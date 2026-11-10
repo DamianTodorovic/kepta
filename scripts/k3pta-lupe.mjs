@@ -1,6 +1,19 @@
-// Die Lupe: startet K3PTA mit Fernsteuerung und wacht über der Fläche.
-// Damian macht den Blackscreen-Klick — diese Wache fängt den Zustand live
-// (DOM, Klassen, Tabs, Speicher, Bild) und schreibt alles in eine Datei.
+// Die Lupe v3 (P195): startet K3PTA mit Fernsteuerung und wacht über der Fläche.
+//
+// Was die ersten Läufe lehrten (10.11.):
+//   - Lauf 1: der Klick selbst überlebt die App zehn Minuten — dann steht der
+//     Hauptfaden still ("LESE-STÖRUNG" für immer). Kein Fehler, kein Crash:
+//     eine Schleife, die nie endet. Deshalb erscheint auch nie der Crash-Bildschirm.
+//   - Lauf 2: die Lupe v2 starb an einer eigenen Unstimmigkeit (sie misst
+//     `gemessen`, prüfte aber noch das alte Feld `sichtbareContainer`) — v3
+//     wickelt jeden Wachgang in eine eigene Kapsel, damit sie nie mehr mitten
+//     im Wachen stirbt.
+//
+// Was v3 NEU kann: wenn der Hauptfaden stillsteht, KLOPFT SIE MIT DEM DEBUGGER
+// AN. V8 unterbricht selbst eine laufende Schleife an der nächsten Gelegenheit
+// und nennt die genaue Fundstelle (Datei:Zeile). Kommt das Klopfen nicht an,
+// steckt der Faden in nativem Code (großes JSON, Regex, SQLite) — auch das ist
+// eine Antwort. Kommt er an, steht der Übeltäter im Protokoll.
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -13,14 +26,6 @@ const PROTOKOLL = path.join(ARBEIT, "lupe.log");
 const log = (z) => { const zl = `[${new Date().toLocaleTimeString("de-DE")}] ${z}`; console.log(zl); fs.appendFileSync(PROTOKOLL, zl + "\n"); };
 
 const schlafe = (ms) => new Promise((r) => setTimeout(r, ms));
-async function warteBis(fn, { maxMs = 60000, schritt = 400 } = {}) {
-  const bis = Date.now() + maxMs;
-  for (;;) {
-    try { const v = await fn(); if (v) return v; } catch { /* noch nicht */ }
-    if (Date.now() > bis) return null;
-    await schlafe(schritt);
-  }
-}
 
 class Cdp {
   constructor(ws) { this.ws = ws; this.nr = 0; this.offen = new Map(); this.evente = []; }
@@ -37,11 +42,14 @@ class Cdp {
         const { los, fehler } = c.offen.get(n.id);
         c.offen.delete(n.id);
         if (n.error) fehler(new Error(n.error.message)); else los(n.result);
-      } else if (n.method) c.evente.push({ methode: n.method, params: n.params });
+      } else if (n.method) c.evente.push({ methode: n.method, params: n.params, t: Date.now() });
+      if (c.evente.length > 300) c.evente.splice(0, c.evente.length - 300);
     };
+    ws.onclose = () => { c.zu = true; };
     return c;
   }
   send(e, params = {}, timeoutMs = 8000) {
+    if (this.zu) return Promise.reject(new Error("VERBINDUNG ZU"));
     const id = ++this.nr;
     return new Promise((los, fehler) => {
       const wache = setTimeout(() => fehler(new Error(`ZEIT ÜBER ${e}`)), timeoutMs);
@@ -49,35 +57,52 @@ class Cdp {
       this.ws.send(JSON.stringify({ id, method: e, params }));
     });
   }
+  /** Wartet auf ein bestimmtes Ereignis (z.B. Debugger.paused). */
+  async warteAufEvent(methode, seit, maxMs) {
+    const bis = Date.now() + maxMs;
+    for (;;) {
+      const gefunden = this.evente.find((e) => e.methode === methode && e.t >= seit);
+      if (gefunden) return gefunden;
+      if (Date.now() > bis) return null;
+      await schlafe(150);
+    }
+  }
 }
-const ausfuhren = async (cdp, ausdruck) =>
-  (await cdp.send("Runtime.evaluate", { expression: ausdruck, returnByValue: true }, 5000)).result?.value;
+const ausfuhren = async (cdp, ausdruck, timeoutMs = 5000) =>
+  (await cdp.send("Runtime.evaluate", { expression: ausdruck, returnByValue: true }, timeoutMs)).result?.value;
 
+// Die Sichtbarkeits-Messung (P194-Zweite): nicht nur, OB Text da ist, sondern
+// WO er steht und wie groß er ist. Ein Behälter mit Text bei 0×0 ist eine
+// verdeckte Tafel — einer mit Text außerhalb des Fensters ist weggefallen.
 const zustand = (cdp) => ausfuhren(cdp, `(()=>{
-  const sichtbar = [...document.querySelectorAll('main > div, main [class*=flex-1]')].filter(el => getComputedStyle(el).display !== 'none' && (el.innerText||'').length > 0);
-  // P194-Zweite: die Behaelter EXISTIEREN mit Text, aber Damian sieht schwarz —
-  // gemessen wird jetzt die SICHTBARKEIT: Position, Groesse, Farbe.
-  const gemessen = sichtbar.slice(0, 8).map(el => {
+  const kandidaten = [...document.querySelectorAll('main > div, main [class*=flex-1]')].filter(el => getComputedStyle(el).display !== 'none');
+  const gemessen = kandidaten.slice(0, 10).map(el => {
     const r = el.getBoundingClientRect();
     const s = getComputedStyle(el);
-    return { text: (el.innerText||'').replace(/\\n+/g,' | ').slice(0, 60), x: Math.round(r.x), y: Math.round(r.y), b: Math.round(r.width), h: Math.round(r.height), farbe: s.color, bg: s.backgroundColor, opacity: s.opacity, transform: s.transform.slice(0, 40) };
+    return { text: (el.innerText||'').replace(/\\n+/g,' | ').slice(0, 70), x: Math.round(r.x), y: Math.round(r.y), b: Math.round(r.width), h: Math.round(r.height), farbe: s.color, sichtbar: s.visibility, opacity: s.opacity };
   });
   return {
-    url: location.href,
-    fenster: { b: window.innerWidth, h: window.innerHeight, scrollX: window.scrollX, scrollY: window.scrollY },
+    url: location.pathname,
+    fenster: { b: window.innerWidth, h: window.innerHeight },
     gemessen,
     tabs: [...document.querySelectorAll('button')].filter(b => /^(System|Artificial|Data|MCP|Sync)/i.test((b.textContent||'').trim())).map(b => (b.textContent||'').trim().slice(0, 18)),
     schalter: [...document.querySelectorAll('input[aria-label^="Search track"]')].map(i => (i.getAttribute('aria-label')||'').replace('Search track: ','')+'='+i.checked).join(','),
     topK: localStorage.getItem('ki_gehirn_topK'),
     tiefe: localStorage.getItem('ki_gehirn_such_tiefe'),
-    semantik: localStorage.getItem('ki_gehirn_semantic'),
     tabGespeichert: localStorage.getItem('kepta_einstellungen_tab'),
-    ausnahmen: null,
   };
 })()`);
 
+const messen = async (cdp) => {
+  try {
+    const m = await cdp.send("Performance.getMetrics", {}, 3000);
+    const holen = (n) => m.metrics?.find((x) => x.name === n)?.value;
+    return { heap: Math.round((holen("JSHeapUsedSize") ?? 0) / 1048576), knoten: holen("Nodes") ?? 0 };
+  } catch { return null; }
+};
+
 async function main() {
-  log("Die Lupe startet: K3PTA wird beendet und mit der Lupe neu gestartet.");
+  log("Die Lupe v3 startet: K3PTA wird beendet und mit der Lupe neu gestartet.");
   try { const { execSync } = await import("node:child_process"); execSync(`osascript -e 'tell application "K3PTA" to quit'`); } catch { /* lief nicht */ }
   await schlafe(3000);
   const app = spawn("/Applications/K3PTA.app/Contents/MacOS/K3PTA", [`--remote-debugging-port=${CDP_PORT}`], {
@@ -90,45 +115,102 @@ async function main() {
   const endpoint = JSON.parse(fs.readFileSync(endpointPfad, "utf8"));
   log(`App-Server: ${endpoint.url} (PID ${endpoint.pid})`);
 
-  const ziel = await warteBis(async () => {
-    const l = await (await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`)).json();
-    return l.find((z) => z.type === "page" && z.webSocketDebuggerUrl) || null;
-  }, { maxMs: 60000 });
+  let ziel = null;
+  for (let i = 0; i < 60 && !ziel; i++) {
+    await schlafe(1000);
+    try {
+      const l = await (await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`)).json();
+      ziel = l.find((z) => z.type === "page" && z.webSocketDebuggerUrl) || null;
+    } catch { /* noch nicht */ }
+  }
   if (!ziel) { log("KEIN CDP-ZIEL — die Lupe kann nicht lesen. Skript endet."); return; }
   const cdp = await Cdp.verbindung(ziel.webSocketDebuggerUrl);
-  await cdp.send("Runtime.enable");
-  log("Die Lupe hängt am Fenster. Damian: mach den Blackscreen-Klick — ich fange den Zustand.");
+  await cdp.send("Runtime.enable").catch(() => {});
+  await cdp.send("Page.enable").catch(() => {});
+  await cdp.send("Performance.enable").catch(() => {});
+  await cdp.send("Debugger.enable").catch(() => {});
+  log("Die Lupe hängt am Fenster. Damian: mach, was du immer machst — ich fange alles.");
 
   const start = await zustand(cdp);
-  start.ausnahmen = "siehe Folgezeilen";
   log("START-ZUSTAND: " + JSON.stringify(start));
 
+  const letzteGute = () => JSON.stringify({ url: letzte?.url, gemessen: letzte?.gemessen?.slice(0, 4), schalter: letzte?.schalter });
+  let letzte = start;
+  let stillstandStreak = 0;
+  let eingefrorenGemeldet = 0;
   let gefangen = 0;
+
   for (let i = 0; i < 900; i++) {
-    await schlafe(1000);
-    const z = await zustand(cdp).catch((e) => ({ fehler: e.message }));
-    if (z.fehler) { log(`[${i}s] LESE-STÖRUNG: ${z.fehler}`); continue; }
-    const wache = cdp.evente.filter((e) => e.methode === "Runtime.exceptionThrown");
-    // Fang-Bedingungen: (a) die sichtbare Fläche hat kaum Text, (b) eine neue Ausnahme
-    const ausserhalb = (z.gemessen ?? []).filter((c) => c.b > 0 && (c.y > z.fenster.h || c.y + c.h < 0 || c.x > z.fenster.b || c.x + c.b < 0));
-    const unsichtbar = (z.gemessen ?? []).filter((c) => c.b > 0 && c.h > 0 && (c.opacity === '0' || c.farbe === 'rgba(0, 0, 0, 0)'));
-    const flaecheArm = z.sichtbareContainer.length === 0 || z.sichtbareContainer.every((c) => c.text.length < 60);
-    if ((flaecheArm || ausserhalb.length > 0 || unsichtbar.length > 0 || wache.length > 0) && gefangen < 3) {
-      gefangen += 1;
-      log(`\n!!! FUNDSACHE #${gefangen} bei ${i}s !!!`);
-      log(`Diagnose: ausserhalb ${ausserhalb?.length ?? 0}, unsichtbar ${unsichtbar?.length ?? 0}, flaecheArm ${flaecheArm}`);
-      log(JSON.stringify(z, null, 1));
-      const tief = await ausfuhren(cdp, `(()=>{
-        const sichtbar = [...document.querySelectorAll('main > div, main [class*=flex-1]')].filter(el => getComputedStyle(el).display !== 'none');
-        return sichtbar.map(el => ({ klasse: (el.className||'').slice(0, 80), text: (el.innerText||'').replace(/\\n+/g,' | ').slice(0, 300) }));
-      })()`).catch((e) => [{ fehler: e.message }]);
-      log("TIEF: " + JSON.stringify(tief, null, 1));
-      const b = await cdp.send("Page.captureScreenshot", { format: "png" });
-      fs.writeFileSync(path.join(ARBEIT, `fundsache-${gefangen}.png`), Buffer.from(b.data, "base64"));
-      log(`  Bild: fundsache-${gefangen}.png`);
-      if (gefangen === 3) { log("Drei Fundsachen gefangen — die Lupe endet. Damian: schick mir den Ordner K3PTA-Lupe auf dem Desktop."); break; }
+    await schlafe(5000);
+    try {
+      let z;
+      try {
+        z = await zustand(cdp);
+      } catch (leseFehler) {
+        stillstandStreak += 1;
+        log(`[${i * 5}s] der Hauptfaden antwortet nicht (${stillstandStreak}×): ${leseFehler.message}`);
+        // Drei verweigerte Antworten hintereinander (~30 s) = der Blackscreen-Moment.
+        if (stillstandStreak >= 3 && eingefrorenGemeldet < 3) {
+          eingefrorenGemeldet += 1;
+          log(`\n!!! STILLSTAND #${eingefrorenGemeldet} bei ${i * 5}s — der Hauptfaden steht. Das letzte Lebenszeichen: ${letzteGute()}`);
+          // Der Prozess-Blitz: dreht der Faden (CPU hoch = Schleife) oder wartet
+          // er (CPU 0 = blockiert, z.B. auf einen sync-Ausflug zum Hauptprozess)?
+          try {
+            const { execSync } = await import("node:child_process");
+            const blitz = execSync("ps -axo pid,pcpu,pmem,state,comm | grep -i 'K3PTA' | grep -v grep", { encoding: "utf8" });
+            log("PROZESS-BLITZ beim Stillstand:\n" + blitz.trim().split("\n").map((z) => "  " + z.trim()).join("\n"));
+          } catch { log("PROZESS-BLITZ: keine K3PTA-Prozesse gefunden"); }
+          const b = await cdp.send("Page.captureScreenshot", { format: "png" }, 8000).catch(() => null);
+          if (b) { fs.writeFileSync(path.join(ARBEIT, `stillstand-${eingefrorenGemeldet}.png`), Buffer.from(b.data, "base64")); log(`  Bild: stillstand-${eingefrorenGemeldet}.png`); }
+          // Das Debugger-Klopfen: V8 unterbricht die Schleife und nennt die Fundstelle.
+          const seit = Date.now();
+          let gefasst = null;
+          for (let k = 0; k < 12 && !gefasst && !cdp.zu; k++) {
+            await cdp.send("Debugger.pause", {}, 3000).catch(() => {});
+            await schlafe(2500);
+            gefasst = await cdp.warteAufEvent("Debugger.paused", seit, 1);
+          }
+          if (gefasst) {
+            const rahmen = gefasst.params.callFrames || [];
+            log(`!!! DER ÜBELTÄTER — der Hauptfaden steckt hier (${rahmen.length} Rahmen):`);
+            for (const [idx, f] of rahmen.slice(0, 25).entries()) {
+              const datei = (f.url || "(unbekannt)").split("/").slice(-2).join("/");
+              log(`  ${idx}. ${f.functionName || "(anonym)"} @ ${datei}:${f.location.lineNumber + 1}:${f.location.columnNumber}`);
+            }
+            await cdp.send("Debugger.resume", {}, 3000).catch(() => {});
+            log("  (die Lupe hat den Faden wieder laufen lassen — das Klopfen wiederholt sich beim nächsten Stillstand)");
+          } else {
+            log("!!! DAS KLOPFEN KAM NICHT AN — der Faden steckt in nativem Code (großes JSON.parse, eine Regex mit Rücklauf oder SQLite). Das engt die Jagd auf die Tuer/Scan-Kette ein.");
+          }
+          stillstandStreak = 0;
+        }
+        continue;
+      }
+      stillstandStreak = 0;
+      letzte = z;
+      // Sichtbarkeits-Funde: die Fläche lebt im Text, zeigt aber nichts.
+      const wirklich = (z.gemessen ?? []).filter((c) => c.b > 200 && c.h > 100 && c.text.length > 60 && c.sichtbar !== "hidden" && c.opacity !== "0");
+      const flaecheArm = wirklich.length === 0;
+      const wache = cdp.evente.filter((e) => e.methode === "Runtime.exceptionThrown");
+      if ((flaecheArm || wache.length > 0) && gefangen < 3) {
+        gefangen += 1;
+        log(`\n!!! FUNDSACHE #${gefangen} bei ${i * 5}s (flaecheArm=${flaecheArm}, ausnahmen=${wache.length})`);
+        log(JSON.stringify(z, null, 1));
+        if (wache.length > 0) log("AUSNAHMEN: " + JSON.stringify(wache.slice(-5).map((e) => String(e.params?.exceptionDetails?.exception?.description || e.params?.exceptionDetails?.text).slice(0, 300))));
+        const b = await cdp.send("Page.captureScreenshot", { format: "png" }, 8000).catch(() => null);
+        if (b) { fs.writeFileSync(path.join(ARBEIT, `fundsache-${gefangen}.png`), Buffer.from(b.data, "base64")); log(`  Bild: fundsache-${gefangen}.png`); }
+      }
+      if (i % 2 === 0) {
+        const m = await messen(cdp);
+        const ort = wirklich[0]?.text?.slice(0, 40) ?? "kein Inhalt sichtbar";
+        log(`[${i * 5}s] lebt | ${ort} | schalter ${z.schalter || "—"} | heap ${m ? m.heap + " MB" : "?"} knoten ${m ? m.knoten : "?"}`);
+      }
+    } catch (wachFehler) {
+      // Die Wache selbst darf nie sterben (Lehre aus Lauf 2).
+      log(`[${i * 5}s] WACH-STÖRUNG (die Lupe läuft weiter): ${wachFehler.message}`);
+      if (cdp.zu) { log("Die Verbindung zum Fenster ist zu — Damian hat es geschlossen oder es stürzte ab. Die Lupe endet."); break; }
     }
-    if (i % 15 === 0) log(`[${i}s] lebt | container ${z.sichtbareContainer?.length} | schalter ${z.schalter || '—'} | tabs ${JSON.stringify(z.tabs)}`);
   }
+  log("Die Lupe endet nach 75 Minuten. Damian: schick mir den Ordner K3PTA-Lupe auf dem Desktop.");
 }
 main().catch((e) => { log("LUPE-FEHLER: " + e.message); });
