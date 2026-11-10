@@ -472,10 +472,10 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
                 aria-checked={privat}
                 aria-label="Private"
                 onClick={() => setPrivat((v) => !v)}
-                className="relative w-10 h-6 rounded-full shrink-0 transition-colors"
-                style={{ background: privat ? 'var(--accent)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}
+                className="switch shrink-0 p-0"
+                data-on={privat}
               >
-                <span className="absolute top-0.5 rounded-full bg-knopf transition-all" style={{ left: privat ? 18 : 2, width: 18, height: 18 }} />
+                <span className="knob" />
               </button>
             </div>
 

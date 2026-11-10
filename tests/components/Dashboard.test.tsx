@@ -776,10 +776,10 @@ describe("Dashboard: Gruppierungen und Vorschau", () => {
       const text = container.textContent ?? "";
       // Die vier Abschnitte bleiben — ihr Sichttext ist eine Beschreibung, kein
       // Korb-Wort (#84).
-      expect(text).toContain("Statements");
-      expect(text).toContain("What happened");
-      expect(text).toContain("How it's done");
-      expect(text).toContain("Papers");
+      expect(text).toContain("Facts & knowledge");
+      expect(text).toContain("Events & dates");
+      expect(text).toContain("How-tos & instructions");
+      expect(text).toContain("Documents & files");
       expect(text).toMatch(/1 note/);
     });
   });

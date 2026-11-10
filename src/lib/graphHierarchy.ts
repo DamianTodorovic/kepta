@@ -81,10 +81,14 @@ export const TYP_LABELS: Record<string, string> = {
  * Sichttext wandert (Auftrag #84).
  */
 export const TYP_BESCHREIBUNG: Record<string, string> = {
-  semantic: "Statements",
-  episodic: "What happened",
-  procedural: "How it's done",
-  reference: "Papers",
+  // P197 (Damian, 23:03): die Namen müssen SOFORT sagen, was darunter fällt —
+  // benannt nach der Vergabe in `src/core/klassifikation.ts` (formulierter Text
+  // ohne Ablauf/Datum; Ereignis-Wort im Titel/Ereignis-Tag; nummerierte Schritte
+  // oder Anleitungs-Wort; Datei-Endung, Rechner-Scan, überwiegend Markup).
+  semantic: "Facts & knowledge",
+  episodic: "Events & dates",
+  procedural: "How-tos & instructions",
+  reference: "Documents & files",
 };
 
 const BEKANNTE_TYPEN = ["semantic", "episodic", "procedural", "reference"];

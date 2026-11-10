@@ -38,7 +38,7 @@ describe("Das Inventar zählt, was im Bild steht", () => {
     // Die Zeilen tragen die Namen, die die Legende schon benutzt — ein dritter
     // Name für dieselbe Art wäre eine zweite Wahrheit. Seit #84 sind das die
     // Beschreibungen aus `TYP_BESCHREIBUNG`, nicht die vier Korb-Woerter.
-    expect(inventar.knoten.map((z) => z.label)).toEqual(["Papers", "Statements", "How it's done", "What happened"]);
+    expect(inventar.knoten.map((z) => z.label)).toEqual(["Documents & files", "Facts & knowledge", "Events & dates", "How-tos & instructions"]);
   });
 
   it("erfindet keine Zeile für eine Art, die nicht im Bild ist", () => {

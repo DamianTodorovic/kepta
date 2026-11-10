@@ -2767,7 +2767,7 @@ describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
 
   it("laesst die Kinder einer doppelt genommenen Gruppe weg und zaehlt sie weiter", async () => {
     const container = await inDenBaum(notizen());
-    await doppelklick(container, scheibeVon("Statements"));
+    await doppelklick(container, scheibeVon("Facts & knowledge"));
     const texte = (await bildNach((t) => t.includes("×2"))).texte;
     expect(texte).not.toContain("Uebergabe Nordwind");
     expect(texte).not.toContain("Nachfass Nordwind");
@@ -2778,7 +2778,7 @@ describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
 
   it("oeffnet die Gruppe beim zweiten Doppelklick wieder", async () => {
     const container = await inDenBaum(notizen());
-    const bei = scheibeVon("Statements");
+    const bei = scheibeVon("Facts & knowledge");
     await doppelklick(container, bei);
     await bildNach((t) => t.includes("×2"));
     await doppelklick(container, bei);
@@ -2797,7 +2797,7 @@ describe("Faltung: ein Doppelklick faltet eine Gruppe und sagt es", () => {
   it("zaehlt in der Kopfzeile, was nach der Faltung im Bild steht", async () => {
     const container = await inDenBaum(notizen());
     expect(kopfZeile(container), "Kopfzeile vor der Faltung").toBe(3);
-    await doppelklick(container, scheibeVon("Statements"));
+    await doppelklick(container, scheibeVon("Facts & knowledge"));
     await bildNach((t) => t.includes("×2"));
     expect(kopfZeile(container), "Kopfzeile nach der Faltung").toBe(1);
     // Und die Bilanz des Ausschnitts sagt, warum eine fehlt.

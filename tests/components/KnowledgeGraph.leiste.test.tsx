@@ -150,19 +150,19 @@ describe("Z-07: ein Zeichen pro Bedeutung", () => {
     expect(knoepfe(container).find((b) => b.textContent?.trim() === "Tree")!.getAttribute("data-on")).toBe("false");
   });
 
-  it("zeichnet den Schalter mit dem Punkt, und die Dichtestufe ohne Punkt", async () => {
+  it("zeichnet den Schalter mit dem Haus-Schalter, und die Dichtestufe ohne (P197)", async () => {
     const { container } = await flaeche();
     const aehnlich = knoepfe(container).find((b) => (b.textContent ?? "").includes("Similar"))!;
-    const punkt = aehnlich.querySelector('[data-testid="graph-schalter-punkt"]') as HTMLElement;
-    expect(punkt, "der Schalter hat kein eigenes Zeichen").toBeTruthy();
-    expect(punkt.style.background, "aus malt in Akzentfarbe — das waere das Zeichen von an").toBe("transparent");
+    const schalter = aehnlich.querySelector('[data-testid="graph-schalter-punkt"]') as HTMLElement;
+    expect(schalter, "der Knopf hat kein eigenes Zeichen").toBeTruthy();
+    expect(schalter.getAttribute("data-on"), "aus zeigt den Haus-Schalter aus").toBe("false");
     await act(async () => {
       fireEvent.click(aehnlich);
       await new Promise((r) => setTimeout(r, 60));
     });
-    expect(punkt.style.background, "an ist nicht die Akzentfarbe").toBe("var(--accent)");
-    expect(aehnlich.getAttribute("aria-pressed"), "Punkt und aria-pressed reden verschieden").toBe("true");
-    // Eine Auswahl ist kein Schalter: in der Schiene sitzt nirgends ein Punkt.
+    expect(schalter.getAttribute("data-on"), "an zeigt den Haus-Schalter an").toBe("true");
+    expect(aehnlich.getAttribute("aria-pressed"), "Schalter und aria-pressed reden verschieden").toBe("true");
+    // Eine Auswahl ist kein Schalter: in der Schiene sitzt nirgends ein Schalter.
     const schiene = container.querySelector('[data-testid="graph-schiene-namen"]')!;
     expect(schiene.querySelector('[data-testid="graph-schalter-punkt"]'), "die Dichtestufe tut so, als waere sie an").toBeNull();
   });

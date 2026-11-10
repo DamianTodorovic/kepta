@@ -5690,20 +5690,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   }
 
   const drin = (g: Leistenglied) => plan.zeile.includes(g);
-  /** Der Punkt ist das eine Zeichen fuer „ein Schalter ist an". */
+  /** P197: der Haus-Schalter statt des Punktes — dasselbe An/Aus-Gesicht wie in
+   *  den Einstellungen (Damian: die Knöpfe „sind noch immer verbugt"; zwei
+   *  Schalter-Designs in einer App sind eines zu viel). */
   const punkt = (an: boolean) => (
-    <span
-      aria-hidden="true"
-      data-testid="graph-schalter-punkt"
-      style={{
-        width: 6,
-        height: 6,
-        flex: "0 0 6px",
-        borderRadius: 999,
-        background: an ? "var(--accent)" : "transparent",
-        boxShadow: an ? "none" : "inset 0 0 0 1px var(--border-strong)",
-      }}
-    />
+    <span className="switch shrink-0" data-on={an} aria-hidden="true" data-testid="graph-schalter-punkt">
+      <span className="knob" />
+    </span>
   );
   /**
    * Die drei Rollen der Leiste, in drei verschiedenen Zeichen (Z-07):

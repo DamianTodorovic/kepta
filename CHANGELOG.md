@@ -1,3 +1,21 @@
+## [3.2.205]
+
+### Changed
+
+- **The four kind names say what falls under them.** Damian (23:03): the labels
+  must be understood at a glance. Renamed by their assignment rules in
+  `src/core/klassifikation.ts`: **Facts & knowledge** (formulated text without
+  steps or dates), **Events & dates** (event word in the title, event tag),
+  **How-tos & instructions** (numbered steps, instruction words), **Files &
+  documents** (file extension, machine scan, markup-heavy). One source
+  (`TYP_BESCHREIBUNG`) — the graph legend, schema panel, shelf swatches and the
+  Settings "Colours" section all flip together.
+- **Every on/off control wears the one house switch.** The graph shelf's dot
+  toggles (`punkt`) now render the same 34×20 `.switch` as Settings, and the
+  note editor's "Private" switch — the third hand-rolled copy with the knob
+  14 px outside the pill — is replaced too. One switch design in all of K3PTA.
+  Held by the updated shelf/leiste, editor and schema guards.
+
 ## [3.2.204]
 
 ### Fixed

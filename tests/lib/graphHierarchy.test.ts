@@ -175,7 +175,7 @@ describe("buildHierarchy", () => {
     ]);
     const refTyp = finde(baum, "__typ:reference");
     expect(refTyp).not.toBeNull();
-    expect(refTyp!.label).toBe("Papers");   // seit #84 die Beschreibung; die Art bleibt `reference`
+    expect(refTyp!.label).toBe("Documents & files");   // seit #84 die Beschreibung; die Art bleibt `reference`
     expect(refTyp!.typ).toBe("reference"); // bekannte Farbe — blau wie im Kraftfeld
     expect(finde(baum, "1")).not.toBeNull();
   });
