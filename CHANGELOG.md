@@ -1,3 +1,18 @@
+## [3.2.200]
+
+### Fixed
+
+- **The voice switches reset the result list — no more thousand-card freeze.**
+  Damian's blackscreen (9.11., video): clicking Words/Meaning/Graph delivered
+  new results to a list whose visible counter had been grown by earlier
+  Load-mores — the surface painted the whole grown list at once and the window
+  froze. The list-reset now also listens to the three voice switches
+  (`src/components/Dashboard.tsx`, the pagination reset): every switch click
+  brings the list back to its first 48 cards, and scrolling grows it again
+  gradually. Held by the P193 case in
+  `tests/components/dashboard-trefferstufe.test.tsx` (3000 results, expand,
+  switch — seen red before the rule: 192 rows stood).
+
 ## [3.2.199]
 
 ### Fixed

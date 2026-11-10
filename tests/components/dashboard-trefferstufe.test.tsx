@@ -140,4 +140,37 @@ describe("Punkt 4: die Trefferstufe kantt die Liste", () => {
     const { container } = await zeichne({ topK: "5", semantik: "false" });
     expect(zeilen(container) > 5, `ohne Semantik stehen nur ${zeilen(container)} Zeilen — die Liste kaeme ohne Rueckweg aus`).toBe(true);
   });
+
+  /* P193 (Damian-Befund, 9.11.): der Spuren-Schalter richtet die Liste AUF.
+     Sein Video zeigte den Blackscreen: der Klick auf Words/Meaning/Graph liefert
+     der Liste neue Ergebnisse, ohne den sichtbaren Zähler zurückzusetzen — wer
+     vorher per Nachladen den Aufbau vergrößert hatte, malte beim nächsten Such-Lauf
+     plötzlich den ganzen Aufbau auf einmal, und das Fenster erstarrte. Die Such-
+     ergebnisse ändern sich mit jeder Stimme, also muss die Liste auf ihren Anfang
+     zurück (die ersten 48 Karten), sobald eine Stimme umgestellt wird. */
+  it("P193: nach dem Umstellen einer Stimme richtet sich die Liste auf den Anfang", async () => {
+    tuer({ gesamt: 3000 });
+    const { container } = await zeichne({ topK: "0" });
+    const erste = zeilen(container);
+    expect(erste, "die Liste startet nicht bei der Seitengröße").toBe(48);
+    // Die Liste aufbauen: der Load-more-Knopf hebt den sichtbaren Zähler.
+    for (let k = 0; k < 3; k++) {
+      const mehr = [...container.querySelectorAll("button")].find((b) => /Load more/i.test(b.textContent || ""));
+      if (!mehr) break;
+      fireEvent.click(mehr!);
+      await act(async () => { await new Promise((r) => setTimeout(r, 900)); });
+    }
+    const aufgebaut = zeilen(container);
+    expect(aufgebaut, "der Aufbau wuchs nicht — der Test kann die Rücksetzung nicht sehen").toBeGreaterThan(erste);
+
+    // Der Klick, der bei Damian schwarz wurde: eine Stimme umstellen.
+    await act(async () => {
+      localStorage.setItem("ki_gehirn_spur_bm25", "0");
+      window.dispatchEvent(new CustomEvent("kepta_such_prefs"));
+      await new Promise((r) => setTimeout(r, 1200));
+    });
+    // Die Suche lief neu — die Liste muss auf ihren Anfang zurück (48 Karten),
+    // nicht am alten Aufbau hängen (dort malte sie beim Umschalten alles auf einmal).
+    expect(zeilen(container), `nach der Stimme standen ${zeilen(container)} Zeilen — der Aufbau wurde nicht aufgerichtet`).toBe(48);
+  });
 });

@@ -1530,10 +1530,13 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   ), [gruppen, sichtbareGruppen, paginatedMemories, displayedMemories, visibleCount, scoredMap, serverScored, loadMoreRef, seitenHinweis]);
 
-  // Reset Paginierung bei Filter-/Suche-Wechsel
+  // Reset Paginierung bei Filter-/Suche-Wechsel. P193: auch bei den Stimmen —
+  // der Klick auf Words/Meaning/Graph liefert der Liste neue Ergebnisse, und wer
+  // vorher per Nachladen den sichtbaren Zähler hochgeholt hatte, malte beim
+  // nächsten Lauf den ganzen Aufbau auf einmal (Damians Blackscreen, 9.11.).
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [debouncedSearchQuery, selectedTags, semanticEnabled, topK]);
+  }, [debouncedSearchQuery, selectedTags, semanticEnabled, topK, suchPrefs.spurBm25, suchPrefs.spurVektor, suchPrefs.spurGraph]);
 
   // IntersectionObserver: automatisches Nachladen beim Scrollen (400px Vorlauf).
   // Zwei Wege, ein Anker: solange der Cache Karten hat, die noch nicht gemalt sind, wächst das
