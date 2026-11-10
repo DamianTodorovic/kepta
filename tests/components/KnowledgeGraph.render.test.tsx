@@ -532,23 +532,38 @@ describe("Farben und Groesse", () => {
     expect(document.documentElement.style.getPropertyValue("--type-semantic")).toBe("#ffee66");
   });
 
-  it("weist eine Leiter-brechende Farbe ab: nichts gemalt, nichts gespeichert", async () => {
+  it("nimmt eine Leiter-brechende Farbe an und fuehrt nur ihre Helligkeit (P196)", async () => {
+    // Damian, 10.11.: „man kann die Farben nicht ändern" — der alte Weg verwies
+    // #ff3366 wortlos (3,30:1 auf dem Blatt). Der neue Weg nimmt sie an, hebt
+    // ihre Helligkeit auf die Leiter und lässt den Farbton stehen.
     const { container } = await zeichne([note()]);
     const waehler = container.querySelectorAll('input[type="color"]');
     await greifeRegler(waehler[0] as HTMLInputElement, "#ff3366");
-    // Gegenstueck zum Fall oben: ohne ihn waere "nichts gespeichert" auch dann
-    // gruen, wenn die Flaeche JEDE Wahl verwirft.
-    expect(localStorage.getItem("kepta_type_colors")).toBeNull();
-    expect(document.documentElement.style.getPropertyValue("--type-semantic")).toBe("");
+    const varTon = document.documentElement.style.getPropertyValue("--type-semantic");
+    expect(varTon, "die Wahl wurde nicht auf die Variable getragen").not.toBe("");
+    expect(varTon.toLowerCase()).not.toBe("#ff3366"); // geführt, nicht roh
+    const gespeichert = localStorage.getItem("kepta_type_colors");
+    expect(gespeichert, "der Speicher trägt den geführten Ton").toContain(varTon.slice(1).toLowerCase());
+    // und sie liest jetzt: dieselbe Leiter, die früher die Wahl verschmiss.
+    const m = varTon.trim().match(/^#?([0-9a-fA-F]{6})$/)!;
+    const zahl = parseInt(m[1], 16);
+    const k = (n: number) => { const s = n / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); };
+    const tinte = 0.2126 * k((zahl >> 16) & 255) + 0.7152 * k((zahl >> 8) & 255) + 0.0722 * k(zahl & 255);
+    for (const grund of [0.00213, 0.0396]) {
+      expect((Math.max(tinte, grund) + 0.05) / (Math.min(tinte, grund) + 0.05)).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
-  it("uebersieht einen Ton, den eine alte Fassung gespeichert hat", async () => {
-    // Das Tor gilt auch rueckwaerts: ein Wert, der vor 18.10. gespeichert wurde,
-    // darf beim naechsten Start keine Schrift mehr ausstechen.
+  it("führt einen Ton aus einer alten Fassung auf die Leiter, statt ihn zu übersehen", async () => {
+    // Rückwärts gilt der neue Weg auch: ein Wert, der vor 18.10. gespeichert
+    // wurde, wird beim Lesen normalisiert und getragen — der Datensatz bleibt
+    // unangetastet, die Wirkung liest jetzt.
     localStorage.setItem("kepta_type_colors", JSON.stringify({ semantic: "#ff3366" }));
     await zeichne([note()]);
-    expect(document.documentElement.style.getPropertyValue("--type-semantic")).toBe("");
-    expect(localStorage.getItem("kepta_type_colors")).toContain("ff3366"); // der Mensch-Datensatz bleibt, nur die Wirkung ist raus
+    const varTon = document.documentElement.style.getPropertyValue("--type-semantic");
+    expect(varTon, "der alte Ton wurde nicht getragen").not.toBe("");
+    expect(varTon.toLowerCase()).not.toBe("#ff3366"); // geführt
+    expect(localStorage.getItem("kepta_type_colors")).toContain("ff3366"); // der Mensch-Datensatz bleibt, wie er war
   });
 
   it("passt die Ansicht neu ein, wenn sich das Fenster aendert", async () => {

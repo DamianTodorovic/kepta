@@ -1,3 +1,24 @@
+## [3.2.203]
+
+### Fixed
+
+- **Every colour pick is accepted — the silent snap-back is dead.** Damian
+  (10.11.): "you can't change the colours in the graph." The old gate
+  (`tintetauglich`) silently rejected any pick that failed 4.5:1 *text* contrast
+  on the dark papers — measured 18.10.: `#cc00bb` held 3.9:1, `#007bff` 3.1:1 —
+  so a large part of the colour wheel snapped back to the registry tone with no
+  word. The colour maths now lives in `src/lib/typFarben.ts`: a pick is always
+  accepted and only its lightness is lifted until the tone reads on both papers
+  (hue preserved). `src/components/KnowledgeGraph.tsx` reads it; the four swatches
+  in the shelf are labelled with their kind.
+- **The same four pickers now live in Settings → System status** ("Colours") —
+  `src/components/TypFarbenReihe.tsx` shares one store with the graph shelf, and
+  the choice carries app-wide through `--type-*` (dots, card ridge, type label,
+  legend). The knowledge list has always read those variables; now the setting is
+  reachable from both places Damian expected it.
+  Held by `tests/lib/typ-farben.test.ts` (acceptance, hue preservation, persistence,
+  junk rejection).
+
 ## [3.2.202]
 
 ### Fixed

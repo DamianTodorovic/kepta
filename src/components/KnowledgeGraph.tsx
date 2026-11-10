@@ -66,6 +66,7 @@ import {
   type Transform,
 } from "../lib/graphLayout";
 import { t as uiT } from "../lib/uiText";
+import { leseTypFarben, schreibeTypFarbe, trageGespeicherteTypFarben } from "../lib/typFarben";
 import { bestandGroesse } from "../lib/store";
 import {
   buildHierarchy,
@@ -682,35 +683,12 @@ const TYP_TOKEN: Record<string, string> = {
 };
 const ROLLEN_TOKEN: Record<string, string> = { ...TYP_TOKEN, ...HERKUNFT_TOKEN };
 
-/** Eine eigene Farbwahl überschreibt beide Kanäle desselben Tokens — sonst
- *  malt die Leinwand die Wahl und das Blatt den Registerton. */
-function setTypVar(rolle: string, wert: string) {
-  document.documentElement.style.setProperty(`--type-${rolle}`, wert);
-  document.documentElement.style.setProperty(`--type-${rolle}-hex`, wert);
-}
-
-/**
- * Eine eigene Farbwahl schreibt in ein Token, das im selben Moment als SCHRIFT
- * gelesen wird: Index-Zahlen, Karten-Grat, Legenden-Wort (der Kommentar oben,
- * Zeile 1183, nennt das „app-weit"). Ein `#rrggbb` aus dem Regler kann deshalb
- * die Leiter ausstechen, und ein Wert, den eine alte Fassung gespeichert hat,
- * tut es ohne dass jemand wählt. Gemessen 18.10. am echten Bestand (21 066):
- * die gespeicherten Töne #cc00bb, #00ff55, #007bff, #ffffff malten die
- * Index-Zahlen mit 3,12:1 (Pixel, auf dem Panel #252526) und die Legende als
- * reines Weiß — die Leiter verlangt 4,65 gegen das härteste Papier.
- *
- * `tintetauglich` lässt eine Wahl nur gelten, wenn sie als Schrift auf beiden
- * Papieren des dunklen Themas 4,5:1 hält; sonst bleibt der Registerton stehen.
- */
-function tintetauglich(wert: string): boolean {
-  const m = /^#?([0-9a-fA-F]{6})$/.exec((wert || "").trim());
-  if (!m) return false;
-  const zahl = parseInt(m[1], 16);
-  const k = (n: number) => { const s = n / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); };
-  const tinte = 0.2126 * k((zahl >> 16) & 255) + 0.7152 * k((zahl >> 8) & 255) + 0.0722 * k(zahl & 255);
-  const papiere = [0.00213, 0.0396]; /* #070708 Tisch, #38383a Blatt */
-  return papiere.every((grund) => (Math.max(tinte, grund) + 0.05) / (Math.min(tinte, grund) + 0.05) >= 4.5);
-}
+// P196: die Farb-Mathematik (Leiter, Normalisierung, Speicherung, app-weite
+// Variablen) lebt jetzt in `src/lib/typFarben.ts` — der Graph und die
+// Einstellungs-Seite teilen EIN Vokabular. Die frühere örtliche Fassung
+// (`setTypVar`, `tintetauglich`) wies Wahlen still ab, die als Schrift 4,5:1
+// verfehlten — Damian: „man kann die Farben nicht ändern." Der neue Weg nimmt
+// jede Wahl an und führt nur die Helligkeit auf die Leiter.
 
 function leseRollenHexe(): Record<string, string> {
   if (typeof document === "undefined") return {};
@@ -2069,12 +2047,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   }, [mehrOffen, menueAnzahl]);
 
   const [customTypeColors, setCustomTypeColors] = useState<Record<string, string>>(() => {
-    // Nur was die Leiter hält, kommt durch: sonst überschreibt ein Wert, den
-    // eine alte Fassung gespeichert hat, bis heute Index-Zahlen und Legende.
-    try {
-      const gespeichert = JSON.parse(localStorage.getItem("kepta_type_colors") || "{}") as Record<string, string>;
-      return Object.fromEntries(Object.entries(gespeichert).filter(([, wert]) => tintetauglich(wert)));
-    } catch { return {}; }
+    // P196: gespeicherte Wahlen werden normalisiert, nicht verworfen — jede
+    // kommt auf die Leiter und bleibt (der alte Filter schmiss still weg).
+    return leseTypFarben();
   });
   const rollenHexe = useRollenHexe();
   const TYPE_COLORS = useMemo(() => {
@@ -2100,19 +2075,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
 
   // Eine Typ-Farbe wirkt app-weit (Karten-Grat, Typ-Label, Index-Zahlen).
   useEffect(() => {
-    for (const t of Object.keys(customTypeColors)) setTypVar(t, customTypeColors[t]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    trageGespeicherteTypFarben();
   }, []);
   const setTypeColor = (t: string, c: string) => {
-    // Eine Wahl unter der Leiter wird nicht gemalt: der Regler snappt sichtbar
-    // auf den Registerton zurück, weil `value` an TYPE_COLORS hängt.
-    if (!tintetauglich(c)) return;
-    setTypVar(t, c);
-    setCustomTypeColors((prev) => {
-      const next = { ...prev, [t]: c };
-      try { localStorage.setItem("kepta_type_colors", JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
+    // P196: JEDE Wahl wird angenommen. Die Leiter (4,5:1 als Schrift) führt nur
+    // die Helligkeit — der Farbton bleibt; das stille Zurückweisen ist tot
+    // (gemessen 10.11.: #cc00bb & Co. verschwanden wortlos, Damian: „man kann
+    // die Farben nicht ändern").
+    const ton = schreibeTypFarbe(t, c);
+    if (!ton) return;
+    setCustomTypeColors((prev) => ({ ...prev, [t]: ton }));
   };
 
   // --- Echte Relationen aus der Graph-DB ---
@@ -6028,17 +6000,22 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     </div>
   );
   const farbenReihe = (
-    <div className="flex items-center gap-1 shrink-0" title="Dot colours — each colour tints its type across the graph, cards and list">
+    // P196: vier beschriftete Wähler statt anonymer Punkte — jede Wahl gilt
+    // (Helligkeit wird nur auf die Leiter geführt) und trägt app-weit.
+    <div className="flex items-start gap-3 shrink-0" title="Dot colours — each colour tints its type across the graph, cards and list">
       {TYP_FOLGE.map((t) => (
-        <input
-          key={t}
-          type="color"
-          value={TYPE_COLORS[t] ?? ""}
-          onChange={(e) => setTypeColor(t, e.target.value)}
-          title={`Colour: ${TYP_BESCHREIBUNG[t]} — tints the dots, their card ridge, and their number in the list`}
-          className="graph-swatch"
-          style={{ color: `var(${TYP_TOKEN[t]})` }}
-        />
+        <label key={t} className="flex flex-col items-center gap-1 cursor-pointer select-none">
+          <input
+            type="color"
+            value={TYPE_COLORS[t] ?? ""}
+            onChange={(e) => setTypeColor(t, e.target.value)}
+            aria-label={`Colour for ${TYP_BESCHREIBUNG[t]}`}
+            title="Colours the dots, the card ridge and the type label everywhere."
+            className="graph-swatch"
+            style={{ color: `var(${TYP_TOKEN[t]})`, pointerEvents: "auto" }}
+          />
+          <span className="fs-1" style={{ color: "var(--text-3)" }}>{TYP_BESCHREIBUNG[t]}</span>
+        </label>
       ))}
     </div>
   );

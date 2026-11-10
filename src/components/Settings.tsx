@@ -10,6 +10,8 @@ import { AUTO_LEARN_TIMEOUT_MS } from '../lib/autolearn';
 import { QUITTUNG_MS } from '../lib/quittung';
 import { refreshMemories } from '../lib/store';
 import { SystemStatus } from './SystemStatus';
+import { TYP_BESCHREIBUNG } from '../lib/graphHierarchy';
+import { TYP_ROLLEN, leseTypFarben, schreibeTypFarbe } from '../lib/typFarben';
 import PraxisSync from './PraxisSync';
 import { KeptaMark } from './KeptaMark';
 import { getZoom, setZoom as speichereZoom, wendeZoomAn, t } from '../lib/uiText';
@@ -154,6 +156,47 @@ function Meldung({ meldung, ort }: { meldung: { ort: string; text: string; art?:
     <p data-quittung={ort} data-art={absage ? 'warn' : 'ok'} className="fs-2 lh-dicht mt-2 flex items-center gap-2" style={{ color: absage ? 'var(--warn)' : 'var(--ok)' }}>
       {absage ? <AlertTriangle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />} {meldung.text}
     </p>
+  );
+}
+
+
+/** P196: die vier Farb-Wähler — dieselbe Wahl wie im Graph-Regal, derselbe
+ *  Speicher (`kepta_type_colors`), dieselbe Wirkung überall. Jede Wahl wird
+ *  angenommen (`schreibeTypFarbe` führt nur die Helligkeit auf die Leiter). */
+function TypFarbenReihe() {
+  const [farben, setFarben] = useState<Record<string, string>>(() => leseTypFarben());
+  useEffect(() => {
+    setFarben((bisher) => {
+      const aus = { ...bisher };
+      const stil = getComputedStyle(document.documentElement);
+      for (const rolle of TYP_ROLLEN) {
+        if (aus[rolle]) continue;
+        const wert = stil.getPropertyValue(`--type-${rolle}-hex`).trim();
+        if (/^#[0-9a-f]{6}$/i.test(wert)) aus[rolle] = wert;
+      }
+      return aus;
+    });
+  }, []);
+  return (
+    <div className="flex items-start gap-5 flex-wrap">
+      {TYP_ROLLEN.map((rolle) => (
+        <label key={rolle} className="flex flex-col items-center gap-1 cursor-pointer select-none">
+          <input
+            type="color"
+            value={farben[rolle] ?? "#cccccc"}
+            onChange={(e) => {
+              const ton = schreibeTypFarbe(rolle, e.target.value);
+              if (ton) setFarben((bisher) => ({ ...bisher, [rolle]: ton }));
+            }}
+            aria-label={`Colour for ${TYP_BESCHREIBUNG[rolle]}`}
+            title="Colours the dots, the card ridge and the type label everywhere."
+            className="graph-swatch"
+            style={{ color: `var(--type-${rolle})`, pointerEvents: "auto" }}
+          />
+          <span className="fs-2" style={{ color: "var(--text-2)" }}>{TYP_BESCHREIBUNG[rolle]}</span>
+        </label>
+      ))}
+    </div>
   );
 }
 
@@ -735,6 +778,23 @@ export function Settings() {
           <div className="space-y-10">
             <SystemStatus />
             <PrivacyShield />
+
+            {/* P196: die Typ-Farben — dieselbe Wahl wie im Graph-Regal, dieselbe
+                Wirkung überall (Punkte, Karten-Grat, Etikett, Legende). Jede Wahl
+                wird angenommen; ihre Helligkeit führt nur auf die Lesbarkeits-
+                Leiter, der Farbton bleibt. */}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="fs-4 font-semibold" style={{ color: 'var(--text-1)' }}>Colours</h3>
+              </div>
+              <p className="fs-2 mb-3" style={{ color: 'var(--text-3)' }}>
+                One colour per kind of knowledge. The graph dots, the card ridge and the
+                type label all wear it. Pick freely: dark picks get lifted just enough
+                to stay readable.
+              </p>
+              <TypFarbenReihe />
+            </div>
+
 
             {/* Suche (Paket 2 — UI-Funktionsparität): was die Engine tut, ist
                 hier einstellbar — Suchtiefe, die drei Spuren, Treffer-Anzahl.
