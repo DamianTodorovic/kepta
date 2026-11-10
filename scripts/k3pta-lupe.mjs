@@ -71,23 +71,27 @@ class Cdp {
 const ausfuhren = async (cdp, ausdruck, timeoutMs = 5000) =>
   (await cdp.send("Runtime.evaluate", { expression: ausdruck, returnByValue: true }, timeoutMs)).result?.value;
 
-// Die Sichtbarkeits-Messung (P194-Zweite): nicht nur, OB Text da ist, sondern
-// WO er steht und wie groß er ist. Ein Behälter mit Text bei 0×0 ist eine
-// verdeckte Tafel — einer mit Text außerhalb des Fensters ist weggefallen.
+// Die ehrliche Messung (P195, Lehre aus der Mess-Blende): Elemente in
+// display:none-Teilbäumen melden ihren EIGENEN display-Wert und visibility,
+// aber 0×0 — der alte Greifer (`main [class*=flex-1]`, erste 10) füllte sich
+// deshalb mit Artefakten versteckter Ansichten und rief "leer", obwohl die
+// Fläche gesund war. Jetzt: die ACHT DIREKTEN Hüllen von main, mit Klasse,
+// Größe, Display und Textlänge — plus das Ansichts-Schild und seine Spur.
 const zustand = (cdp) => ausfuhren(cdp, `(()=>{
-  const kandidaten = [...document.querySelectorAll('main > div, main [class*=flex-1]')].filter(el => getComputedStyle(el).display !== 'none');
-  const gemessen = kandidaten.slice(0, 10).map(el => {
+  const main = document.querySelector('main');
+  const hüllen = main ? [...main.children].map(el => {
     const r = el.getBoundingClientRect();
     const s = getComputedStyle(el);
-    return { text: (el.innerText||'').replace(/\\n+/g,' | ').slice(0, 70), x: Math.round(r.x), y: Math.round(r.y), b: Math.round(r.width), h: Math.round(r.height), farbe: s.color, sichtbar: s.visibility, opacity: s.opacity };
-  });
+    return { k: String(el.className).replace(/\\s+/g,' ').slice(0, 90), b: Math.round(r.width), h: Math.round(r.height), d: s.display, zeichen: (el.textContent||'').length };
+  }) : [];
+  const sichtbar = hüllen.find(h => h.d !== 'none' && h.b > 0 && h.h > 0);
   return {
     url: location.pathname,
     fenster: { b: window.innerWidth, h: window.innerHeight },
-    gemessen,
+    hüllen,
+    sichtbarText: sichtbar ? sichtbar.zeichen : 0,
     ansicht: document.querySelector('[data-ansicht]')?.getAttribute('data-ansicht') ?? '(keine Spur — App älter als 3.2.201)',
     ansichtSpur: (window.__ansichtSpur || []).slice(-12),
-    tabs: [...document.querySelectorAll('button')].filter(b => /^(System|Artificial|Data|MCP|Sync)/i.test((b.textContent||'').trim())).map(b => (b.textContent||'').trim().slice(0, 18)),
     schalter: [...document.querySelectorAll('input[aria-label^="Search track"]')].map(i => (i.getAttribute('aria-label')||'').replace('Search track: ','')+'='+i.checked).join(','),
     topK: localStorage.getItem('ki_gehirn_topK'),
     tiefe: localStorage.getItem('ki_gehirn_such_tiefe'),
@@ -136,7 +140,7 @@ async function main() {
   const start = await zustand(cdp);
   log("START-ZUSTAND: " + JSON.stringify(start));
 
-  const letzteGute = () => JSON.stringify({ url: letzte?.url, gemessen: letzte?.gemessen?.slice(0, 4), schalter: letzte?.schalter });
+  const letzteGute = () => JSON.stringify({ url: letzte?.url, ansicht: letzte?.ansicht, hüllen: letzte?.hüllen?.slice(0, 3), schalter: letzte?.schalter });
   let letzte = start;
   let stillstandStreak = 0;
   let eingefrorenGemeldet = 0;
@@ -190,23 +194,24 @@ async function main() {
       }
       stillstandStreak = 0;
       letzte = z;
-      // Sichtbarkeits-Funde: die Fläche lebt im Text, zeigt aber nichts.
-      const wirklich = (z.gemessen ?? []).filter((c) => c.b > 200 && c.h > 100 && c.text.length > 60 && c.sichtbar !== "hidden" && c.opacity !== "0");
-      const flaecheArm = wirklich.length === 0;
+      // Ehrlicher Fund: keine sichtbare Hülle — oder eine sichtbare ohne Text
+      // (das schwarze Feld: Hülle block, Inhalt leer). Keine Blenden-Artefakte mehr.
+      const sichtbare = (z.hüllen ?? []).filter((h) => h.d !== "none" && h.b > 0 && h.h > 0);
+      const flaecheArm = sichtbare.length === 0 || (z.sichtbarText ?? 0) < 20;
       const wache = cdp.evente.filter((e) => e.methode === "Runtime.exceptionThrown");
       if ((flaecheArm || wache.length > 0) && gefangen < 3) {
         gefangen += 1;
         log(`\n!!! FUNDSACHE #${gefangen} bei ${i * 5}s (flaecheArm=${flaecheArm}, ausnahmen=${wache.length})`);
         log(`ANSICHT im Fund: ${JSON.stringify(z.ansicht)} | Spur: ${JSON.stringify(z.ansichtSpur)}`);
-        log(JSON.stringify(z, null, 1));
+        log("HÜLLEN: " + JSON.stringify(z.hüllen, null, 1));
         if (wache.length > 0) log("AUSNAHMEN: " + JSON.stringify(wache.slice(-5).map((e) => String(e.params?.exceptionDetails?.exception?.description || e.params?.exceptionDetails?.text).slice(0, 300))));
         const b = await cdp.send("Page.captureScreenshot", { format: "png" }, 8000).catch(() => null);
         if (b) { fs.writeFileSync(path.join(ARBEIT, `fundsache-${gefangen}.png`), Buffer.from(b.data, "base64")); log(`  Bild: fundsache-${gefangen}.png`); }
       }
       if (i % 2 === 0) {
         const m = await messen(cdp);
-        const ort = wirklich[0]?.text?.slice(0, 40) ?? "kein Inhalt sichtbar";
-        log(`[${i * 5}s] lebt | ${ort} | schalter ${z.schalter || "—"} | heap ${m ? m.heap + " MB" : "?"} knoten ${m ? m.knoten : "?"}`);
+        const ort = sichtbare[0] ? `${sichtbare[0].zeichen} Z · ${sichtbare[0].k.slice(0, 34)}` : "keine Hülle sichtbar";
+        log(`[${i * 5}s] lebt | ${ort} | ansicht ${z.ansicht} | schalter ${z.schalter || "—"} | heap ${m ? m.heap + " MB" : "?"} knoten ${m ? m.knoten : "?"}`);
       }
     } catch (wachFehler) {
       // Die Wache selbst darf nie sterben (Lehre aus Lauf 2).
