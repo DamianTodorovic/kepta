@@ -112,8 +112,12 @@ async function main() {
       cwd: WURZEL, env: { ...process.env, HOME: path.join(ARBEIT, "h"), KEPTA_DATA_DIR: path.join(ARBEIT, "d"), KEPTA_ENCRYPTION: "off", KEPTA_DB_KEY: "0".repeat(64) }, stdio: ["ignore", "pipe", "pipe"],
     });
     const endpoint = await warteBis(() => {
-      const p = path.join(ARBEIT, "h", ".kepta", "endpoint.json");
-      try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return null; }
+      // Der Server schreibt in den DATENordner — mit KEPTA_DATA_DIR liegt die
+      // Auskunft in d/endpoint.json, sonst im Home. Beide Orte gelten.
+      for (const p of [path.join(ARBEIT, "d", "endpoint.json"), path.join(ARBEIT, "h", ".kepta", "endpoint.json")]) {
+        try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { /* der andere Ort */ }
+      }
+      return null;
     }, { maxMs: 90000 });
     if (!endpoint) { log("KEIN endpoint.json — der Server im Electron kam nicht hoch."); diener.kill(); return; }
     basisUrl = endpoint.url;

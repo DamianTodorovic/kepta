@@ -245,6 +245,18 @@ export function Dashboard() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [currentView, setCurrentView] = useState<ViewKey>('memories');
+  // P195: die Ansichts-Spur. Der Blackscreen (alle acht Hüllen versteckt) heißt:
+  // `currentView` trug einen Wert, den keine Hülle kennt. Die Spur hält die
+  // letzten Wandlungen am Fenster fest und die Hülle trägt den Wert als
+  // Daten-Attribut — die Lupe liest beides im kaputten Zustand und nennt
+  // damit den Schuldigen. Die Spur darf nie in die Fläche fallen.
+  useEffect(() => {
+    try {
+      const spur = ((window as unknown as { __ansichtSpur?: [number, ViewKey][] }).__ansichtSpur ??= []);
+      spur.push([Date.now(), currentView]);
+      if (spur.length > 40) spur.splice(0, spur.length - 40);
+    } catch { /* die Spur ist Werkzeug, kein Nutzermerkmal */ }
+  }, [currentView]);
   /** Das Dossier, das von außen geöffnet wurde — ein Klick im Graphen. */
   const [dossierThema, setDossierThema] = useState<{ text: string; nr: number } | undefined>(undefined);
   const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
@@ -1569,6 +1581,7 @@ export function Dashboard() {
       className={cn("huelle flex h-full overflow-hidden", schmal && "huelle-schmal")}
       data-fenster={schluessel ? "schluessel" : "gedaempft"}
       data-einrichtung={wizardOpen ? "offen" : undefined}
+      data-ansicht={currentView}
     >
       <Sidebar
         tags={allTags}

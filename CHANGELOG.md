@@ -1,3 +1,16 @@
+## [3.2.201]
+
+### Added
+
+- **The empty-surface state now names itself.** The P195 Lupe run (10.11.)
+  caught the blackscreen with measurements: the main panel renders as an empty
+  rounded frame while all eight view shells carry `hidden` — the active-view
+  state held a value none of them knows. The shell now carries that value as a
+  `data-ansicht` attribute (`src/components/Dashboard.tsx`, the shell div) and
+  keeps the last 40 view changes on `window.__ansichtSpur`, so the Lupe reads
+  the culprit value and its history in the broken state instead of guessing.
+  No behaviour change — a trace, not a fix.
+
 ## [3.2.200]
 
 ### Fixed

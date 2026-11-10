@@ -85,6 +85,8 @@ const zustand = (cdp) => ausfuhren(cdp, `(()=>{
     url: location.pathname,
     fenster: { b: window.innerWidth, h: window.innerHeight },
     gemessen,
+    ansicht: document.querySelector('[data-ansicht]')?.getAttribute('data-ansicht') ?? '(keine Spur — App älter als 3.2.201)',
+    ansichtSpur: (window.__ansichtSpur || []).slice(-12),
     tabs: [...document.querySelectorAll('button')].filter(b => /^(System|Artificial|Data|MCP|Sync)/i.test((b.textContent||'').trim())).map(b => (b.textContent||'').trim().slice(0, 18)),
     schalter: [...document.querySelectorAll('input[aria-label^="Search track"]')].map(i => (i.getAttribute('aria-label')||'').replace('Search track: ','')+'='+i.checked).join(','),
     topK: localStorage.getItem('ki_gehirn_topK'),
@@ -195,6 +197,7 @@ async function main() {
       if ((flaecheArm || wache.length > 0) && gefangen < 3) {
         gefangen += 1;
         log(`\n!!! FUNDSACHE #${gefangen} bei ${i * 5}s (flaecheArm=${flaecheArm}, ausnahmen=${wache.length})`);
+        log(`ANSICHT im Fund: ${JSON.stringify(z.ansicht)} | Spur: ${JSON.stringify(z.ansichtSpur)}`);
         log(JSON.stringify(z, null, 1));
         if (wache.length > 0) log("AUSNAHMEN: " + JSON.stringify(wache.slice(-5).map((e) => String(e.params?.exceptionDetails?.exception?.description || e.params?.exceptionDetails?.text).slice(0, 300))));
         const b = await cdp.send("Page.captureScreenshot", { format: "png" }, 8000).catch(() => null);

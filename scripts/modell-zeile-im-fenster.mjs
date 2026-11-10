@@ -109,7 +109,8 @@ async function main() {
       const da = await warteBis(async () => ausfuhren(cdp, `(()=>!!document.querySelector('[data-testid="such-modell"]'))()`), { maxMs: 20000 });
       if (!da) throw new Error(`(${breit}px) die Search-Model-Zeile erschien nicht`);
       // Der Health-Fetch loesst nach dem Tab-Wechsel — der Zeile Zeit geben.
-      const mitZahl = await warteBis(async () => {
+      // Der Warte-Wert dient nur dem Atem des Health-Fetchs — die Bindung blieb ungenutzt.
+      await warteBis(async () => {
         const z = await ausfuhren(cdp, `(document.querySelector('[data-testid="such-modell"]')||{innerText:''}).innerText||''`);
         return /\d+ of 15/.test(z) ? z : null;
       }, { maxMs: 8000, schritt: 300 });
