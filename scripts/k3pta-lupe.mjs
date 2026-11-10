@@ -55,9 +55,17 @@ const ausfuhren = async (cdp, ausdruck) =>
 
 const zustand = (cdp) => ausfuhren(cdp, `(()=>{
   const sichtbar = [...document.querySelectorAll('main > div, main [class*=flex-1]')].filter(el => getComputedStyle(el).display !== 'none' && (el.innerText||'').length > 0);
+  // P194-Zweite: die Behaelter EXISTIEREN mit Text, aber Damian sieht schwarz —
+  // gemessen wird jetzt die SICHTBARKEIT: Position, Groesse, Farbe.
+  const gemessen = sichtbar.slice(0, 8).map(el => {
+    const r = el.getBoundingClientRect();
+    const s = getComputedStyle(el);
+    return { text: (el.innerText||'').replace(/\\n+/g,' | ').slice(0, 60), x: Math.round(r.x), y: Math.round(r.y), b: Math.round(r.width), h: Math.round(r.height), farbe: s.color, bg: s.backgroundColor, opacity: s.opacity, transform: s.transform.slice(0, 40) };
+  });
   return {
     url: location.href,
-    sichtbareContainer: sichtbar.map(el => ({ klasse: (el.className||'').slice(0, 70), text: (el.innerText||'').replace(/\\n+/g,' | ').slice(0, 200) })),
+    fenster: { b: window.innerWidth, h: window.innerHeight, scrollX: window.scrollX, scrollY: window.scrollY },
+    gemessen,
     tabs: [...document.querySelectorAll('button')].filter(b => /^(System|Artificial|Data|MCP|Sync)/i.test((b.textContent||'').trim())).map(b => (b.textContent||'').trim().slice(0, 18)),
     schalter: [...document.querySelectorAll('input[aria-label^="Search track"]')].map(i => (i.getAttribute('aria-label')||'').replace('Search track: ','')+'='+i.checked).join(','),
     topK: localStorage.getItem('ki_gehirn_topK'),
@@ -102,10 +110,13 @@ async function main() {
     if (z.fehler) { log(`[${i}s] LESE-STÖRUNG: ${z.fehler}`); continue; }
     const wache = cdp.evente.filter((e) => e.methode === "Runtime.exceptionThrown");
     // Fang-Bedingungen: (a) die sichtbare Fläche hat kaum Text, (b) eine neue Ausnahme
+    const ausserhalb = (z.gemessen ?? []).filter((c) => c.b > 0 && (c.y > z.fenster.h || c.y + c.h < 0 || c.x > z.fenster.b || c.x + c.b < 0));
+    const unsichtbar = (z.gemessen ?? []).filter((c) => c.b > 0 && c.h > 0 && (c.opacity === '0' || c.farbe === 'rgba(0, 0, 0, 0)'));
     const flaecheArm = z.sichtbareContainer.length === 0 || z.sichtbareContainer.every((c) => c.text.length < 60);
-    if ((flaecheArm || wache.length > 0) && gefangen < 3) {
+    if ((flaecheArm || ausserhalb.length > 0 || unsichtbar.length > 0 || wache.length > 0) && gefangen < 3) {
       gefangen += 1;
       log(`\n!!! FUNDSACHE #${gefangen} bei ${i}s !!!`);
+      log(`Diagnose: ausserhalb ${ausserhalb?.length ?? 0}, unsichtbar ${unsichtbar?.length ?? 0}, flaecheArm ${flaecheArm}`);
       log(JSON.stringify(z, null, 1));
       const tief = await ausfuhren(cdp, `(()=>{
         const sichtbar = [...document.querySelectorAll('main > div, main [class*=flex-1]')].filter(el => getComputedStyle(el).display !== 'none');
