@@ -92,6 +92,7 @@ const zustand = (cdp) => ausfuhren(cdp, `(()=>{
     sichtbarText: sichtbar ? sichtbar.zeichen : 0,
     ansicht: document.querySelector('[data-ansicht]')?.getAttribute('data-ansicht') ?? '(keine Spur — App älter als 3.2.201)',
     ansichtSpur: (window.__ansichtSpur || []).slice(-12),
+    doppelt: { hüllen: document.querySelectorAll('[data-ansicht]').length, mains: document.querySelectorAll('main').length, wurzeln: document.querySelectorAll('#root > *').length },
     schalter: [...document.querySelectorAll('input[aria-label^="Search track"]')].map(i => (i.getAttribute('aria-label')||'').replace('Search track: ','')+'='+i.checked).join(','),
     topK: localStorage.getItem('ki_gehirn_topK'),
     tiefe: localStorage.getItem('ki_gehirn_such_tiefe'),
