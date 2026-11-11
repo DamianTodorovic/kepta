@@ -179,16 +179,5 @@ describe("KnowledgeGraph: der erste Blick", () => {
     }
   });
 
-  it("hält die Zwillingsschwester: der Baum bleibt bei seiner eignen Lesbarkeitszeile", async () => {
-    const { container } = await zeichne("baum");
-    const k = malstab();
-    // Der Baum regelt das seit F8-N1 über `zeilenKMin`. Wer die Feld-Heilung
-    // einbaut und den Boden verlagert, muss beide Ansichten tragen können —
-    // dieser Fall hält die zweite Stelle, damit die Heilung nicht eine Ansicht
-    // flickt und die andere still verändert.
-    expect(BLATT_ABSTAND * k, `Baum bei ${(k * 100).toFixed(1)} % — Blattzeilen stehen zu eng`).toBeGreaterThanOrEqual(
-      BLATT_ABSTAND * zeilenKMin(14, BLATT_ABSTAND)
-    );
-  });
 
 });

@@ -473,13 +473,16 @@ describe("Punkt 7, die Ansichts-Namen: drei Knoepfe, drei Klarnamen, eine Quelle
       expect(text, `${was} klickt die Kraft-Ansicht unter einem alten Titel`).toContain(ansichtBeschreibung("force").slice(0, 11));
       expect(text, `${was} sucht noch den alten Verfahrenstitel`).not.toContain("Force view");
     }
+    // P197: der Baum ist aus dem Produkt geflogen — die Instrumente und Faelle
+    // dürfen ihn nicht mehr suchen; das Kraftfeld ist die eine Feld-Ansicht.
     for (const [datei, was] of [
+      ["scripts/fps-laeufer.mjs", "der Kosten-Laeufer"],
+      ["scripts/screenshots.mjs", "der Bildmacher"],
       ["tests/components/KnowledgeGraph.f8.test.tsx", "der F-8-Fall"],
       ["tests/components/KnowledgeGraph.schrift.test.tsx", "der Schrift-Fall"],
     ]) {
       const text = fs.readFileSync(path.join(WURZEL, datei), "utf8");
-      expect(text, `${was} findet den Baum-Knopf nicht mehr`).toContain(ansichtBeschreibung("dendrogram").slice(0, 9));
-      expect(text, `${was} sucht noch das Verfahren`).not.toContain('"Dendrogram"');
+      expect(text, `${was} sucht noch den Baum-Knopf`).not.toContain(ansichtBeschreibung("dendrogram").slice(0, 9));
     }
   });
 

@@ -79,7 +79,7 @@ describe("#54: die Klappe an der Legende", () => {
     // Klappe versteckt per CSS, sie wirft nichts aus dem Baum).
     const stand = view.container.querySelector('[data-testid="graph-farbgruppe-stand"]');
     expect(stand, "der Gruppenstand fehlt ganz aus dem Baum").toBeTruthy();
-    expect(stand!.closest(".legende-griffe"), "der Gruppenstand hängt nicht hinter der Klappe").toBeTruthy();
+    expect(stand!.closest("[hidden]"), "der Gruppenstand hängt nicht hinter der Klappe").toBeTruthy();
   });
 
   it("ein Klick oeffnet alles, der naechste klappt wieder zu", async () => {
@@ -96,7 +96,7 @@ describe("#54: die Klappe an der Legende", () => {
     expect(k.getAttribute("aria-expanded"), "zweiter Klick hat nicht wieder zugemacht").toBe("false");
     const stand = view.container.querySelector('[data-testid="graph-farbgruppe-stand"]');
     expect(stand, "zugemacht, und der Gruppenstand ist ganz weg").toBeTruthy();
-    expect(stand!.closest(".legende-griffe"), "zugemacht hängt der Gruppenstand nicht hinter der Klappe").toBeTruthy();
+    expect(stand!.closest("[hidden]"), "zugemacht hängt der Gruppenstand nicht hinter der Klappe").toBeTruthy();
   });
 
   it("die Wahl des Menschen bleibt, auch im naechsten Offnen", async () => {

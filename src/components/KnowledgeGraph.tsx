@@ -2735,7 +2735,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const [ansicht, setAnsicht] = useState<GraphAnsicht>(() => {
     try {
       const v = localStorage.getItem(ANSICHT_KEY);
-      return v === "dendrogram" || v === "semantic" ? v : "force";
+      // P197: der Baum (dendrogram) ist aus dem Produkt geflogen — eine im
+      // Speicher gemerkte Baum-Ansicht fällt auf das Kraftfeld zurück.
+      return v === "semantic" ? v : "force";
     } catch { return "force"; }
   });
   const wechsleAnsicht = (v: GraphAnsicht) => {
@@ -2897,9 +2899,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * wenn seine zweite Ebene 90,16 % in ein Fach legt, ist die Art keine Antwort
    * mehr, und dann steht diese hier.
    */
+  // P197: das Regal-Modell zählt in JEDER Ansicht über denselben Bestand — der
+  // Baum ist aus dem Produkt geflogen, aber das Gruppen-Regal (Band 4 mit den
+  // Farb-Wählern) braucht die Zählung in Claims und Meaning genauso.
   const regal = useMemo(
-    () => (ansicht === "dendrogram" ? baueRegal(baumMemories) : null),
-    [baumMemories, ansicht]
+    () => baueRegal(baumMemories),
+    [baumMemories]
   );
   /**
    * G-72 — die Gruppen, die ein Mensch aus einem Tag baut. **Ein Aufruf, ein Korpus:**
@@ -5949,7 +5954,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const schieneAnsicht = (
     <div className="apple-seg shrink-0" role="group" aria-label="Graph layout" data-testid="graph-schiene-ansicht">
       {segment(ansicht === "force", ansichtBeschreibung("force"), () => wechsleAnsicht("force"), ansichtLabel("force"))}
-      {segment(ansicht === "dendrogram", ansichtBeschreibung("dendrogram"), () => wechsleAnsicht("dendrogram"), ansichtLabel("dendrogram"))}
+      {/* P197: der Baum (dendrogram) ist aus dem Produkt geflogen — unübersichtlich
+          nach Damians Urteil; die gemerkte Baum-Ansicht fällt aufs Kraftfeld zurück. */}
       {segment(ansicht === "semantic", ansichtBeschreibung("semantic"), () => wechsleAnsicht("semantic"), ansichtLabel("semantic"))}
     </div>
   );
@@ -6887,7 +6893,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               eigne Eigenschaft: ohne sie ist es ein Wort, kein Knopf. Der Stand nennt die
               Zahl aus demselben Modellaufruf, der auch das Regal fuellt — und seine Null,
               wenn eine gesetzte Gruppe nichts trifft. */}
-          <div className={legendeVoll ? undefined : "legende-griffe"}>
+          <div hidden={!legendeVoll || undefined}>
           <div className="flex items-center gap-2 flex-wrap" style={{ pointerEvents: "none" }}>
             <button
               type="button"
@@ -6951,7 +6957,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           {/* P197: das Regal bleibt IMMER gemountet — die Klappe versteckt es nur
               (`.legende-griffe`). Zuvor nahm es die Klappe ganz aus dem Baum:
               die Gruppen-Wähler waren unauffindbar, bis jemand die Legende öffnete. */}
-          <div className={legendeVoll ? undefined : "legende-griffe"}>
+          <div hidden={!legendeVoll || undefined}>
             {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
           </div>
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem

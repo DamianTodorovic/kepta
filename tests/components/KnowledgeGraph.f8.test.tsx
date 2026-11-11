@@ -135,59 +135,6 @@ function begriffsFeld(notizen: Memory[], gruppen: number) {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ relations: [], memoriesByEntity: byEntity }), { status: 200 })));
 }
 
-describe("A7-01: der Rueckweg aus der Faltung ist mit der Maus zu treffen", () => {
-  /**
-   * Der Knopf sass in einer Legende, die die Maus durchliess (`pointer-events-none`), und A7 hat
-   * das im echten Browser gemessen: `elementFromPoint` in der Mitte des Knopfes gab CANVAS
-   * zurueck, ein echter Mausklick aenderte keinen Pixel (Tinte 2 821 → 2 821), ein DOM-Klick
-   * entfaltet sehr wohl (4 153). Ein Test mit `fireEvent.click` macht genau diesen toten Knopf
-   * grün — deshalb wird hier die Klasse am Element geprueft, und der Treffer in der Messstrasse.
-   *
-   * Am 22.10. hat Heilung A (Punkt 5) die Sperre an der Legende aufgehoben: derselbe Kasten
-   * wuchs am echten Bestand auf 849 px in eine 608-px-Leinwand (1024 x 768) und 1 053 px in
-   * 628 px (390 x 844) und schob die Gruppen-Steuerung bei 390 px ganz aus dem Fenster. Er
-   * traegt seither Obergrenze, eigne Rolle und eigne Zeiger-Eigenschaft, im echten Fenster
-   * gemessen (`feldzug/p5-kappe-2210.md`, 23:04 und 23:06 MESZ). Was dieser Fall prueft, gilt
-   * unveraendert weiter: der Rueckweg-Knopf nimmt die Hand selbst an, er erbt sie nicht von
-   * einem durchlaessigen Elternknoten. Die fruehere Erwartung "die Legende muss die Maus
-   * weiterreichen" ist an die Leinwand bewegt — dritter Fall in
-   * `KnowledgeGraph.legende-kappe.test.tsx`.
-   */
-  it("hebt die Zeigersperre am Knopf auf, nicht an der Legende", async () => {
-    // 40 Notizen an acht Begriffen: der Rahmen haelt ~20 Zeilen, also muss der
-    // Baum falten — aber nie leer. Ohne Begriffen stuenden die Notizen einzeln am
-    // Typ, und es gaebe nichts zu falten: ein Test, der den Knopf sucht, findet
-    // dann keinen, weil die Flaeche gar nicht in der Faltung ist.
-    const notizen = Array.from({ length: 40 }, () => note({ tags: ["feld"] }));
-    const byEntity: Record<string, string[]> = {};
-    for (let g = 0; g < 8; g++) byEntity[`begriff ${g}`] = notizen.slice(g * 5, g * 5 + 5).map((m) => m.id);
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ relations: [], memoriesByEntity: byEntity }), { status: 200 })));
-
-    const { container } = await feld(notizen, [900, 420]);
-    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
-    await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 400)); });
-
-    // Erste Zusage: der Baum zeigt Notizen, nicht nur Gruppenzahlen.
-    const titel = leinwand.schriften().filter((s) => /^F8 Notiz \d+/.test(s.text));
-    expect(titel.length, `kein Notiztitel im Baum: ${container.querySelector('[data-testid="graph-legende"]')?.textContent?.slice(0, 200)}`).toBeGreaterThan(0);
-
-    // Dritte Zusage: was die Faltung nimmt, steht als Malzeichen ueber der
-    // Gruppe — nach dem Umbau auf Bildpixel (A7-02) der Grund, diesen Test extra
-    // zu halten. Ein ×N, das nicht gemalt wird, ist ein Schwinden ohne Zahl.
-    const malzeichen = leinwand.schriften().filter((x) => /^×\d+$/.test(x.text));
-    expect(malzeichen.length, `kein ×N gemalt: ${JSON.stringify(leinwand.schriften().map((x) => x.text))}`).toBeGreaterThan(0);
-    expect(malzeichen[0].px, `das Malzeichen ist ${malzeichen[0].px} px — ein Zustand, den man erst beim Heranzoomen sieht, ist keiner`).toBeGreaterThanOrEqual(11);
-
-    // Zweite Zusage: der Rueckweg ist mit der Maus zu treffen.
-    const legende = container.querySelector('[data-testid="graph-legende"]');
-    expect(legende, "die Legende fehlt").toBeTruthy();
-    const knopf = [...container.querySelectorAll("button")].find((b) => /show everything/i.test(b.textContent ?? "")) as HTMLButtonElement;
-    expect(knopf, `kein Rueckweg-Knopf in: ${legende!.textContent?.slice(0, 200)}`).toBeTruthy();
-    expect(knopf.className, "der Knopf erbt die Zeigersperre der Legende").toMatch(/pointer-events-auto/);
-    // Die Zeigersperre der Legende selbst ist am 22.10. gefallen (Heilung A, Punkt 5) — ihr
-    // Schutz wohnt jetzt an der Leinwand, siehe `KnowledgeGraph.legende-kappe.test.tsx`.
-  });
-});
 
 describe("A7-03: Hover über einer Notiz muss das Netz ruhiger machen, nicht lauter", () => {
   it("dimmt im Hover alle übrigen Züge unter α 0,08 und hält die Nachbarschaft voll", async () => {
@@ -260,19 +207,6 @@ describe("A7-02: die Titel schrumpfen unter die Lesbarkeit", () => {
     expect(container).toBeTruthy();
   });
 
-  it("laesst die Titel auch im Baum nicht auf Welt-Pixel schrumpfen", async () => {
-    const { container } = await feld(Array.from({ length: 40 }, () => note()), [900, 640]);
-    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
-    expect(baum, "Der Baum-Knopf fehlt").toBeTruthy();
-    await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 500)); });
-    // Derselbe Stand wie im Feld: eingepasst liegt jeder Knoten unter der Pforte,
-    // der Baum malt nichts. Gemessen wird erst, was Titel hat.
-    await bisZumErstenTitel(container);
-    const titel = leinwand.schriften().filter((s) => /^F8 Notiz \d+/.test(s.text));
-    expect(titel.length, "Der Baum malt keine Notiztitel").toBeGreaterThan(0);
-    const kleinste = Math.min(...titel.map((t) => t.px));
-    expect(kleinste, `Baum-Titel nur ${kleinste.toFixed(1)} px`).toBeGreaterThanOrEqual(11);
-  });
 
   it("meldet in der Bilanz, wie viele Knoten einen Titel tragen", async () => {
     const { container } = await feld(Array.from({ length: 60 }, () => note()), [300, 220]);
@@ -364,27 +298,6 @@ describe("Titel-Etat: die Bilanz nennt, wie viele ohne Namen blieben — und war
     expect(e.ohnee, "Der gewaehlte Modus steht als Zahl der versaeumten Namen da").toBe(0);
   });
 
-  it("zaehlt die Namenlosen am Baum anders als im Feld, weil dort ein anderes Raster gilt", async () => {
-    const notizen = Array.from({ length: 120 }, () => note());
-    begriffsFeld(notizen, 4);
-    const { container } = await feld(notizen, [900, 640]);
-    await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
-    const feldEtat = etat(container);
-    const baum = [...container.querySelectorAll("button")].find((b) =>
-      (b.getAttribute("title") || "").startsWith("Tree view")
-    );
-    expect(baum, "Der Baum-Knopf fehlt").toBeTruthy();
-    await act(async () => {
-      baum!.click();
-      await new Promise((r) => setTimeout(r, 500));
-    });
-    const e = etat(container);
-    const summe = e.gruende.reduce((s, g) => s + g.n, 0);
-    expect(summe, `Der Baum-Etat geht nicht auf: "${e.text}"`).toBe(e.ohnee);
-    expect(e.benannt + e.ohnee, `auch im Baum nicht: "${e.text}"`).toBe(e.umfang);
-    expect(e.gruende.length, `Der Baum nennt keinen Grund: "${e.text}"`).toBeGreaterThan(0);
-    expect(feldEtat.umfang, "Der Feld-Etat ist vor dem Umschalten nicht gemessen worden").toBeGreaterThan(0);
-  });
 });
 
 describe("A7-04: dem Kraftfeld fehlte jede Dichte-Kappe", () => {
@@ -569,96 +482,4 @@ describe("#124 der Nachschlag hat dieselbe Falle, eine Ebene tiefer", () => {
   });
 });
 
-describe("F8-N1 (Sichtpruefung): der Baum steht nicht als Haarlinie, und die Bilanz nennt ihren Umfang", () => {
-  /**
-   * Der kleinste Abstand zweier auf dem Schirm gemalter Notizscheiben.
-   *
-   * Im Bild vom 400er-Baum standen zwei Zeilen 3 px auseinander — die Kamera
-   * hatte alle Zeilen in den Rahmen gepresst. Geprueft wird der Abstand der
-   * gemalten Scheiben, nicht ein Zoom-Wert: was ein Mensch sieht, ist Zeilen-
-   * abstand, und der ist beides — Etikettenplatz und Badgeplatz.
-   */
-  function kleinsterZeilenabstand() {
-    let tx = 0, ty = 0, k = 0;
-    for (const a of leinwand.letzterRahmen()) {
-      if (a.op === "translate" && ty === 0) { tx = Number(a.args[0]); ty = Number(a.args[1]); }
-      if (a.op === "scale" && k === 0) k = Number(a.args[0]);
-    }
-    const ys: number[] = [];
-    for (const a of leinwand.letzterRahmen()) {
-      if (a.op === "fillRect") ys.push(Number(a.args[1]) * k + ty);
-      else if (a.op === "drawImage" && a.args.length >= 5) ys.push(Number(a.args[2]) * k + ty);
-    }
-    ys.sort((x, y) => x - y);
-    let luecke = Infinity;
-    for (let i = 1; i < ys.length; i++) luecke = Math.min(luecke, ys[i] - ys[i - 1]);
-    return { luecke: Number.isFinite(luecke) ? luecke : null, gescheiben: ys.length, k };
-  }
 
-  async function imBaumBei(n: number, masse: [number, number] = [1130, 700]) {
-    const notizen = Array.from({ length: n }, (_, i) => note({ tags: [`feld ${i % 4}`] }));
-    const byEntity: Record<string, string[]> = {};
-    for (let g = 0; g < 20; g++) byEntity[`begriff ${g}`] = notizen.slice(g * Math.ceil(n / 20), (g + 1) * Math.ceil(n / 20)).map((m) => m.id);
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ relations: [], memoriesByEntity: byEntity }), { status: 200 })));
-    const { container } = await feld(notizen, masse);
-    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
-    await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 500)); });
-    return container;
-  }
-
-  it("haelt bei 400 Notizen zwei Zeilen mindestens 13 Bildpixel auseinander", async () => {
-    await imBaumBei(400);
-    const { luecke, gescheiben, k } = kleinsterZeilenabstand();
-    expect(gescheiben, "es werden keine Notizscheiben gemalt").toBeGreaterThan(0);
-    expect(luecke, `kleinster Zeilenabstand ${luecke?.toFixed(1)} px bei Zoom ${(k * 100).toFixed(0)} % — der Baum ist eine Haarlinie`).toBeGreaterThanOrEqual(13);
-  });
-
-  it("sagt die Bilanz in Umfangen, die das Auge nachzaehlen kann", async () => {
-    // Ein kurzer Rahmen (240 px) faellt unter die Zeilenzahl, die der Baum offen
-    // laesst: damit liegt ein Teil der entfalteten Notizen ausserhalb des Bildes
-    // — und das muss die Flaeche sagen, statt es still zu halten.
-    const container = await imBaumBei(400, [1130, 240]);
-    const legende = container.querySelector('[data-testid="graph-legende"]');
-    expect(legende!.textContent, "die Legende fehlt").toContain("400 notes");
-    expect(legende!.textContent, `Belegtext: ${legende!.textContent?.slice(0, 320)}`)
-      .toMatch(/\d+ unfolded, \d+ notes? folded under \d+ groups/);
-    const imBild = container.querySelector('[data-testid="graph-im-bild"]');
-    expect(imBild, "die Flaeche sagt nicht, was ausserhalb ihres Rahmens liegt").toBeTruthy();
-    const text = imBild!.textContent || "";
-    const treffer = text.match(/^(\d+) of (\d+) unfolded notes are in this picture$/);
-    const leer = /^no unfolded notes are in this picture/.test(text);
-    expect(!!(treffer || leer), `Belegtext: ${text}`).toBe(true);
-    if (treffer) {
-      const imZahl = Number(treffer[1]);
-      const vonZahl = Number(treffer[2]);
-      expect(imZahl, "die Zeile meldet mehr Notizen, als die Flaeche entfaltet hat").toBeLessThanOrEqual(vonZahl);
-      const entfaltet = Number((legende!.textContent || "").match(/(\d+) unfolded/)?.[1] ?? -1);
-      expect(vonZahl, `${vonZahl} in der Bildzeile, ${entfaltet} in der Bilanz — zwei Zahlen fuer denselben Umfang`)
-        .toBe(entfaltet);
-    }
-    // Der Stamm bleibt im Bild: die Wurzel ist der erste Satz, den jemand
-    // in einem Baum liest.
-    expect(leinwand.schriften().some((x) => x.text === "Knowledge"), "die Wurzel steht nicht im Bild").toBe(true);
-  });
-});
-
-describe("F8-N1 (zweiter Blick ins eigene Bild): ein Baum ueber dem Rahmen beginnt bei seiner Wurzel", () => {
-  it("schneidet bei einem Baum ueber dem Rahmen weder Stamm noch Bilanz ab", async () => {
-    // Der Lesbarkeitsboden laesst den Baum ueber den Rahmen wachsen. Zentriert
-    // sitzt die Wurzel eines horizontalen Dendrogramms in der Mitte der
-    // Blatthoehe — sie muss im Bild bleiben, und was fehlt, muss die Zeile
-    // sagen, damit die Zahl mit dem Bild zusammenstimmt.
-    const notizen = Array.from({ length: 180 }, (_, i) => note({ tags: [`feld ${i % 4}`] }));
-    const byEntity: Record<string, string[]> = {};
-    for (let g = 0; g < 60; g++) byEntity[`begriff ${g}`] = notizen.slice(g * 3, g * 3 + 3).map((m) => m.id);
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ relations: [], memoriesByEntity: byEntity }), { status: 200 })));
-    const { container } = await feld(notizen, [1130, 260]);
-    const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
-    await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 500)); });
-
-    expect(leinwand.schriften().some((t) => t.text === "Knowledge"),
-      `die Wurzel steht nicht im Bild: ${JSON.stringify(leinwand.schriften().map((t) => t.text).slice(0, 12))}`).toBe(true);
-    const imBild = container.querySelector('[data-testid="graph-im-bild"]');
-    expect((imBild!.textContent || "").length, "bei einem Baum ueber dem Rahmen sagt die Flaeche nichts ueber den Rest").toBeGreaterThan(0);
-  });
-});

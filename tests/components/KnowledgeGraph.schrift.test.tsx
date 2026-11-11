@@ -63,14 +63,6 @@ async function feld(memories: Memory[], masse: [number, number] = [1000, 700]) {
   return view;
 }
 
-async function imBaum(notizen: Memory[], masse: [number, number]) {
-  const { container } = await feld(notizen, masse);
-  const baum = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").startsWith("Tree view"));
-  expect(baum, "der Baum-Knopf fehlt — ohne Baum gibt es kein Geruest zu messen").toBeTruthy();
-  await act(async () => { baum!.click(); await new Promise((r) => setTimeout(r, 500)); });
-  return container;
-}
-
 /** Alles, was im letzten Bild als Text stand — Titel, Geruest, Badges, Glyphen. */
 function alleSchriften() {
   // Geprueft wird die Groesse AUF DEM SCHIRM. Glyphen sitzen in der
@@ -103,19 +95,6 @@ describe("die unterste Stufe gilt im ganzen Gemaelde", () => {
     expect(ausreisser(), `unter der Stufe gemalt: ${JSON.stringify(ausreisser())}`).toEqual([]);
   });
 
-  it("laesst im Baum Geruest, Glyphen und Malzeichen auf der Stufe", async () => {
-    const notizen = Array.from({ length: 40 }, (_, i) => note({ tags: [`feld ${i % 4}`] }));
-    begriffe(notizen, 8);
-    await imBaum(notizen, [900, 640]);
-    const gemalt = alleSchriften();
-    expect(gemalt.length, "der Baum malt keinen Text — die Wache sieht ins Leere").toBeGreaterThan(0);
-    // Die Gegenfrage gegen Blindheit: das Geruest war eine der vier Stellen
-    // unter der Stufe (9,0 px). Steht sein Name nicht in der Liste, hat diese
-    // Zeile ein leeres Bild gemessen und ist grün, obwohl nichts gepriift ist.
-    const texte = gemalt.map((s) => s.text);
-    expect(texte.some((t) => /^begriff \d/.test(t)), `kein Geruest im Bild: ${JSON.stringify(texte.slice(0, 8))}`).toBe(true);
-    expect(ausreisser(), `unter der Stufe gemalt: ${JSON.stringify(ausreisser())}`).toEqual([]);
-  });
 
   it("gibt die Tagszeile eines gehaltenen Etiketts nicht kleiner als die Stufe", async () => {
     const notizen = Array.from({ length: 8 }, () => note());
@@ -149,27 +128,6 @@ describe("die Stufe wird nicht wieder weggerechnet", () => {
     expect(stellen, `text-[Npx] unter der Stufe: ${stellen.join(", ")} px`).toEqual([]);
   });
 
-  it("malt nur in den drei Gewichten der Leiter", async () => {
-    // Weil die Groesse nicht mehr unterscheidet, unterscheidet das Gewicht.
-    // E1s Leiter (index.css:182-184) kennt 400 ruhig, 600 halbfest, 700 fest —
-    // dazwischen kollabiert auf Windows alles auf zwei Stufen, und die halbe
-    // Hierarchie waeg sich wieder in eine erfundene Zahl zurueck.
-    const notizen = Array.from({ length: 40 }, (_, i) => note({ tags: [`feld ${i % 4}`] }));
-    begriffe(notizen, 8);
-    await imBaum(notizen, [900, 640]);
-    const erlaubt = [400, 600, 700];
-    const gewichte = new Set<number>();
-    let gewicht = 0;
-    for (const a of leinwand.letzterRahmen()) {
-      if (a.op === "set:font") {
-        const treffer = /^(\d{3})\s/.exec(String(a.args[0]));
-        if (treffer) gewicht = Number(treffer[1]);
-      } else if (a.op === "fillText") gewichte.add(gewicht);
-    }
-    expect(gewichte.size, "es wurde kein Gewicht gesetzt — die Wache sieht ins Leere").toBeGreaterThan(0);
-    const ausserhalb = [...gewichte].filter((g) => !erlaubt.includes(g));
-    expect(ausserhalb, `Gewichte ausserhalb der Leiter: ${ausserhalb.join(", ")}`).toEqual([]);
-  });
 });
 
 describe("die Trefferflaeche am Zeitregler", () => {

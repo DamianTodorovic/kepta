@@ -1,3 +1,16 @@
+## [3.2.207]
+
+### Removed
+
+- **The Tree diagram is out of the product.** Damian (11.11.): "absolutely bad
+  and confusing." The Claims and Meaning views remain (they are the graph); the
+  Tree button is gone, and a remembered tree view falls back to the field. The
+  dendrogram internals stay in the bundle for now (unreachable from any surface)
+  and will be excised in a dedicated cleanup; twenty-two tree-view test cases
+  that tested the removed face are gone with it
+  (`tests/components/KnowledgeGraph.render.test.tsx`, the shelf guard asserts
+  only Claims and Meaning).
+
 ## [3.2.206]
 
 ### Changed

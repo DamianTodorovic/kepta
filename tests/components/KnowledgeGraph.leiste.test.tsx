@@ -147,7 +147,9 @@ describe("Z-07: ein Zeichen pro Bedeutung", () => {
     expect(kraft.getAttribute("data-on"), "die gewaehlte Ansicht traegt kein Blatt").toBe("true");
     expect(kraft.getAttribute("style"), "die Auswahl malt in Akzentfarbe — das ist das Zeichen des Schalters").toBeNull();
     expect(kraft.className).toContain("apple-seg-btn");
-    expect(knoepfe(container).find((b) => b.textContent?.trim() === "Tree")!.getAttribute("data-on")).toBe("false");
+    // P197: der Baum ist aus dem Produkt geflogen — nur Claims und Meaning bleiben.
+    expect(knoepfe(container).find((b) => b.textContent?.trim() === "Tree"), "der Baum-Knopf ist zurück").toBeUndefined();
+    expect(knoepfe(container).find((b) => b.textContent?.trim() === "Meaning")!.getAttribute("data-on")).toBe("false");
   });
 
   it("zeichnet den Schalter mit dem Haus-Schalter, und die Dichtestufe ohne (P197)", async () => {
