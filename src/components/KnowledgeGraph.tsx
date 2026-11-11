@@ -106,7 +106,7 @@ import { ansichtBeschreibung, ansichtLabel } from "../lib/ansichten";
 // P197: der Baum (dendrogram) ist aus dem Produkt geflogen — der Knopf ist weg,
 // eine gemerkte Baum-Ansicht fällt aufs Kraftfeld zurück. Der interne Weg bleibt
 // bis zur Ausmähdung (P198) im Bündel, ist von keiner Fläche erreichbar.
-export type GraphAnsicht = "force" | "dendrogram" | "semantic";
+export type GraphAnsicht = "force" | "semantic";
 const ANSICHT_KEY = "kepta_graph_view";
 /** Richtung ist von Haus aus an — sie ist die Aussage, nicht ein Schmuck. */
 const RICHTUNG_KEY = "kepta_graph_richtung";
@@ -2903,10 +2903,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   // denselben Konzepten, die das Feld zeigt — sonst stehen für dieselbe
   // Wissensbasis zwei Zahlen im Kopf.
   const konzeptNamen = useMemo(() => new Set(netz.knoten.map((k) => k.label)), [netz]);
-  const baum = useMemo(
-    () => (ansicht === "dendrogram" ? buildHierarchy(baumMemories, entitaeten, konzeptNamen) : null),
-    [baumMemories, entitaeten, konzeptNamen, ansicht]
-  );
+  // P197: der Baum ist aus dem Produkt geflogen — kein Hierarchie-Aufbau mehr.
+  const baum = null;
   /**
    * Die Lesung desselben Bestands in zwei Baendern — nur im Baum, nur ueber dem,
    * was der Zeitregler gerade gelten laesst. Der Baum antwortet auf "welcher Art";
@@ -3095,11 +3093,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * Notizen aus dem Bild, und die Zeile verspricht, was im Bild steht.
    */
   const bildZaehlung = useMemo(
-    () =>
-      ansicht === "dendrogram"
-        ? { knoten: baumNotizen.length, kanten: sichtbareAnzahl.kanten }
-        : sichtbareAnzahl,
-    [ansicht, baumNotizen, sichtbareAnzahl]
+    () => sichtbareAnzahl,
+    [sichtbareAnzahl]
   );
   imBildRef.current = bildZaehlung.knoten;
   // #101: was der Kopf der Zeile oben zu nennen hat, kommt aus dem Feld — und
@@ -3144,17 +3139,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
      * Klaue: Bestand, was offen steht, was gefaltet ist und wie viele Gruppen
      * es traegt.
      */
-    if (ansicht === "dendrogram" && autoZiffern > 0) {
-      // „in all" nur, wenn die Tür den Bestand nennt: 100 von 14 702 als
-      // „100 notes" auszugeben ist dieselbe stille Kappe, die dieser Schnitt
-      // abschafft. Schweigt die Tür, bleibt die Liste alles, was die Fläche weiß.
-      const umfang = bestandGroesse() === null
-        ? `${zahl(memories.length)} notes`
-        : `${zahl(bestandNotizen)} notes in all`;
-      klausaen.push(
-        `${umfang} · ${zahl(offen)} unfolded, ${zahl(autoZiffern)} notes folded under ${zahl(autoGefaeltet)} groups`
-      );
-    } else if (offen < bestandNotizen) {
+    if (offen < bestandNotizen) {
       // „in all" nur, wenn die Tür den Bestand nennt; schweigt sie, ist
       // die größere Zahl die eigene Liste und die Klaue heißt „in this view".
       klausaen.push(
@@ -3229,9 +3214,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     }
     return n;
   }, [baumLayout]);
-  // Erst hier, wenn baumNachbarn steht: die Hervorhebung im Baum folgt den
-  // Eltern-Kind-Kanten, im Kraftfeld den Aehnlichkeitskanten.
-  nachbarnRef.current = ansicht === "dendrogram" ? baumNachbarn : neighborsOf;
+  // P197: die Hervorhebung folgt den Aehnlichkeitskanten — der Baum ist raus.
+  nachbarnRef.current = neighborsOf;
 
   // --- Simulation aufbauen / uebernehmen ---
   //
@@ -3322,44 +3306,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idsSchluessel, edges, radiusOf, ansicht, kraftGeruest]);
 
-  // Dendrogramm: dieselbe Simulation, aber Kanten = Eltern-Kind, und die
-  // Strukturknoten (Wurzel/Typ/Entitaet/Tag-Gruppe) kommen hinzu. Positionen
-  // gleiten im Render-Loop auf die Zielstellen, die Physik ruht. AUSNAHME der
-  // Zeitregler: bei 3 000+ Notizen war das Gleiten nach jedem Loslassen
-  // Sekunden wilder Bewegung — der ganze Graph flog hin und her, nichts war
-  // bedienbar. Beim Zeit-Wechsel stehen die Knoten deshalb SOFORT auf ihren
-  // neuen Platz (instant snap), die Kamera setzt einmal frisch.
-  useEffect(() => {
-    const zeitWechsel = letzterZeitCommit.current !== sliderCommit;
-    letzterZeitCommit.current = sliderCommit;
-    if (ansicht !== "dendrogram") return;
-    const ids = baumIdsSchluessel ? baumIdsSchluessel.split(",") : [];
-    const sim = reuseSimulation(simRef.current, ids, baumLayout.edges, radiusOf, krafteFeld(krafteRef.current));
-    for (const n of baumLayout.nodes) {
-      if (!n.id.startsWith("__") || sim.index.has(n.id)) continue;
-      const kopie: LayoutNode = { ...n };
-      sim.nodes.push(kopie);
-      sim.index.set(kopie.id, kopie);
-    }
-    simRef.current = sim;
-    spiegleGang(null);
-    strukturKnotenRef.current = baumLayout.struktur;
-    zielRef.current = new Map(baumLayout.nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
-    if (zeitWechsel) {
-      for (const n of sim.nodes) {
-        const ziel = zielRef.current.get(n.id);
-        if (ziel) { n.x = ziel.x; n.y = ziel.y; }
-      }
-    }
-    // Der Ausschnitt wartet nicht auf den Gleiter: wer aus dem Kraftfeld in den
-    // Baum wechselt, sah bis hierhin mehrere Bilder lang das alte Fenster — bei
-    // einem breiten Baum genau den Ausschnitt, in dem nur Stamm und ein Typ
-    // standen. Die Zielpositionen des Layouts kennen die Ebene schon jetzt.
-    autoFitOffen.current = false;
-    fitBaumAnsicht(baumLayout.nodes);
-    zeichneNoetig.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baumIdsSchluessel, baumLayout, radiusOf, ansicht, sliderCommit]);
 
   // Semantische Ansicht: dieselbe Knotenmenge und dieselben Behauptungen wie im
   // Kraftfeld, nur die Plätze kommen aus der Projektion. Physik aus, Gleiter an
@@ -3385,9 +3331,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   // Und: Wer aus dem Baum kommt, bekommt im Kraftfeld einen Gleit-Übergang.
   const vorherAnsichtRef = useRef<GraphAnsicht>(ansicht);
   useEffect(() => {
-    if (vorherAnsichtRef.current === "dendrogram" && ansicht === "force") {
-      uebergangBaumRef.current = true;
-    }
     vorherAnsichtRef.current = ansicht;
     nutzerBewegt.current = false;
     zeichneNoetig.current = true;
@@ -3677,7 +3620,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (nutzerBewegt.current) return;
     const sim = simRef.current;
     if (!sim || sim.nodes.length === 0) return;
-    if (ansichtRef.current === "dendrogram") { fitBaumAnsicht(); return; }
     if (ansichtRef.current === "semantic") { fitKarte(zielRef.current); return; }
     transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), titelAnker(sim));
     setZoomAnzeige(transformRef.current.k);
@@ -3772,10 +3714,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // Welche Knoten gab es zum gewählten Zeitpunkt? (Regel in lib/graphTime)
     // Der effektive Stand: im Kraftfeld live beim Ziehen, sonst committet.
     const zeitAktiv = effektivAktivRef.current;
-    // Im Baum sind nicht aktive Notizen bereits aus der Hierarchie gefallen;
-    // die Eltern-Kind-Kanten fuehren zu Strukturknoten ohne Memory — die
-    // Zeitregel darf sie nicht ausblenden.
-    const kantenZeit = ansichtRef.current === "dendrogram" ? null : zeitAktiv;
+    const kantenZeit = zeitAktiv;
 
     ctx.save();
     ctx.translate(t.x, t.y);
@@ -3795,7 +3734,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     const ARTEN: readonly KantArt[] = ["vermutung", "erwaehnung", "abgelaufen", "behauptung"];
     const jetzt = Date.now();
     const artFuer = (e: LayoutEdge): KantArt => {
-      if (ansichtRef.current === "dendrogram") return "behauptung"; // hier ist jede Kante die Hierarchie selbst
       if (!e.real) return "vermutung";
       if (!istStruktur(e.source) || !istStruktur(e.target)) return "erwaehnung";
       // Nur beim Stand „jetzt" wird das Fenster zum Zustand. Ist der Regler
@@ -3825,7 +3763,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
      * die Struktur selbst — dort zu dimmen hiesse, die Hierarchie wegzunehmen,
      * um eine Zeile zu zeigen.
      */
-    const teilt = hov !== null && ansichtRef.current !== "dendrogram";
+    const teilt = hov !== null;
     // Etwas gemalte, sichtbare Behauptungen — aus ihnen wird unten das Etikett.
     const etikettenmoeglich: LayoutEdge[] = [];
     /**
@@ -3954,9 +3892,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             continue;
           }
           ctx.moveTo(a.x, a.y);
-          if (art === "vermutung" || ansichtRef.current === "dendrogram") {
-            // Baum: gerade Verbindung — der Dendrogramm-Look lebt von den klaren
-            // Linien zwischen den Ebenen, nicht von Federn.
+          if (art === "vermutung") {
             ctx.lineTo(b.x, b.y);
           } else {
             ctx.quadraticCurveTo((a.x + b.x) / 2 - (dy / len) * off, (a.y + b.y) / 2 + (dx / len) * off, b.x, b.y);
@@ -4417,7 +4353,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // 4 % Zoom), nicht die kleine Basis — was im Gedränge sichtbar bleibt,
     // entscheidet das Belegungsraster weiter unten.
     const mindestRadius = 1.5;
-    const baumAnsicht = ansichtRef.current === "dendrogram";
     // Was der Zeiger oder die Tastatur haelt, kriegt immer sein Etikett — auch
     // auf „keine". Eine Fläche, die auf Nachfrage schweigt, ist keine Auskunft.
     const gehaltenId = hov ?? tastaturIdRef.current;
@@ -4463,7 +4398,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       stufe.kuerzung * zeichenBreite + auslassungBreite,
       zellHoehe,
     );
-    const budget = stufe.grenzenlos ? Number.MAX_SAFE_INTEGER : kapazitaet * (baumAnsicht ? 3 : 1);
+    const budget = stufe.grenzenlos ? Number.MAX_SAFE_INTEGER : kapazitaet;
     // Die engere Pforte als die breitere Stufe: was im Feld als
     // Kandidat durchfaellt, kann kein Raster und kein Budget der Welt
     // benennen. Bei 400 Notizen auf 27 % Zoom standen dort 0 von 400 —
@@ -4974,7 +4909,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           aussenStandRef.current = neuerStand;
           setAussenStand(neuerStand);
         }
-        const meldung = rahmenZeilentext(imStrengeNoten, gesamt, ansichtRef.current === "dendrogram", !!kernNeu.marke);
+        const meldung = rahmenZeilentext(imStrengeNoten, gesamt, false, !!kernNeu.marke);
         if (rahmenZeile.textContent !== meldung) rahmenZeile.textContent = meldung;
         // Wort und Marke an einem Knoten, aus einer Rechnung: wer die Zeile liest, kann an
         // diesem Attribut pruefen, ob das Bild dieselbe Kante markiert, die die Zahl nennt.
@@ -5019,7 +4954,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         const b = index.get(gehalten.target)!;
         const gerade = kanteIstGerade(
           gehalten,
-          ansichtRef.current === "dendrogram",
+          false,
           richtungRef.current && t.k >= KEIL_AB_ZOOM
         );
         const punkt = kartenAnker(a, b, gerade);
@@ -5074,8 +5009,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       if (!laeuft) return;
       const sim = simRef.current;
       if (sim) {
-        if (ansichtRef.current === "dendrogram" || ansichtRef.current === "semantic") {
-          // Baum und Projektion: kein Physik-Loop — die Knoten gleiten auf ihre
+        if (ansichtRef.current === "semantic") {
+          // Projektion: kein Physik-Loop — die Knoten gleiten auf ihre
           // Zielstellen und ruhen dann. Loslassen einer Bewegung = Auto-Fit.
           const bewegt = bewegungAn ? stepDendrogram(sim.nodes, zielRef.current, reduzierteBewegung.current ? 1 : undefined) : false;
           if (bewegt) zeichneNoetig.current = true;
@@ -5243,13 +5178,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * steht, darf keinen Tooltip gewinnen.
    */
   const malweiseFuer = useCallback((e: LayoutEdge): "gerade" | "bogen" | null => {
-    const baum = ansichtRef.current === "dendrogram";
     const keilAn = richtungRef.current && transformRef.current.k >= KEIL_AB_ZOOM;
-    if (!baum) {
+    {
       if (!e.real && nurEchteKanten(simRef.current?.edges.length ?? 0, transformRef.current.k)) return null;
       if (!edgeVisibleAt(effektivAktivRef.current, e.source, e.target, e, effektivZeitRef.current)) return null;
     }
-    return kanteIstGerade(e, baum, keilAn) ? "gerade" : "bogen";
+    return kanteIstGerade(e, false, keilAn) ? "gerade" : "bogen";
   }, []);
 
   /** Der Name eines Endpunkts — Begriff oder Notiztitel, nie eine interne ID. */
@@ -5260,21 +5194,18 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
 
   /** Was der Zeiger ueber einer Kante erfahrt. */
   const infoFuerKante = useCallback((e: LayoutEdge): KantenInfo => {
-    const baum = ansichtRef.current === "dendrogram";
-    const art: KantenInfo["art"] = baum
-      ? "hierarchy"
-      : !e.real
-        ? "similar"
-        : istStruktur(e.source) && istStruktur(e.target)
-          ? "claim"
-          : "mention";
+    const art: KantenInfo["art"] = !e.real
+      ? "similar"
+      : istStruktur(e.source) && istStruktur(e.target)
+        ? "claim"
+        : "mention";
     const t = transformRef.current;
     const a = simRef.current?.index.get(e.source);
     const b = simRef.current?.index.get(e.target);
     let x = 0;
     let y = 0;
     if (a && b) {
-      const gerade = kanteIstGerade(e, baum, richtungRef.current && t.k >= KEIL_AB_ZOOM);
+      const gerade = kanteIstGerade(e, false, richtungRef.current && t.k >= KEIL_AB_ZOOM);
       const punkt = kartenAnker(a, b, gerade);
       const lage = kartenLage(punkt.x * t.k + t.x, punkt.y * t.k + t.y, masseRef.current);
       x = lage.x;
@@ -5490,17 +5421,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     const treffer = trefferBei(w);
     const m = treffer ? byIdRef.current.get(treffer.id) : undefined;
     if (m) { onSelectMemory(m); return; }
-    // Eine Gruppe im Baum falten: die Kinder verschwinden, ihre Zahl bleibt.
-    // Die Wurzel ist der Rahmen, keine Gruppe — sie zu falten wäre ein leeres
-    // Bild mit einem Klick, der sich nach nichts anfuelt.
-    if (treffer && ansichtRef.current === "dendrogram" && istStruktur(treffer.id) && treffer.id !== "__wurzel") {
-      falteUm(treffer.id);
-    }
-  }, [onSelectMemory, trefferBei, falteUm]);
+  }, [onSelectMemory, trefferBei]);
 
   /** Zeiger, wo eine Handlung wartet: ein Konzept öffnet, eine Gruppe faltet. */
-  const zeigerHand = (id: string) =>
-    id.startsWith(ENTITAETS_PRAEFIX) || (ansicht === "dendrogram" && istStruktur(id) && id !== "__wurzel");
+  const zeigerHand = (id: string) => id.startsWith(ENTITAETS_PRAEFIX);
 
   // --- Tastaturbedienung ---
   // Pfeiltasten waehlen den naechsten Notiz-Knoten in der jeweiligen Richtung,
@@ -5542,12 +5466,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    */
   const trefferIds = useMemo(() => {
     if (!filter.trim()) return [] as string[];
-    const imBild =
-      ansicht === "dendrogram"
-        ? new Set(baumNotizen.map((n) => n.id))
-        : new Set(feldNotizen.map((m) => m.id));
+    const imBild = new Set(feldNotizen.map((m) => m.id));
     return filtered.filter((m) => imBild.has(m.id)).map((m) => m.id);
-  }, [filter, filtered, ansicht, baumNotizen, feldNotizen]);
+  }, [filter, filtered, feldNotizen]);
   /** Wo im Blättern man steht. -1 = gefunden, aber noch nicht hingesprungen. */
   const [trefferZeiger, setTrefferZeiger] = useState(-1);
   useEffect(() => { setTrefferZeiger(-1); }, [filter]);
@@ -5602,13 +5523,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       }
       return;
     }
-    // Eine Typ- oder Tag-Ebene hat kein Dossier. Ohne Handlung wäre Enter
-    // dort eine tote Taste — im Baum ist sie der Weg zur Faltung.
-    if (id && ansicht === "dendrogram" && /^__(typ|tag):/.test(id)) {
-      e.preventDefault();
-      falteUm(id);
-    }
-  }, [onSelectMemory, onSelectConcept, ansicht, falteUm]);
+  }, [onSelectMemory, onSelectConcept]);
 
   /**
    * Die Tastatur der Suche. Escape räumt ZUERST das Wort — wer ein Suchfeld
@@ -5645,9 +5560,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // Konzept (Enter öffnet sein Dossier) und — im Baum — die Typ- und
     // Tag-Ebene (Enter faltet sie). Die Wurzel ist der Rahmen, sie tut nichts
     // und bleibt deshalb aus der Reise draußen.
-    const imBaum = ansicht === "dendrogram";
     const notizKnoten = sim.nodes.filter(
-      (n) => byIdRef.current.has(n.id) || n.id.startsWith(ENTITAETS_PRAEFIX) || (imBaum && /^__(typ|tag):/.test(n.id))
+      (n) => byIdRef.current.has(n.id) || n.id.startsWith(ENTITAETS_PRAEFIX)
     );
     if (notizKnoten.length === 0) return;
     const aktuell = tastaturIdRef.current
@@ -6810,9 +6724,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               ? ` of ${mengenzahl(graphApi.bestand.knoten)} in all`
               : ""}{" "}
             ·{" "}
-            {ansicht === "dendrogram"
-              ? `${mengenzahl(baumLayout.edges.length)} ${baumLayout.edges.length === 1 ? "link" : "links"}`
-              : `${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}${kantenWortZeile(NAMEN_STUFE[etikettenModus].kantentext, zoomAnzeige, edges)}${handWortZeile(edges)}`}
+            {`${mengenzahl(kanten.echt)} ${kanten.echt === 1 ? "link" : "links"}${aehnlichkeitsZeile(kanten.aehnlichkeit, edges.length, zoomAnzeige)}${kantenWortZeile(NAMEN_STUFE[etikettenModus].kantentext, zoomAnzeige, edges)}${handWortZeile(edges)}`}
             {kopfLadeSatz(bestandStand)}
             {kopfKanteSatz(kanteStand)}
             {kopfFensterSatz(Boolean(graphApi?.ausriss?.begrenzt))}
@@ -6878,13 +6790,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           />
           <div className="flex flex-wrap items-center gap-3 hud-label">
             <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--accent)" strokeWidth="2" /></svg>{" "}
-            {ansicht === "dendrogram" ? uiT("legend.hierarchy") : uiT("legend.claim")}
-            {ansicht !== "dendrogram" && (
+            {uiT("legend.claim")}
+            {(
               <>
                 <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--text-1)" strokeWidth="1" opacity="0.45" /></svg> {uiT("legend.mention")}
               </>
             )}
-            {ansicht !== "dendrogram" && ahnlichkeit && (
+            {ahnlichkeit && (
               <>
                 <svg width="26" height="6"><line x1="0" y1="3" x2="26" y2="3" stroke="var(--text-3)" strokeWidth="1.5" strokeDasharray="3 4" /></svg> {uiT("legend.similarity")}
               </>
@@ -7029,7 +6941,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               (`.legende-griffe`). Zuvor nahm es die Klappe ganz aus dem Baum:
               die Gruppen-Wähler waren unauffindbar, bis jemand die Legende öffnete. */}
           <div hidden={!legendeVoll || undefined}>
-            {regal && <GraphRegal regal={regal} ansichtsName={ansicht === "dendrogram" ? "the tree" : "the field"} gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
+            {regal && <GraphRegal regal={regal} ansichtsName="the field" gruppen={farbgruppen} achsen={achsen} steuerung={gruppenSteuerung} gemalt={gemalt} />}
           </div>
           {/* Die Griffe erklaert die Flaeche schon an den Werkzeugen selbst; auf dem
               Telefon sind sie teils nicht einmal vorhanden (kein Hover, kein Rad).
@@ -7038,11 +6950,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               Hilfe, keine Auskunft, und die Klappe muss bei jeder Breite unter 25 %
               der Bildflaeche kommen. */}
           <div className="hud-label legende-prosa legende-griffe">
-            {ansicht === "dendrogram"
-              ? uiT("hint.tree")
-              : ansicht === "semantic"
-                ? uiT("hint.semantic")
-                : uiT("hint.force")}
+            {ansicht === "semantic" ? uiT("hint.semantic") : uiT("hint.force")}
           </div>
         </div>
       </div>

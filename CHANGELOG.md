@@ -1,3 +1,15 @@
+## [3.2.210]
+
+### Removed
+
+- **The dendrogram internals are excised** (P198): after the Tree view left the
+  product (3.2.207), the type, the hierarchy build, the tree time-rebuild effect,
+  the tree edge/label/tooltip branches and the tree fit are gone from
+  `src/components/KnowledgeGraph.tsx` — compiler-guided (the narrowed
+  `GraphAnsicht` listed every site). The shelf model now counts in every view.
+  The word-chain "N notes in all" (a tree-view sentence) left with it
+  (`scripts/pruefe-asar-inhalt.cjs` updated).
+
 ## [3.2.209]
 
 ### Fixed

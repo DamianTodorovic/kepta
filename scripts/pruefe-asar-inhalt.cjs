@@ -700,7 +700,8 @@ const erwartet = [
   // Punkt 7, 2.11. (3.2.115, der letzte Name der Sammlung): gegen das installierte 3.2.114
   // gezaehlt je **0**. "in the store" stand dort 7 mal — die Abwesenheit kann diese Liste nicht
   // ausdruecken (nur `>=`), darum beweist sie der Zyklus `saetze` am gemalten Text.
-  ["notes in all", 1],
+  // P197 (3.2.210): die Kette "N notes in all" hing an der Baum-Ansicht — mit
+  // dem Baum ist sie aus der Quelle geflogen; das Feld sagt "in this view"/"in all".
   ["claims in all", 1],
   ["More of your notes", 1],
   // Punkt 4 und 7, 2.11. (3.2.116): gegen das installierte 3.2.115 gezaehlt je **0**.
