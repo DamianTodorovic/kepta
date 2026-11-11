@@ -1068,8 +1068,11 @@ export function Settings() {
             <div className="pt-8 space-y-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <div className="rounded-xl p-3 sm:p-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: autoLearn ? 'var(--accent-soft)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}>
+                  {/* P197: der Textblock wächst (flex-1), damit der Schalter NEBEN
+                      dem Titel bleibt statt unter den Text zu rutschen (Damians
+                      Bild 00:11). */}
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: autoLearn ? 'var(--accent-soft)' : 'var(--bg-inset-strong)', border: '1px solid var(--border-subtle)' }}>
                       <Sparkles className="w-4 h-4" style={{ color: autoLearn ? 'var(--accent)' : 'var(--text-3)' }} />
                     </div>
                     <div className="min-w-0 break-words">

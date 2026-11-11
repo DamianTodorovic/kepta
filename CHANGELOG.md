@@ -1,3 +1,21 @@
+## [3.2.208]
+
+### Changed
+
+- **The shelf's 13+ controls sit in four named groups** (P197 step 2): "What the
+  picture carries" (Schema, Connected, Self, Similar, unlinked filter), "Shape &
+  colour" (colour channel, pickers, claim direction, thickness, depth, label
+  density), "Motion" (motion, forces), "Time & scope" (time, date, tag filter) —
+  anything outside the groups falls under "Everything else". The flat "N out of
+  the row — everything here works the same" sentence is gone; each group says
+  what its controls belong to.
+- **The knowledge cards show the kind colour on the card itself** (P197 step 3):
+  the side ridge is 6 px, and the type label wears a soft tint of the same colour
+  (colour-mix 14 %) — a pick from the graph or Settings is visible on every card
+  without opening anything.
+- **The Auto-learn switch sits beside its title** instead of wrapping below the
+  text (the text block grows, the switch stays) (P197 step 4).
+
 ## [3.2.207]
 
 ### Removed

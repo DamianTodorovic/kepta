@@ -64,17 +64,31 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
       className="row-entry cursor-pointer group relative"
     >
       {/* Farbstreich links: der Typ färbt den Kartenrand */}
-      {/* 4 px breit: die Kapsel malt dasselbe Bild wie 2 px, nennt aber eine Form statt eines Werts ausserhalb der Stufen */}
+      {/* P197: 6 px statt 4 px — die Art-Farbe muss auf einen Blick sichtbar sein
+          (Damian: „die Farben, die man einstellt, bleiben ja überall"). Die Kapsel
+          malt dasselbe Bild wie 2 px, nennt aber eine Form statt eines Werts
+          ausserhalb der Stufen. */}
       {typeColor && (
         <span
           aria-hidden
-          className="absolute left-0 top-3 bottom-3 w-[4px]"
+          className="absolute left-0 top-2 bottom-2 w-[6px]"
           style={{ background: `linear-gradient(180deg, ${typeColor}, color-mix(in srgb, ${typeColor} 30%, transparent))`, borderRadius: 999 }}
         />
       )}
 
-      {/* Standarte: Glyph und Farbe aus der Rechen-Art, Wort aus Zeile 1 */}
-      <span className="row-type" style={{ color: typeText ?? 'var(--text-2)' }} title={TRAEGER_HINWEISE[gruppe.traeger]}>
+      {/* Standarte: Glyph, Art-Farbe als weicher Chip, Wort aus Zeile 1 — die Art
+          ist auf der Karte SEHBAR, nicht nur am Streifen (P197). */}
+      <span
+        className="row-type"
+        style={{
+          color: typeText ?? 'var(--text-2)',
+          background: typeColor ? `color-mix(in srgb, ${typeColor} 14%, transparent)` : undefined,
+          borderRadius: 999,
+          paddingInline: 8,
+          paddingBlock: 2,
+        }}
+        title={TRAEGER_HINWEISE[gruppe.traeger]}
+      >
         {TypeIcon && <TypeIcon className="w-3.5 h-3.5 shrink-0" weight="duotone" />}
         <span className="row-type-label">{traegerEtikett}</span>
       </span>

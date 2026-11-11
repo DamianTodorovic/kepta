@@ -108,14 +108,20 @@ describe("More-Klappe: die Faltkante nennt den Rest und deckt den Kopf nicht", (
    * Raster, Kopf und Balken ueber beide Spalten, Raster ohne Fremdabstaende). Den Beweis
    * liefern die Bilder: 1024 mit Hinweis "3 more below", 1440 mit 0 unter/0 rechts.
    */
-  it("kein Multicol mehr: das Raster ab 820 fliesst nur senkrecht", () => {
+  it("die Gruppen tragen das Menue: Überschriften, Zeilen, kein Multicol (P197)", () => {
     const klappe = klassenAb(block, kasten);
-    expect(klappe, "die Klappe traegt ab 820 kein Raster").toMatch(/min-\[820px\]:grid/);
-    expect(klappe, "das Raster hat keine zwei Spalten").toMatch(/min-\[820px\]:grid-cols-2/);
+    // Der neue Vertrag: einspaltiger Fluss mit Gruppen-Überschriften — die alte
+    // Zwei-Spalten-Raster-Wache hielt der flachen Liste die Stange.
     expect(klappe, "Multicol legt bei Ueberlauf eine dritte Spalte an").not.toMatch(/min-\[820px\]:columns-2/);
-    expect(klappe, "das Raster nimmt die Reihenabstaende nicht mit (space-y bleibt)").toMatch(/min-\[820px\]:space-y-0/);
-    expect(klappe, "dem Raster fehlt der Spaltenabstand").toMatch(/min-\[820px\]:gap-2/);
-    // Kopf und Balken muessen ueber beide Spalten laufen, sonst sitzen sie in einer Zelle.
-    expect((block.match(/min-\[820px\]:col-span-full/g) || []).length, "nicht genau zwei Elemente spannen ueber beide Spalten").toBe(2);
+    expect(klappe, "das Panel scrollt, statt die Fläche zu sprengen").toMatch(/overflow-y-auto/);
+    // Die Gruppen kommen aus der MENUE_GRUPPEN-Liste (vier im Lauf, die Quell-
+    // stelle schreibt die Überschrift zweimal: Gruppen-Map + „Everything else").
+    expect(block, "die Gruppen-Liste fehlt").toContain("MENUE_GRUPPEN");
+    const gruppen = (block.match(/hud-label font-semibold/g) || []).length;
+    expect(gruppen, "die Gruppen-Überschriften fehlen").toBeGreaterThanOrEqual(2);
+    // Jede Reihe bleibt addressierbar (data-mehr-reihe) — die Wachen der
+    // einzelnen Regler lesen sie weiter. Die Marke steht zweimal im Quelltext
+    // (Gruppen-Map + „Everything else"); zur Laufzeit trägt sie JEDE Reihe.
+    expect((block.match(/data-mehr-reihe=/g) || []).length, "die Reihen-Marke fehlt im Quelltext").toBe(2);
   });
 });

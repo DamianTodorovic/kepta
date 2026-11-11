@@ -70,8 +70,8 @@ describe("Klappe am Fuss: die Kappe zieht ab, was ihre eigne Verankerung braucht
   it("ab 820 px traegt ein Raster zwei Spalten; Multicol legt bei Ueberlauf eine dritte an", () => {
     // Befund 24.10. 00:18 MESZ, 1024 x 768: `columns-2` schob `farben` nach x 988..1 317,
     // die Klappe endet bei 985; clientHeight == scrollHeight == 612, also kein Rollweg.
-    expect(klasse, "die Klappe traegt kein Raster ab 820").toMatch(/min-\[820px\]:grid/);
-    expect(klasse, "das Raster hat keine zwei Spalten").toMatch(/min-\[820px\]:grid-cols-2/);
+    // P197: das Raster ist weg — die Gruppen-Überschriften tragen den einspaltigen
+    // Fluss; Multicol bleibt draussen (dritte Spalte bei Ueberlauf).
     expect(klasse, "Multicol kann hinter der rechten Kante eine dritte Spalte anlegen").not.toMatch(/min-\[820px\]:columns-2/);
   });
 });

@@ -220,6 +220,17 @@ const BEWEGUNG_KEY = "kepta_graph_bewegung";
  */
 const LEGENDE_KEY = "kepta_graph_legende";
 const TAG_FILTER_KEY = "kepta_graph_tag_filter";
+/**
+ * P197: die Sinn-Gruppen des More-Menüs — eine flache Liste von 13+ Reglern
+ * („everything here works the same") ist keine Auskunft. Jede Gruppe sagt, wozu
+ * ihre Regler gehören; was nicht passt, landet unter „Everything else".
+ */
+const MENUE_GRUPPEN: { titel: string; teile: string[] }[] = [
+  { titel: "What the picture carries", teile: ["schema", "connected", "selbst", "aehnlichkeit", "nurmit"] },
+  { titel: "Shape & colour", teile: ["kanal", "farben", "richtung", "dicke", "tiefe", "namen"] },
+  { titel: "Motion", teile: ["bewegung", "krafte"] },
+  { titel: "Time & scope", teile: ["zeitstand", "zeitregler", "datum", "tagfilter"] },
+];
 const NUR_MIT_KEY = "kepta_graph_nur_mit_verbindungen";
 /**
  * G-76 — die Dicke der gemalten Verbindungen. Eine Masste, die das Bild hoert:
@@ -6281,28 +6292,57 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
              bild-wirksamen Glieder liegen 258,1 / 347,1 / 436,1 px unter der Kante. Am Fuss
              der Leinwand sind es 788 px, und ab 820 px Breite tragen zwei Kolonnen die 17
              Glieder in neun Reihen. */
-          className="hud-panel absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 pt-2 pb-0 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto min-[820px]:grid min-[820px]:grid-cols-2 min-[820px]:gap-2 min-[820px]:space-y-0 min-[820px]:items-start"
+          className="hud-panel absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 pt-2 pb-0 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto"
         >
-          <div className="flex items-center justify-between gap-3 min-[820px]:col-span-full">
+          <div className="flex items-center justify-between gap-3">
             <div className="hud-label" style={{ color: "var(--text-2)" }}>
-              {plan.menue.length} out of the row — everything here works the same
+              Everything the picture can do, in four groups
             </div>
             <button onClick={() => setzeMehrOffen(false)} className="btn-ghost px-2 py-1 rounded fs-1" title="Close">
               Close
             </button>
           </div>
-          {plan.menue.map((g) => (
-            <div key={g} className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`graph-mehr-${g}`} data-mehr-reihe={g}>
-              <div className="shrink-0">{geraet(g)}</div>
-              {erklaerung(g) && (
-                <span className="hud-label" style={{ color: "var(--text-2)" }}>{erklaerung(g)}</span>
-              )}
-            </div>
-          ))}
+          {/* P197: vier Sinn-Gruppen statt einer flachen Liste — jede Gruppe sagt,
+              wozu ihre Regler gehören. Zeilen außerhalb der Gruppen landen unter
+              „Everything else". */}
+          {MENUE_GRUPPEN.map((gruppe) => {
+            const zeilen = plan.menue.filter((g) => gruppe.teile.includes(g));
+            if (zeilen.length === 0) return null;
+            return (
+              <div key={gruppe.titel}>
+                <div className="hud-label font-semibold" style={{ color: "var(--text-1)", marginTop: 10 }}>{gruppe.titel}</div>
+                {zeilen.map((g) => (
+                  <div key={g} className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`graph-mehr-${g}`} data-mehr-reihe={g}>
+                    <div className="shrink-0">{geraet(g)}</div>
+                    {erklaerung(g) && (
+                      <span className="hud-label" style={{ color: "var(--text-2)" }}>{erklaerung(g)}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+          {(() => {
+            const rest = plan.menue.filter((g) => !MENUE_GRUPPEN.some((gruppe) => gruppe.teile.includes(g)));
+            if (rest.length === 0) return null;
+            return (
+              <div>
+                <div className="hud-label font-semibold" style={{ color: "var(--text-1)", marginTop: 10 }}>Everything else</div>
+                {rest.map((g) => (
+                  <div key={g} className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`graph-mehr-${g}`} data-mehr-reihe={g}>
+                    <div className="shrink-0">{geraet(g)}</div>
+                    {erklaerung(g) && (
+                      <span className="hud-label" style={{ color: "var(--text-2)" }}>{erklaerung(g)}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
           {mehrDraussen > 0 && (
             <div
               data-testid="graph-mehr-draussen"
-              className="sticky bottom-0 z-10 -mx-3 border-t px-3 py-2 hud-label pointer-events-none min-[820px]:col-span-full"
+              className="sticky bottom-0 z-10 -mx-3 border-t px-3 py-2 hud-label pointer-events-none"
               style={{ background: "var(--bg-panel-solid)", color: "var(--text-2)", borderColor: "var(--border-subtle)" }}
             >
               {mehrDraussen} more below — keep scrolling
