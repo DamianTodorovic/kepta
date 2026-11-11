@@ -134,7 +134,7 @@ describe("Z-03: die Zeile traegt, was sie zeigt", () => {
     expect([...panel.querySelectorAll("button")].map((b) => b.textContent?.trim()).join(" ")).toMatch(/Many/);
     // A8-08: die Auskunft war ein Schwebetext. Im Menue ist sie ein Satz.
     expect(panel.textContent).toMatch(/Density of names/);
-    expect(panel.textContent).toMatch(/out of the row/);
+    expect(panel.textContent).toMatch(/What the picture carries/);
   });
 });
 

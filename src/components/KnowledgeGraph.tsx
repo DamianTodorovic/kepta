@@ -103,6 +103,9 @@ import { gemeinschaftenBaue, grundHexVon, haufenBildBaue, haufenKantenAus, haufe
 import { KAPPE_PANEL } from "../lib/kappe";
 import { ansichtBeschreibung, ansichtLabel } from "../lib/ansichten";
 
+// P197: der Baum (dendrogram) ist aus dem Produkt geflogen — der Knopf ist weg,
+// eine gemerkte Baum-Ansicht fällt aufs Kraftfeld zurück. Der interne Weg bleibt
+// bis zur Ausmähdung (P198) im Bündel, ist von keiner Fläche erreichbar.
 export type GraphAnsicht = "force" | "dendrogram" | "semantic";
 const ANSICHT_KEY = "kepta_graph_view";
 /** Richtung ist von Haus aus an — sie ist die Aussage, nicht ein Schmuck. */
