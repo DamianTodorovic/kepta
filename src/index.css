@@ -899,9 +899,13 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
   /* Beide Reihen der Seitenleiste sind Griffe und tragen die Kontrollstufe — bis 31.10. standen
      dafuer zwei Tailwind-Werte in der Bauteilkette (8 px und 6 px), ausserhalb der Stufen. */
   border-radius: var(--r-btn);
-  transition: background var(--dur) ease, color var(--dur) ease, border-color var(--dur) ease, box-shadow var(--dur) ease;
+  transition: background var(--dur) ease, color var(--dur) ease, border-color var(--dur) ease, box-shadow var(--dur) ease, transform var(--dur-fast) var(--ease-apple);
 }
 .sidebar-nav-btn:hover, .sidebar-tag-btn:hover { background: var(--side-flaeche); }
+/* P197 (Emil-Regel: „Buttons must feel responsive" — Drück-Rücken auf JEDER
+   pressbaren Stelle, 0.95–0.98): die Seitenleiste ist die meistgedrückte
+   Fläche der App — ihr Rücken fehlte. */
+.sidebar-nav-btn:active, .sidebar-tag-btn:active { transform: scale(0.98); }
 .sidebar-nav-btn[data-active="true"] {
   background: var(--side-auswahl);
   box-shadow: inset 2px 0 0 var(--accent);
@@ -1121,7 +1125,10 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
   color: var(--text-2);
+  /* P197: Chips sind Knöpfe (Filter, Ausschlüsse) — Drück-Rücken dazu. */
+  transition: transform var(--dur-fast) var(--ease-apple);
 }
+.chip:active { transform: scale(0.97); }
 .kbd {
   display: inline-flex;
   align-items: center;
@@ -1288,7 +1295,7 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .card:hover, .btn-primary:active, .btn-ghost:active { transform: none; }
+  .card:hover, .btn-primary:active, .btn-ghost:active, .sidebar-nav-btn:active, .sidebar-tag-btn:active, .chip:active, .apple-seg-btn:active { transform: none; }
 }
 
 /* ---------- Weniger Durchsicht ----------
@@ -1447,9 +1454,11 @@ button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
   border: 0;
   background: transparent;
   color: var(--text-2);
-  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple);
+  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
 }
 .apple-seg-btn:hover { color: var(--text-1); }
+/* P197: Drück-Rücken auch an den Graph-Segmenten. */
+.apple-seg-btn:active { transform: scale(0.97); }
 .apple-seg-btn[data-on="true"] {
   background: var(--bg-panel-solid);
   color: var(--text-1);
