@@ -1,3 +1,17 @@
+## [3.2.209]
+
+### Fixed
+
+- **The graph heals itself when the window comes back to the front.** The root
+  of the "empty graph" reports: an **occluded** window (K3PTA behind another
+  app) receives no frame ticks — the paint loop stands still, the canvas keeps
+  its 300×150 HTML-default bitmap, and the view reads as black/empty. Measured
+  live on 11.11., 21:17 (freshly started: canvas 968×656 CSS, buffer 300×150,
+  `document.hidden` stuck true). The new self-heal guard re-measures the real
+  box every 5 s while the graph view is open, pulls missed sizing in, and wakes
+  the paint tick — bringing the window forward shows the picture immediately
+  (`src/components/KnowledgeGraph.tsx`).
+
 ## [3.2.208]
 
 ### Changed

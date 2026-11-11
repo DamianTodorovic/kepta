@@ -5157,6 +5157,34 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   }, [zeichne, dimensions, fitBaumAnsicht, sichtbar, fensterSichtbar, bewegungAn]);
 
   useEffect(() => { zeichneNoetig.current = true; }, [timeFilter, TYPE_COLORS, hovered, aktiverKanal, farbgruppen]);
+  /**
+   * P197: die Selbstheil-Wache gegen den VERDECKTEN Takt. Ein verdecktes Fenster
+   * (K3PTA liegt hinter einem anderen) bekommt keinen Bild-Takt: der Mal-Lauf
+   * steht still, die Leinwand behält ihre HTML-Default-Größe (300×150), und die
+   * Fläche wirkt schwarz/leer — gemessen am echten Fenster 11.11., 21:17 (frisch
+   * gestartet: Canvas 968×656 CSS, Puffer 300×150, `document.hidden` trotz
+   * sichtbaren Fensters hängen geblieben). Bringt der Mensch das Fenster nach
+   * vorn, muss das Bild SOFORT kommen — diese Wache misst alle paar Sekunden die
+   * echte Box, holt Versäumtes nach und weckt den Takt. Kostet im Wachzustand
+   * einen Rahmenschub alle fünf Sekunden, sonst nichts.
+   */
+  useEffect(() => {
+    if (!sichtbar) return;
+    const wache = setInterval(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const r = canvas.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) return; // die Ansicht ist zu — nichts zu heilen
+      const dpr = Math.min(2, (typeof window !== "undefined" && window.devicePixelRatio) || 1);
+      const soll = Math.round(r.width * dpr);
+      if (canvas.width !== soll) {
+        // Die Box und der Puffer sind auseinander — die Messung nachziehen.
+        setDimensions({ w: Math.max(1, Math.round(r.width)), h: Math.max(1, Math.round(r.height)) });
+      }
+      zeichneNoetig.current = true;
+    }, 5000);
+    return () => clearInterval(wache);
+  }, [sichtbar]);
   // Die Legenden-Karte ist ein Hindernis, das ohne einen neuen Lauf wachsen und
   // schrumpfen kann (die Klappe, ein Regal, eine Zeile, die spaeter eintrifft).
   // Die Kernzahl weicht ihr aus — aber nur, wer malt, weicht aus. Ohne diesen
