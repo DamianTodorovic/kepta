@@ -22,6 +22,8 @@ import {
   kanteBei,
   merkUrsprung,
   loeseKnoten,
+  feldSchnappschuss,
+  feldZurueck,
   setzeKrafte,
   setzeKnotenGroesse,
   nurEchteKanten,
@@ -2763,6 +2765,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   /** Sobald der Nutzer selbst verschoben oder gezoomt hat, faessen wir den Ausschnitt nicht mehr an. */
   const nutzerBewegt = useRef(false);
   const draggingRef = useRef<LayoutNode | null>(null);
+  /**
+   * P197: der Feld-Schnappschuss. Der ERSTE Griff nach der letzten Lösung
+   * friert das ganze Bild ein; „Release pinned" gibt es vollständig wieder —
+   * auch die Nachbarn, die die Kollision verdrängt hat (Damian: „wird nicht
+   * alles wie davor").
+   */
+  const feldSchnappschussRef = useRef<ReturnType<typeof feldSchnappschuss> | null>(null);
   const panRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
   const hoveredRef = useRef<string | null>(null);
   // Tastatur-Auswahl: der Knoten, den die Pfeiltasten gerade markieren.
@@ -3332,6 +3341,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const vorherAnsichtRef = useRef<GraphAnsicht>(ansicht);
   useEffect(() => {
     vorherAnsichtRef.current = ansicht;
+    // P197: ein Ansichtswechsel baut das Feld neu — ein alter Schnappschuss
+    // würde Knoten einer fremden Welt zurücksetzen. Die neue Messung beginnt
+    // mit dem nächsten Griff.
+    feldSchnappschussRef.current = null;
     nutzerBewegt.current = false;
     zeichneNoetig.current = true;
   }, [ansicht]);
@@ -5248,11 +5261,20 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const loeseAlle = useCallback(() => {
     const sim = simRef.current;
     if (!sim) return;
-    for (const k of sim.nodes) {
-      // Ein Knoten ohne gemerkte Stelle hat nichts zurueckzugeben — aber er soll
-      // auch nicht festgenagelt bleiben.
-      if (k.ursprung) loeseKnoten(sim, k.id);
-      else k.pinned = false;
+    // P197: mit Schnappschuss kehrt das GANZE Feld heim — die gezogenen Knoten
+    // UND die Nachbarn, die die Kollision verdrängt hat (Damian: „wird nicht
+    // alles wie davor"). Ohne Schnappschuss gilt der alte Weg.
+    const stand = feldSchnappschussRef.current;
+    if (stand) {
+      feldZurueck(sim, stand);
+      feldSchnappschussRef.current = null;
+    } else {
+      for (const k of sim.nodes) {
+        // Ein Knoten ohne gemerkte Stelle hat nichts zurueckzugeben — aber er soll
+        // auch nicht festgenagelt bleiben.
+        if (k.ursprung) loeseKnoten(sim, k.id);
+        else k.pinned = false;
+      }
     }
     setAngeheftet(0);
     zeichneNoetig.current = true;
@@ -5267,6 +5289,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // nicht der Hand. (Und das Anheften ist Kraftfeld-Sache.)
     const treffer = ansichtRef.current === "force" ? trefferBei(w) : null;
     if (treffer) {
+      // P197: der ERSTE Griff nach der letzten Lösung friert das ganze Feld ein
+      // — „Release pinned" gibt es vollständig wieder, Nachbarn eingeschlossen.
+      if (!feldSchnappschussRef.current) feldSchnappschussRef.current = feldSchnappschuss(sim);
       // Die Stelle des ERSTEN Griffs wird gemerkt, bevor die Hand sie bewegt:
       // genau sie gibt der Loesungsknopf zurueck.
       merkUrsprung(sim, treffer.id);

@@ -1003,14 +1003,18 @@ describe("Kollision: Knoten ueberlappen nie", () => {
     expect(b.x).toBe(500);
   });
 
-  it("bewegt einen festgehaltenen Knoten nicht — der andere weicht ganz aus", () => {
+  it("bewegt einen festgehaltenen Knoten nicht — der andere weicht angetrieben aus (P197)", () => {
+    // P197 (Damian: „der Graph bugt, wenn man Knoten zieht"): der volle Schub in
+    // einem Ruf liess das Feld um den Griff zerspringen. Der Schub ist gedämpft
+    // (0,6 je Durchgang); der Rest löst sich im nächsten Rahmen des lebenden
+    // Takts — die Knoten überlappen nie länger als einen Rahmen.
     const a = knoten("a", 0, 0, 12);
     a.pinned = true;
     const b = knoten("b", 3, 0, 12);
     resolveCollisions([a, b]);
     expect(a.x).toBe(0);
     expect(a.y).toBe(0);
-    expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(12 + 12 + COLLIDE_PADDING - 0.001);
+    expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(12 + 12 + COLLIDE_PADDING - 0.05);
   });
 
   it("kommt mit exakt uebereinanderliegenden Knoten zurecht", () => {

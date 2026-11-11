@@ -656,11 +656,14 @@ export function resolveCollisions(
       d = Math.sqrt(d2);
       ux = ax / d; uy = ay / d;
     }
-    // Die Ueberlappung wird auf beide verteilt; haelt einer still
-    // (weil er gerade gezogen wird), weicht der andere ganz aus.
+    // Die Ueberlappung wird auf beide verteilt; haelt einer still (weil er
+    // gerade gezogen wird), weicht der andere ANGETRIEBEN aus — P197 (Damian:
+    // „der Graph bugt, wenn man Knoten zieht"): der volle Schub (1.0) liess das
+    // Feld um den Griff herum zerspringen. Der gedämpfte Anteil löst dieselbe
+    // Überlappung über mehrere Rahmen auf — ruhig statt knallend.
     const ueberlappung = mindest - d;
-    const anteilN = n.pinned ? 0 : m.pinned ? 1 : 0.5;
-    const anteilM = m.pinned ? 0 : n.pinned ? 1 : 0.5;
+    const anteilN = n.pinned ? 0 : m.pinned ? 0.6 : 0.5;
+    const anteilM = m.pinned ? 0 : n.pinned ? 0.6 : 0.5;
     n.x -= ux * ueberlappung * anteilN;
     n.y -= uy * ueberlappung * anteilN;
     m.x += ux * ueberlappung * anteilM;
@@ -1249,6 +1252,52 @@ export function loeseKnoten(sim: Simulation, id: string): number {
   n.vy = 0;
   n.pinned = false;
   return weg;
+}
+
+/**
+ * P197: der Feld-Schnappschuss. Beim ERSTEN Griff nach der letzten Lösung wird
+ * das GANZE Feld eingefroren — „Release pinned" verspricht Damians Wortlaut
+ * („wird nicht alles wie davor"): nicht nur die gezogenen Knoten kehren heim,
+ * auch die Nachbarn, die die Kollision verdrängt hat. Die Kollision schiebt
+ * freie Knoten in jedem Bild; wer nur die angehefteten zurücksetzt, sieht ein
+ * Feld, das „fast wie vorher" aussieht — und fast ist die Klage.
+ */
+export interface FeldStand {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  pinned: boolean;
+  ursprung: LayoutNode["ursprung"];
+}
+
+export function feldSchnappschuss(sim: Simulation): Map<string, FeldStand> {
+  const stand = new Map<string, FeldStand>();
+  for (const n of sim.nodes) {
+    stand.set(n.id, { x: n.x, y: n.y, vx: n.vx, vy: n.vy, pinned: n.pinned, ursprung: n.ursprung ? { ...n.ursprung } : null });
+  }
+  return stand;
+}
+
+/**
+ * Stellt das ganze Feld aus einem Schnappschuss wieder her — jede Position,
+ * jede Geschwindigkeit; angeheftet wird nichts, gemerkte Ursprünge räumen die
+ * Klappe auf. Rückgabe: die Zahl der gesetzten Knoten (das Messzeug des Knopfs).
+ */
+export function feldZurueck(sim: Simulation, stand: Map<string, FeldStand>): number {
+  let gesetzt = 0;
+  for (const n of sim.nodes) {
+    const alt = stand.get(n.id);
+    if (!alt) continue;
+    n.x = alt.x;
+    n.y = alt.y;
+    n.vx = 0;
+    n.vy = 0;
+    n.pinned = false;
+    n.ursprung = alt.ursprung ? { ...alt.ursprung } : null;
+    gesetzt++;
+  }
+  return gesetzt;
 }
 
 /**

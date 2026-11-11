@@ -1,3 +1,20 @@
+## [3.2.211]
+
+### Fixed
+
+- **"Release pinned" restores the WHOLE field, not just the dragged nodes**
+  (P197; Damian: "it doesn't all go back like before"). The drag shoves
+  neighbours out of the way — the old release returned only the pinned nodes and
+  left every shoved neighbour displaced. The first grab now freezes the whole
+  field (`feldSchnappschuss`), and the release puts everything back exactly as
+  it was — pinned nodes, shoved neighbours, velocities, origins
+  (`src/lib/graphLayout.ts`, `feldSchnappschuss`/`feldZurueck`; the view switch
+  discards a stale snapshot).
+- **The collision shove around a dragged node is damped** (0.6 per pass instead
+  of 1.0): dragging through a dense area no longer makes the field erupt — the
+  same overlap resolves over a few frames.
+  Held by `tests/lib/graph-feld-schnappschuss.test.ts`.
+
 ## [3.2.210]
 
 ### Removed
