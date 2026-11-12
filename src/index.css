@@ -455,7 +455,7 @@ body {
   letter-spacing: -0.008em;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color var(--dur) ease, color var(--dur) ease;
+  transition: background-color var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple);
 }
 
 /* Ein Ring-System für alles Fokussierbare: 2 px + 2 px Abstand, gerechnet
@@ -755,7 +755,7 @@ select:focus-visible {
   margin: 0 6px;
   font-size: var(--fs-3);
   color: var(--text-1);
-  transition: background 0.1s var(--ease-apple);
+  transition: background var(--dur-fast) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
 }
 .palette-row[data-active="true"] {
   background: var(--accent-soft-2);
@@ -768,7 +768,7 @@ select:focus-visible {
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-btn);
   color: var(--text-1);
-  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background var(--dur-fast) ease;
+  transition: border-color var(--dur-fast) var(--ease-apple), box-shadow var(--dur-fast) var(--ease-apple), background var(--dur-fast) var(--ease-apple);
 }
 .hud-input::placeholder { color: var(--text-3); }
 .hud-input:hover { border-color: var(--kante-stark); }
@@ -806,7 +806,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
      die Berandung muss die 3:1 von WCAG 1.4.11 tragen. */
   border: 1px solid var(--accent-kante);
   box-shadow: var(--shadow-sm);
-  transition: background var(--dur-fast) ease, transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, opacity var(--dur-fast) ease;
+  transition: background var(--dur-fast) var(--ease-apple), transform var(--dur-fast) var(--ease-apple), box-shadow var(--dur-fast) var(--ease-apple), opacity var(--dur-fast) var(--ease-apple);
 }
 .btn-primary:hover {
   background: var(--accent-2);
@@ -821,7 +821,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-btn);
   font-weight: var(--fw-halbfest);
-  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease, transform var(--dur-fast) ease;
+  transition: background var(--dur-fast) var(--ease-apple), border-color var(--dur-fast) var(--ease-apple), color var(--dur-fast) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
 }
 .btn-ghost:hover { background: var(--bg-inset-strong); border-color: var(--border-strong); }
 .btn-ghost:active { transform: scale(0.985); }
@@ -836,7 +836,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   color: var(--danger);
   border: 1px solid var(--border-subtle);
   font-weight: var(--fw-halbfest);
-  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
+  transition: background var(--dur-fast) var(--ease-apple), border-color var(--dur-fast) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
 }
 .btn-danger-ghost:hover { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
 
@@ -899,7 +899,7 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
   /* Beide Reihen der Seitenleiste sind Griffe und tragen die Kontrollstufe — bis 31.10. standen
      dafuer zwei Tailwind-Werte in der Bauteilkette (8 px und 6 px), ausserhalb der Stufen. */
   border-radius: var(--r-btn);
-  transition: background var(--dur) ease, color var(--dur) ease, border-color var(--dur) ease, box-shadow var(--dur) ease, transform var(--dur-fast) var(--ease-apple);
+  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
 }
 .sidebar-nav-btn:hover, .sidebar-tag-btn:hover { background: var(--side-flaeche); }
 /* P197 (Emil-Regel: „Buttons must feel responsive" — Drück-Rücken auf JEDER
@@ -995,13 +995,14 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
   color: var(--text-2);
-  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple);
+  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
 }
 .suggestion-pill:hover {
   background: var(--accent-soft);
   border-color: color-mix(in srgb, var(--accent) 35%, transparent);
   color: var(--text-1);
 }
+.suggestion-pill:active { transform: scale(0.97); }
 
 /* Toasts — Kartonzettel mit klarer Kante */
 .toast-lens {
@@ -1029,10 +1030,14 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
 .graph-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
 .graph-swatch::-webkit-color-swatch { border-radius: 999px; border: none; }
 .graph-swatch::-moz-color-swatch { border-radius: 999px; border: none; }
-.graph-swatch:hover {
-  transform: scale(1.14);
-  border-color: var(--edge-light);
-  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+/* P199 (Emil-Audit §6): Bewegung auf :hover nur hinter dem Zeiger-Gatter —
+   Touch-Flächen feuern beim Antippen sonst einen falschen Schwebezustand. */
+@media (hover: hover) and (pointer: fine) {
+  .graph-swatch:hover {
+    transform: scale(1.14);
+    border-color: var(--edge-light);
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+  }
 }
 .graph-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -1066,8 +1071,10 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
   margin-top: -6px;
   transition: transform var(--dur-fast) var(--ease-apple);
 }
-.graph-time::-webkit-slider-thumb:hover,
-.graph-regler::-webkit-slider-thumb:hover { transform: scale(1.18); }
+@media (hover: hover) and (pointer: fine) {
+  .graph-time::-webkit-slider-thumb:hover,
+  .graph-regler::-webkit-slider-thumb:hover { transform: scale(1.18); }
+}
 .graph-time::-moz-range-track,
 .graph-regler::-moz-range-track { height: 2px; border-radius: 999px; background: var(--border-strong); }
 .graph-time::-moz-range-thumb,
@@ -1190,7 +1197,7 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
   border-radius: 999px;
   background: var(--bg-inset-strong);
   border: 1px solid var(--border-subtle);
-  transition: background var(--dur) ease, border-color var(--dur) ease;
+  transition: background var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -1205,7 +1212,7 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
   border-radius: 999px;
   background: var(--knopf);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform var(--dur) ease;
+  transition: transform var(--dur) var(--ease-apple);
   transform: translateX(2px);
 }
 .switch[data-on="true"] .knob { transform: translateX(15px); }
@@ -1288,14 +1295,47 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
 /* ---------- Alt-Klassen (Rückwärtskompatibilität) ---------- */
 .border-gradient-b { border-bottom: 1px solid var(--border-subtle); }
 
+/* P199 (Emil-Audit §6): weniger und sanfter, nicht null — der alte Block
+   tötete ALLE Übergänge (auch Farb-/Deckkraft-Quittungen) auf 0,01 ms, während
+   motion/react daneben ungebremst lief. Jetzt: Schleifen aus, Transform-
+   Übergänge sofort — Farb- und Zustands-Quittungen behalten ihr Maß. Die
+   Framer-Bewegungen schaltet MotionConfig reducedMotion="user" ab (main.tsx). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  .btn-primary, .btn-ghost, .sidebar-nav-btn, .sidebar-tag-btn, .chip,
+  .apple-seg-btn, .row-entry, .graph-swatch, .switch, .switch .knob,
+  .graph-time::-webkit-slider-thumb, .graph-regler::-webkit-slider-thumb {
+    transition-duration: 0.01ms !important;
+  }
   .card:hover, .btn-primary:active, .btn-ghost:active, .sidebar-nav-btn:active, .sidebar-tag-btn:active, .chip:active, .apple-seg-btn:active { transform: none; }
+}
+
+/* P199 (Emil-Audit §8): Ansichtswechsel blenden kurz ein, statt zu teleportieren —
+   reine Deckkraft (kompositorisch gratis), neu begonnen bei jedem Einblenden, weil
+   display:none die Box abmeldet und die Animation beim Wiederanzeigen von vorn läuft. */
+@keyframes ansicht-blende {
+  from { opacity: 0; }
+}
+.ansicht-blende {
+  animation: ansicht-blende var(--dur) var(--ease-apple);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ansicht-blende { animation: none; }
+}
+
+/* P199 (Emil-Audit §4): Aufklappen ohne Höhen-Rate — der Inhalt meldet sich
+   mit kurzer Herkunft (Deckkraft + 4 px), statt hart zu mounten. Die Höhe
+   selbst bleibt unanimiert: kein Layout-Maß auf seltenen Flächen. */
+@keyframes klappe-auf {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+.klappe-auf { animation: klappe-auf var(--dur) var(--ease-apple); }
+@media (prefers-reduced-motion: reduce) {
+  .klappe-auf { animation: none; }
 }
 
 /* ---------- Weniger Durchsicht ----------
@@ -1409,7 +1449,17 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
   background: var(--bg-inset);
   cursor: inherit;
 }
-button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); }
+/* P199 (Emil-Audit §3): der Press-Rücken für die restlichen Griffe — dieselbe
+   Sprache wie .btn-ghost:active (0,985) und .chip:active (0,97). Textlinks
+   bleiben außen: ihr Feedback ist der Unterstrich, kein Skalensprung. */
+button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); transition: transform var(--dur-fast) var(--ease-apple); }
+button.row-quiet:active { transform: scale(0.97); }
+.btn-danger-ghost:active { transform: scale(0.985); }
+.palette-row:active { transform: scale(0.99); }
+/* Leise Textgriffe (Graph-Regal, KG-Mehr-Menü): hud-label als Knopf —
+   derselbe Rücken, in leise. */
+button.hud-label { transition: transform var(--dur-fast) var(--ease-apple); }
+button.hud-label:active { transform: scale(0.97); }
 .row-stamp {
   font-size: var(--fs-1);
   font-weight: var(--fw-fest);

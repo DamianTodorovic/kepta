@@ -2,7 +2,6 @@ import { ApiFehler, sendJson, tuerSatz } from '../lib/api';
 import { absage, antwortKlausel } from '../lib/absage';
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Key, ShieldCheck, SettingsIcon, Download, CheckCircle2, AlertTriangle, RefreshCw, Cpu, HardDriveDownload, Server, Plug, Copy, Terminal, Braces, Globe, Search, Save, Layers, ExternalLink, Sparkles } from "../lib/icons";
-import { motion } from 'motion/react';
 import { PROVIDERS, providerById, loadAISettings, hydrateAISettings, saveAISettings, kiSchluesselStatus, type AISchluesselStatus, type AISettings } from '../lib/ai';
 import { grundText } from '../lib/tuergrund';
 import { istLokaleAdresse } from '../lib/schild';
@@ -731,11 +730,10 @@ export function Settings() {
 
   return (
     <div className="max-w-2xl mx-auto py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="hud-panel rounded-2xl p-4 sm:p-6 md:p-8"
-      >
+      {/* P199: der Mount-Lauf spielte unsichtbar — Einstellungen bleiben
+          dauerhaft gemountet; die Umhüllung im Dashboard blendet bei jedem
+          Einblenden (ansicht-blende). */}
+      <div className="hud-panel rounded-2xl p-4 sm:p-6 md:p-8">
         <div className="flex items-center gap-4 mb-6 pb-6" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <KeptaMark size={40} />
           <div>
@@ -1628,7 +1626,7 @@ curl -X POST ${API_BASE}/api/memory \\
             </p>
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }

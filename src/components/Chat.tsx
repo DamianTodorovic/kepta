@@ -893,7 +893,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               das Delta-Cache-Signal aus Paket 2 gilt hier genauso wie im Dashboard. */}
           {gehirnWaermt && (
             <span className="chip hidden sm:inline-flex" title="Built once — every saved note only patches it">
-              <span className="agent-dot" /> Warming the search index…
+              <span className="agent-dot" data-laeuft="true" /> Warming the search index…
             </span>
           )}
           {gehirnWarm && !gehirnWaermt && suchDauerMs !== null && (
@@ -959,7 +959,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             </div>
             <div className="relative h-7 flex items-center">
               <div className="absolute left-0 right-0 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-inset-strong)" }}>
-                <div className="h-full rounded-full transition-[width]" style={{ width: `${budgetPercent}%`, background: "var(--accent)" }} />
+                {/* P199 (Emil-Audit §5): Fläche statt Breite — der Regler schob
+                    bei jedem Ziehhakt ein Relayout; scaleX ist rein kompositorisch. */}
+                <div className="h-full w-full origin-left rounded-full transition-transform" style={{ transform: `scaleX(${Math.min(budgetPercent, 100) / 100})`, background: "var(--accent)" }} />
               </div>
               {/* h-7 statt h-1.5: die Trefferfläche des Reglers war gemessen
                   6 px hoch (Z-08: mindestens 20, wiederholt 28). */}
@@ -1041,9 +1043,9 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         {messages.map((msg) => (
           <motion.div
             key={msg.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.18 }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
             className={`flex ${msg.role === "user" ? "justify-end" : ""}`}
           >
             {msg.role === "user" ? (
@@ -1230,7 +1232,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         ))}
 
         {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="msg-ai flex items-center gap-2 fs-4 lh-lesbar" style={{ color: "var(--text-2)" }}>
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="msg-ai flex items-center gap-2 fs-4 lh-lesbar" style={{ color: "var(--text-2)" }}>
             <span className="flex items-center gap-1">
               <span className="typing-dot" />
               <span className="typing-dot" />

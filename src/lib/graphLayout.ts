@@ -1274,7 +1274,7 @@ export interface FeldStand {
 export function feldSchnappschuss(sim: Simulation): Map<string, FeldStand> {
   const stand = new Map<string, FeldStand>();
   for (const n of sim.nodes) {
-    stand.set(n.id, { x: n.x, y: n.y, vx: n.vx, vy: n.vy, pinned: n.pinned, ursprung: n.ursprung ? { ...n.ursprung } : null });
+    stand.set(n.id, { x: n.x, y: n.y, vx: n.vx, vy: n.vy, pinned: n.pinned, ursprung: n.ursprung ? { ...n.ursprung } : undefined });
   }
   return stand;
 }
@@ -1294,7 +1294,7 @@ export function feldZurueck(sim: Simulation, stand: Map<string, FeldStand>): num
     n.vx = 0;
     n.vy = 0;
     n.pinned = false;
-    n.ursprung = alt.ursprung ? { ...alt.ursprung } : null;
+    n.ursprung = alt.ursprung ? { ...alt.ursprung } : undefined;
     gesetzt++;
   }
   return gesetzt;

@@ -73,7 +73,7 @@ describe("P197: der Feld-Schnappschuss stellt ALLES wieder her", () => {
     const stand = feldSchnappschuss(sim);
     a.ursprung = { x: a.x + 10, y: a.y };
     feldZurueck(sim, stand);
-    expect(a.ursprung, "ein alter Ursprung überlebte die Wiederherstellung").toBeNull();
+    expect(a.ursprung, "ein alter Ursprung überlebte die Wiederherstellung").toBeUndefined();
   });
 
   it("setzt nur Knoten, die der Schnappschuss kennt", () => {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { KURVE_APPLE, FEDER_OVERLAY } from "../lib/motionTokens";
 import { Memory } from "../types";
 import { X, Trash2, CheckCircle2, AlertCircle, FileText } from "../lib/icons";
 import {
@@ -112,7 +113,7 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
       <motion.div
         initial={{ opacity: 0, scale: 0.98, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.16 }}
+        transition={{ ease: KURVE_APPLE, duration: 0.2 }}
         className="relative panel rounded-2xl w-full max-w-3xl max-h-[86vh] flex flex-col overflow-hidden"
       >
         <div className="flex items-start gap-3 px-5 py-4 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
@@ -142,8 +143,15 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
             </div>
           )}
 
+          {/* P199 (Emil-Audit §8): Aufräumen ist ein Stapelgang — die gelöschte
+              Gruppe klappt weich zusammen, die übrigen gleiten nach (kleine
+              Liste, gelegentliche Fläche: Layout-Feder erlaubt). */}
+          <AnimatePresence initial={false}>
           {groups.map((g) => (
-            <div key={g.key} className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-inset)" }}>
+            <motion.div key={g.key} layout="position"
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={FEDER_OVERLAY}
+              className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-inset)" }}>
               <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--warn)" }} />
                 <span className="fs-3 font-semibold" style={{ color: "var(--text-1)" }}>
@@ -217,8 +225,9 @@ export function DuplicatesPanel({ memories, open, onClose, onDelete, onDeleteMan
                   );
                 })}
               </div>
-            </div>
+            </motion.div>
           ))}
+          </AnimatePresence>
         </div>
 
         {groups.length > 0 && (

@@ -6262,7 +6262,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
              bild-wirksamen Glieder liegen 258,1 / 347,1 / 436,1 px unter der Kante. Am Fuss
              der Leinwand sind es 788 px, und ab 820 px Breite tragen zwei Kolonnen die 17
              Glieder in neun Reihen. */
-          className="hud-panel absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 pt-2 pb-0 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto"
+          className="hud-panel klappe-auf absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 pt-2 pb-0 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto"
         >
           <div className="flex items-center justify-between gap-3">
             <div className="hud-label" style={{ color: "var(--text-2)" }}>

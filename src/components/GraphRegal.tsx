@@ -167,7 +167,7 @@ export function GraphRegal({ regal, ansichtsName, gruppen, achsen, steuerung, ge
           <div
             ref={koerbListeRef}
             data-testid="regal-koerb-liste"
-            className="flex flex-col gap-1"
+            className="klappe-auf flex flex-col gap-1"
             style={kappeListe()}
           >
             {k.notizen === 0 ? (

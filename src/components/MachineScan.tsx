@@ -2,6 +2,7 @@ import { absage } from "../lib/absage";
 import { ApiFehler, tuerSatz } from "../lib/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
+import { KURVE_APPLE } from "../lib/motionTokens";
 import { X, ShieldCheck, ShieldAlert, Loader2, FolderOpen, CheckCircle2, AlertTriangle, Bot } from "../lib/icons";
 import { TRAEGER_LABELS } from '../lib/graphHierarchy';
 import { inForm } from "../lib/antwort";
@@ -293,7 +294,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
       <motion.div
         initial={{ opacity: 0, scale: 0.98, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.16 }}
+        transition={{ ease: KURVE_APPLE, duration: 0.2 }}
         className="relative panel rounded-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden"
       >
         <div className="flex items-start gap-3 px-5 py-4 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>

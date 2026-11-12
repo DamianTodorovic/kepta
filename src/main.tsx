@@ -1,5 +1,6 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
+import {MotionConfig} from 'motion/react';
 import App from './App.tsx';
 import {Fehlerschirm} from './components/Fehlerschirm';
 import './index.css';
@@ -22,7 +23,13 @@ void starteEinstellungen().finally(() => {
     // nie wieder ein graues Fenster sein, sondern muss sagen, was warf.
     <Fehlerschirm>
       <StrictMode>
-        <App />
+        {/* P199 (Emil-Audit §6): der eine Gatter-Punkt für die ganze App —
+            unter „Bewegung reduzieren" schalten alle Framer-Transforms sofort,
+            Deckkraft- und Farb-Quittungen bleiben. Vorher liefen Schubladen,
+            Wizard und Toasts ungebremst weiter, während das CSS alles tötete. */}
+        <MotionConfig reducedMotion="user">
+          <App />
+        </MotionConfig>
       </StrictMode>
     </Fehlerschirm>,
   );

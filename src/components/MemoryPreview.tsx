@@ -4,6 +4,7 @@
 // uebergibt an den bestehenden Editor.
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
+import { FEDER_SCHUBLADE } from "../lib/motionTokens";
 import { formatDistanceToNow } from "date-fns";
 import { Memory } from "../types";
 import { FileText, ExternalLink, EditPen, Copy, Check, Lock, Bot } from "../lib/icons";
@@ -173,7 +174,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
         initial={{ x: "100%", opacity: 0.5 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: "100%", opacity: 0.5 }}
-        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        transition={FEDER_SCHUBLADE}
         className="relative w-full max-w-2xl h-full flex flex-col z-10 glass-strong"
         style={{ borderLeft: "1px solid var(--border-subtle)" }}
         data-testid="memory-preview"
@@ -272,7 +273,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
             <div data-testid="preview-stands" className="mb-4">
               <button
                 onClick={() => setStaendeOffen((v) => !v)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl fs-2"
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl fs-2 transition active:scale-[0.99]"
                 style={{ background: "var(--bg-inset)", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
                 data-testid="preview-stands-open"
                 aria-expanded={staendeOffen}
@@ -281,7 +282,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
                 <span style={{ color: "var(--text-3)" }}>{staendeOffen ? "Hide" : "Show"}</span>
               </button>
               {staendeOffen && (
-                <ul className="mt-2 space-y-1">
+                <ul className="mt-2 space-y-1 klappe-auf">
                   {staende.map((s) => (
                     <li key={s.id}>
                       <button
@@ -335,7 +336,7 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
               {wiederherstellenOffen && (
                 <div
                   data-testid="preview-stand-restore-bestaetigung"
-                  className="mb-2 rounded-xl px-3 py-2 fs-2"
+                  className="mb-2 rounded-xl px-3 py-2 fs-2 klappe-auf"
                   style={{ background: "var(--bg-inset)", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
                 >
                   <p>Make this version current? The text it replaces stays in the history as an earlier stand.</p>

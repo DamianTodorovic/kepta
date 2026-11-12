@@ -328,3 +328,65 @@ describe("Iconvertrag in src/lib/icons.tsx", () => {
     expect(klumpen, `${klumpen.length} Bilder füllen eine Strich-Gruppe — sie malen Klumpen`).toEqual([]);
   });
 });
+
+/* P199 (Emil-Audit, 13.11.): der Bewegungs-Vertrag. Vier Späher hörten das
+   ganze Haus ab; diese Wachen nageln das Gefundene fest — eine Kurve, eine
+   Dauerleiter, milde Bewegung-Reduzierung, Zeiger-Gatter für Schwebe,
+   Haus-Federn statt getippter Konfigurationen. */
+describe("Bewegungs-Vertrag (P199, Emil-Audit)", () => {
+  it("tippt keine bare ease-Kurve — die Signaturkurve wird gerufen", () => {
+    for (const [i, z] of ZEILEN.entries()) {
+      if (!z.includes("transition")) continue;
+      // `ease` als Wort, aber nicht --ease-apple (Bindestrich davor) und
+      // nicht ease-in-out (Bindestrich danach):
+      expect(z, `index.css:${i + 1} tippt bare ease statt var(--ease-apple)`).not.toMatch(
+        /transition[a-z-]*\s*:[^;]*[^)\w-]ease(?![\w-])/,
+      );
+    }
+  });
+
+  it("misst Übergänge in Stufen, nicht in handgetippten Sekunden", () => {
+    for (const [i, z] of ZEILEN.entries()) {
+      if (!z.includes("transition")) continue;
+      expect(z, `index.css:${i + 1} tippt Sekunden statt der Dauerstufen`).not.toMatch(
+        /transition[a-z-]*\s*:[^;]*\b\d*\.?\d+s\b/,
+      );
+    }
+  });
+
+  it("reduziert Bewegung milde — der Stern behält seine Farb-Quittungen", () => {
+    // Der alte Block tötete ALLE Übergänge auf 0,01 ms (Emil-Audit §6: Feedback
+    // darf bleiben, nur Bewegung fällt). Der Wildcard-Satz darf transition-duration
+    // nicht mehr anfassen.
+    expect(css).not.toMatch(
+      /reduced-motion: reduce[\s\S]*?\*,\s*\*::before,\s*\*::after\s*\{[^}]*transition-duration/,
+    );
+    // … und die Transform-Übergänge der Griffe werden sofort geschaltet:
+    expect(css).toMatch(/reduced-motion: reduce[\s\S]*?\.btn-primary,\s*\.btn-ghost[^}]*transition-duration:\s*0\.01ms/);
+  });
+
+  it("gattert Schwebe-Hinterlegen hinter den Zeiger", () => {
+    // Touch-Flächen feuern beim Antippen sonst einen falschen Schwebezustand:
+    expect(css).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.graph-swatch:hover/);
+    expect(css).toMatch(/@media \(hover: hover\) and \(pointer: fine\) \{\s*\.graph-time::-webkit-slider-thumb:hover/);
+  });
+
+  it("ruft die Haus-Federn, statt Federn zu tippen", () => {
+    const bausteine = [
+      "Dashboard", "MemoryCard", "Chat", "Settings", "OnboardingWizard",
+      "DuplicatesPanel", "MachineScan", "ui/Toast", "MemoryEditor", "MemoryPreview",
+    ];
+    for (const name of bausteine) {
+      const quelltext = fs.readFileSync(path.join(process.cwd(), "src/components", `${name}.tsx`), "utf8");
+      expect(quelltext, `${name}.tsx tippt eine Spring-Feder statt des Tokens`).not.toMatch(/type:\s*['"]spring['"]/);
+    }
+    // Der eine Gatter-Punkt für die ganze App (Bewegung reduzieren deckt Framer ab):
+    const main = fs.readFileSync(path.join(process.cwd(), "src/main.tsx"), "utf8");
+    expect(main).toMatch(/MotionConfig reducedMotion="user"/);
+  });
+
+  it("schiebt die Karten nicht mehr per Layout-Feder um den Tisch", () => {
+    const karte = fs.readFileSync(path.join(process.cwd(), "src/components/MemoryCard.tsx"), "utf8");
+    expect(karte, "MemoryCard trägt noch layout=\"position\" (Main-Thread auf der belebtesten Fläche)").not.toMatch(/layout="position"/);
+  });
+});

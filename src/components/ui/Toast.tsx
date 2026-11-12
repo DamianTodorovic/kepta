@@ -2,6 +2,7 @@
 // useToast().push({ message, kind?, action?: { label, onClick } })
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { FEDER_OVERLAY } from '../../lib/motionTokens';
 import { CheckCircle2, Info, AlertTriangle, X } from "../../lib/icons";
 
 export interface ToastAction {
@@ -76,7 +77,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 initial={{ opacity: 0, y: 16, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+                transition={FEDER_OVERLAY}
                 className="pointer-events-auto flex items-center gap-3 pl-4 pr-2 py-3 min-w-[260px] max-w-sm toast-lens"
               >
                 <Icon className="w-4 h-4 shrink-0" style={{ color: ACCENTS[t.kind ?? 'info'] }} />
@@ -84,7 +85,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 {t.action && (
                   <button
                     onClick={() => { void t.action!.onClick(); dismiss(t.id); }}
-                    className="fs-2 lh-dicht font-semibold px-3 py-2 rounded-lg transition-colors hover:opacity-80 shrink-0"
+                    className="fs-2 lh-dicht font-semibold px-3 py-2 rounded-lg transition hover:opacity-80 active:scale-[0.97] shrink-0"
                     style={{ color: 'var(--accent)', background: 'var(--accent-soft)' }}
                   >
                     {t.action.label}
@@ -92,7 +93,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 )}
                 <button
                   onClick={() => dismiss(t.id)}
-                  className="p-1 rounded-md opacity-40 hover:opacity-80 transition-opacity shrink-0"
+                  className="p-1 rounded-md opacity-40 hover:opacity-80 transition active:scale-[0.97] shrink-0"
                   style={{ color: 'var(--text-2)' }}
                   aria-label="Close"
                 >

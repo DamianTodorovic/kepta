@@ -1,3 +1,49 @@
+## [3.2.212]
+
+### Changed
+
+- **The whole app now runs on ONE motion system** (P199 — a full
+  animation audit with the Emil Kowalski skills, four parallel auditors over
+  every component). What was measured and healed:
+  - One curve everywhere: nine bare `ease` declarations in `index.css` now call
+    the house curve `--ease-apple` — the switch knob, the buttons, the sidebar,
+    the palette rows, the body (previously two curves fought inside one
+    declaration on the highest-frequency button).
+  - House springs as tokens (`src/lib/motionTokens.ts`): toasts, the shortcuts
+    sheet, editor and preview drawers now call two shared springs instead of
+    four hand-typed configs (the toast was the bounciest motion in a crisp app;
+    it now sits at ≈0.78 damping ratio).
+  - Reduced motion finally covers the WHOLE app: `MotionConfig
+    reducedMotion="user"` in `main.tsx` gates every Framer transform, and the
+    old CSS block that killed ALL transitions (including colour feedback) now
+    only stops movement — colour/state feedback survives (AUDIT §6: fewer and
+    gentler, not zero).
+  - View switches fade instead of teleporting: the dead mount animations
+    (which played invisibly at startup and never again) are replaced by the
+    `ansicht-blende` — a 200 ms opacity fade that replays on every reveal.
+    Measured live in the packaged app: opacity dips to 0.000 and lands at 1.
+  - The card list no longer runs a main-thread layout animation on the
+    busiest surface (every search tick, filter and resize shoved up to 48
+    cards around); cards snap like in Linear/Notion.
+  - Press feedback for the remaining grips: `.btn-danger-ghost`,
+    suggestion pills, quiet row buttons, palette rows, hud-label buttons and
+    the toast buttons now all give the same subtle press-back (0.96–0.99) the
+    main buttons had.
+  - Hover motion sits behind `@media (hover: hover) and (pointer: fine)` so
+    touch devices don't fire false hovers; collapsibles announce themselves
+    with a 4 px origin instead of mounting hard.
+  - Chat messages rise in (6 px origin instead of a bare fade); the token
+    budget bar animates `scaleX` instead of relayout on every drag tick.
+- The `agent-dot` pulse contract is finally honoured: the four running-state
+  dots set `data-laeuft="true"`, so the pulse shows only while something is
+  actually running.
+- A stale `null` vs `undefined` type error in the P197 snapshot helpers is
+  fixed (`graphLayout.ts` — the suite never typechecks, `npm run lint` does).
+
+Held by six new guards in `tests/design-tokens.test.ts` (no bare ease, no
+hand-typed seconds, mild reduced-motion, hover gates, house springs,
+no card layout animation) — suite 3904/3904.
+
 ## [3.2.211]
 
 ### Fixed

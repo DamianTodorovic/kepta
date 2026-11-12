@@ -2,7 +2,6 @@ import { memo } from 'react';
 type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
 import { formatDistanceToNow } from 'date-fns';
 import { Memory } from '../types';
-import { motion } from 'motion/react';
 import { Brain } from "../lib/icons";
 import { Hash, Clock, Zap, FileText, ExternalLink, Lock } from "../lib/icons";
 import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from '../lib/quelle';
@@ -58,8 +57,12 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
   const lesetext = inhaltOhneQuelle(memory.content);
 
   return (
-    <motion.div
-      layout="position"
+    // P199 (Emil-Audit §1+§5): die Layout-Feder der Karte flog — die
+    // meistbediente Fläche der App (jeder Suchtakt, jeder Filter, jeder
+    // Resize) schob bis zu 48 Karten auf dem Main-Thread um den Tisch.
+    // Dichte Listen springen an ihren Platz (Linear/Notion-Stil); Farb- und
+    // Drück-Quittungen bleiben.
+    <div
       onClick={onClick}
       className="row-entry cursor-pointer group relative"
     >
@@ -192,6 +195,6 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         </div>
         <span className="row-time tnum">{formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}</span>
       </div>
-    </motion.div>
+    </div>
   );
 });

@@ -39,6 +39,7 @@ import { t, wendeZoomAn } from '../lib/uiText';
 import { ansichtLabel } from '../lib/ansichten';
 import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink, ShieldCheck } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
+import { FEDER_OVERLAY } from '../lib/motionTokens';
 import { cn } from '../lib/utils';
 
 type ViewKey = 'memories' | 'today' | 'chat' | 'graph' | 'dossier' | 'activity' | 'team' | 'settings';
@@ -1637,10 +1638,13 @@ export function Dashboard() {
             </button>
           </div>
         )}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className={cn("flex-1 flex flex-col h-full min-h-0 rounded-2xl overflow-hidden", currentView === 'memories' ? 'flex' : 'hidden')}
+        {/* P199 (Emil-Audit): die sieben Ansichtsumhüllungen spielten ihren
+            Mount-Lauf unsichtbar beim App-Start ab und nie wieder — toter
+            Lauf. Die Ansichts-Blende aus index.css blendet stattdessen bei
+            JEDEM Einblenden 200 ms Deckkraft ein; Bewegung in Deckkraft,
+            keine Doppelbelichtung, reduced-motion folgt der CSS-Wache. */}
+        <div
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 rounded-2xl overflow-hidden", currentView === 'memories' ? 'flex' : 'hidden')}
         >
           <header className="h-14 px-5 flex items-center gap-3 shrink-0 border-gradient-b">
             {isFocusMode && (
@@ -1814,7 +1818,7 @@ export function Dashboard() {
                   misst die Antwortzeit und zeigt, wenn das Gehirn warm ist. */}
               {gehirnWaermt && (
                 <span className="chip" title="Built once — every saved note only patches it afterwards">
-                  <span className="agent-dot" /> Warming the search index…
+                  <span className="agent-dot" data-laeuft="true" /> Warming the search index…
                 </span>
               )}
               {gehirnWarm && !gehirnWaermt && (
@@ -2038,7 +2042,7 @@ export function Dashboard() {
                 </div>
                 <div className="index-cell ml-auto">
                   <span className="v">
-                    {agentActive ? <span className="agent-dot" />
+                    {agentActive ? <span className="agent-dot" data-laeuft="true" />
                       : tuerLebt === "antwortete" ? <span className="status-dot" />
                         : <span className="status-dot status-dot-leise" />}
                     {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync'
@@ -2122,7 +2126,7 @@ export function Dashboard() {
                 <div className="flex items-center gap-2 fs-2" style={{ color: 'var(--text-3)' }}>
                   {agentActive ? (
                     <>
-                      <span className="agent-dot" />
+                      <span className="agent-dot" data-laeuft="true" />
                       <span style={{ color: 'var(--accent)', fontWeight: 'var(--fw-halbfest)' }}>Agent active</span>
                     </>
                   ) : tuerLebt === "antwortete" ? (
@@ -2309,12 +2313,10 @@ export function Dashboard() {
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className={cn("flex-1 h-full overflow-hidden", currentView === 'chat' ? 'flex' : 'hidden')}
+        <div
+          className={cn("ansicht-blende flex-1 h-full overflow-hidden", currentView === 'chat' ? 'flex' : 'hidden')}
         >
           <Chat
             activeMemories={chatMemories}
@@ -2323,12 +2325,10 @@ export function Dashboard() {
             isFocusMode={isFocusMode}
             onToggleFocus={() => setIsFocusMode(!isFocusMode)}
           />
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className={cn("flex-1 flex flex-col h-full min-h-0 overflow-hidden px-2 py-3 md:px-5", currentView === 'graph' ? 'flex' : 'hidden')}
+        <div
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden px-2 py-3 md:px-5", currentView === 'graph' ? 'flex' : 'hidden')}
         >
           <div className="flex items-center gap-3 mb-2 shrink-0">
             <div className="fs-3 font-semibold shrink-0" style={{ color: 'var(--text-1)' }}>Graph</div>
@@ -2359,47 +2359,37 @@ export function Dashboard() {
               onSelectConcept={(name) => { setDossierThema({ text: name, nr: (dossierThema?.nr ?? 0) + 1 }); setCurrentView('dossier'); }}
             />
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className={cn("flex-1 px-5 h-full overflow-y-auto", currentView === 'today' ? 'block' : 'hidden')}
+        <div
+          className={cn("ansicht-blende flex-1 px-5 h-full overflow-y-auto", currentView === 'today' ? 'block' : 'hidden')}
         >
           <TodayView aktiv={currentView === 'today'} onOpenMemory={oeffneNotiz} onGo={(v) => setCurrentView(v)} />
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className={cn("flex-1 px-5 h-full overflow-y-auto", currentView === 'dossier' ? 'block' : 'hidden')}
+        <div
+          className={cn("ansicht-blende flex-1 px-5 h-full overflow-y-auto", currentView === 'dossier' ? 'block' : 'hidden')}
         >
           <DossierView dossierThema={dossierThema} onOpenMemory={oeffneNotiz} onEditMemory={(id) => { const m = memories.find((x) => x.id === id); if (m) { setEditingMemory(m); setIsEditorOpen(true); } }} />
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className={cn("flex-1 px-5 h-full overflow-y-auto", currentView === 'activity' ? 'block' : 'hidden')}
+        <div
+          className={cn("ansicht-blende flex-1 px-5 h-full overflow-y-auto", currentView === 'activity' ? 'block' : 'hidden')}
         >
           <ActivityView aktiv={currentView === 'activity'} onOpenMemory={oeffneNotiz} />
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className={cn("flex-1 px-5 h-full overflow-y-auto", currentView === 'team' ? 'block' : 'hidden')}
+        <div
+          className={cn("ansicht-blende flex-1 px-5 h-full overflow-y-auto", currentView === 'team' ? 'block' : 'hidden')}
         >
           <TeamView aktiv={currentView === 'team'} />
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className={cn("flex-1 p-3 sm:p-5 h-full overflow-y-auto", currentView === 'settings' ? 'block' : 'hidden')}
+        <div
+          className={cn("ansicht-blende flex-1 p-3 sm:p-5 h-full overflow-y-auto", currentView === 'settings' ? 'block' : 'hidden')}
         >
           <Settings />
-        </motion.div>
+        </div>
       </main>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} actions={paletteActions} />
@@ -2473,7 +2463,7 @@ function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void 
             initial={{ opacity: 0, y: 12, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
-            transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+            transition={FEDER_OVERLAY}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-2xl p-6 glass-strong"
           >

@@ -1,6 +1,7 @@
 import { absage } from '../lib/absage';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { KURVE_APPLE } from '../lib/motionTokens';
 import { Sparkles, Check, ChevronRight, ChevronLeft, Cpu, Database, Globe, User, Target, Loader2, PartyPopper, AlertCircle, Info } from "../lib/icons";
 import { normalizeTopics, MAX_TOPICS, type DetectedAI, detectLocalAIs, suggestProvider, saveProfile, createDefaultProfile, type UserProfileAdaptive } from '../lib/profile';
 import { starterNotes } from '../lib/starter';
@@ -156,11 +157,11 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
       aria-label="Set up K3PTA"
     >
       <motion.div initial={{scale:0.96, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.96, opacity:0}}
-        transition={{ ease: [0.2, 0.8, 0.2, 1], duration: 0.28 }}
+        transition={{ ease: KURVE_APPLE, duration: 0.3 }}
         className="relative w-full h-full max-h-full overflow-hidden palette-lens flex flex-col">
         {/* Progress */}
         <div className="h-1 w-full flex gap-1 p-1" style={{background:'var(--bg-inset)'}}>
-          {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-[width] duration-200" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}
+          {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-colors" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}
         </div>
         <div className="px-7 pt-6 pb-4 flex items-center gap-4" style={{borderBottom:'1px solid var(--border-subtle)'}}>
           <KeptaMark size={38} />
@@ -175,7 +176,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
         <div className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
           {step===1 && (
-            <motion.div key="s1" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-5">
+            <motion.div key="s1" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} transition={{ ease: KURVE_APPLE, duration: 0.3 }} className="space-y-5">
               <div className="flex items-center gap-2 hud-label"><User className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Who are you?</div>
               <div>
                 <label htmlFor="onboarding-name" className="hud-label block mb-2">Name (what should K3PTA call you?)</label>
@@ -213,7 +214,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
             </motion.div>
           )}
           {step===2 && (
-            <motion.div key="s2" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-4">
+            <motion.div key="s2" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} transition={{ ease: KURVE_APPLE, duration: 0.3 }} className="space-y-4">
               <div className="hud-label flex items-center gap-2"><Database className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> What do you work with? (optional, up to {MAX_TOPICS})</div>
               <div className="space-y-2">
                 <input
@@ -248,7 +249,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
             </motion.div>
           )}
           {step===3 && (
-            <motion.div key="s3" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-4">
+            <motion.div key="s3" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} transition={{ ease: KURVE_APPLE, duration: 0.3 }} className="space-y-4">
               <div className="hud-label flex items-center gap-2"><Cpu className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Your AI — found on this computer</div>
               {/* Die Ports gehören nicht in einen Sprechtext: „localhost:11434"
                   ist für einen Frischgelaedenen kein Grund, kein Ausweg und keine
@@ -299,7 +300,7 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
             </motion.div>
           )}
           {step===4 && (
-            <motion.div key="s4" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} className="space-y-4">
+            <motion.div key="s4" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} transition={{ ease: KURVE_APPLE, duration: 0.3 }} className="space-y-4">
               <div className="hud-label flex items-center gap-2"><PartyPopper className="w-3.5 h-3.5" style={{color:'var(--accent)'}}/> Almost there — saving your first notes</div>
               <div className="hud-panel rounded-xl p-4 space-y-3">
                 <div className="flex gap-3">

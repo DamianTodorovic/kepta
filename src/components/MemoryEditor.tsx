@@ -1,6 +1,7 @@
 import { useState, useEffect, KeyboardEvent, FormEvent } from 'react';
 import { Memory } from '../types';
 import { motion } from 'motion/react';
+import { FEDER_SCHUBLADE } from '../lib/motionTokens';
 import { formatDistanceToNow } from 'date-fns';
 import { Brain } from "../lib/icons";
 import { X, Save, Trash2, Hash, Clock, Zap, Lock } from "../lib/icons";
@@ -246,7 +247,7 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
         initial={{ x: '100%', opacity: 0.5 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: '100%', opacity: 0.5 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        transition={FEDER_SCHUBLADE}
         className="relative w-full max-w-2xl h-full flex flex-col z-10 glass-strong"
         style={{ borderLeft: '1px solid var(--border-subtle)' }}
       >
