@@ -6,8 +6,9 @@ import path from "node:path";
 
 const BRAVE = process.env.KEPTA_BRAVE || "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
 const CDP_PORT = 3977;
-const ARBEIT = "/tmp/kepta-mockv2-foto";
-const MOCKUP = "/Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/p201-redesign/mockup/k3pta-redesign-v2.html";
+const ARBEIT = "/tmp/kepta-mockend-foto";
+const MOCKUP = process.env.KEPTA_MOCKUP || "/Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/p201-redesign/mockup/k3pta-redesign-END.html";
+const PRAEFIX = process.env.KEPTA_FOTO_PRAEFIX || "mockend";
 const ZIEL = path.dirname(MOCKUP);
 fs.rmSync(ARBEIT, { recursive: true, force: true });
 fs.mkdirSync(ARBEIT, { recursive: true });
@@ -64,12 +65,12 @@ try {
   const cdp = await Cdp.verbindung(stelle.webSocketDebuggerUrl);
   await cdp.send("Page.enable");
   await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
-  for (const s of ["knowledge", "graph", "chat", "today", "settings"]) {
+  for (const s of ["knowledge", "graph", "chat", "today", "dossier", "activity", "settings", "editor", "preview", "palette", "scan", "duplicates", "setup"]) {
     await cdp.send("Page.navigate", { url: `file://${MOCKUP}?screen=${s}` });
     await schlafe(1400);
     const b = await cdp.send("Page.captureScreenshot", { format: "png" });
-    fs.writeFileSync(path.join(ZIEL, `mockv2-${s}.png`), Buffer.from(b.data, "base64"));
-    console.log(`Foto: mockv2-${s}.png`);
+    fs.writeFileSync(path.join(ZIEL, `${PRAEFIX}-${s}.png`), Buffer.from(b.data, "base64"));
+    console.log(`Foto: ${PRAEFIX}-${s}.png`);
   }
 } catch (f) {
   console.error("FEHLER:", f.message);
