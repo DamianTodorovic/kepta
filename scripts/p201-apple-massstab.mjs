@@ -89,9 +89,11 @@ try {
         const k = "rand|" + nenne(el);
         if (!gesehn.has(k)) { gesehn.add(k); funde.push({ art: "rand", sel: nenne(el), um: Math.round(r.right - vw) }); }
       }
-      // 2) abgeschnittene Text-Zeile ohne Scroll-Grammatik (nur Blätter mit eigenem Text)
+      // 2) abgeschnittene Text-Zeile ohne Scroll-Grammatik (nur Blätter mit eigenem Text).
+      //    Bewusste Abschneidung (text-overflow: ellipsis/clip) ist App-Grammatik — kein Fund.
       const ox = cs.overflowX;
-      if ((ox === "visible" || ox === "hidden" || ox === "clip") && el.children.length === 0 &&
+      const bewusstGekappt = cs.textOverflow === "ellipsis" || cs.textOverflow === "clip";
+      if (!bewusstGekappt && (ox === "visible" || ox === "hidden" || ox === "clip") && el.children.length === 0 &&
           el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0 && (el.textContent || "").trim().length > 0) {
         const k = "text|" + nenne(el);
         if (!gesehn.has(k)) { gesehn.add(k); funde.push({ art: "text", sel: nenne(el), fehlt: el.scrollWidth - el.clientWidth }); }
