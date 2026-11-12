@@ -1,3 +1,19 @@
+## [3.2.213]
+
+### Fixed
+
+- **Holding a dragged node no longer moves the rest of the field**
+  (P200; Damian: "it goes back now, but when I hold a node I pulled away, the
+  others move too"). The image loop kept stepping the simulation for as long
+  as the grip lasted (`bewegt = … || draggingRef !== null`): the collision
+  shoved neighbours out from under the held node every frame, and the link
+  spring tugged connected neighbours back and forth. Now the field freezes
+  while the grip lasts — only the dragged node follows the pointer directly;
+  neighbours stand still until the mouse is released. "Release pinned" still
+  restores the whole frozen picture (P197 snapshot).
+  Held by `tests/components/KnowledgeGraph.griff-frost.test.ts` and a live
+  pixel proof against the installed app (`scripts/p200-griff-frost.mjs`).
+
 ## [3.2.212]
 
 ### Changed

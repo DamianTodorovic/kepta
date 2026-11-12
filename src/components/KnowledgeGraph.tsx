@@ -5043,9 +5043,17 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
               uebergangRef.current = new Map();
               zeichneNoetig.current = true;
             }
+          } else if (draggingRef.current !== null) {
+            // P200 (Damian, 12.11.: „wenn ich einen Knoten, den ich weggezogen
+            // habe, gedrückt halte, bewegen sich die anderen auch"): WÄHREND
+            // des Griffs steht das Kraftfeld. Der gezogene Knoten folgt der
+            // Hand direkt (onPointerMove setzt seine Stelle), die Nachbarn
+            // rühren sich nicht — kein Takt, keine Kollision, kein Feder-Zug.
+            // Erst das Loslassen gibt das Feld wieder frei; das Bild wird bei
+            // Griff, Zug und Loslassen je einmal angemalt.
           } else {
             const steht = isSettled(sim);
-            const bewegt = (bewegungAn && !steht) || draggingRef.current !== null;
+            const bewegt = bewegungAn && !steht;
             if (bewegt) {
               stepSimulation(sim);
               const stehtJetzt = isSettled(sim);
@@ -5307,13 +5315,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // 320 Notizen verschoben sich 263 der uebrigen Knoten um im Mittel 91
       // Einheiten, der weiteste um 673.
       //
-      // Ohne das Anheizen bewegt sich nur, was der gezogene Knoten auf seinem
-      // Weg wirklich beruehrt — die Kollision laeuft ohnehin in jedem Bild und
-      // ohne alpha. Dieselbe Geste: mittlere Verschiebung 5,3 statt 91, und der
-      // Graph steht sofort wieder still statt nach 236 Bildern.
-      //
-      // Warm bleibt die Schleife trotzdem: sie rechnet, solange draggingRef
-      // gesetzt ist (siehe Bildschleife), unabhaengig von alpha.
+      // Ohne das Anhezen bewegt sich nur, was der gezogene Knoten auf seinem
+      // Weg wirklich beruehrt — seit P200 bewegt sich während des Griffs
+      // UEBERHAUPT NICHTS mehr: die Bildschleife taktet nicht (siehe den
+      // draggingRef-Zweig dort), der Knoten folgt der Hand direkt. Die
+      // Nachbarn stehen, bis man loslässt.
+      zeichneNoetig.current = true;
     } else {
       panRef.current = { sx: e.clientX, sy: e.clientY, ox: transformRef.current.x, oy: transformRef.current.y };
       autoFitOffen.current = false;
