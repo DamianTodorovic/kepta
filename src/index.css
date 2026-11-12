@@ -698,6 +698,34 @@ select:focus-visible {
   opacity: 1;
 }
 
+/* Die App-Statuszeile (P202, App-Fenster-Übernahme): was das Fenster unten
+   dauerhaft sagt — der Gehirn-Status und die Verbindung, wie Mail und Linear
+   sie unten tragen. Sie sitzt außerhalb des Scroll-Bereichs der Fläche, damit
+   sie beim Lesen nie weg ist; die Chip-Zeile über dem Feed ist dadurch frei
+   geworden (ihr Inhalt lebt hier weiter, nichts geht verloren). */
+.flaechen-status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+  padding: 0 20px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-inset);
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.flaechen-status .gruen {
+  color: var(--ok);
+  font-weight: var(--fw-halbfest);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.flaechen-status .strich { color: var(--text-3); }
+.flaechen-status .rechts { margin-left: auto; }
+
 /* Chat — die Antwort ist Prosa am Blattrand, die Frage ein Karton-Zettel */
 .chat-prose {
   max-width: 68ch;

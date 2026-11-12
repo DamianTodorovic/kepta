@@ -37,7 +37,7 @@ import { pdfTextAusBuffer } from '../lib/pdfText';
 import { TYP_BESCHREIBUNG, TRAEGER_FRAGE, TRAEGER_FRAGE_SATZ, THEMA_FRAGE, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, themenFaecher, zahlDerAuswahl, type Traeger, type Thema, type AchsenZahlen } from '../lib/graphHierarchy';
 import { t, wendeZoomAn } from '../lib/uiText';
 import { ansichtLabel } from '../lib/ansichten';
-import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink, ShieldCheck } from "../lib/icons";
+import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
 import { FEDER_OVERLAY } from '../lib/motionTokens';
 import { cn } from '../lib/utils';
@@ -2040,54 +2040,12 @@ export function Dashboard() {
                   <span className="v">{groessenZahl(allTags.length)}</span>
                   <span className="k">tags{ladung !== null ? ` in the ${groessenZahl(ladung)} loaded` : ""}</span>
                 </div>
-                <div className="index-cell ml-auto">
-                  <span className="v">
-                    {agentActive ? <span className="agent-dot" data-laeuft="true" />
-                      : tuerLebt === "antwortete" ? <span className="status-dot" />
-                        : <span className="status-dot status-dot-leise" />}
-                    {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync'
-                      : tuerLebt === "verweigerte" ? 'No answer from the store' : 'Asking the store'}
-                  </span>
-                  <span className="k">local, private, MCP</span>
-                </div>
               </div>
 
-              {/* Gehirn-Status (Paket 2): der Kern legt Rechenschaft ab — Version,
-                  Erinnerungs-Zähler, Verschlüsselung samt Schlüssel-Ablage und das
-                  Embedding-Modell mit seinem Zähler. Was /api/health weiß, steht hier. */}
-              {gehirn && (
-                <div className="mb-4 shrink-0 flex flex-wrap items-center gap-2 fs-3" data-testid="gehirn-status">
-                  {gehirn.version && (
-                    <span className="chip" title="The running version — also reported over MCP and /api/health.">
-                      K3PTA {gehirn.version}
-                    </span>
-                  )}
-                  <span className="chip tnum" title="Notes in the database on this computer — the same count the sidebar shows.">
-                    {groessenZahl(gehirn.count)} {gehirn.count === 1 ? 'note' : 'notes'} stored
-                  </span>
-                  {gehirn.hatVerschluesselung && (
-                    <span
-                      className="chip"
-                      style={gehirn.verschluesselt ? { color: 'var(--ok)' } : { color: 'var(--warn)' }}
-                      title={gehirn.verschluesselt
-                        ? `The knowledge base file is encrypted (AES-256)${gehirn.ablage ? ` — key in the ${gehirn.ablage}` : ''}.`
-                        : 'The knowledge base file is not encrypted.'}
-                    >
-                      <ShieldCheck className="w-3 h-3" />
-                      {gehirn.verschluesselt ? 'Encrypted' : 'Not encrypted'}
-                    </span>
-                  )}
-                  {(gehirn.embedModelle.length > 0 || gehirn.embedTotal > 0) && (
-                    <span
-                      className="chip tnum"
-                      title="The search model, and how many of your notes carry its vectors"
-                    >
-                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} pieces`).join(' · ')}
-                      {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces ready` : ''}
-                    </span>
-                  )}
-                </div>
-              )}
+              {/* Der Gehirn-Status (Paket 2: Version, Erinnerungs-Zähler, Verschlüsselung,
+                  Embedding-Modell) ist in die App-Statuszeile unten gezogen (P202,
+                  App-Fenster-Übernahme) — er ist Dauerinformation, keine Arbeitsinfo,
+                  und gehört in die Zeile, die Mail und Linear unten tragen. */}
 
               {/* #116 — die Queue arbeitet im Hintergrund (2,1 Stuecke je Sekunde, gemessen
                   27.10. an 3 000 Notizen: 256 von 6 000 nach 120 s). Solange das laeuft, findet
@@ -2312,6 +2270,62 @@ export function Dashboard() {
                 </>
               )}
             </div>
+          </div>
+
+          {/* Die App-Statuszeile: was das Fenster unten dauerhaft sagt. Der Gehirn-Status
+              (Version, Bestand, Verschlüsselung, Embeddings) wanderte hierher — er ist
+              Dauerinformation, keine Arbeitsinfo — zusammen mit der Verbindung, die vorher
+              die rechte Zelle des Index-Streifens trug. Mail und Linear tragen ihre
+              Zustandszeile unten; eine Fläche, die beim Lesen nie wegscrollt, macht die
+              Zahl glaubwürdig (P202, App-Fenster-Übernahme). */}
+          {/* Die Zeile steht IMMER — auch wenn die Tür nie geantwortet hat (dann mit dem
+              Grund statt der Behauptung, Punkt 4): eine Zustandszeile, die nur bei
+              Gesundheit erscheint, ist keine. Nur die Gehirn-Segmente hängen an der Antwort. */}
+          <div className="flaechen-status" data-testid="gehirn-status">
+            <span className="gruen">
+              {agentActive ? <span className="agent-dot" data-laeuft="true" />
+                : tuerLebt === "antwortete" ? <span className="status-dot" />
+                  : <span className="status-dot status-dot-leise" />}
+              {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync'
+                : tuerLebt === "verweigerte" ? 'No answer from the store' : 'Asking the store'}
+            </span>
+            {gehirn && (
+              <>
+                <span className="strich">·</span>
+                {gehirn.version && (
+                  <>
+                    <span title="The running version — also reported over MCP and /api/health.">K3PTA {gehirn.version}</span>
+                    <span className="strich">·</span>
+                  </>
+                )}
+                <span className="tnum" title="Notes in the database on this computer — the same count the sidebar shows.">
+                  {groessenZahl(gehirn.count)} {gehirn.count === 1 ? 'note' : 'notes'} stored
+                </span>
+                {gehirn.hatVerschluesselung && (
+                  <>
+                    <span className="strich">·</span>
+                    <span
+                      style={{ color: gehirn.verschluesselt ? 'var(--ok)' : 'var(--warn)' }}
+                      title={gehirn.verschluesselt
+                        ? `The knowledge base file is encrypted (AES-256)${gehirn.ablage ? ` — key in the ${gehirn.ablage}` : ''}.`
+                        : 'The knowledge base file is not encrypted.'}
+                    >
+                      {gehirn.verschluesselt ? 'Encrypted' : 'Not encrypted'}
+                    </span>
+                  </>
+                )}
+                {(gehirn.embedModelle.length > 0 || gehirn.embedTotal > 0) && (
+                  <>
+                    <span className="strich">·</span>
+                    <span className="tnum" title="The search model, and how many of your notes carry its vectors">
+                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} pieces`).join(' · ')}
+                      {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces ready` : ''}
+                    </span>
+                  </>
+                )}
+              </>
+            )}
+            <span className="rechts">local, private, MCP</span>
           </div>
         </div>
 

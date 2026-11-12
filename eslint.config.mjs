@@ -15,6 +15,14 @@ export default tseslint.config(
       // minifizierte Bundles: gemessen 11.10. ergaben acht getrackte Dateien aus
       // `dist-e1/` und `dist-e3/` zusammen 11.100 „Fehler".
       "dist-*/**",
+      // Die Design-Skill-Bäume (P201-Schlag: hallmark, krehel, impeccable samt
+      // absichtlich kaputter Proben in scripts/fixtures) sind Werkzeug-Wissen, kein
+      // Produktquelltext — das Gate lintet sie nicht (gemessen 13.11.: 544 „Fehler"
+      // aus zwei Bäumen, null aus src).
+      "agent/**",
+      ".agents/**",
+      ".github/skills/**",
+      ".claude/skills/**",
       "release/**",
       "node_modules/**",
       "coverage/**",

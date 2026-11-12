@@ -44,9 +44,11 @@ async function zeige() {
 }
 
 const syncStelle = (container: HTMLElement) => {
-  const zellen = [...container.querySelectorAll(".index-cell")];
-  const zelle = zellen.find((z) => /local, private, MCP/.test(z.textContent || ""));
-  return (zelle?.textContent || "").replace(/\s+/g, " ").trim();
+  // P202, App-Fenster-Übernahme: die Verbindungs-Behauptung sitzt jetzt in der
+  // App-Statuszeile unter der Fläche (früher: rechte Zelle des Index-Streifens) —
+  // der Griff zeigt auf die neue Zeile, die Behauptungen selbst stehen unverändert.
+  const stelle = container.querySelector(".flaechen-status");
+  return (stelle?.textContent || "").replace(/\s+/g, " ").trim();
 };
 
 beforeEach(() => {
