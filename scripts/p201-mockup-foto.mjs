@@ -6,8 +6,8 @@ import path from "node:path";
 
 const BRAVE = process.env.KEPTA_BRAVE || "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
 const CDP_PORT = 3977;
-const ARBEIT = "/tmp/kepta-mock-foto";
-const MOCKUP = "/Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/p201-redesign/mockup/k3pta-redesign.html";
+const ARBEIT = "/tmp/kepta-mockv2-foto";
+const MOCKUP = "/Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/p201-redesign/mockup/k3pta-redesign-v2.html";
 const ZIEL = path.dirname(MOCKUP);
 fs.rmSync(ARBEIT, { recursive: true, force: true });
 fs.mkdirSync(ARBEIT, { recursive: true });
@@ -68,8 +68,8 @@ try {
     await cdp.send("Page.navigate", { url: `file://${MOCKUP}?screen=${s}` });
     await schlafe(1400);
     const b = await cdp.send("Page.captureScreenshot", { format: "png" });
-    fs.writeFileSync(path.join(ZIEL, `mock-${s}.png`), Buffer.from(b.data, "base64"));
-    console.log(`Foto: mock-${s}.png`);
+    fs.writeFileSync(path.join(ZIEL, `mockv2-${s}.png`), Buffer.from(b.data, "base64"));
+    console.log(`Foto: mockv2-${s}.png`);
   }
 } catch (f) {
   console.error("FEHLER:", f.message);
