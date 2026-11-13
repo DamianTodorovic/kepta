@@ -5,7 +5,7 @@
 
 ## Your AI forgets everything. Every chat starts from zero.
 
-**KEPTA is the fix: one local, encrypted memory that every AI reads and writes — Claude, Cursor, Gemini CLI, Cline, any MCP client, and scripts over HTTP. No cloud. No account. One file you own.**
+**K3PTA is the fix: one local, encrypted memory that every AI reads and writes — Claude, Cursor, Gemini CLI, Cline, any MCP client, and scripts over HTTP. No cloud. No account. One file you own.**
 
 Everything an AI system learns goes into an encrypted knowledge base on your own computer — and every AI recalls it in milliseconds, however long the context grows. Documents, decisions, client knowledge, whole chat histories: remembered, linked, contradicted, superseded — never lost.
 
@@ -21,7 +21,7 @@ flowchart LR
     B["Cursor · Gemini CLI<br/>Cline · Codex · Zed"]
     C["Your scripts"]
   end
-  subgraph KEPTA["KEPTA — this repository"]
+  subgraph K3PTA["K3PTA — this repository"]
     direction TB
     M["MCP server<br/>8 tools · stdio + Streamable HTTP"]
     G["HTTP API · 32 routes<br/>Python client · CLI"]
@@ -86,7 +86,7 @@ The app is free, like everything in this repository. KEPTA Enterprise (team and 
 
 ## 🧠 One engine. Free. For every AI.
 
-KEPTA is not a feature inside one app — it is a memory layer that outlives every model, every app and every context window. Three doors lead into the same encrypted file:
+K3PTA is not a feature inside one app — it is a memory layer that outlives every model, every app and every context window. Three doors lead into the same encrypted file:
 
 | Door | What uses it |
 |---|---|
