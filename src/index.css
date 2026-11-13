@@ -790,6 +790,43 @@ select:focus-visible {
   padding: 2px 0;
 }
 .chat-panel-regler .zeile .wert { color: var(--text-1); }
+
+/* Die Settings-Fläche als App-Fenster (P202): Abschnitts-Spalte links, Panel
+   rechts in voller Höhe — die Apple-Einstellungen-Grammatik statt Zentrum-Karte. */
+.einstellungen-liste {
+  width: 196px;
+  flex: none;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-inset);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  gap: 1px;
+}
+.einstellungen-liste-kopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 12px;
+  min-width: 0;
+}
+.einstellungen-liste .navi { display: flex; flex-direction: column; gap: 1px; }
+.einstellungen-liste .navi button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 32px;
+  padding: 0 9px;
+  border-radius: var(--r-btn);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  text-align: left;
+  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple);
+}
+.einstellungen-liste .navi button:hover { background: var(--bg-hover); color: var(--text-1); }
+.einstellungen-liste .navi button[data-on='true'] { background: var(--accent-soft); color: var(--accent); }
+.settings-panel-fenster { flex: 1; min-width: 0; overflow-y: auto; padding: 20px 24px; }
 .msg-user {
   margin-left: auto;
   max-width: min(78%, 58ch);

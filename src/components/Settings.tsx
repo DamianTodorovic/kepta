@@ -729,46 +729,34 @@ export function Settings() {
   const inputClass = "hud-input w-full rounded-xl px-4 py-3 fs-4 lh-lesbar";
 
   return (
-    <div className="max-w-2xl mx-auto py-8">
+    <div className="h-full flex min-h-0">
       {/* P199: der Mount-Lauf spielte unsichtbar — Einstellungen bleiben
           dauerhaft gemountet; die Umhüllung im Dashboard blendet bei jedem
           Einblenden (ansicht-blende). */}
-      <div className="hud-panel rounded-2xl p-4 sm:p-6 md:p-8">
-        <div className="flex items-center gap-4 mb-6 pb-6" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-          <KeptaMark size={40} />
-          <div>
-            <h2 className="fs-5 font-semibold" style={{ color: 'var(--text-1)' }}>Settings</h2>
-            <p className="fs-4 lh-lesbar mt-1" style={{ color: 'var(--text-2)' }}>AI connection, data and MCP</p>
+      {/* P202, App-Fenster-Übernahme: die drei Schirme stehen als Abschnitts-Spalte
+          links (wie die Apple-Einstellungen ihre Bereiche führen), das Panel rechts
+          trägt den Inhalt in voller Höhe — statt Zentrum-Karte auf grauem Grund. */}
+      <div className="einstellungen-liste">
+        <div className="einstellungen-liste-kopf">
+          <KeptaMark size={28} />
+          <div className="min-w-0">
+            <div className="fs-4 font-semibold" style={{ color: 'var(--text-1)' }}>Settings</div>
+            <div className="fs-2" style={{ color: 'var(--text-3)' }}>AI connection, data and MCP</div>
           </div>
         </div>
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 p-1 rounded-xl hud-inset">
-          <button
-            onClick={() => waehleTab('system')}
-            aria-pressed={activeTab === 'system'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'system' ? 'bg-blatt shadow-sm' : ''}`}
-            style={{ color: activeTab === 'system' ? 'var(--text-1)' : 'var(--text-2)' }}
-          >
+        <div className="navi">
+          <button onClick={() => waehleTab('system')} aria-pressed={activeTab === 'system'} data-on={activeTab === 'system' ? 'true' : 'false'}>
             <Cpu className="w-4 h-4" /> AI &amp; data
           </button>
-          <button
-            onClick={() => waehleTab('mcp')}
-            aria-pressed={activeTab === 'mcp'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'mcp' ? 'bg-blatt shadow-sm' : ''}`}
-            style={{ color: activeTab === 'mcp' ? 'var(--text-1)' : 'var(--text-2)' }}
-          >
+          <button onClick={() => waehleTab('mcp')} aria-pressed={activeTab === 'mcp'} data-on={activeTab === 'mcp' ? 'true' : 'false'}>
             <Plug className="w-4 h-4" /> MCP / API
           </button>
-          <button
-            onClick={() => waehleTab('sync')}
-            aria-pressed={activeTab === 'sync'}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg fs-4 lh-lesbar font-semibold transition-colors ${activeTab === 'sync' ? 'bg-blatt shadow-sm' : ''}`}
-            style={{ color: activeTab === 'sync' ? 'var(--text-1)' : 'var(--text-2)' }}
-          >
+          <button onClick={() => waehleTab('sync')} aria-pressed={activeTab === 'sync'} data-on={activeTab === 'sync' ? 'true' : 'false'}>
             <ShieldCheck className="w-4 h-4" /> Device Sync
           </button>
         </div>
+      </div>
+      <div className="settings-panel-fenster">
 
         {activeTab === 'sync' && <PraxisSync />}
 
