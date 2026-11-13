@@ -993,6 +993,9 @@ async function haupt() {
   for (const z of lang.slice(0, 6)) console.log(`    langster Satz ${z.langster} Woerter  ${z.quelle}  ::  ${z.s.slice(0, 120)}`);
   if (suche) {
     console.log(`  die Objekt-Gleichung verwirft: Flaeche ${flaeche.zeilen.length - flaeche.getragen.length}, Werkzeug ${werkzeug.zeilen.length - werkzeug.getragen.length}, Diener ${diener.zeilen.length - diener.getragen.length}`);
+    // Die Verworfenen BENENNEN (P202): die Wache soll den Satz nennen, nicht nur zählen.
+    const drin = new Set(flaeche.getragen.map((z) => (typeof z === "object" && z ? z.s : z)));
+    for (const z of flaeche.zeilen) if (!drin.has(z.s)) console.log(`    verworfen  ${z.quelle}  ::  ${z.s.slice(0, 140)}`);
   }
 
   const cFlaeche = zensiere(flaeche.getragen);

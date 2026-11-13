@@ -568,6 +568,9 @@ export function Dashboard() {
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [importErr, setImportErr] = useState<string | null>(null);
+  // P202: das Import-Band steht auf Wunsch (der Listen-Kopf trägt das Werkzeug) —
+  // das Mockup zeigt die Liste sofort, ohne Tisch darüber.
+  const [importBandOffen, setImportBandOffen] = useState(false);
 
   // URL-Clipper State
   const [clipUrl, setClipUrl] = useState("");
@@ -934,12 +937,8 @@ export function Dashboard() {
   const blattWeichtAb = bestandGruppen !== null
     && TRAEGER_REIHENFOLGE.some((k) => zeigeTraeger[k] !== traegerCounts[k]);
 
-  // Begrüßung nach Tageszeit + Name aus dem adaptiven Profil
-  const greeting = (() => {
-    const h = new Date().getHours();
-    return h < 5 ? 'Good night' : h < 11 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  })();
-  const profileName = (() => { try { return loadProfile()?.displayName || ''; } catch { return ''; } })();
+  // Begrüßung + Profilname flogen mit dem Gruß-Hero (P202, Mockup-Grammatik) —
+  // die vier Tageszeit-Sätze sind damit auch aus dem Bundle (Auslieferungsgleichung).
 
   // --- Tag-gefilterte Basis ---
   const tagFiltered = useMemo(() => {
@@ -1818,6 +1817,16 @@ export function Dashboard() {
             </div>
 
             <div className="ml-auto flex items-center gap-2 fs-2 lh-dicht">
+              {/* Das Import-Werkzeug im Regal (P202): das Band öffnet auf Wunsch —
+                  die Liste startet ohne Tisch darüber (Mockup-Grammatik). */}
+              <button
+                onClick={() => setImportBandOffen((v) => !v)}
+                className="btn-ghost treff p-2 rounded-lg"
+                title="Import"
+                aria-label="Import"
+              >
+                <UploadCloud className="w-4 h-4" />
+              </button>
               {/* Such-Cache-Status: der Kern baut den Suchindex beim ersten
                   Zugriff einmal auf und patcht ihn danach nur noch — die App
                   misst die Antwortzeit und zeigt, wenn das Gehirn warm ist. */}
@@ -1900,8 +1909,12 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Quellen: Datei-Import + URL-Clipper — eine Fläche, eine Geste */}
-          <div className="px-5 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+          {/* Quellen: Datei-Import + URL-Clipper — eine Fläche, eine Geste.
+              P202: das Band ist EINGEKLAPPT (data-zu) — der Listen-Kopf trägt das
+              Werkzeug, die Liste startet ohne Tisch darüber (Mockup-Grammatik).
+              Das Band bleibt gerendert: die Wege (Choose/Drop/URL) arbeiten auch
+              aus dem eingeklappten Zustand. */}
+          <div className="import-huelle px-5 py-3 shrink-0" data-zu={!importBandOffen} style={{ borderBottom: importBandOffen ? '1px solid var(--border-subtle)' : 'none' }}>
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -1980,16 +1993,8 @@ export function Dashboard() {
           <div className="flex-1 flex min-h-0">
           <div className="flex-1 overflow-y-auto px-5 py-4">
             <div className="max-w-6xl mx-auto h-full flex flex-col">
-              {/* Persönlicher Kopf — Datum als Zeile, Aussage als Display */}
-              <div className="mb-4 shrink-0">
-                <h1 className="display">
-                  {greeting}{profileName ? `, ${profileName}` : ''}
-                </h1>
-                <p className="fs-3 mt-1" style={{ color: 'var(--text-2)' }}>
-                  {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  {agentActive ? ' — an agent is working right now' : ''}
-                </p>
-              </div>
+              {/* P202, Mockup-Grammatik: kein Gruß-Hero über der Liste — das Fenster
+                  zeigt sofort die Akten (der Gruß war die Website-Signatur). */}
 
               {/* Übersicht — der Index-Streifen: eine dominante Zahl, leise Zweitgrößen */}
               <div className="index-strip mb-4 shrink-0 flex-wrap gap-y-3">
@@ -2071,6 +2076,7 @@ export function Dashboard() {
 
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <div className="flex items-center gap-3 fs-2 tnum" style={{ color: 'var(--text-3)' }}>
+                  <h2 className="fs-5 font-semibold" style={{ color: 'var(--text-1)', margin: 0 }}>Knowledge</h2>
                   <span>{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'notes'}</span>
                   {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
                     serverTotal !== null && serverTotal > displayedMemories.length ? (

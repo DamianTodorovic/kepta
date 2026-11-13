@@ -1109,6 +1109,11 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
   overflow: hidden;
   transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple);
 }
+/* Die Import-Hülle (P202): eingeklappt trägt der Listen-Kopf das Werkzeug und
+   die Liste startet ohne Tisch (Mockup-Grammatik). Die Wege bleiben gerendert —
+   ein Drop oder ein Dateiwechsel arbeitet auch aus dem eingeklappten Zustand. */
+.import-huelle { max-height: 240px; transition: max-height var(--dur-slow) var(--ease-apple), padding var(--dur) var(--ease-apple); }
+.import-huelle[data-zu="true"] { max-height: 0; overflow: hidden; padding-top: 0; padding-bottom: 0; }
 .import-band[data-drag="true"] {
   border-color: var(--accent);
   border-style: solid;

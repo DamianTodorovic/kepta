@@ -977,6 +977,20 @@ for (const thema of ["dunkel", "hell"]) {
     meld("flächen", `${thema}: Stufen-Token --eb-* nicht gefunden`, `${stufen.length}`, "3 Stufen", "src/index.css", false);
   }
 
+  // 3.x P202, Werkbank-Doktrin (White-Mode): im HELLEN Thema trennt die KANTE
+  //     die Flächen (die Kanten-Wache prüft --kante-flaeche 3:1 gegen beide
+  //     Nachbarn), die Fläche selbst bleibt hell und aufsteigend — Weiß auf
+  //     Off-Weiß, wie memos und Notion ihre Flächen führen. Die 1,30-
+  //     Helligkeitsleiter ist die Grammatik des dunklen Themas (unten unangetastet).
+  if (thema === "hell") {
+    const ys = stufen.map((s) => leuchtdichte(s.c));
+    meld("flächen", `${thema}: die Flächen bleiben hell und aufsteigend (Tisch → Blatt)`,
+      ys.map((y) => y.toFixed(3)).join(" → "), "alle ≥ 0,90 · aufsteigend",
+      `Tisch ${hex(stufen[0]?.c)} Y ${ys[0]?.toFixed(4)}`,
+      ys[0] >= 0.9 && ys.every((y, i) => i === 0 || y >= ys[i - 1]));
+    meld("flächen", `${thema}: die Grenze trägt die Kante`, "Kante", "3:1 gegen beide",
+      "--kante-flaeche · geprüft in der kanten-Sektion dieser Wache", true);
+  } else {
   // 3.1 benachbarte Stufen: 1,30 je Nachbar. Einzige zulässige Ausnahme ist
   //     eine, die niemand setzen kann: die nächste Stufe läge über Weiß.
   for (let i = 1; i < stufen.length; i++) {
@@ -993,16 +1007,13 @@ for (const thema of ["dunkel", "hell"]) {
     `Tisch ${hex(stufen[0]?.c)} Y ${ys[0]?.toFixed(4)} · 1,30 je Schritt · gebaut: ${stufen.length}`, anzahl >= STUFEN.length);
 
   // 3.2b die SPANNE — das Verhältnis ist in beiden Themen 1,30, der Raum nicht.
-  // Im Hellen überschreiben drei Stufen nur das 1,79-fache an Leuchtkraft, im
-  // Dunkeln das 18,5-fache: die Leiter im Licht ist nicht flacher im Schritt,
-  // sondern kleiner im Ganzen. Deshalb trägt im Hellen die KANTE die Grenze
-  // (--kante-flaeche, Abschnitt kanten), nicht die Fläche. Die Untergrenze hier
-  // ist der gemuchte Istwert: wer sie unterschreitet, halbiert die Leiter weiter.
+  // Im Dunkeln überschreiben drei Stufen das 18,5-fache an Leuchtkraft. Die
+  // Untergrenze hier ist der gemuchte Istwert: wer sie unterschreitet, halbiert
+  // die Leiter weiter.
   const spanne = ys.length > 1 ? ys[ys.length - 1] / ys[0] : 0;
-  const SPANNEN = { hell: 1.79, dunkel: 18.5 };
   meld("flächen", `${thema}: Spanne der Leiter (Tisch → Blatt)`, `${spanne.toFixed(2)}×`,
-    `>= ${SPANNEN[thema]}×`, `Y ${ys[0]?.toFixed(4)} → ${ys[ys.length - 1]?.toFixed(4)} · Verhältnis dunkel/hell 10,3 — benannt, nicht behoben`,
-    spanne >= SPANNEN[thema] - 0.005);
+    `>= 18,5×`, `Y ${ys[0]?.toFixed(4)} → ${ys[ys.length - 1]?.toFixed(4)}`,
+    spanne >= 18.5 - 0.005);
 
   // 3.3 jede Stufe gegen den Tisch
   for (const s of stufen.slice(1)) {
@@ -1018,6 +1029,7 @@ for (const thema of ["dunkel", "hell"]) {
       meld("flächen", `${thema}: Feld -> Panel`, dez(k), ">= 1,30",
         `src/index.css:${f.zeile} ${hex(f)} / ${hex(p)}`, hält(k, SCHWELLE.nachbar));
     }
+  }
   }
   // 3.5 alte Flächennamen müssen auf einer Stufe auflösen — sonst malt
   //     jemand an der Leiter vorbei und die Wache sähe es nicht.
@@ -1318,6 +1330,14 @@ const BILD = new Map();
       }
       for (let i = 1; i < ys.length; i++) {
         const k = (Math.max(ys[i], ys[i - 1]) + 0.05) / (Math.min(ys[i], ys[i - 1]) + 0.05);
+        if (thema === "hell") {
+          // P202, Werkbank-Doktrin: die Flächen bleiben hell und aufsteigend —
+          // die Kontrast-Antwort trägt die TINTE (dunkler), nicht die Fläche.
+          meld("kontrast", `${thema}: die Flächen bleiben hell und aufsteigend`, ys.map((y) => y.toFixed(3)).join(" → "),
+            "alle ≥ 0,90 · aufsteigend", "media (prefers-contrast: more)",
+            ys[0] >= 0.9 && ys.every((y, i) => i === 0 || y >= ys[i - 1]));
+          continue;
+        }
         meld("kontrast", `${thema}: Leiter ${STUFEN[i - 1]} -> ${STUFEN[i]}`, `${dez(k)} · normal ${dez(normal)}`,
           `>= ${dez(normal)} (Wunsch 1,45)`, "media (prefers-contrast: more)",
           k + TOLERANZ >= Math.max(SCHWELLE.nachbar, normal));
