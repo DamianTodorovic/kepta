@@ -2,6 +2,7 @@ import { absage } from "../lib/absage";
 import { ApiFehler, tuerSatz } from "../lib/api";
 import { useState, useRef, useEffect, useMemo, useCallback, FormEvent } from "react";
 import { motion } from "motion/react";
+import { formatDistanceToNow } from "date-fns";
 import { Send, AlertTriangle, Database, Trash2, PanelLeftOpen, Square, Copy, Check, CheckCircle2, Coins, Hash, FileText, Sparkles, ShieldCheck } from "../lib/icons";
 import { istLokaleAdresse } from "../lib/schild";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
@@ -394,8 +395,6 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     }
     return picked;
   }, [activeMemories, tokenBudget, input, getRankedMemories, serverReihenfolge]);
-
-  const budgetedIds = useMemo(() => new Set(budgetedMemories.map((m) => m.id)), [budgetedMemories]);
 
   /** Spuren-Herkunft je Knoten aus dem letzten Server-Ranking — für die Quellen-Badges. */
   const serverTracks = useMemo(() => {
@@ -806,8 +805,8 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
     }
   };
 
-  // Slider Prozent für Track-Füllung
-  const budgetPercent = ((tokenBudget - MIN_BUDGET) / (MAX_BUDGET - MIN_BUDGET)) * 100;
+  // Slider Prozent für Track-Füllung — der Regler lebt im Kontext-Panel (P202),
+  // die scaleX-Füllung des alten Bands ist mit ihm gezogen.
 
   return (
     <div className="flex flex-col h-full w-full relative">
@@ -922,94 +921,18 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   : "Local ranking — the search index did not answer"}
             </span>
           )}
-          <div className="flex items-center gap-2" style={{ color: "var(--text-2)" }}>
-            <span className="hud-label hidden sm:inline">Context:</span>
-            <span className="px-2 py-1 rounded hud-inset flex items-center gap-1" style={{ color: "var(--accent)" }}>
-              <Hash className="w-3 h-3" />
-              {budgetedMemories.length}/{activeMemories.length}
-            </span>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded hud-inset hud-label">
-            <FileText className="w-3 h-3" /> ~{totalInputTokensEstimate.toLocaleString("en-GB")} tokens
-          </div>
-          <div className="hidden md:flex items-center gap-2 px-2 py-1 rounded hud-inset hud-label" title={`Input ${totalInputTokensEstimate} · Output ~${liveOutputTokens || 0} · ${estimatedCostNow}`}>
-            <Coins className="w-3 h-3" /> {estimatedCostNow}
-          </div>
           <button onClick={clearChat} className="btn-ghost treff p-2 rounded-lg hover:!border-gefahr" title="Clear chat" aria-label="Clear chat">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* ---------- Kontext & Budget ---------- */}
-      <div className="px-6 py-3 shrink-0 border-b" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-inset)" }}>
-        <div className="flex items-center gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <span className="hud-label flex items-center gap-2">
-                <Sparkles className="w-3 h-3" style={{ color: "var(--accent)" }} />
-                Context &amp; token budget
-              </span>
-              <span className="fs-1 flex items-center gap-2" style={{ color: "var(--text-2)" }}>
-                <span className="px-2 py-1 rounded-md fs-1 font-semibold tnum" style={{ background: "var(--bg-panel)", border: "1px solid var(--border-subtle)", color: "var(--text-1)" }}>
-                  {tokenBudget.toLocaleString("en-GB")}
-                </span>
-                <span>· {budgetedMemories.length} notes in play</span>
-              </span>
-            </div>
-            <div className="relative h-7 flex items-center">
-              <div className="absolute left-0 right-0 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-inset-strong)" }}>
-                {/* P199 (Emil-Audit §5): Fläche statt Breite — der Regler schob
-                    bei jedem Ziehhakt ein Relayout; scaleX ist rein kompositorisch. */}
-                <div className="h-full w-full origin-left rounded-full transition-transform" style={{ transform: `scaleX(${Math.min(budgetPercent, 100) / 100})`, background: "var(--accent)" }} />
-              </div>
-              {/* h-7 statt h-1.5: die Trefferfläche des Reglers war gemessen
-                  6 px hoch (Z-08: mindestens 20, wiederholt 28). */}
-              <input
-                type="range"
-                min={MIN_BUDGET}
-                max={MAX_BUDGET}
-                step={500}
-                value={tokenBudget}
-                onChange={(e) => setTokenBudget(parseInt(e.target.value, 10))}
-                className="relative w-full h-7 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
-                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-knopf [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--accent)] [&::-webkit-slider-thumb]:shadow-sm
-                  [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-knopf [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
-                aria-label="Token Budget"
-              />
-            </div>
-            {budgetedMemories.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {budgetedMemories.slice(0, 8).map((m) => (
-                  <span
-                    key={m.id}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md fs-1 font-semibold border truncate max-w-[140px]"
-                    style={{ background: budgetedIds.has(m.id) ? "var(--accent-soft)" : "var(--bg-panel)", borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
-                    title={`${m.title} — ${m.id}`}
-                  >
-                    <Hash className="w-2.5 h-2.5 shrink-0" style={{ color: "var(--accent)" }} />
-                    <span className="truncate">{m.title || m.id.slice(0, 8)}</span>
-                  </span>
-                ))}
-                {budgetedMemories.length > 8 && (
-                  <span className="fs-1 px-2 py-1 rounded-md" style={{ color: "var(--text-3)" }}>
-                    +{budgetedMemories.length - 8}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="hidden lg:flex flex-col items-end gap-1 fs-2 lh-dicht min-w-[130px] shrink-0">
-            <span className="hud-label">Cost estimate</span>
-            <span className="mono fs-3" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>
-              {estimatedCostNow}
-            </span>
-            <span className="fs-1 mono tnum" style={{ color: "var(--text-3)" }}>
-              In ~{totalInputTokensEstimate} · Out ~{liveOutputTokens || "—"}
-            </span>
-          </div>
-        </div>
-      </div>
+      {/* ---------- Kontext-Panel (P202, App-Fenster-Übernahme) ----------
+          Das Context- und Budget-Band steht jetzt als SPALTE rechts neben dem
+          Gespräch — die App-Fenster-Grammatik trägt die Auskünfte in der Spalte
+          neben dem Fluss, nicht als Band darüber. */}
+      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex flex-col min-w-0">
 
       {/* ---------- Messages ---------- */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
@@ -1305,6 +1228,50 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             <span className="flex items-center gap-1"><span className="kbd !py-px">⇧ Enter</span> new line</span>
           </span>
         </div>
+      </div>
+      </div>
+
+      {/* Das Kontext-Panel rechts (P202): die Notizen im Prompt als Zeilen, Budget und
+          Kosten am eigenen Platz — Auskünfte in der Spalte, nicht als Band über dem
+          Fluss. */}
+      <div className="chat-panel">
+        <div className="chat-panel-kopf">
+          <span>Context</span>
+          <span className="chat-panel-zahl tnum"># {budgetedMemories.length}/{activeMemories.length}</span>
+        </div>
+        <div className="chat-panel-zeilen">
+          {budgetedMemories.map((m) => (
+            <div key={m.id} className="chat-panel-zeile" title={`${m.title} — ${m.id}`}>
+              <span className="punkt" style={m.type ? { background: `var(--type-${m.type})` } : undefined} />
+              <span className="mitte">
+                <span className="titel">{m.title || "Untitled"}</span>
+                <span className="alter tnum">{formatDistanceToNow(new Date(m.updatedAt), { addSuffix: true })}</span>
+              </span>
+            </div>
+          ))}
+          {budgetedMemories.length === 0 && (
+            <p className="chat-panel-leer">No notes in the prompt yet — raise the budget or save notes.</p>
+          )}
+        </div>
+        <div className="chat-panel-regler">
+          <div className="zeile"><span>Budget</span><span className="wert tnum">{tokenBudget.toLocaleString("en-GB")} tokens</span></div>
+          <input
+            type="range"
+            min={MIN_BUDGET}
+            max={MAX_BUDGET}
+            step={500}
+            value={tokenBudget}
+            onChange={(e) => setTokenBudget(parseInt(e.target.value, 10))}
+            className="relative w-full h-7 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-knopf [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--accent)] [&::-webkit-slider-thumb]:shadow-sm
+              [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-knopf [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
+            aria-label="Token Budget"
+          />
+          <div className="zeile" style={{ marginTop: 6 }}><span>Cost estimate</span><span className="wert mono" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>{estimatedCostNow}</span></div>
+          <div className="zeile"><span>In</span><span className="wert mono tnum">~{totalInputTokensEstimate.toLocaleString("en-GB")} tokens</span></div>
+          <div className="zeile"><span>Out</span><span className="wert mono tnum">~{liveOutputTokens || "—"}</span></div>
+        </div>
+      </div>
       </div>
     </div>
   );
