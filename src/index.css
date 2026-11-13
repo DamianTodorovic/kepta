@@ -194,25 +194,27 @@
   --type-herkunft-rechner: oklch(0.3882 0.0769 189.6);
   --type-herkunft-rechner-hex: #00514d;
 
-  /* Die Stahl-Seitenleiste bleibt Stahl (Material-Entscheidung), aber sie
-     bekommt Token statt Inline-Farben: nur so erreicht sie ein Theme und
-     eine increased-contrast-Antwort. BENUTZT WIRD SIE VON Sidebar.tsx —
-     die Werte hier sind gerechnet, nicht gesetzt. */
-  --side-basis-1: oklch(0.2435 0.0030 286.0);
-  --side-basis-2: oklch(0.1880 0.0030 286.0);
-  --side-text: oklch(0.9365 0.0027 106.5);
-  --side-ruhig: oklch(0.7111 0.0097 91.6);    /* 7,68 auf dem Stahl */
-  --side-akzent: oklch(0.7286 0.1552 30.7);   /* 8,35 auf dem Stahl */
-  --side-kante: oklch(0.5395 0.0026 286.0);   /* 3,05 auch über der hellsten Stahl-Lage */
-  --side-leise: oklch(0.6425 0.0097 91.6);    /* leiseste Ebene auf dem Stahl, hält 4,68 auch über der hellsten Lage */
-  --side-kante-heben: oklch(0.6029 0.0026 286.0); /* Hover-Kante: 3,96 gegen den Stahl, die ruhende hält 3,05 */
-  --side-flaeche: oklch(1 0 0 / 0.045);        /* Lage über dem Stahl: hover */
-  --side-auswahl: oklch(1 0 0 / 0.07);         /* Lage über dem Stahl: die aktive Stelle */
+  /* Die Seitenleiste folgt dem Thema (P202, White-Mode: Damian 13.11. — „die
+     Standard-Farbe soll immer White-Mode sein, wenn man K3PTA installiert"):
+     im hellen Thema ist sie die Seite der hellen Welt (eine Stufe über dem
+     Tisch, die Tinten sind die hellen Werte, wörtlich — die Harmonie-Wache
+     rechnet die Rampe aus diesen Zahlen). Der dunkle Stahl-Satz steht unten
+     im .dark-Block, unverändert. */
+  --side-basis-1: oklch(0.8936 0.0027 106.5);  /* = --eb-1 hell: die Leisten-Fläche */
+  --side-basis-2: oklch(0.8095 0.0027 106.5);  /* = --eb-0 hell: die Fusszeile tiefer */
+  --side-text: oklch(0.2494 0.0035 228.9);     /* = --text-1 hell */
+  --side-ruhig: oklch(0.3341 0.0050 236.6);    /* = --text-2 hell */
+  --side-akzent: var(--accent);
+  --side-kante: var(--border-subtle);
+  --side-leise: oklch(0.3972 0.0046 236.5);    /* = --text-3 hell */
+  --side-kante-heben: var(--kante-stark);
+  --side-flaeche: oklch(0 0 0 / 0.05);         /* dunkle Lage als Hover auf der hellen Seite */
+  --side-auswahl: var(--accent-soft);          /* die aktive Stelle: die Auswahlfläche des Systems */
   /* Zwei Stufen, die die Fläche schon malte, bevor sie hier standen: 0,1 und 0,09
      standen als Hartwert in .sidebar-nav-btn bzw. .sidebar-tag-btn (Zensus 18.10.,
      im ausgelieferten Bündel gemessen: 1 Fremd-Farbe je Ansicht). */
-  --side-auswahl-heben: oklch(1 0 0 / 0.1);    /* die aktive Stelle unter der Hand */
-  --side-marke-auswahl: oklch(1 0 0 / 0.09);   /* ein gewähltes Tag-Wort */
+  --side-auswahl-heben: var(--accent-soft);    /* die aktive Stelle unter der Hand */
+  --side-marke-auswahl: var(--accent-soft);    /* ein gewähltes Tag-Wort */
 
   /* Schatten liegen flach auf dem Tisch, nichts schwebt */
   --shadow-sm: 0 1px 2px rgba(20, 28, 34, 0.12);
@@ -590,9 +592,14 @@ select:focus-visible {
   box-shadow: inset 0 0 0 1px var(--kante-flaeche), var(--shadow-md);
 }
 
-/* Sidebar: der Rücken des Aktenschrankes — immer Stahl, immer dunkel,
-   egal ob das Blatt daneben im Tag- oder Nachtmodus liegt. */
+/* Sidebar: die Leiste folgt dem Thema (P202, White-Mode) — im hellen Modus ist
+   sie die Seite der hellen Welt (side-basis-Token), im dunklen bleibt sie der
+   Rücken des Aktenschrankes. */
 .sidebar-glass {
+  background: linear-gradient(180deg, var(--side-basis-1), var(--side-basis-2));
+  border-right: 1px solid var(--side-kante);
+}
+.dark .sidebar-glass {
   background: linear-gradient(180deg, var(--stahl-1), var(--stahl-2));
   border-right: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.03);
@@ -1734,6 +1741,10 @@ button.hud-label:active { transform: scale(0.97); }
     --text-3: oklch(0.2918 0.0046 236.5);
     --text-2: oklch(0.2493 0.0050 236.6);
     --text-1: oklch(0.1344 0.0035 228.9);
+    /* P202: die Seitenleiste folgt im hellen Thema der Anhebung — die leiseste
+       Ebene wird dunkler (kontrastreicher), die Richtung dreht sich gegenüber
+       dem Stahl (dort wird heller angehoben). */
+    --side-leise: oklch(0.2918 0.0046 236.5);
     --warn: oklch(0.2985 0.1009 70.0);
     --ok: oklch(0.2843 0.0676 155.6);
     --danger: oklch(0.3089 0.1384 30.5);

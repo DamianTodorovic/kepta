@@ -17,9 +17,8 @@ import path from "node:path";
 const lese = (...teile: string[]) => fs.readFileSync(path.join(process.cwd(), ...teile), "utf-8");
 
 const LEISTE = lese("src", "components", "Sidebar.tsx");
-const STIL_PFAD = path.join(process.cwd(), "src", "components", "huelle.css");
-const HAT_STIL = fs.existsSync(STIL_PFAD);
-const STIL = HAT_STIL ? fs.readFileSync(STIL_PFAD, "utf-8") : "";
+const HAT_STIL = fs.existsSync("src/components/huelle.css");
+const STIL = HAT_STIL ? lese("src", "components", "huelle.css") : "";
 
 /** Alle Flächen, die diese Scheibe besitzt. */
 const EIGENE_FLAECHEN = [
@@ -51,6 +50,8 @@ describe("Seitenleisten-Farbe: kein Inline-Wert an einer Fläche, die ein Theme 
   it("zieht den Stahl aus dem System, nicht aus einem eigenen Wert", () => {
     // E1 hat die Triade gesetzt (index.css:112-119, 281-288) — in beiden
     // Themen derselbe Satz. Eine eigene Farbe hier wäre ein zweites System.
+    // P202, White-Mode: im hellen Thema zieht die Leiste die helle Seite —
+    // die Wache "Seiten-Harmonie" hält beide Sätze weiter unten fest.
     for (const name of ["--side-text", "--side-ruhig", "--side-akzent", "--side-kante", "--side-flaeche", "--side-auswahl"]) {
       expect(STIL, `huelle.css zieht ${name} nicht`).toContain(`var(${name}`);
     }
@@ -102,11 +103,15 @@ describe("Seiten-Harmonie: die drei Ebenen bleiben in der Reihenfolge", () => {
     return { text: h("--side-text"), ruhig: h("--side-ruhig"), leise: h("--side-leise"), basis: h("--side-basis-2") };
   }
 
-  it("normal: text > ruhig > leise > Stahl", () => {
+  it("helle Seite: die Tinte ist dunkler als die Fläche, die Rampe hält die Hierarchie", () => {
+    // P202, White-Mode: im hellen Thema ist die Leiste die helle Seite — die
+    // Tinte arbeitet DUNKLER als die Fläche, also dreht sich die L-Rampe:
+    // der Text liegt am tiefsten (größter Kontrast), die leiseste Ebene am
+    // nächsten an der Fläche. Die Hierarchie selbst bleibt: text > ruhig > leise.
     const s = stufen(/:root\s*\{[\s\S]*?\n\}/, "Wurzel");
-    expect(s.text, `text ${s.text} muss über ruhig ${s.ruhig} liegen`).toBeGreaterThan(s.ruhig);
-    expect(s.ruhig, `ruhig ${s.ruhig} muss über leise ${s.leise} liegen`).toBeGreaterThan(s.leise);
-    expect(s.leise, `leise ${s.leise} muss über dem Stahl ${s.basis} liegen`).toBeGreaterThan(s.basis);
+    expect(s.text, `text ${s.text} muss unter ruhig ${s.ruhig} liegen`).toBeLessThan(s.ruhig);
+    expect(s.ruhig, `ruhig ${s.ruhig} muss unter leise ${s.leise} liegen`).toBeLessThan(s.leise);
+    expect(s.leise, `leise ${s.leise} muss unter der Fläche ${s.basis} liegen`).toBeLessThan(s.basis);
   });
 
   it("erhöhter Kontrast: die leiseste Ebene überholt die Beschriftung nicht", () => {
@@ -114,21 +119,31 @@ describe("Seiten-Harmonie: die drei Ebenen bleiben in der Reihenfolge", () => {
     // wurde heller als die Navigation — rgb(176,174,168) gegen rgb(164,162,155).
     // Eine Anhebung, die die Rampe dreht, ist kein höherer Kontrast, sondern
     // eine falsche Hierarchie.
-    // Der Kontrastblock erklärt **nur, was er anhebt** — was dort fehlt, behält
-    // den Basiswert, also wird die ruhige Ebene dort gelesen, wo sie steht.
+    // P202, White-Mode: auf der hellen Seite dreht sich die Richtung — Anhebung
+    // heißt dort DUNKLER (kleineres L), nicht heller. Der Kontrastblock erklärt
+    // **nur, was er anhebt** — was dort fehlt, behält den Basiswert.
     const basis = stufen(/:root\s*\{[\s\S]*?\n\}/, "Wurzel");
     const angehoben = /@media\s*\(prefers-contrast:\s*more\)\s*\{[\s\S]*?\n\}/.exec(index)?.[0] ?? "";
     const m = /--side-leise:\s*oklch\(\s*([0-9.]+)/.exec(angehoben);
     if (!m) throw new Error("--side-leise wird im Kontrastblock nicht angehoben — diese Wache meint genau das");
     const leise = Number(m[1]);
+    expect(leise, `die Anhebung ${leise} muss unter ihrem eigenen Basiswert ${basis.leise} liegen (helle Seite: dunkler = kontrastreicher)`).toBeLessThan(basis.leise);
     expect(basis.ruhig, `ruhig ${basis.ruhig} muss über dem angehobenen leise ${leise} liegen`).toBeGreaterThan(leise);
-    expect(leise, `die Anhebung ${leise} soll über ihrem eigenen Basiswert ${basis.leise} liegen`).toBeGreaterThan(basis.leise);
   });
 
-  it("dunkles Thema zieht dieselben Ebenen wie das helle", () => {
-    const hell = stufen(/:root\s*\{[\s\S]*?\n\}/, "Wurzel");
+  it("dunkles Thema hält den Stahl-Satz, das helle Thema die helle Seite", () => {
+    // P202: die beiden Themen ziehen nicht mehr denselben Satz — das dunkle
+    // Thema bewahrt den Stahl (die Material-Entscheidung, unverändert), das
+    // helle Thema führt die helle Seite. Die Wache hält beide Sätze an ihren
+    // bewussten Werten fest, damit kein Thema dem anderen heimlich folgt.
     const dunkel = stufen(/\.dark\s*\{[\s\S]*?\n\}/, "Dunkelblock");
-    expect(dunkel).toEqual(hell);
+    expect(dunkel.text).toBeCloseTo(0.9365, 4);
+    expect(dunkel.ruhig).toBeCloseTo(0.7111, 4);
+    expect(dunkel.leise).toBeCloseTo(0.6425, 4);
+    expect(dunkel.basis).toBeCloseTo(0.188, 4);
+    const hell = stufen(/:root\s*\{[\s\S]*?\n\}/, "Wurzel");
+    expect(hell.text).toBeCloseTo(0.2494, 4);
+    expect(hell.basis).toBeCloseTo(0.8095, 4);
   });
 });
 
