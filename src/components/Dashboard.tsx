@@ -1626,7 +1626,9 @@ export function Dashboard() {
           ein Fokus außerhalb der sichtbaren Ansicht zog `main` um 1455 px weg,
           die sichtbare Hülle fuhr aus dem Fenster, übrig blieb der leere
           Panel-Rahmen. `clip` verweigert jedes Scrollen — die Bühne steht fest. */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-clip my-3 mr-3 panel rounded-2xl relative z-10">
+      {/* P202, Mockup-Treue: das Fenster ist VOLL — die Spalten stehen ohne
+          Rand und Rundung an der Kante (kein Karten-im-Rahmen-Look). */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-clip relative">
         {/**
          * #32: der Auf-Schalter lebte bisher nur in der Kopfzeile der memories-Ansicht.
          * Die andern Ansichten sitzen in denselben Rahmen, haben aber keine Kopfzeile —
@@ -1889,46 +1891,8 @@ export function Dashboard() {
                 </div>
               )}
 
-              {/* P202, Mockup-Treue: die Such-Steuer steht als schlanke Zeile in der
-                  Listen-Spalte (das Mockup trägt „Meaning search 5" am Listen-Fuß);
-                  die Zustands-Behauptung zog in den Listen-Fuß und die Statuszeile. */}
-              <div className="listen-steuer">
-                <label className="flex items-center gap-2 cursor-pointer select-none" title="Searches the meaning of your question, not only the words">
-                  <input
-                    type="checkbox"
-                    checked={semanticEnabled}
-                    onChange={(e) => setSemanticEnabled(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
-                  <span className="fs-2 font-semibold whitespace-nowrap" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
-                    {ansichtLabel("semantic")} search
-                  </span>
-                </label>
-
-                <div className="flex items-center gap-2 ml-auto min-w-0">
-                  <span className="fs-2" style={{ color: 'var(--text-3)' }}>Results</span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={RESULT_STOPS.length - 1}
-                    step={1}
-                    value={Math.max(0, RESULT_STOPS.indexOf(topK as typeof RESULT_STOPS[number]))}
-                    onChange={(e) => setTopK(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
-                    className="h-7 w-24"
-                    aria-label="Number of results shown"
-                    title="How many results to show. The last step shows everything that matches."
-                  />
-                  <span
-                    className="chip tnum !px-2"
-                    title={topK === 0
-                      ? 'Showing every note that matches — nothing is cut off. The chat still gets only the most relevant ones.'
-                      : `Showing at most ${topK} hits. Slide to the end for all of them.`}
-                  >
-                    {resultLabel(topK)}
-                  </span>
-                </div>
-              </div>
+              {/* P202, Mockup-Treue: die Such-Steuer wohnt im LISTEN-FUß (das Mockup
+                  trägt „Meaning search 5" dort) — die Zeile über der Liste flog. */}
 
               {/* Nur die Zeilen rollen (Mockup-Grammatik): Kopf, Auskunft, Steuer und
                   Fuß stehen fest — die Liste ist das rollende Blatt der Spalte. */}
@@ -1963,7 +1927,11 @@ export function Dashboard() {
                       zweite Wort gehoert der Herkunft im Graphen
                       (`graphHerkunft.ts → HERKUNFT_FRAGE`), und eine Zahl unter
                       dem falschen Wort ist keine Auskunft. */}
-                  <div className="flex flex-wrap items-center gap-2 mb-2" role="group" aria-label={TRAEGER_FRAGE}>
+                  {/* P202, Mockup-Treue: die Form/About-Wörter stehen als EINE dünne
+                      Zeile mit kleinen Kanten-Chips — die Gruppen und ihre Rollen
+                      bleiben (die Wachen klicken sie über die Rollennamen). */}
+                  <div className="listen-filter">
+                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={TRAEGER_FRAGE}>
                     <span className="fs-1 shrink-0" style={{ color: 'var(--text-3)' }}>Form</span>
                     {TRAEGER_REIHENFOLGE.map((t) => {
                       const an = aktiveTraeger.includes(t);
@@ -1974,7 +1942,7 @@ export function Dashboard() {
                           aria-pressed={an}
                           title={TRAEGER_HINWEISE[t]}
                           onClick={() => setAktiveTraeger((vorher) => vorher.includes(t) ? vorher.filter((x) => x !== t) : [...vorher, t])}
-                          className="row-quiet min-h-6 px-2"
+                          className="row-quiet min-h-5 px-1.5"
                           style={an ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--accent)' } : undefined}
                         >
                           {TRAEGER_LABELS[t]}
@@ -1984,7 +1952,7 @@ export function Dashboard() {
                     {gruppenFilterAktiv && (
                       <button
                         type="button"
-                        className="row-quiet min-h-6 px-2"
+                        className="row-quiet min-h-5 px-1.5"
                         title="Show everything again"
                         onClick={() => { setAktiveTraeger([]); setAktiveThemen([]); }}
                       >
@@ -2003,7 +1971,7 @@ export function Dashboard() {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 mb-3" role="group" aria-label={THEMA_FRAGE}>
+                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={THEMA_FRAGE}>
                     <span className="fs-1 shrink-0" style={{ color: 'var(--text-3)' }}>About</span>
                     {THEMA_REIHENFOLGE.map((t) => {
                       const an = aktiveThemen.includes(t);
@@ -2015,13 +1983,14 @@ export function Dashboard() {
                           disabled={nurCode}
                           title={nurCode ? 'Code is not sorted by topic — a program is a program' : THEMA_HINWEISE[t]}
                           onClick={() => setAktiveThemen((vorher) => vorher.includes(t) ? vorher.filter((x) => x !== t) : [...vorher, t])}
-                          className="row-quiet min-h-6 px-2 disabled:opacity-45"
+                          className="row-quiet min-h-5 px-1.5 disabled:opacity-45"
                           style={an ? { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--accent)' } : undefined}
                         >
                           {THEMA_LABELS[t]}
                         </button>
                       );
                     })}
+                  </div>
                   </div>
 
                   <div className="apple-seg mb-3" role="group" aria-label="Grouping of the list">
@@ -2205,6 +2174,41 @@ export function Dashboard() {
                     <span className="ml-1 font-semibold underline underline-offset-2">Review</span>
                   </button>
                 )}
+                {/* Die Such-Steuer am Fuß-Ende (Mockup: „Meaning search 5"). */}
+                <div className="flex items-center gap-2 ml-auto pl-2">
+                  <label className="flex items-center gap-2 cursor-pointer select-none" title="Searches the meaning of your question, not only the words">
+                    <input
+                      type="checkbox"
+                      checked={semanticEnabled}
+                      onChange={(e) => setSemanticEnabled(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
+                    <span className="fs-1 font-semibold whitespace-nowrap" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
+                      {ansichtLabel("semantic")} search
+                    </span>
+                  </label>
+                  <span className="fs-1" style={{ color: 'var(--text-3)' }}>Results</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={RESULT_STOPS.length - 1}
+                    step={1}
+                    value={Math.max(0, RESULT_STOPS.indexOf(topK as typeof RESULT_STOPS[number]))}
+                    onChange={(e) => setTopK(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
+                    className="h-7 w-20"
+                    aria-label="Number of results shown"
+                    title="How many results to show. The last step shows everything that matches."
+                  />
+                  <span
+                    className="chip tnum !px-2"
+                    title={topK === 0
+                      ? 'Showing every note that matches — nothing is cut off. The chat still gets only the most relevant ones.'
+                      : `Showing at most ${topK} hits. Slide to the end for all of them.`}
+                  >
+                    {resultLabel(topK)}
+                  </span>
+                </div>
               </div>
             </aside>
             {/* Die Detail-Spalte STEHT IMMER (Mockup-Grammatik): die geöffnete Akte füllt
@@ -2341,40 +2345,24 @@ export function Dashboard() {
             {gehirn && (
               <>
                 <span className="strich">·</span>
-                {gehirn.version && (
-                  <>
-                    <span title="The running version — also reported over MCP and /api/health.">K3PTA {gehirn.version}</span>
-                    <span className="strich">·</span>
-                  </>
-                )}
+                {/* P202, Mockup-Wortlaut: "40 notes, 6 tags" — der Bestand des
+                    Fensters. Die Version wohnt im Systemstatus (Settings), die
+                    Verschlüsselungs-Auskunft im selben Tisch. */}
                 <span className="tnum" title="Notes in the database on this computer — the same count the sidebar shows.">
-                  {groessenZahl(gehirn.count)} {gehirn.count === 1 ? 'note' : 'notes'} stored
+                  {groessenZahl(gehirn.count)} {gehirn.count === 1 ? 'note' : 'notes'}, {allTags.length} tags
                 </span>
-                {gehirn.hatVerschluesselung && (
-                  <>
-                    <span className="strich">·</span>
-                    <span
-                      style={{ color: gehirn.verschluesselt ? 'var(--ok)' : 'var(--warn)' }}
-                      title={gehirn.verschluesselt
-                        ? `The knowledge base file is encrypted (AES-256)${gehirn.ablage ? ` — key in the ${gehirn.ablage}` : ''}.`
-                        : 'The knowledge base file is not encrypted.'}
-                    >
-                      {gehirn.verschluesselt ? 'Encrypted' : 'Not encrypted'}
-                    </span>
-                  </>
-                )}
                 {(gehirn.embedModelle.length > 0 || gehirn.embedTotal > 0) && (
                   <>
                     <span className="strich">·</span>
                     <span className="tnum" title="The search model, and how many of your notes carry its vectors">
-                      Embeddings: {gehirn.embedModelle.map((m) => `${m.name} ${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} pieces`).join(' · ')}
+                      Embeddings: {gehirn.embedModelle.map((m) => `${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} pieces ready`).join(' · ')}
                       {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces ready` : ''}
                     </span>
                   </>
                 )}
               </>
             )}
-            <span className="rechts">local, private, MCP</span>
+            <span className="rechts">local · private · MCP</span>
           </div>
         </div>
 

@@ -205,10 +205,12 @@ describe("Bestand statt Seitenlänge: die Fläche nennt, was die Tür sagt", () 
     // Im eigenen Bildbefund (14.10.) stand über dem Rand „14,702 entries in the
     // index" und direkt darunter „14702 nodes in the brain". Eine Zahl, zwei
     // Kleider, ein Bildschirm — der Mensch hält sie für zwei Bestände.
+    // P202, Mockup-Wortlaut: die Zeile sagt „14,702 notes, 7 tags" — dieselbe
+    // Zahl, dasselbe Kleid (Tausenderpunkt), derselbe Bestand wie der Held.
     const { container } = rahmen();
     const chip = () => container.querySelector('[data-testid="gehirn-status"]');
-    await waitFor(() => expect(chip()?.textContent).toMatch(/notes stored/), { timeout: 6000 });
-    expect(chip()!.textContent).toMatch(/14,702 notes stored/);
+    await waitFor(() => expect(chip()?.textContent).toMatch(/notes, /), { timeout: 6000 });
+    expect(chip()!.textContent).toMatch(/14,702 notes, /);
     expect(chip()!.textContent, "dieselbe Größe ohne Tausenderpunkt").not.toMatch(/\b14702\b/);
   });
 

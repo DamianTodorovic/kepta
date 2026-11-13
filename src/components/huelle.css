@@ -99,7 +99,8 @@
   color: var(--s-tinte-3);
 }
 .seiten-leiste .seiten-kante-oben { border-top: 1px solid var(--s-kante); }
-.seiten-leiste .seiten-kante-unten { border-bottom: 1px solid var(--s-kante); }
+/* P202, 13.11.: .seiten-kante-unten fiel als Waise — die Marke über der Leiste
+   (ihr letzter Rufer) zog in die Fuß-Konto-Zeile (Mockup-Grammatik). */
 .seiten-leiste .seiten-flaeche {
   background: var(--s-flaeche-heben);
   border: 1px solid var(--s-kante);

@@ -737,13 +737,8 @@ export function Settings() {
           links (wie die Apple-Einstellungen ihre Bereiche führen), das Panel rechts
           trägt den Inhalt in voller Höhe — statt Zentrum-Karte auf grauem Grund. */}
       <div className="einstellungen-liste">
-        <div className="einstellungen-liste-kopf">
-          <KeptaMark size={28} />
-          <div className="min-w-0">
-            <div className="fs-4 font-semibold" style={{ color: 'var(--text-1)' }}>Settings</div>
-            <div className="fs-2" style={{ color: 'var(--text-3)' }}>AI connection, data and MCP</div>
-          </div>
-        </div>
+        {/* P202, Mockup-Grammatik: die Abschnitte stehen direkt in der Leiste —
+            kein Karten-Kopf über ihnen (der Titel wohnt im Fenster-Titel). */}
         <div className="navi">
           <button onClick={() => waehleTab('system')} aria-pressed={activeTab === 'system'} data-on={activeTab === 'system' ? 'true' : 'false'}>
             <Cpu className="w-4 h-4" /> AI &amp; data

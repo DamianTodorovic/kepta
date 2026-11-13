@@ -186,7 +186,9 @@ describe("Dashboard: Wissen anzeigen", () => {
     const user = userEvent.setup();
     const { container } = await zeige([note()]);
     await user.click(screen.getByRole("button", { name: /^Settings$/ }));
-    await waitFor(() => expect(container.textContent).toMatch(/AI connection, data and MCP/));
+    // P202, Mockup-Grammatik: der Karten-Kopf mit dem Untertitel flog — der Griff
+    // ist der Titel des Panels („System status"), der immer dort steht.
+    await waitFor(() => expect(container.textContent).toMatch(/System status/));
   });
 });
 
@@ -544,10 +546,11 @@ describe("Dashboard: Gehirn-Status (Paket 2 — Health auf der Fläche)", () => 
     }));
     const { container } = await zeige([note()]);
     const status = container.querySelector('[data-testid="gehirn-status"]');
-    await waitFor(() => expect(status?.textContent).toMatch(/K3PTA 3\.1\.1/), { timeout: 3000 });
-    expect(status!.textContent).toMatch(/42 notes stored/);
-    expect(status!.textContent).toMatch(/Encrypted/);
-    expect(status!.textContent).toMatch(/nomic-embed-text 8/);
+    // P202, Mockup-Wortlaut (k3pta-app-fenster): die Statuszeile nennt Bestand und
+    // tags und die Embeddings; die Version und die Verschlüsselung wohnten in den
+    // Systemstatus (Settings) — der Systemstatus-Test hält sie dort.
+    await waitFor(() => expect(status?.textContent).toMatch(/42 notes, /), { timeout: 3000 });
+    expect(status!.textContent).toMatch(/Embeddings: 8 of 10 pieces ready/);
   });
 
   it("holt den Zähler nach, sobald ein Agent schreibt", async () => {
@@ -578,14 +581,14 @@ describe("Dashboard: Gehirn-Status (Paket 2 — Health auf der Fläche)", () => 
 
     const { container } = await zeige([note()]);
     const chip = container.querySelector('[data-testid="gehirn-status"]');
-    await waitFor(() => expect(chip?.textContent).toMatch(/74 notes stored/), { timeout: 3000 });
+    await waitFor(() => expect(chip?.textContent).toMatch(/74 notes, /), { timeout: 3000 });
 
     zaehler = 75;
     await act(async () => {
       quellen[0]!.onmessage?.({ data: JSON.stringify({ type: "save", source: "agent", ts: Date.now() }) } as unknown as MessageEvent);
       await new Promise((r) => setTimeout(r, 30));
     });
-    await waitFor(() => expect(chip?.textContent).toMatch(/75 notes stored/), { timeout: 3000 });
+    await waitFor(() => expect(chip?.textContent).toMatch(/75 notes, /), { timeout: 3000 });
   });
 });
 

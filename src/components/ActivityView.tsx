@@ -96,11 +96,20 @@ function Live({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMemory: (id: stri
   if (eintraege === null) return <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-3)' }}>Loading…</p>;
   if (eintraege.length === 0) {
     return (
-      <div className="space-y-5">
-        <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
-          No AI app has used K3PTA yet. Connect one below — every note it saves or looks up then shows up here as it happens.
-        </p>
-        <ConnectApps />
+      <div>
+        {/* P202, Mockup-Grammatik: der Leerauftritt steht zentriert in der Fläche,
+            der Connect-Tisch darunter in seiner Lesebreite (560 px). */}
+        <div className="flex flex-col items-center justify-center text-center" style={{ minHeight: '34vh' }}>
+          <h2 className="fs-5 font-bold" style={{ color: 'var(--text-1)', margin: 0 }}>
+            No AI app has used K3PTA yet.
+          </h2>
+          <p className="fs-3 lh-lesbar mt-2 max-w-[52ch]" style={{ color: 'var(--text-2)' }}>
+            Connect one below — every note it saves or looks up shows up here as it happens.
+          </p>
+        </div>
+        <div style={{ maxWidth: 560 }}>
+          <ConnectApps />
+        </div>
       </div>
     );
   }

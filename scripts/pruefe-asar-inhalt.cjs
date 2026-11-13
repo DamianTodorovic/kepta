@@ -690,7 +690,10 @@ const erwartet = [
   // Punkt 7, 2.11. (zwei Erstleser ohne Projektkenntnis, 07:33 MESZ, derselbe Korpus, zwei
   // unabhaengige Laeufe): die Flaeche nannte Speicherschluessel, Feldschema und "node", und Today
   // schrieb "since … ago". Gegen das installierte 3.2.109 gezaehlt: alle drei **0**.
-  ["pieces ready", 1],
+  // P202, 13.11.: die Statuszeile sagt "Embeddings: N of M ready" (Mockup-Wortlaut);
+  // die Stück-Auskunft trägt der füllend-Chip über der Liste ("pieces of your N notes
+  // are ready") — die Marke zog mit ihm.
+  ["pieces of your", 1],
   ["saved as a new note", 1],
   ["what happened in the last", 1],
   // Punkt 7, 2.11. (das Woerterbuch der Flaeche, 3.2.114): gegen das installierte 3.2.109 gezaehlt

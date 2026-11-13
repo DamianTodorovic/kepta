@@ -1036,7 +1036,7 @@ darum immer zusammen; die Pinne hält 53 von 172, Kante > 0,30.
 
 README.md:128 nannte sieben Zahlen — „the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · **All**".
 Die Gegenprobe in der Suite war leer: `grep -rln "RESULT_STOPS" tests/` meldete keine einzige Datei,
-und der eine Regler-Fall (`tests/components/Dashboard.test.tsx:206`) prüfte `Number(regler.max) > 0`.
+und der eine Regler-Fall (`tests/components/Dashboard.test.tsx:208`) prüfte `Number(regler.max) > 0`.
 Das ist die Anwesenheit eines Reglers, nicht seine Skala. Ein Instrument, das sieben Stufen nicht von
 vier unterscheidet, lässt die Doku grün, wenn die Hälfte der Stufen verschwindet.
 

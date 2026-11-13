@@ -74,7 +74,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
       {typeColor && (
         <span
           aria-hidden
-          className="absolute left-0 top-2 bottom-2 w-[6px]"
+          className="row-grat absolute left-0 top-2 bottom-2 w-[6px]"
           style={{ background: `linear-gradient(180deg, ${typeColor}, color-mix(in srgb, ${typeColor} 30%, transparent))`, borderRadius: 999 }}
         />
       )}

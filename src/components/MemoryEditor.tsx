@@ -259,56 +259,52 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete, spalte = false
         className={`relative ${spalte ? 'w-full' : 'w-full max-w-2xl'} h-full flex flex-col z-10 glass-strong`}
         style={{ borderLeft: '1px solid var(--border-subtle)' }}
       >
-        <header className="flex items-center justify-between p-5 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-          <div className="flex items-center gap-3">
-            <KeptaMark size={30} />
-            <div>
-              <h2 className="fs-5 font-semibold" style={{ color: 'var(--text-1)' }}>
-                {memory?.id ? 'Edit note' : 'New note'}
-              </h2>
-              <div className="hud-label mt-1 flex items-center gap-2">
-                {memory?.id ? (
-                  <>
-                    <Clock className="w-3 h-3" />
-                    {KINDS.find(k => k.key === (memory.type || 'semantic'))?.label ?? TYP_BESCHREIBUNG.semantic}
-                    {' · '}
-                    {formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}
-                  </>
-                ) : (
-                  'A new note in your local knowledge base'
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+        {/* P202, Mockup-Grammatik (detail-kopf): „Bearbeiten · Private" + Save primär
+            + X — der Save feuert den Formular-Submit über das form-Attribut. */}
+        <header className="detail-kopf">
+          <span className="wo">
+            {memory?.id ? 'Edit note' : 'New note'}
+            {privat ? ' · Private' : ''}
+          </span>
+          <div className="kopf-handlungen">
             {onDelete && memory?.id && (
               <button
                 type="button"
                 onClick={onDelete}
-                className="btn-danger-ghost p-2 rounded-lg"
+                className="btn-ghost p-1.5 rounded-lg"
                 title="Move to trash"
+                aria-label="Move to trash"
               >
-                <Trash2 className="w-4.5 h-4.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
             )}
             <button
+              type="submit"
+              form="editor-form"
+              className="btn-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg fs-2 font-semibold"
+            >
+              <Save className="w-3.5 h-3.5" />
+              Save
+            </button>
+            <button
               onClick={requestClose}
               aria-label="Close editor"
-              className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-inset)]"
-              style={{ color: 'var(--text-3)' }}
+              className="btn-ghost p-1.5 rounded-lg"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </header>
 
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+        <form id="editor-form" onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-y-auto">
           <div className="p-8 flex-1 flex flex-col gap-6">
             <div>
-              <label htmlFor="memory-titel" className="hud-label mb-2">Title</label>
+              {/* P202, Mockup-Grammatik: der Titel steht ohne sichtbares Label — der
+                  Platzhalter genügt, das aria-label trägt den Namen für die taste. */}
               <input
                 id="memory-titel"
                 type="text"
+                aria-label="Title"
                 placeholder="Title of this note"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -540,15 +536,10 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete, spalte = false
               <button type="button" onClick={() => setWarnUnsaved(false)} className="fs-2 lh-dicht font-semibold px-3 py-1 rounded-lg btn-ghost">Keep editing</button>
             </div>
           )}
-          <footer className="p-5 shrink-0 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+          {/* P202, Mockup-Grammatik: kein Fuß mit zweitem Save — die Sicherung wohnt
+              im Kopf; der Satz bleibt als leise Zeile. */}
+          <footer className="px-8 pb-4 shrink-0">
             <span className="hud-label">Everything stays local on this device</span>
-            <button
-              type="submit"
-              className="btn-primary flex items-center gap-2 px-5 py-2 rounded-lg fs-3 font-semibold"
-            >
-              <Save className="w-4 h-4" />
-              Save
-            </button>
           </footer>
         </form>
       </motion.div>

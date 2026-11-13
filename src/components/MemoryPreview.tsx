@@ -7,7 +7,7 @@ import { motion } from "motion/react";
 import { FEDER_SCHUBLADE } from "../lib/motionTokens";
 import { formatDistanceToNow } from "date-fns";
 import { Memory } from "../types";
-import { FileText, ExternalLink, EditPen, Copy, Check, Lock, Bot } from "../lib/icons";
+import { FileText, ExternalLink, EditPen, Copy, Check, Lock, Bot, X } from "../lib/icons";
 import { useToast } from "./ui/Toast";
 import { ApiFehler } from "../lib/api";
 import { absage } from "../lib/absage";
@@ -188,45 +188,65 @@ export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: 
         style={{ borderLeft: ohneVorhang ? "1px solid var(--kante-flaeche)" : "1px solid var(--border-subtle)" }}
         data-testid="memory-preview"
       >
-        <header className="flex items-start justify-between gap-3 p-5 pb-4 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-          <div className="min-w-0">
-            <h2 className="fs-5 font-semibold lh-dicht break-words" style={{ color: "var(--text-1)" }}>
-              {memory.title || "Untitled"}
-            </h2>
-            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 fs-1" style={{ color: "var(--text-3)" }}>
-              <span>{artLabel}</span>
-              <span>·</span>
-              <span>{formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}</span>
-              {chunk && (
-                <>
-                  <span>·</span>
-                  <span className="tnum" title="This file came in as separate pieces">{t("preview.part")} {chunk.nr}/{chunk.von}</span>
-                </>
-              )}
-              {typeof memory.confidence === "number" && (
-                <>
-                  <span>·</span>
-                  <span className="tnum">{t("preview.confidence")} {Math.round(memory.confidence * 100)}%</span>
-                </>
-              )}
-              {privat && (
-                <>
-                  <span>·</span>
-                  <span className="inline-flex items-center gap-1" style={{ color: "var(--accent)" }}><Lock className="w-3 h-3" /> Private</span>
-                </>
-              )}
-            </div>
+        {/* P202, Mockup-Grammatik (detail-kopf): oben stehen Ort und Handlungen —
+            der Titel und die Zeile stehen im Körper (wie im Mockup h1 + meta). */}
+        <header className="detail-kopf">
+          <span className="wo">Vorschau{privat ? ' · Private' : ''}</span>
+          <div className="kopf-handlungen">
+            {kopiert && <span className="fs-1 shrink-0" style={{ color: 'var(--ok)' }}>{t("preview.copied")}</span>}
+            <button
+              onClick={() => void texteKopieren()}
+              className="btn-ghost p-1.5 rounded-lg"
+              aria-label="Copy text"
+              title="Copy the full text to the clipboard"
+            >
+              {kopiert ? <Check className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={() => onEdit(memory)}
+              className="btn-ghost p-1.5 rounded-lg"
+              aria-label="Edit"
+              title="Edit this note"
+            >
+              <EditPen className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="btn-ghost p-1.5 rounded-lg"
+              aria-label="Close preview"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="btn-ghost px-2 py-1 rounded-lg fs-1 shrink-0"
-            aria-label="Close preview"
-          >
-            {t("preview.close")}
-          </button>
         </header>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
+          <h2 className="fs-6 font-semibold lh-dicht break-words" style={{ color: "var(--text-1)" }}>
+            {memory.title || "Untitled"}
+          </h2>
+          <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 fs-2" style={{ color: "var(--text-3)" }}>
+            <span>{artLabel}</span>
+            <span>·</span>
+            <span>{formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}</span>
+            {chunk && (
+              <>
+                <span>·</span>
+                <span className="tnum" title="This file came in as separate pieces">{t("preview.part")} {chunk.nr}/{chunk.von}</span>
+              </>
+            )}
+            {typeof memory.confidence === "number" && (
+              <>
+                <span>·</span>
+                <span className="tnum">{t("preview.confidence")} {Math.round(memory.confidence * 100)}%</span>
+              </>
+            )}
+            {privat && (
+              <>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1" style={{ color: "var(--accent)" }}><Lock className="w-3 h-3" /> Private</span>
+              </>
+            )}
+          </div>
           {(privat || leserStand !== "offen") && (
             <div data-testid="preview-readers" className="mb-4 fs-2 flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: "var(--bg-inset)", color: "var(--text-2)" }}>
               {privat ? <Lock className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} /> : <Bot className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} />}
@@ -380,7 +400,9 @@ export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: 
           )}
         </div>
 
-        <footer className="flex items-center justify-between gap-3 p-5 pt-4 shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+        {/* P202, Mockup-Grammatik: die Tags stehen unten — die Aktionen (Copy/Edit)
+            wohnten schon im Kopf; ein zweiter Knopf-Satz wäre eine doppelte Behauptung. */}
+        <footer className="px-5 py-3 shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
           <div className="flex flex-wrap gap-2 min-w-0 overflow-hidden">
             {memory.tags.map((tag) => (
               <span
@@ -391,24 +413,6 @@ export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: 
                 {tag}
               </span>
             ))}
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => void texteKopieren()}
-              className="btn-ghost px-3 py-2 rounded-lg fs-2 font-semibold flex items-center gap-2"
-              title="Copy the full text to the clipboard"
-            >
-              {kopiert ? <Check className="w-4 h-4" style={{ color: "var(--accent)" }} /> : <Copy className="w-4 h-4" />}
-              {kopiert ? t("preview.copied") : t("preview.copyText")}
-            </button>
-            <button
-              onClick={() => onEdit(memory)}
-              className="btn-ghost px-3 py-2 rounded-lg fs-2 font-semibold flex items-center gap-2"
-              style={{ border: "1px solid var(--border-subtle)", color: "var(--accent)" }}
-            >
-              <EditPen className="w-4 h-4" />
-              {t("preview.edit")}
-            </button>
           </div>
         </footer>
       </motion.div>

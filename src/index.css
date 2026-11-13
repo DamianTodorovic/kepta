@@ -781,31 +781,74 @@ select:focus-visible {
   padding: 0 8px 8px;
 }
 .listen-spalte .apple-seg { flex-wrap: wrap; }
-/* Die Zeilen sind in der schmalen Spalte enger gesetzt als am breiten Blatt:
-   der Titel steht in einer Zeile (Ellipsis), der Text als Zwei-Zeilen-Vorschau —
-   die Mockup-Zeile (punkt · titel · vorschau · zeit), nicht die Aktenwand. */
-.listen-spalte .row-entry { padding: 9px 4px; gap: 8px; contain-intrinsic-size: auto 88px; }
+/* Die Zeile ist das zeile-item des Mockups (k3pta-app-fenster): farbiger
+   Art-Punkt, Titel in Sans in EINER Zeile, Vorschau in einer Zeile, rechts
+   Zeit und Herkunft — keine Serife, keine Pillen, keine Tag-Kette, keine
+   Trennlinie (der Schweb-Hintergrund trennt). */
+.listen-spalte .row-entry {
+  padding: 8px 9px;
+  gap: 9px;
+  border-bottom: none;
+  border-radius: var(--r-btn);
+  contain-intrinsic-size: auto 64px;
+}
+.listen-spalte .row-entry:hover { background: rgba(31,30,28,.045); border-color: transparent; }
+.listen-spalte .row-type { align-items: center; margin-top: 0; gap: 0; }
+.listen-spalte .row-type svg { width: 10px; height: 10px; }
+.listen-spalte .row-type-label { display: none; }
+/* Der Farb-Grat (P196) wohnt am breiten Blatt — die schmale Zeile trägt die
+   Farbe am Punkt (wie das Mockup: nur der Art-Punkt neben dem Titel). */
+.listen-spalte .row-grat { display: none; }
+/* Die Bedien-Chips im Filter-Band: klein über den generischen Knopf im Band —
+   die .row-quiet-Regel selbst bleibt unangetastet (H-3 liest sie wörtlich). */
+.listen-filter button { min-height: 22px; padding: 0 7px; }
+/* Der Füll-Chip (#115) ist Auskunft, kein Listenteil — er bleibt im DOM
+   (seine Wachen lesen ihn), das Bild der Spalte ruht. */
+.listen-spalte [data-testid="suche-fuellend"] { display: none; }
 .listen-spalte .row-body h3 {
-  font-size: var(--fs-3);
+  font-family: inherit;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-halbfest);
   line-height: 1.3;
-  margin: 0 0 2px;
+  margin: 0 0 1px;
+  letter-spacing: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .listen-spalte .row-body p {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  font-size: var(--fs-2);
+  color: var(--text-3);
 }
-.listen-spalte .row-type-label { font-size: var(--fs-1); }
-.listen-spalte .row-pct { font-size: var(--fs-3); }
-/* Die Tag-Kette gehört in der schmalen Zeile nicht an die Kante (das Mockup
-   trägt Punkt · Titel · Vorschau · Zeit) — die Tags leben als About-Filter und
-   im Detail. display:none bleibt für die Tests im Textbestand (jsdom zählt sie),
-   das Bild ruht. */
+/* Die Quelle-/Badge-Zeile wohnt im Detail, nicht an der Kante der schmalen
+   Zeile (das Mockup trägt dort Punkt · Titel · Vorschau · Zeit). */
+.listen-spalte .row-body-foot { display: none; }
+.listen-spalte .row-meta { gap: 2px; }
+.listen-spalte .row-time { font-size: var(--fs-1); }
+/* Die Tag-Kette gehört in der schmalen Zeile nicht an die Kante — die Tags
+   leben als About-Filter und im Detail. display:none bleibt für die Tests im
+   Textbestand (jsdom zählt sie), das Bild ruht. */
 .listen-spalte .row-tags { display: none; }
+/* Die Auskunft (Index-Streifen) lebt im Listen-Kopf ("40 of 40") und in der
+   Statuszeile ("40 notes, 6 tags") — im Bild der Spalte steht sie nicht. Die
+   bewachten Zellen (.num-hero/.index-cell) bleiben im DOM für ihre Tests. */
+.listen-spalte > .index-strip { display: none; }
+/* Die Form/About-Wörter: eine dünne Zeile mit kleinen Kanten-Chips (die
+   Gruppen und ihre Rollen bleiben für die Wachen unangetastet). */
+.listen-filter {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 5px 12px 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-1);
+}
 .listen-fuss {
   flex: none;
   display: flex;
@@ -950,19 +993,17 @@ select:focus-visible {
   width: 196px;
   flex: none;
   border-right: 1px solid var(--border-subtle);
-  background: var(--bg-inset);
+  /* P202, Mockup-Grammatik: die Abschnitte stehen auf der Flächenfarbe —
+     kein Karten-Kasten um die Leiste. */
+  background: transparent;
   display: flex;
   flex-direction: column;
   padding: 12px 8px;
   gap: 1px;
 }
-.einstellungen-liste-kopf {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 8px 12px;
-  min-width: 0;
-}
+/* P202, 13.11.: .einstellungen-liste-kopf fiel als Waise — der Karten-Kopf über
+   den Abschnitten flog (Mockup-Grammatik: die Abschnitte stehen direkt in der
+   Leiste, der Titel wohnt im Fenster-Titel). */
 .einstellungen-liste .navi { display: flex; flex-direction: column; gap: 1px; }
 .einstellungen-liste .navi button {
   display: flex;

@@ -89,24 +89,9 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
       inert={isFocusMode}
       aria-hidden={isFocusMode}
     >
-      {/* Marke */}
-      <div className="seiten-kante-unten h-[64px] px-4 flex items-center gap-2 shrink-0">
-        <KeptaMark size={26} />
-        <div className="min-w-0">
-          <div className="seiten-marke font-semibold tracking-[-0.02em] fs-3 lh-marke">
-            K3PTA
-          </div>
-          <div className="seiten-zahl fs-1 mt-1 tnum">
-            {totalMemories.toLocaleString('en-GB')} {totalMemories === 1 ? 'note' : 'notes'}
-          </div>
-        </div>
-      </div>
-
-      {/* P202, Mockup-Treue (k3pta-app-fenster): die Suche steht oben in der
-          Navigation — das Feld filtert die Liste, ⌘K daneben öffnet die Palette.
-          Vorher lebte sie in einer Werkzeugleiste über der Fläche; Mail, Linear
-          und das Mockup tragen das Feld an der Leiste. */}
-      <div className="px-3 pb-1 shrink-0">
+      {/* P202, Mockup-Treue (k3pta-app-fenster): die Leiste startet mit der Suche —
+          die Marke wohnt im Fuß-Konto (wie im Mockup), nicht in einem Kopf-Block. */}
+      <div className="px-3 pt-3 pb-1 shrink-0">
         <div className="relative flex items-center">
           <Search className="w-3.5 h-3.5 absolute left-2.5 pointer-events-none" style={{ color: 'var(--side-text)' }} />
           <input
@@ -134,6 +119,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                 onClick={() => onNavigate(item.id)}
                 data-active={active}
                 title={item.erklaerung}
+                aria-label={item.label}
                 className={cn(
                   "sidebar-nav-btn w-full min-h-9 flex items-center gap-2 px-3 py-2 fs-3 text-left",
                   active ? "font-semibold" : "font-semibold"
@@ -141,6 +127,14 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
               >
                 <item.icon className="seiten-ikone w-4 h-4 shrink-0" weight={item.weight ?? 'duotone'} />
                 <span className="flex-1">{item.label}</span>
+                {/* Die Zahl rechts in der Zeile (Mockup-Grammatik): der Bestand steht
+                    beim Fach, nicht in einem eigenen Kopf — mit seinem Wort, wie die
+                    Leiste ihn immer nannte. */}
+                {item.id === 'memories' && totalMemories > 0 && (
+                  <span className="seiten-zahl fs-1 tnum shrink-0">
+                    {totalMemories.toLocaleString('en-GB')} {totalMemories === 1 ? 'note' : 'notes'}
+                  </span>
+                )}
                 {item.id === 'activity' && appsLive && (
                   <span aria-hidden title="An AI app is using K3PTA right now" data-testid="apps-live" className="seiten-punkt w-1.5 h-1.5 rounded-full animate-pulse shrink-0" />
                 )}
