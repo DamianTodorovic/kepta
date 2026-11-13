@@ -802,6 +802,17 @@ select:focus-visible {
 /* Die Bedien-Chips im Filter-Band: klein über den generischen Knopf im Band —
    die .row-quiet-Regel selbst bleibt unangetastet (H-3 liest sie wörtlich). */
 .listen-filter button { min-height: 22px; padding: 0 7px; }
+/* Das Gruppierungs-Segment steht frei (Mockup): keine Umrandung, nur das aktive
+   Wort liegt als weicher Kasten auf der Fläche. */
+.listen-spalte .apple-seg { background: transparent; border: none; padding: 2px 12px; gap: 10px; }
+.listen-spalte .apple-seg-btn { padding: 3px 9px; font-size: var(--fs-2); }
+.listen-spalte .apple-seg-btn[data-on="true"] { background: rgba(31,30,28,.07); box-shadow: none; }
+/* Der Listen-Fuß trägt freie Wörter (Mockup), keine Chip-Kästen — die Knöpfe
+   darin (Scan/Review) behalten ihre Wirkfläche. */
+.listen-fuss .chip { background: transparent; border: none; padding: 0; }
+/* Die aktive Zeile (Mockup): grün getönt, Titel in Akzent, Kante links. */
+.row-entry.aktiv { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); border-radius: var(--r-btn); }
+.row-entry.aktiv .row-body h3 { color: var(--accent); }
 /* Der Füll-Chip (#115) ist Auskunft, kein Listenteil — er bleibt im DOM
    (seine Wachen lesen ihn), das Bild der Spalte ruht. */
 .listen-spalte [data-testid="suche-fuellend"] { display: none; }
@@ -1219,6 +1230,8 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
   transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
 }
 .sidebar-nav-btn:hover, .sidebar-tag-btn:hover { background: var(--side-flaeche); }
+/* P202, Mockup-Grammatik: die Zahl in der aktiven Zeile trägt den Akzent. */
+.sidebar-nav-btn[data-active='true'] .seiten-zahl { color: var(--accent); }
 /* P197 (Emil-Regel: „Buttons must feel responsive" — Drück-Rücken auf JEDER
    pressbaren Stelle, 0.95–0.98): die Seitenleiste ist die meistgedrückte
    Fläche der App — ihr Rücken fehlte. */

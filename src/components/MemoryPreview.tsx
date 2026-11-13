@@ -7,7 +7,7 @@ import { motion } from "motion/react";
 import { FEDER_SCHUBLADE } from "../lib/motionTokens";
 import { formatDistanceToNow } from "date-fns";
 import { Memory } from "../types";
-import { FileText, ExternalLink, EditPen, Copy, Check, Lock, Bot, X } from "../lib/icons";
+import { EditPen, Copy, Check, Lock, Bot, X } from "../lib/icons";
 import { useToast } from "./ui/Toast";
 import { ApiFehler } from "../lib/api";
 import { absage } from "../lib/absage";
@@ -247,6 +247,40 @@ export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: 
               </>
             )}
           </div>
+          {/* P202, Mockup-Grammatik: die getönten Tag-Pillen und die Herkunft stehen
+              in der Zeile unter dem Titel — die große Quelle-Karte flog; der Weg
+              zurück zur Herkunft ist das Wort "saved from …" selbst (grüner Glieder). */}
+          {memory.tags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              {memory.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center px-2 py-px rounded fs-1 font-semibold"
+                  style={{ color: 'var(--type-semantic)', background: 'color-mix(in srgb, var(--type-semantic) 12%, transparent)' }}
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+          {quelle && (
+            <div className="flex items-center flex-wrap gap-1 mt-2 fs-2" style={{ color: 'var(--text-3)' }}>
+              <span>saved from</span>
+              <button
+                onClick={() => void quelleOeffnen()}
+                data-testid="preview-open-source"
+                className="font-semibold hover:underline underline-offset-2"
+                style={{ color: 'var(--accent)' }}
+                title={quelle.art === "datei"
+                  ? `Open file: ${quelle.pfad}`
+                  : quelle.art === "url"
+                    ? `Open link: ${quelle.url}`
+                    : `Imported from inbox: ${quelle.name}`}
+              >
+                {quelle.name}
+              </button>
+            </div>
+          )}
           {(privat || leserStand !== "offen") && (
             <div data-testid="preview-readers" className="mb-4 fs-2 flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: "var(--bg-inset)", color: "var(--text-2)" }}>
               {privat ? <Lock className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} /> : <Bot className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} />}
@@ -261,39 +295,6 @@ export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: 
               </span>
             </div>
           )}
-          {/* Quelle zuerst — der Weg zurück zur Herkunft ist der häufigste Griff */}
-          {quelle && (
-            <div className="mb-4">
-              <button
-                onClick={() => void quelleOeffnen()}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left border hover:border-[var(--accent)] transition-colors group"
-                style={{ background: "var(--bg-inset)", borderColor: "var(--border-subtle)" }}
-                data-testid="preview-open-source"
-                title={quelle.art === "datei"
-                  ? `Open file: ${quelle.pfad}`
-                  : quelle.art === "url"
-                    ? `Open link: ${quelle.url}`
-                    : `Imported from inbox: ${quelle.name}`}
-              >
-                <FileText className="w-4 h-4 shrink-0" style={{ color: "var(--accent)" }} />
-                <span className="min-w-0 flex-1">
-                  <span className="block fs-3 font-semibold truncate" style={{ color: "var(--text-1)" }}>
-                    {quelle.name}
-                  </span>
-                  <span className="block fs-1 truncate" style={{ color: "var(--text-3)" }}>
-                    {quelle.art === "datei" ? quelle.pfad : quelle.art === "url" ? quelle.url : `Imported from inbox · ${quelle.name}`}
-                  </span>
-                </span>
-                {quelle.art !== "inbox" && (
-                  <span className="shrink-0 fs-1 font-semibold flex items-center gap-1 opacity-70 group-hover:opacity-100" style={{ color: "var(--accent)" }}>
-                    {quelle.art === "url" ? <ExternalLink className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
-                    {t("preview.open")}
-                  </span>
-                )}
-              </button>
-            </div>
-          )}
-
           {/* Der komplette Text, Absatz fuer Absatz — kein Formular, kein Markup-Zwang */}
           {staendeGrund && (
             <p role="status" data-testid="preview-staende-grund" className="fs-2 mb-3" style={{ color: 'var(--warn)' }}>{staendeGrund}</p>

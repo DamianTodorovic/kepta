@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { cn } from '../lib/utils';
 type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
 import { formatDistanceToNow } from 'date-fns';
 import { Memory } from '../types';
@@ -20,6 +21,11 @@ interface MemoryCardProps {
    * stammen die Karten aus dem lokalen Sofort-Ranking — dann keine Badges.
    */
   herkunft?: { bm25: number | null; vektor: number | null; graph: number | null };
+  /**
+   * P202, Mockup-Grammatik: die geöffnete Akte ist die aktive Zeile — grün
+   * getönt, Titel in Akzent, Kante links (`.row-entry.aktiv`).
+   */
+  aktiv?: boolean;
 }
 
 /**
@@ -33,7 +39,7 @@ const TYPE_META: Record<string, { icon: React.ComponentType<{ className?: string
   reference: { icon: FileText },
   procedural: { icon: Zap },
 };
-export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms, herkunft }: MemoryCardProps) {
+export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms, herkunft, aktiv = false }: MemoryCardProps) {
   const toast = useToast();
   const pct = typeof score === "number" ? Math.round(score * 100) : null;
   const now = Date.now();
@@ -64,7 +70,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
     // Drück-Quittungen bleiben.
     <div
       onClick={onClick}
-      className="row-entry cursor-pointer group relative"
+      className={cn("row-entry cursor-pointer group relative", aktiv && "aktiv")}
     >
       {/* Farbstreich links: der Typ färbt den Kartenrand */}
       {/* P197: 6 px statt 4 px — die Art-Farbe muss auf einen Blick sichtbar sein

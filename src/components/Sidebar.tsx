@@ -1,6 +1,6 @@
 import { useState, type RefObject } from 'react';
 import { Brain } from "../lib/icons";
-import { Hash, MessageSquare, SettingsIcon, Moon, Sun, PanelLeftClose, Network, Sparkles, Clock, FileText, Bot, User, Search } from "../lib/icons";
+import { MessageSquare, SettingsIcon, Moon, Sun, PanelLeftClose, Network, Sparkles, Clock, FileText, Bot, User, Search } from "../lib/icons";
 import { useTheme } from '../contexts/ThemeContext';
 import { cn } from '../lib/utils';
 import { KeptaMark } from './KeptaMark';
@@ -165,8 +165,11 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   data-active={active}
                   className="sidebar-tag-btn w-full min-h-7 flex items-center gap-2 px-2 py-[5px] fs-3 text-left"
                 >
-                  <Hash className="seiten-ikone w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate flex-1">{name}</span>
+                  {/* P202, Mockup-Grammatik: der Tag trägt die Art-Farbe der Fakten —
+                      kein grauer Hash-Glyph daneben; das Wort bleibt das Wort. */}
+                  <span className="truncate flex-1" style={{ color: 'var(--type-semantic)', fontWeight: 550 }}>
+                    {name}
+                  </span>
                   {count !== null && count > 1 && (
                     <span className="seiten-plakette fs-1 tnum px-2 py-px rounded-md shrink-0">{count}</span>
                   )}

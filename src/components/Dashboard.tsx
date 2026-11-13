@@ -1448,6 +1448,7 @@ export function Dashboard() {
         score={pct}
         matchedTerms={scored?.matchedTerms}
         herkunft={herkunft}
+        aktiv={vorschauMemory?.id === memory.id}
         onClick={() => setVorschauMemory(memory)}
       />
     );
