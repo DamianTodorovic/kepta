@@ -82,10 +82,10 @@
      Entwurf und Beweis: node scripts/design-wache.mjs --generieren,
      Prüfung jedes Wertes: node scripts/design-wache.mjs
      ============================================================ */
-  --eb-0: oklch(0.8095 0.0027 106.5);   /* Tisch — der graue Aktendeckel */
-  --eb-1: oklch(0.8936 0.0027 106.5);   /* Panel */
-  --eb-2: oklch(0.9846 0.0027 106.5);   /* Blatt: Karte, Menü, Toast */
-  --feld: oklch(0.8095 0.0027 106.5);   /* ein Schritt unter dem Panel */
+  --eb-0: oklch(0.9719 0.0022 106);     /* Tisch — die Werkbank-Grundfläche #f7f6f3 (P202, Mockup) */
+  --eb-1: oklch(0.9755 0.0018 106);     /* Panel — #f6f5f3 */
+  --eb-2: oklch(0.9830 0.0012 106);     /* Blatt: Karte, Menü, Toast — #fafaf9 (Biss-Kontrolle: Blau ≤ 250) */
+  --feld: oklch(0.9547 0.0027 106);     /* ein Schritt unter dem Panel — #f1f0ec */
 
   /* Flächen — alte Namen bleiben, sie zeigen auf die Stufen */
   --bg-base: var(--eb-0);
@@ -101,10 +101,12 @@
   --bg-hover: var(--eb-1);
   --scrim: color-mix(in srgb, var(--bg-base) 60%, transparent);
 
-  /* Linien — drei Rollen, jede gegen beide Nachbarn gerechnet */
-  --kante-dekor: oklch(0.6968 0.0027 106.5);      /* Haarlinie in einer Fläche, 1,35 */
-  --kante-stark: oklch(0.6090 0.0027 106.5);      /* sichtbare Regel, 1,90 */
-  --kante-kontrolle: oklch(0.4958 0.0027 106.5);  /* Bedienelement-Berandung, 3,05 */
+  /* Linien — drei Rollen, auf die Werkbank-Grundfläche gerechnet (P202):
+     #f7f6f3 hat Y 0,922 — die Haarlinie hält 1,35, die Regel 1,90, die
+     Bedienelement-Berandung 3,05 gegen sie und ihre Nachbarn. */
+  --kante-dekor: oklch(0.8480 0.0022 106);        /* Haarlinie in einer Fläche, 1,35 */
+  --kante-stark: oklch(0.7264 0.0022 106);        /* sichtbare Regel, 1,90 */
+  --kante-kontrolle: oklch(0.5767 0.0022 106);    /* Bedienelement-Berandung, 3,05 */
   /* Flächengrenze: die Kante ZWISCHEN Blatt und Tisch. Im hellen Thema kann die
      Leuchtkraft hier nicht mehr trennen — drei Stufen bei 1,30 überschreiben von
      Tisch zu Blatt nur das 1,79-fache (dunkel: 18,5-faches), also trägt die Kante
@@ -139,9 +141,9 @@
   /* Text — Tinte. Gelöst gegen das härteste Gegenüber, das unter ihr
      liegen kann: im hellen Thema der Tisch samt Ambient-Tinktur, nicht
      das Papier. Sonst sind die Zeilen auf dem Aktendeckel zu leise. */
-  --text-1: oklch(0.2494 0.0035 228.9);   /* 8,72 gegen den Tisch */
-  --text-2: oklch(0.3341 0.0050 236.6);   /* 6,00 */
-  --text-3: oklch(0.3972 0.0046 236.5);   /* 4,65 — die Ebene, die erklärt */
+  --text-1: oklch(0.2354 0.0032 92);      /* #1f1e1c — warme Werkbank-Tinte */
+  --text-2: oklch(0.4240 0.0072 91);      /* #5f5b54 — 5,9 gegen den Tisch */
+  --text-3: oklch(0.4518 0.0082 91);      /* #6b675f — 4,9 — die Ebene, die erklärt */
   --text-muted: var(--text-2);
 
   /* Akzent — Siegellack. Zwei Rollen, weil Komponenten denselben Token
@@ -149,15 +151,15 @@
      beides zugleich sein (D1-04). `--accent` = Schrift und Zeichen,
      `--accent-fuell` = Masse (Knopf, Sprechblase, Schalter),
      `--accent-kante` = Rand der Masse, `--fokus` = Tastatur-Ring. */
-  --accent: oklch(0.4153 0.1510 29.9);          /* 7,23 auf dem Blatt */
-  --accent-fuell: oklch(0.4640 0.1510 29.9);
-  --accent-kante: oklch(0.4640 0.1510 29.9);
-  --fokus: oklch(0.4640 0.1510 29.9);           /* 4,28 gegen den Tisch */
-  --accent-2: oklch(0.4200 0.1510 29.9);
-  --accent-soft: oklch(0.4640 0.1510 29.9 / 0.07);
-  --accent-soft-2: oklch(0.4640 0.1510 29.9 / 0.11);
-  --accent-glow: oklch(0.4640 0.1510 29.9 / 0.22);
-  --on-accent: oklch(0.9626 0.0131 82.4);       /* 6,78 auf der Füllung */
+  --accent: oklch(0.4751 0.0832 162.5);         /* #276b4f — die Schrift-Rolle (D1-04) */
+  --accent-fuell: oklch(0.5180 0.0875 162.5);   /* #2e7d5b — die Masse (Knopf, Schalter) */
+  --accent-kante: oklch(0.4751 0.0832 162.5);   /* #276b4f */
+  --fokus: oklch(0.4751 0.0832 162.5);
+  --accent-2: oklch(0.4751 0.0832 162.5);
+  --accent-soft: oklch(0.5180 0.0875 162.5 / 0.12);
+  --accent-soft-2: oklch(0.5180 0.0875 162.5 / 0.18);
+  --accent-glow: oklch(0.5180 0.0875 162.5 / 0.22);
+  --on-accent: oklch(1 0 0);                    /* Weiß auf der Füllung: 5,1 */
 
   /* Semantik — Archivtinten, als Schrift gelöst (4,65 gegen den Tisch) */
   --ok: oklch(0.3896 0.0676 155.6);
@@ -200,13 +202,13 @@
      Tisch, die Tinten sind die hellen Werte, wörtlich — die Harmonie-Wache
      rechnet die Rampe aus diesen Zahlen). Der dunkle Stahl-Satz steht unten
      im .dark-Block, unverändert. */
-  --side-basis-1: oklch(0.8936 0.0027 106.5);  /* = --eb-1 hell: die Leisten-Fläche */
-  --side-basis-2: oklch(0.8095 0.0027 106.5);  /* = --eb-0 hell: die Fusszeile tiefer */
-  --side-text: oklch(0.2494 0.0035 228.9);     /* = --text-1 hell */
-  --side-ruhig: oklch(0.3341 0.0050 236.6);    /* = --text-2 hell */
+  --side-basis-1: oklch(0.9547 0.0027 106);    /* = --eb-1 hell: die Leisten-Fläche #f1f0ec */
+  --side-basis-2: oklch(0.9247 0.0029 106);    /* = --eb-0 hell: die Fusszeile tiefer #eae9e4 */
+  --side-text: oklch(0.2354 0.0032 92);        /* = --text-1 hell */
+  --side-ruhig: oklch(0.4240 0.0072 91);       /* = --text-2 hell */
   --side-akzent: var(--accent);
   --side-kante: var(--border-subtle);
-  --side-leise: oklch(0.3972 0.0046 236.5);    /* = --text-3 hell */
+  --side-leise: oklch(0.4518 0.0082 91);       /* = --text-3 hell */
   --side-kante-heben: var(--kante-stark);
   --side-flaeche: oklch(0 0 0 / 0.05);         /* dunkle Lage als Hover auf der hellen Seite */
   --side-auswahl: var(--accent-soft);          /* die aktive Stelle: die Auswahlfläche des Systems */

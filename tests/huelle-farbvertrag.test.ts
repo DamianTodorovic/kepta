@@ -142,8 +142,8 @@ describe("Seiten-Harmonie: die drei Ebenen bleiben in der Reihenfolge", () => {
     expect(dunkel.leise).toBeCloseTo(0.6425, 4);
     expect(dunkel.basis).toBeCloseTo(0.188, 4);
     const hell = stufen(/:root\s*\{[\s\S]*?\n\}/, "Wurzel");
-    expect(hell.text).toBeCloseTo(0.2494, 4);
-    expect(hell.basis).toBeCloseTo(0.8095, 4);
+    expect(hell.text).toBeCloseTo(0.2354, 4);
+    expect(hell.basis).toBeCloseTo(0.9247, 4);
   });
 });
 

@@ -74,12 +74,18 @@ describe("Design-Wache", () => {
     ).toEqual([]);
   });
 
-  // Die vier Sonden aus D1 C.16 — hier als eigene Scheibe maschinell, damit
+  // Die Sonden aus D1 C.16 — hier als eigene Scheibe maschinell, damit
   // ein künftiger Lauf nicht wieder "sieht das schon so" sagt.
-  it("hält die Ebenen-Wache: jede Leiterstufe 1,30 gegen den Nachbarn", () => {
-    const leiter = ergebnis.linien.filter((l) => l.sektion === "flächen" && /Leiter/.test(l.befund));
-    expect(leiter.length).toBeGreaterThanOrEqual(4); // beide Themen, beide Nachbarschaften
-    for (const l of leiter) expect(parseFloat(l.zahl.replace(",", "."))).toBeGreaterThanOrEqual(1.3 - 0.006);
+  // P202, Werkbank-Doktrin: das dunkle Thema führt die 1,30-Leiter weiter, das
+  // helle Thema trägt die Werkbank-Zeile (die Flächen bleiben hell und
+  // aufsteigend; die Grenze trägt die Kante).
+  it("hält die Ebenen-Wachen: dunkel 1,30 je Nachbar, hell die Werkbank-Doktrin", () => {
+    const dunkel = ergebnis.linien.filter((l) => l.sektion === "flächen" && l.befund.startsWith("dunkel: Leiter"));
+    expect(dunkel.length).toBeGreaterThanOrEqual(2); // beide Nachbarschaften der Stahl-Welt
+    for (const l of dunkel) expect(parseFloat(l.zahl.replace(",", "."))).toBeGreaterThanOrEqual(1.3 - 0.006);
+    const werkbank = ergebnis.linien.find((l) => l.sektion === "flächen" && /aufsteigend/.test(l.befund));
+    expect(werkbank, "die Werkbank-Zeile der hellen Fläche fehlt").toBeTruthy();
+    expect(werkbank!.ok).toBe(true);
   });
 
   it("hält die Ruhe-Ebenen-Wache: jede Schrift 4,50 in beiden Themen", () => {
