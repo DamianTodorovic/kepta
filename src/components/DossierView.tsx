@@ -184,138 +184,168 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
   const chips = [...(vorschlaege?.topics ?? []), ...(vorschlaege?.tags ?? [])].filter((v, i, a) => a.findIndex((x) => x.name.toLowerCase() === v.name.toLowerCase()) === i).slice(0, 12);
 
   return (
-    <div className="max-w-3xl mx-auto py-6" data-testid="dossier-view">
-      <header className="mb-5">
-        <h1 className="display">Dossier</h1>
-        <p className="fs-4 lh-lesbar mt-1" style={{ color: 'var(--text-2)' }}>
-          Everything you know about a person, a project or a topic — on one page: the statements, what happened
-          when, how it's done, the files behind it and what is still open.
-        </p>
-      </header>
-      <form onSubmit={absenden} className="flex gap-2 mb-3">
-        <input
-          value={eingabe}
-          onChange={(e) => setEingabe(e.target.value)}
-          placeholder="A person, a client, a project, a topic…"
-          aria-label="Who or what is the dossier about?"
-          className="hud-input flex-1 rounded-xl px-4 py-3 fs-4 lh-lesbar"
-        />
-        <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary px-4 py-3 rounded-xl fs-4 lh-lesbar font-semibold flex items-center gap-2 disabled:opacity-50">
-          {laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Create dossier
-        </button>
-      </form>
-      {chips.length > 0 && !daten && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          <span className="fs-2 self-center mr-1" style={{ color: 'var(--text-2)' }}>For example:</span>
-          {chips.map((c) => (
-            <button key={c.name} onClick={() => void erstelle(c.name)} className="min-h-7 inline-flex items-center px-3 py-1 rounded-full fs-2" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
-              {c.name}
-            </button>
-          ))}
-        </div>
-      )}
-      {vorschlagGrund && chips.length === 0 && !daten && (
-        <p role="status" className="fs-3 mb-4" style={{ color: 'var(--text-3)' }}>{vorschlagGrund}</p>
-      )}
-      {fehler && <p className="fs-4 lh-lesbar" style={{ color: 'var(--warn)' }}>{fehler}</p>}
-
-      {daten && daten.total === 0 && (
-        <p className="fs-4 lh-lesbar mt-4" style={{ color: 'var(--text-2)' }}>
-          K3PTA knows nothing about “{daten.topic}” yet. Try another name — or save a first note about it.
-        </p>
-      )}
-
-      {daten && daten.total > 0 && (
-        <article className="hud-panel rounded-2xl p-6 mt-4">
-          <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
-            <div>
-              <h2 className="fs-6 lh-dicht font-semibold" style={{ color: 'var(--text-1)' }}>{daten.topic}</h2>
-              <p className="fs-2 mt-1 tnum" style={{ color: 'var(--text-3)' }}>
-                {daten.total} {daten.total === 1 ? 'note' : 'notes'}
-                {daten.first !== null && daten.last !== null ? ` · ${tag(daten.first)} – ${tag(daten.last)}` : ''}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => void kopieren()} className="btn-ghost px-3 py-2 rounded-lg fs-3 flex items-center gap-2" style={{ border: '1px solid var(--border-subtle)' }}>
-                {kopiert ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {kopiert ? 'Copied' : 'Copy as Markdown'}
-              </button>
-              <button onClick={() => void speichern()} disabled={gespeichert} className="btn-ghost px-3 py-2 rounded-lg fs-3 flex items-center gap-2 disabled:opacity-50" style={{ border: '1px solid var(--border-subtle)' }}>
-                <Save className="w-3.5 h-3.5" /> {gespeichert ? 'Saved' : 'Save as note'}
-              </button>
-            </div>
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex min-h-0" data-testid="dossier-view">
+        {/* P202, Mockup-Grammatik: das Werkzeug (Eingabe + Vorschläge) steht in der
+            Listen-Spalte, das gebaute Dossier füllt die Detail-Spalte — der Hero
+            und die zentrierte Form waren die Website-Signatur und flogen. */}
+        <aside className="listen-spalte">
+          <div className="listen-kopf">
+            <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>Dossier</h2>
+            {chips.length > 0 && <span className="listen-zahl fs-1 tnum">{chips.length}</span>}
           </div>
-          <Liste titel={DOSSIER_TITEL.punkte} eintraege={daten.facts} onOpen={onOpenMemory} />
-          <Liste titel={DOSSIER_TITEL.zeit} eintraege={daten.timeline} mitDatum onOpen={onOpenMemory} />
-          <Liste titel={DOSSIER_TITEL.anleitungen} eintraege={daten.howtos} onOpen={onOpenMemory} />
-          <Liste titel={DOSSIER_TITEL.papiere} eintraege={daten.documents} onOpen={onOpenMemory} />
-          {daten.todos.length > 0 && (
-            <section className="mb-6">
-              <h3 className="fs-3 font-semibold mb-2" style={{ color: 'var(--text-1)' }}>Open to-dos</h3>
-              <ul className="space-y-2">
-                {daten.todos.map((t, i) => (
-                  <li key={`${t.id}-${i}`} className="fs-3" style={{ color: 'var(--text-1)' }}>
-                    ☐ {t.text} <button onClick={() => onOpenMemory(t.id)} className="fs-1 hover:underline" style={{ color: 'var(--text-3)' }}>({t.title})</button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-          {daten.contradictions.length > 0 && (
-            <section className="mb-6">
-              <h3 className="fs-3 font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
-                <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> To check
-              </h3>
-              {/* Paket 3: die Auflösung passiert im Fluss — je Karte drei Entscheidungen.
-                  Ohne ids (alter Server-Stand) bleibt es bei der ehrlichen Textzeile. */}
-              <div className="space-y-3">
-                {daten.contradictions.map((w) => (
-                  <div key={w.key} className="hud-inset rounded-xl p-4" data-testid="dossier-contradiction">
-                    <div className="fs-3 mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
-                      Two notes disagree{w.about ? ` about “${w.about}”` : ''}.
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-2 fs-3" style={{ color: 'var(--text-2)' }}>
-                      {([['Newer', w.newer], ['Older', w.older]] as const).map(([label, s]) => (
-                        <div key={label}>
-                          <span className="fs-1 mr-1" style={{ color: 'var(--text-3)' }}>{label}</span>
-                          <strong style={{ color: 'var(--text-1)' }}>{s.value}</strong> in{' '}
-                          {s.id ? (
-                            <button onClick={() => onOpenMemory(s.id!)} className="hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>{s.title}</button>
-                          ) : s.title}
-                        </div>
-                      ))}
-                    </div>
-                    {entschieden[w.key] ? (
-                      <p role="status" className="fs-3 mt-3" style={{ color: 'var(--ok)' }}>{entschieden[w.key]}</p>
-                    ) : w.newer.id && w.older.id ? (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-semibold">Newer wins</button>
-                        <button onClick={() => void loese(w, 'window')} className="btn-ghost px-3 py-2 rounded-lg fs-3" title="Both stay valid — the older note ends where the newer one began.">Both hold — cap the older</button>
-                        {onEditMemory && (
-                          <button onClick={() => onEditMemory(w.newer.id!)} className="btn-ghost px-3 py-2 rounded-lg fs-3">Edit</button>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="fs-3 mt-2" style={{ color: 'var(--text-2)' }}>
-                        <strong style={{ color: 'var(--text-1)' }}>{w.newer.value}</strong> in {w.newer.title}, but <strong style={{ color: 'var(--text-1)' }}>{w.older.value}</strong> in {w.older.title}
-                      </p>
-                    )}
-                  </div>
+          <div className="listen-zeilen">
+            <div className="px-3 pt-3">
+              <form onSubmit={absenden} className="flex flex-col gap-2">
+                <input
+                  value={eingabe}
+                  onChange={(e) => setEingabe(e.target.value)}
+                  placeholder="A person, a client, a project, a topic…"
+                  aria-label="Who or what is the dossier about?"
+                  className="hud-input w-full rounded-xl px-3 py-2 fs-3 lh-lesbar"
+                />
+                <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary w-full justify-center px-3 py-2 rounded-xl fs-3 font-semibold flex items-center gap-2 disabled:opacity-50">
+                  {laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Create dossier
+                </button>
+              </form>
+            </div>
+            {chips.length > 0 && !daten && (
+              <div className="px-3 pt-2">
+                <div className="fs-1 font-semibold" style={{ color: 'var(--text-3)', padding: '6px 2px 4px' }}>For example</div>
+                {chips.map((c) => (
+                  <button key={c.name} onClick={() => void erstelle(c.name)} className="w-full text-left min-h-7 inline-flex items-center px-3 py-1 rounded-full fs-3 hover:opacity-80 mb-1" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+                    {c.name}
+                  </button>
                 ))}
               </div>
-            </section>
-          )}
-          {daten.related.length > 0 && (
-            <div className="flex flex-wrap gap-2 items-center pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <span className="fs-1 mr-1" style={{ color: 'var(--text-3)' }}>Related:</span>
-              {daten.related.map((r) => (
-                <button key={r.tag} onClick={() => void erstelle(r.tag)} className="px-2 py-1 rounded-full fs-2" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
-                  #{r.tag}
-                </button>
-              ))}
+            )}
+            {vorschlagGrund && chips.length === 0 && !daten && (
+              <p role="status" className="fs-3 px-3 py-2" style={{ color: 'var(--text-3)' }}>{vorschlagGrund}</p>
+            )}
+            {fehler && <p className="fs-3 px-3 py-2" style={{ color: 'var(--warn)' }}>{fehler}</p>}
+          </div>
+          <div className="listen-fuss">
+            <span className="tnum">Builds a brief from your notes</span>
+          </div>
+        </aside>
+        <section className="detail-spalte">
+          {daten && daten.total > 0 ? (
+            <>
+              <div className="detail-kopf">
+                <span className="wo">{daten.topic}</span>
+                <div className="kopf-handlungen">
+                  <button onClick={() => void kopieren()} className="btn-ghost px-2 py-1 rounded-lg fs-2 flex items-center gap-1" style={{ border: '1px solid var(--border-subtle)' }}>
+                    {kopiert ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {kopiert ? 'Copied' : 'Copy as Markdown'}
+                  </button>
+                  <button onClick={() => void speichern()} disabled={gespeichert} className="btn-ghost px-2 py-1 rounded-lg fs-2 flex items-center gap-1 disabled:opacity-50" style={{ border: '1px solid var(--border-subtle)' }}>
+                    <Save className="w-3.5 h-3.5" /> {gespeichert ? 'Saved' : 'Save as note'}
+                  </button>
+                </div>
+              </div>
+              <div className="detail-korper">
+                <article>
+                  <h2 className="fs-6 lh-dicht font-semibold" style={{ color: 'var(--text-1)' }}>{daten.topic}</h2>
+                  <p className="fs-2 mt-1 tnum" style={{ color: 'var(--text-3)' }}>
+                    {daten.total} {daten.total === 1 ? 'note' : 'notes'}
+                    {daten.first !== null && daten.last !== null ? ` · ${tag(daten.first)} – ${tag(daten.last)}` : ''}
+                  </p>
+                  <Liste titel={DOSSIER_TITEL.punkte} eintraege={daten.facts} onOpen={onOpenMemory} />
+                  <Liste titel={DOSSIER_TITEL.zeit} eintraege={daten.timeline} mitDatum onOpen={onOpenMemory} />
+                  <Liste titel={DOSSIER_TITEL.anleitungen} eintraege={daten.howtos} onOpen={onOpenMemory} />
+                  <Liste titel={DOSSIER_TITEL.papiere} eintraege={daten.documents} onOpen={onOpenMemory} />
+                  {daten.todos.length > 0 && (
+                    <section className="mb-6">
+                      <h3 className="fs-3 font-semibold mb-2" style={{ color: 'var(--text-1)' }}>Open to-dos</h3>
+                      <ul className="space-y-2">
+                        {daten.todos.map((t, i) => (
+                          <li key={`${t.id}-${i}`} className="fs-3" style={{ color: 'var(--text-1)' }}>
+                            ☐ {t.text} <button onClick={() => onOpenMemory(t.id)} className="fs-1 hover:underline" style={{ color: 'var(--text-3)' }}>({t.title})</button>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+                  {daten.contradictions.length > 0 && (
+                    <section className="mb-6">
+                      <h3 className="fs-3 font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+                        <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> To check
+                      </h3>
+                      {/* Paket 3: die Auflösung passiert im Fluss — je Karte drei Entscheidungen.
+                          Ohne ids (alter Server-Stand) bleibt es bei der ehrlichen Textzeile. */}
+                      <div className="space-y-3">
+                        {daten.contradictions.map((w) => (
+                          <div key={w.key} className="hud-inset rounded-xl p-4" data-testid="dossier-contradiction">
+                            <div className="fs-3 mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+                              Two notes disagree{w.about ? ` about “${w.about}”` : ''}.
+                            </div>
+                            <div className="grid sm:grid-cols-2 gap-2 fs-3" style={{ color: 'var(--text-2)' }}>
+                              {([['Newer', w.newer], ['Older', w.older]] as const).map(([label, s]) => (
+                                <div key={label}>
+                                  <span className="fs-1 mr-1" style={{ color: 'var(--text-3)' }}>{label}</span>
+                                  <strong style={{ color: 'var(--text-1)' }}>{s.value}</strong> in{' '}
+                                  {s.id ? (
+                                    <button onClick={() => onOpenMemory(s.id!)} className="hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>{s.title}</button>
+                                  ) : s.title}
+                                </div>
+                              ))}
+                            </div>
+                            {entschieden[w.key] ? (
+                              <p role="status" className="fs-3 mt-3" style={{ color: 'var(--ok)' }}>{entschieden[w.key]}</p>
+                            ) : w.newer.id && w.older.id ? (
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-semibold">Newer wins</button>
+                                <button onClick={() => void loese(w, 'window')} className="btn-ghost px-3 py-2 rounded-lg fs-3" title="Both stay valid — the older note ends where the newer one began.">Both hold — cap the older</button>
+                                {onEditMemory && (
+                                  <button onClick={() => onEditMemory(w.newer.id!)} className="btn-ghost px-3 py-2 rounded-lg fs-3">Edit</button>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="fs-3 mt-2" style={{ color: 'var(--text-2)' }}>
+                                <strong style={{ color: 'var(--text-1)' }}>{w.newer.value}</strong> in {w.newer.title}, but <strong style={{ color: 'var(--text-1)' }}>{w.older.value}</strong> in {w.older.title}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                  {daten.related.length > 0 && (
+                    <div className="flex flex-wrap gap-2 items-center pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                      <span className="fs-1 mr-1" style={{ color: 'var(--text-3)' }}>Related:</span>
+                      {daten.related.map((r) => (
+                        <button key={r.tag} onClick={() => void erstelle(r.tag)} className="px-2 py-1 rounded-full fs-2" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+                          #{r.tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              </div>
+            </>
+          ) : daten && daten.total === 0 ? (
+            <div className="detail-leer">
+              <p className="fs-3 max-w-[46ch]" style={{ color: 'var(--text-2)', margin: 0 }}>
+                K3PTA knows nothing about “{daten.topic}” yet. Try another name — or save a first note about it.
+              </p>
+            </div>
+          ) : (
+            <div className="detail-leer">
+              <p className="fs-3 font-semibold" style={{ color: 'var(--text-2)', margin: 0 }}>Nothing built yet</p>
+              <p className="fs-2 max-w-[46ch]" style={{ color: 'var(--text-3)', margin: 0 }}>
+                Everything you know about a person, a project or a topic — on one page: the statements, what happened
+                when, how it's done, the files behind it and what is still open.
+              </p>
             </div>
           )}
-        </article>
-      )}
+        </section>
+      </div>
+      <div className="flaechen-status">
+        <span className={daten && daten.total > 0 ? 'gruen' : undefined}>
+          {daten && daten.total > 0
+            ? `${daten.total} ${daten.total === 1 ? 'note' : 'notes'} covered`
+            : 'No dossier built'}
+        </span>
+      </div>
     </div>
   );
 }

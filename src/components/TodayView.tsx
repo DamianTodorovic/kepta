@@ -212,31 +212,63 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
   const untertitel = fenster === 0 ? `what happened in the last ${spannenText(seit)}` : `what happened ${fensterInfo.text}`;
   const abgeloest = daten?.superseded ?? { total: 0, notes: [] };
   const geloescht = daten?.deleted ?? { total: 0, notes: [] };
+  // P202, Mockup-Treue (k3pta-app-fenster): Today ist ein FENSTER — die Liste
+  // ("What changed") als schmale Spalte mit dem Zeitfenster als Steuer-Zeile,
+  // die Entscheidungen (Widersprüche, to-dos, Fristen, Apps) in der Detail-
+  // Spalte, die Zählpillen im Listen-Fuß. Der Gruß-Hero war die Website-Signatur
+  // und flog — die Fläche zeigt ihre Bewegungen, nicht ihren Empfang.
+  const bewegungen = daten ? (
+    daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 ? (
+      <p className="fs-3 lh-lesbar px-3 py-2" style={{ color: 'var(--text-3)' }}>Nothing new {fensterInfo.text}.</p>
+    ) : (
+      <ul className="space-y-2 px-1">
+        {daten.created.notes.map((n) => (
+          <li key={`new-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
+            <ArtTag>new</ArtTag>
+            <span className="flex-1 min-w-0 truncate"><Titel id={n.id} title={n.title} onOpen={onOpenMemory} /></span>
+            <span className="fs-1 whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>{n.by ? `by ${n.by} · ` : ''}{vor(n.at)}</span>
+          </li>
+        ))}
+        {daten.changed.notes.map((n) => (
+          <li key={`upd-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
+            <ArtTag>updated</ArtTag>
+            <span className="flex-1 min-w-0 truncate"><Titel id={n.id} title={n.title} onOpen={onOpenMemory} /></span>
+            <span className="fs-1 whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>{vor(n.at)}</span>
+          </li>
+        ))}
+        {abgeloest.notes.map((n) => (
+          <li key={`sup-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
+            <ArtTag>replaced</ArtTag>
+            <span className="flex-1 min-w-0 truncate" style={{ color: 'var(--text-3)' }}>{n.title}</span>
+            <span className="fs-1 whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>
+              → replaced by{' '}
+              <button onClick={() => onOpenMemory(n.supersededBy)} className="hover:underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+                {n.replacedBy || n.supersededBy.slice(0, 8)}
+              </button>
+            </span>
+          </li>
+        ))}
+        {geloescht.notes.map((n) => (
+          <li key={`del-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
+            <ArtTag>deleted</ArtTag>
+            <span className="flex-1 min-w-0 truncate" style={{ color: 'var(--text-3)' }}>{n.title}</span>
+            <span className="fs-1 whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>in the trash — restore it there</span>
+          </li>
+        ))}
+      </ul>
+    )
+  ) : null;
   return (
-    <div className="max-w-3xl mx-auto py-6" data-testid="today-view">
-      <header className="mb-6">
-        <h1 className="display">{gruss(jetzt.getHours())}</h1>
-        <p className="fs-4 lh-lesbar mt-1" style={{ color: 'var(--text-2)' }}>
-          {jetzt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · {untertitel}
-        </p>
-        {daten && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {[
-              [daten.created.total, daten.created.total === 1 ? 'new note' : 'new notes'],
-              [daten.changed.total, 'changed'],
-              ...(abgeloest.total > 0 ? [[abgeloest.total, 'replaced'] as const] : []),
-              ...(geloescht.total > 0 ? [[geloescht.total, 'deleted'] as const] : []),
-              [daten.todos.total, daten.todos.total === 1 ? 'open to-do' : 'open to-dos'],
-              [daten.contradictions.length, 'to check'],
-            ].map(([n, text]) => (
-              <span key={String(text)} className="px-3 py-1 rounded-full fs-2 tnum" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
-                <strong style={{ color: 'var(--text-1)' }}>{n}</strong> {text}
-              </span>
-            ))}
-          </div>
-        )}
-        {/* Zeitmaschine: das Fenster, in das Today hineinsieht. */}
-        <div className="mt-4" data-testid="today-zeitfenster">
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex min-h-0" data-testid="today-view">
+      <aside className="listen-spalte">
+        <div className="listen-kopf">
+          <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>What changed</h2>
+          <span className="listen-zahl fs-1 tnum">{fensterInfo.label}</span>
+        </div>
+        {/* Zeitmaschine: das Fenster, in das Today hineinsieht — als schmale
+            Steuer-Zeile der Liste (Mockup-Grammatik). */}
+        <div className="listen-steuer" data-testid="today-zeitfenster">
           {/* h-7 statt h-1.5: gemessen war die Trefferfläche des Reglers 6 px
               hoch. Z-08 verlangt mindestens 20, für Wiederholtes 28. Die Spur
               malt die Lage darunter, der Knauf sitzt zentriert. */}
@@ -247,192 +279,169 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
             step={1}
             value={fenster}
             onChange={(e) => setFenster(parseInt(e.target.value, 10))}
-            className="w-full h-7 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
+            className="flex-1 min-w-0 h-7 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-knopf [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--accent)] [&::-webkit-slider-thumb]:shadow-sm
               [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-knopf [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
             aria-label="Time window"
           />
-          <div className="flex justify-between mt-1">
-            {FENSTER.map((f, i) => (
-              <span key={f.label} className="fs-1" style={i === fenster ? { color: 'var(--text-1)', fontWeight: 600 } : { color: 'var(--text-3)' }}>{f.label}</span>
-            ))}
-          </div>
+          <span className="fs-1 tnum whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>{fensterInfo.label}</span>
         </div>
-      </header>
-
-      {fehler && (
-        <div className="hud-inset rounded-xl p-4 fs-4 lh-lesbar flex items-center gap-3" style={{ color: 'var(--warn)' }}>
-          {fehler}
-          <button onClick={() => void laden()} className="btn-ghost px-3 py-1 rounded-lg fs-2 lh-dicht flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Try again</button>
-        </div>
-      )}
-      {!daten && !fehler && <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>Getting your day ready…</p>}
-
-      {daten && (
-        <>
-          {daten.contradictions.length > 0 && (
-            <Abschnitt titel="Needs a look" zahl={daten.contradictions.length}>
-              <div className="space-y-3">
-                {daten.contradictions.map((w) => (
-                  <div key={w.key} className="hud-inset rounded-xl p-4" data-testid="contradiction">
-                    <div className="fs-3 mb-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
-                      <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--warn)' }} />
-                      Two notes disagree{w.about ? ` about “${w.about}”` : ''}.
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-3 fs-3" style={{ color: 'var(--text-2)' }}>
-                      {([['Newer', w.newer], ['Older', w.older]] as const).map(([label, s]) => (
-                        <div key={s.id}>
-                          <div className="fs-1 mb-1" style={{ color: 'var(--text-3)' }}>{label} · {vor(s.updatedAt)}</div>
-                          <Titel id={s.id} title={s.title} onOpen={onOpenMemory} />
-                          <p className="mt-1"><Satz satz={s.sentence} wert={s.value} /></p>
-                        </div>
-                      ))}
-                    </div>
-                    {erledigt[w.key] ? (
-                      <p role="status" className="fs-3 mt-3" style={{ color: 'var(--ok)' }}>{erledigt[w.key]}</p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-semibold">Keep the newer</button>
-                        <button onClick={() => void loese(w, 'older')} className="btn-ghost px-3 py-2 rounded-lg fs-3" style={{ border: '1px solid var(--border-subtle)' }}>Keep the older</button>
-                        <button onClick={() => void loese(w, 'both')} className="btn-ghost px-3 py-2 rounded-lg fs-3">Both are right</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+        <div className="listen-zeilen">
+          {fehler && (
+            <div className="hud-inset rounded-xl p-4 m-2 fs-4 lh-lesbar flex flex-wrap items-center gap-3" style={{ color: 'var(--warn)' }}>
+              {fehler}
+              <button onClick={() => void laden()} className="btn-ghost px-3 py-1 rounded-lg fs-2 lh-dicht flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> Try again</button>
+            </div>
+          )}
+          {!daten && !fehler && <p className="fs-3 lh-lesbar px-3 py-2" style={{ color: 'var(--text-2)' }}>Getting your day ready…</p>}
+          {daten && (
+            <>
+              <div className="px-3 py-2 fs-2" style={{ color: 'var(--text-2)' }}>
+                {untertitel}
               </div>
-            </Abschnitt>
-          )}
-
-          <Abschnitt titel="What changed" zahl={daten.created.total + daten.changed.total + abgeloest.total + geloescht.total}>
-            {daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 ? (
-              <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-3)' }}>Nothing new {fensterInfo.text}.</p>
-            ) : (
-              <>
-                {daten.created.bySource.length > 0 && (
-                  <p className="fs-3 mb-2" style={{ color: 'var(--text-2)' }}>
-                    {daten.created.bySource.map((q) => `${q.who}: ${q.count} new`).join(' · ')}
-                    {daten.changed.total > 0 ? ` · ${daten.changed.total} changed` : ''}
-                  </p>
-                )}
-                {/* Konsolidiert (Paket 3): jede Bewegung der Wahrheit in ihrer Kategorie —
-                    neu, aktualisiert, abgelöst (mit Nachfolger als Klickziel), gelöscht. */}
-                <ul className="space-y-2">
-                  {daten.created.notes.map((n) => (
-                    <li key={`new-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
-                      <ArtTag>new</ArtTag>
-                      <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                      <span className="fs-1" style={{ color: 'var(--text-3)' }}>{n.by ? `by ${n.by} · ` : ''}{vor(n.at)}</span>
-                    </li>
-                  ))}
-                  {daten.changed.notes.map((n) => (
-                    <li key={`upd-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
-                      <ArtTag>updated</ArtTag>
-                      <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                      <span className="fs-1" style={{ color: 'var(--text-3)' }}>{vor(n.at)}</span>
-                    </li>
-                  ))}
-                  {abgeloest.notes.map((n) => (
-                    <li key={`sup-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
-                      <ArtTag>replaced</ArtTag>
-                      <span style={{ color: 'var(--text-3)' }}>{n.title}</span>
-                      <span className="fs-1" style={{ color: 'var(--text-3)' }}>
-                        → replaced by{' '}
-                        <button onClick={() => onOpenMemory(n.supersededBy)} className="hover:underline underline-offset-2" style={{ color: 'var(--accent)' }}>
-                          {n.replacedBy || n.supersededBy.slice(0, 8)}
-                        </button>
-                      </span>
-                    </li>
-                  ))}
-                  {geloescht.notes.map((n) => (
-                    <li key={`del-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
-                      <ArtTag>deleted</ArtTag>
-                      <span style={{ color: 'var(--text-3)' }}>{n.title}</span>
-                      <span className="fs-1" style={{ color: 'var(--text-3)' }}>in the trash — restore it there</span>
-                    </li>
-                  ))}
-                </ul>
-                {(() => {
-                  const gezeigt = daten.created.notes.length + daten.changed.notes.length + abgeloest.notes.length + geloescht.notes.length;
-                  const alles = daten.created.total + daten.changed.total + abgeloest.total + geloescht.total;
-                  return alles > gezeigt ? (
-                    <p className="fs-1 mt-2" style={{ color: 'var(--text-3)' }}>and {alles - gezeigt} more</p>
-                  ) : null;
-                })()}
-              </>
-            )}
-          </Abschnitt>
-
-          {daten.todos.total > 0 && (
-            <Abschnitt titel="Open to-dos" zahl={daten.todos.total}>
-              <ul className="space-y-2">
-                {daten.todos.items.map((t, i) => (
-                  <li key={`${t.id}-${i}`} className="fs-3 flex items-baseline gap-2" style={{ color: 'var(--text-1)' }}>
-                    <span aria-hidden className="w-3 h-3 rounded-[3px] shrink-0 translate-y-0.5" style={{ border: '1.5px solid var(--text-3)' }} />
-                    <span className="flex-1">{t.text}</span>
-                    <button onClick={() => onOpenMemory(t.id)} className="fs-1 hover:underline shrink-0" style={{ color: 'var(--text-3)' }}>{t.title}</button>
-                  </li>
-                ))}
-              </ul>
-              {daten.todos.total > daten.todos.items.length && (
-                <p className="fs-1 mt-2" style={{ color: 'var(--text-3)' }}>and {daten.todos.total - daten.todos.items.length} more in your notes</p>
+              {daten.created.bySource.length > 0 && (
+                <p className="fs-2 px-3 pb-1" style={{ color: 'var(--text-3)' }}>
+                  {daten.created.bySource.map((q) => `${q.who}: ${q.count} new`).join(' · ')}
+                  {daten.changed.total > 0 ? ` · ${daten.changed.total} changed` : ''}
+                </p>
               )}
-            </Abschnitt>
+              {bewegungen}
+            </>
           )}
-
-          {(daten.expiring.length > 0 || daten.expired.length > 0) && (
-            <Abschnitt titel="Due" zahl={daten.expiring.length + daten.expired.length}>
-              <ul className="space-y-2">
-                {daten.expiring.map((n) => (
-                  <li key={n.id} className="fs-3 flex items-baseline gap-2">
-                    <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--warn)' }} />
-                    <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                    <span className="fs-1" style={{ color: 'var(--text-3)' }}>valid until {datum(n.validTo)}</span>
-                  </li>
-                ))}
-                {daten.expired.map((n) => (
-                  <li key={n.id} className="fs-3 flex items-baseline gap-2">
-                    <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--text-3)' }} />
-                    <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                    <span className="fs-1" style={{ color: 'var(--text-2)' }}>expired {datum(n.validTo)} — still true?</span>
-                  </li>
-                ))}
-              </ul>
-            </Abschnitt>
+        </div>
+        <div className="listen-fuss">
+          {daten && (
+            <span className="tnum">
+              {daten.created.total} {daten.created.total === 1 ? 'new note' : 'new notes'} · {daten.changed.total} changed
+              {abgeloest.total > 0 ? ` · ${abgeloest.total} replaced` : ''}
+              {geloescht.total > 0 ? ` · ${geloescht.total} deleted` : ''}
+              {' · '}{daten.todos.total} {daten.todos.total === 1 ? 'open to-do' : 'open to-dos'} · {daten.contradictions.length} to check
+            </span>
           )}
+        </div>
+      </aside>
+      <section className="detail-spalte">
+        <div className="detail-kopf"><span className="wo">{jetzt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</span></div>
+        <div className="detail-korper">
+          {daten && (
+            <>
+              {daten.contradictions.length > 0 && (
+                <Abschnitt titel="Needs a look" zahl={daten.contradictions.length}>
+                  <div className="space-y-3">
+                    {daten.contradictions.map((w) => (
+                      <div key={w.key} className="hud-inset rounded-xl p-4" data-testid="contradiction">
+                        <div className="fs-3 mb-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+                          <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--warn)' }} />
+                          Two notes disagree{w.about ? ` about “${w.about}”` : ''}.
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-3 fs-3" style={{ color: 'var(--text-2)' }}>
+                          {([['Newer', w.newer], ['Older', w.older]] as const).map(([label, s]) => (
+                            <div key={s.id}>
+                              <div className="fs-1 mb-1" style={{ color: 'var(--text-3)' }}>{label} · {vor(s.updatedAt)}</div>
+                              <Titel id={s.id} title={s.title} onOpen={onOpenMemory} />
+                              <p className="mt-1"><Satz satz={s.sentence} wert={s.value} /></p>
+                            </div>
+                          ))}
+                        </div>
+                        {erledigt[w.key] ? (
+                          <p role="status" className="fs-3 mt-3" style={{ color: 'var(--ok)' }}>{erledigt[w.key]}</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            <button onClick={() => void loese(w, 'newer')} className="btn-primary px-3 py-2 rounded-lg fs-3 font-semibold">Keep the newer</button>
+                            <button onClick={() => void loese(w, 'older')} className="btn-ghost px-3 py-2 rounded-lg fs-3" style={{ border: '1px solid var(--border-subtle)' }}>Keep the older</button>
+                            <button onClick={() => void loese(w, 'both')} className="btn-ghost px-3 py-2 rounded-lg fs-3">Both are right</button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Abschnitt>
+              )}
 
-          <Abschnitt titel="Your AI apps">
-            {daten.apps.length === 0 ? (
-              <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
-                No AI app has used K3PTA since then.{' '}
-                {/* min-h-6: gemessen 20 px hohe Textstelle ohne Polster — die
-                    Untergrenze, nicht mehr. */}
-                <button onClick={() => onGo('activity')} className="min-h-6 px-1 inline-flex items-center underline underline-offset-2" style={{ color: 'var(--accent)' }}>Connect an app</button>
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {daten.apps.map((a) => (
-                  <li key={a.who} className="fs-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
-                    <Bot className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
-                    <strong>{a.who}</strong>
-                    <span style={{ color: 'var(--text-2)' }}>
-                      {a.calls} {a.calls === 1 ? 'call' : 'calls'} · {a.saves} saved · {a.searches} {a.searches === 1 ? 'search' : 'searches'}
-                    </span>
-                  </li>
-                ))}
-                <li>
-                  <button onClick={() => onGo('activity')} className="fs-2 hover:underline" style={{ color: 'var(--accent)' }}>See everything they did</button>
-                </li>
-              </ul>
-            )}
-          </Abschnitt>
+              {daten.todos.total > 0 && (
+                <Abschnitt titel="Open to-dos" zahl={daten.todos.total}>
+                  <ul className="space-y-2">
+                    {daten.todos.items.map((t, i) => (
+                      <li key={`${t.id}-${i}`} className="fs-3 flex items-baseline gap-2" style={{ color: 'var(--text-1)' }}>
+                        <span aria-hidden className="w-3 h-3 rounded-[3px] shrink-0 translate-y-0.5" style={{ border: '1.5px solid var(--text-3)' }} />
+                        <span className="flex-1">{t.text}</span>
+                        <button onClick={() => onOpenMemory(t.id)} className="fs-1 hover:underline shrink-0" style={{ color: 'var(--text-3)' }}>{t.title}</button>
+                      </li>
+                    ))}
+                  </ul>
+                  {daten.todos.total > daten.todos.items.length && (
+                    <p className="fs-1 mt-2" style={{ color: 'var(--text-3)' }}>and {daten.todos.total - daten.todos.items.length} more in your notes</p>
+                  )}
+                </Abschnitt>
+              )}
 
-          {daten.contradictions.length === 0 && daten.todos.total === 0 && daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 && (
-            <p className="fs-4 lh-lesbar flex items-center gap-2" style={{ color: 'var(--ok)' }}>
-              <CheckCircle2 className="w-4 h-4" /> All quiet. Nothing needs you right now.
-            </p>
+              {(daten.expiring.length > 0 || daten.expired.length > 0) && (
+                <Abschnitt titel="Due" zahl={daten.expiring.length + daten.expired.length}>
+                  <ul className="space-y-2">
+                    {daten.expiring.map((n) => (
+                      <li key={n.id} className="fs-3 flex items-baseline gap-2">
+                        <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--warn)' }} />
+                        <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
+                        <span className="fs-1" style={{ color: 'var(--text-3)' }}>valid until {datum(n.validTo)}</span>
+                      </li>
+                    ))}
+                    {daten.expired.map((n) => (
+                      <li key={n.id} className="fs-3 flex items-baseline gap-2">
+                        <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--text-3)' }} />
+                        <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
+                        <span className="fs-1" style={{ color: 'var(--text-2)' }}>expired {datum(n.validTo)} — still true?</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Abschnitt>
+              )}
+
+              <Abschnitt titel="Your AI apps">
+                {daten.apps.length === 0 ? (
+                  <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
+                    No AI app has used K3PTA since then.{' '}
+                    {/* min-h-6: gemessen 20 px hohe Textstelle ohne Polster — die
+                        Untergrenze, nicht mehr. */}
+                    <button onClick={() => onGo('activity')} className="min-h-6 px-1 inline-flex items-center underline underline-offset-2" style={{ color: 'var(--accent)' }}>Connect an app</button>
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {daten.apps.map((a) => (
+                      <li key={a.who} className="fs-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+                        <Bot className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
+                        <strong>{a.who}</strong>
+                        <span style={{ color: 'var(--text-2)' }}>
+                          {a.calls} {a.calls === 1 ? 'call' : 'calls'} · {a.saves} saved · {a.searches} {a.searches === 1 ? 'search' : 'searches'}
+                        </span>
+                      </li>
+                    ))}
+                    <li>
+                      <button onClick={() => onGo('activity')} className="fs-2 hover:underline" style={{ color: 'var(--accent)' }}>See everything they did</button>
+                    </li>
+                  </ul>
+                )}
+              </Abschnitt>
+
+              {daten.contradictions.length === 0 && daten.todos.total === 0 && daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 && (
+                <p className="fs-4 lh-lesbar flex items-center gap-2" style={{ color: 'var(--ok)' }}>
+                  <CheckCircle2 className="w-4 h-4" /> All quiet. Nothing needs you right now.
+                </p>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+      </section>
+      </div>
+      {/* Die Statuszeile der Fläche (Mockup-Grammatik): was das Fenster unten
+          dauerhaft sagt — die Verbindung und das gewählte Fenster. Der Ort steht
+          dauerhaft in der Leiste; die Zeile wiederholt ihn nicht. */}
+      <div className="flaechen-status">
+        <span className={!fehler && daten ? 'gruen' : undefined}>
+          {fehler ? 'No answer from the store' : daten ? 'In sync' : 'Asking the store…'}
+        </span>
+        <span className="strich">·</span>
+        <span>{fensterInfo.label}</span>
+      </div>
     </div>
   );
 }

@@ -292,27 +292,37 @@ function Protokoll() {
 export function ActivityView({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMemory: (id: string) => void }) {
   const [reiter, setReiter] = useState<'live' | 'audit'>('live');
   return (
-    <div className="max-w-3xl mx-auto py-6" data-testid="activity-view">
-      <header className="mb-5">
-        <h1 className="display">Activity</h1>
-        <p className="fs-4 lh-lesbar mt-1" style={{ color: 'var(--text-2)' }}>What your AI apps read and write in your memory — and a sealed record of every access.</p>
-      </header>
-      <div className="flex gap-1 p-1 rounded-xl hud-inset mb-6 max-w-xs" role="tablist">
-        {([['live', 'Live', 'Live shows what your AI apps are reading and writing in your memory right now'], ['audit', 'Audit log', 'The audit log is the sealed list of who read or changed what in your memory, and when']] as const).map(([id, label, erklaerung]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={reiter === id}
-            onClick={() => setReiter(id)}
-            title={erklaerung}
-            className={`flex-1 py-2 rounded-lg fs-3 font-semibold ${reiter === id ? 'bg-blatt shadow-sm' : ''}`}
-            style={{ color: reiter === id ? 'var(--text-1)' : 'var(--text-2)' }}
-          >
-            {label}
-          </button>
-        ))}
+    <div className="flex-1 flex flex-col min-h-0" data-testid="activity-view">
+      {/* P202, Mockup-Grammatik: der Titel steht im Kopf der Fläche, die Wahl
+          (Live/Audit) als Segmente in den Kopf-Handlungen — der Hero flog. */}
+      <div className="listen-kopf">
+        <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>What your AI apps read and write</h2>
+        <div className="kopf-handlungen">
+          <div className="flex gap-1 p-1 rounded-xl hud-inset" role="tablist">
+            {([['live', 'Live', 'Live shows what your AI apps are reading and writing in your memory right now'], ['audit', 'Audit log', 'The audit log is the sealed list of who read or changed what in your memory, and when']] as const).map(([id, label, erklaerung]) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={reiter === id}
+                onClick={() => setReiter(id)}
+                title={erklaerung}
+                className={`px-3 py-1 rounded-lg fs-2 font-semibold ${reiter === id ? 'bg-blatt shadow-sm' : ''}`}
+                style={{ color: reiter === id ? 'var(--text-1)' : 'var(--text-2)' }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-      {reiter === 'live' ? <Live aktiv={aktiv} onOpenMemory={onOpenMemory} /> : <Protokoll />}
+      <div className="detail-korper">
+        {reiter === 'live' ? <Live aktiv={aktiv} onOpenMemory={onOpenMemory} /> : <Protokoll />}
+      </div>
+      <div className="flaechen-status">
+        <span className="gruen">Sealed record</span>
+        <span className="strich">·</span>
+        <span>every access, local</span>
+      </div>
     </div>
   );
 }

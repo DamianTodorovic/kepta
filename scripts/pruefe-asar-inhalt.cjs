@@ -683,7 +683,10 @@ const erwartet = [
   // Punkt 2, 2.11. (derselbe Zustand, derselbe Sitz): der Chat-Kopf malt die Ruhe nicht mehr von
   // Hand, sondern ruft dieselbe Klasse. Gegen das installierte 3.2.109 gezaehlt: **0** fuer die
   // ganze Kette (`status-dot-leise` selbst war dort schon 0, die Kette ist die eigne Marke).
-  ["-right-0.5 status-dot status-dot-leise", 1],
+  // P202, 13.11.: der Kasten im Chat-Kopf flog (Mockup-Grammatik) — die Positionskette
+  // "-right-0.5 …" beschreibt keine Quelle mehr; der leise Punkt steht jetzt in der
+  // Zustands-Zelle und wird von tests/components/chat-punkt-leise.test.tsx an der Stelle
+  // gehalten. Die kurze Kette oben zählt ihn weiter.
   // Punkt 7, 2.11. (zwei Erstleser ohne Projektkenntnis, 07:33 MESZ, derselbe Korpus, zwei
   // unabhaengige Laeufe): die Flaeche nannte Speicherschluessel, Feldschema und "node", und Today
   // schrieb "since … ago". Gegen das installierte 3.2.109 gezaehlt: alle drei **0**.

@@ -810,84 +810,71 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
 
   return (
     <div className="flex flex-col h-full w-full relative">
-      {/* ---------- Header ---------- */}
-      <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-y-2 z-10 border-gradient-b shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-        <div className="flex items-center gap-3">
-          {isFocusMode && (
-            <button onClick={onToggleFocus} className="btn-ghost p-2 -ml-2 rounded-lg" aria-label="Leave focus mode">
-              <PanelLeftOpen className="w-5 h-5" />
-            </button>
+      {/* ---------- Kopf (P202, Mockup-Grammatik) ---------- */}
+      <div className="listen-kopf" style={{ background: 'var(--feld)' }}>
+        {isFocusMode && (
+          <button onClick={onToggleFocus} className="btn-ghost p-1.5 rounded-lg shrink-0" aria-label="Leave focus mode">
+            <PanelLeftOpen className="w-4 h-4" />
+          </button>
+        )}
+        <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>
+          Chat
+          {isStreaming && <span className="inline-flex items-center gap-1 fs-1 font-normal px-2 py-1 rounded hud-inset ml-2" style={{ color: "var(--accent)" }}><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" /> streaming…</span>}
+        </h2>
+        {/* Aufgabe #94: derselbe Satz wie in der Zustands-Tafel fuer denselben Zustand.
+            Die Ruhe ist seit 3.2.111 eine Klasse (`status-dot-leise`); diese Stelle malt sie
+            nicht mehr von Hand. */}
+        <span className="listen-zahl fs-2 inline-flex items-center gap-2" data-testid="chat-verbindung">
+          {connection.state === "connected" ? (
+            <>
+              <span className="status-dot" title={connection.local ? "A local program on this machine — no key needed." : "AI connected"} />
+              {connection.label} — {connection.model}
+              {connection.local && <span className="px-1 py-0 rounded fs-1 border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>local</span>}
+            </>
+          ) : (
+            <>
+              {/* Punkt 4/7: der Zustand steht GENAU einmal — der Punkt malt die Ruhe,
+                  das Wort daneben trägt den Namen (eigener Blattknoten); der Titel
+                  würde ihn zweimal sagen. */}
+              <span className="status-dot status-dot-leise" />
+              <span>{verbindungsGrund ?? "No AI connected"}</span>
+            </>
           )}
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center relative" style={{ background: "var(--accent-soft)", border: "1px solid var(--border-subtle)", boxShadow: "inset 0 1px 0 var(--edge-light)" }}>
-            <KeptaMark size={24} />
-            {/* Aufgabe #94: derselbe Satz wie in der Zustands-Tafel fuer denselben Zustand.
-                Die Ruhe ist seit 3.2.111 eine Klasse (`status-dot-leise`); diese Stelle malt sie
-                nicht mehr von Hand. Ein Zustand, den zwei Stellen verschiedentlich zeichnen, war
-                genau der Defekt, den #8 und #94 schon fuer die Worte heilen mussten. */}
-            {connection.state === "connected" ? (
-              <span
-                className="absolute -bottom-0.5 -right-0.5 status-dot"
-                title={connection.local ? "A local program on this machine — no key needed." : "AI connected"}
-              />
-            ) : (
-              <span
-                className="absolute -bottom-0.5 -right-0.5 status-dot status-dot-leise"
-                title="No AI connected"
-              />
-            )}
-          </div>
-          <div>
-            <h2 className="font-semibold fs-4 lh-lesbar flex items-center gap-2" style={{ color: "var(--text-1)" }}>
-              Chat
-              {isStreaming && <span className="inline-flex items-center gap-1 fs-1 font-normal px-2 py-1 rounded hud-inset" style={{ color: "var(--accent)" }}><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" /> streaming…</span>}
-            </h2>
-            <div className="hud-label mt-1 flex items-center gap-2">
-              {connection.state === "connected" ? (
-                <>
-                  <span>{connection.label} — {connection.model}</span>
-                  {connection.local && <span className="px-1 py-0 rounded fs-1 border" style={{ borderColor: "var(--border-subtle)", color: "var(--ok)" }}>local</span>}
-                  <button
-                    onClick={() => { disconnectAI(); stossVerbindungAn((n) => n + 1); }}
-                    className="inline-flex items-center gap-1 min-h-6 px-2 rounded fs-1 border transition-colors hover:opacity-80"
-                    style={{ borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
-                    title="Disconnect this AI — nothing is deleted, you can reconnect any time"
-                  >
-                    Disconnect
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span style={{ color: "var(--text-2)" }} data-testid="chat-verbindung">
-                    {verbindungsGrund ?? "No AI connected"}
-                  </span>
-                  {!detectedLocal && (
-                    <button
-                      onClick={() => void sucheLokaleKI()}
-                      className="inline-flex items-center gap-1 min-h-6 px-2 rounded fs-1 border transition-colors hover:opacity-80"
-                      style={{ borderColor: "var(--border-subtle)", color: "var(--text-2)" }}
-                      title="Ask this machine if Ollama or LM Studio runs — nothing leaves until you click"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      {suchLaeuft ? "Looking…" : "Look for a local model"}
-                    </button>
-                  )}
-                  {detectedLocal && (
-                    <button
-                      onClick={() => connectLocal(detectedLocal)}
-                      className="inline-flex items-center gap-1 min-h-6 px-2 rounded fs-1 border transition-colors hover:opacity-80"
-                      style={{ borderColor: "var(--border-subtle)", color: "var(--accent)", background: "var(--accent-soft)" }}
-                      title={`${detectedLocal.label} detected locally — connect it`}
-                    >
-                      <Sparkles className="w-2.5 h-2.5" />
-                      {detectedLocal.label.replace(/\s*\(.*\)$/, "")} — connect
-                    </button>
-                  )}
-                </>
+        </span>
+        <div className="kopf-handlungen">
+          {connection.state === "connected" ? (
+            <button
+              onClick={() => { disconnectAI(); stossVerbindungAn((n) => n + 1); }}
+              className="btn-ghost px-2 py-1 rounded-lg fs-2"
+              title="Disconnect this AI — nothing is deleted, you can reconnect any time"
+            >
+              Disconnect
+            </button>
+          ) : (
+            <>
+              {!detectedLocal && (
+                <button
+                  onClick={() => void sucheLokaleKI()}
+                  className="btn-ghost px-2 py-1 rounded-lg fs-2 inline-flex items-center gap-1"
+                  title="Ask this machine if Ollama or LM Studio runs — nothing leaves until you click"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {suchLaeuft ? "Looking…" : "Look for a local model"}
+                </button>
               )}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-4 fs-2 lh-dicht font-semibold">
+              {detectedLocal && (
+                <button
+                  onClick={() => connectLocal(detectedLocal)}
+                  className="btn-ghost px-2 py-1 rounded-lg fs-2 inline-flex items-center gap-1"
+                  style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
+                  title={`${detectedLocal.label} detected locally — connect it`}
+                >
+                  <Sparkles className="w-2.5 h-2.5" />
+                  {detectedLocal.label.replace(/\s*\(.*\)$/, "")} — connect
+                </button>
+              )}
+            </>
+          )}
           {/* Such-Cache-Status (Paket 3): der Chat misst die eigene Engine-Anfrage —
               das Delta-Cache-Signal aus Paket 2 gilt hier genauso wie im Dashboard. */}
           {gehirnWaermt && (
@@ -921,7 +908,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   : "Local ranking — the search index did not answer"}
             </span>
           )}
-          <button onClick={clearChat} className="btn-ghost treff p-2 rounded-lg hover:!border-gefahr" title="Clear chat" aria-label="Clear chat">
+          <button onClick={clearChat} className="btn-ghost treff p-1.5 rounded-lg hover:!border-gefahr" title="Clear chat" aria-label="Clear chat">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>

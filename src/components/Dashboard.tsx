@@ -2212,16 +2212,28 @@ export function Dashboard() {
                 das erst bei Klick erscheint. */}
             <section className="detail-spalte">
               <AnimatePresence>
-                {vorschauMemory && (
+                {isEditorOpen ? (
+                  /* P202, Mockup-Treue: der Editor STEHT in der Detail-Spalte (die Drei
+                      Spalten bleiben) — die Schublade über der Fläche flog. */
+                  <MemoryEditor
+                    key="editor"
+                    memory={editingMemory}
+                    onSave={handleSave}
+                    onClose={() => setIsEditorOpen(false)}
+                    onDelete={editingMemory ? () => handleDelete(editingMemory.id) : undefined}
+                    spalte
+                  />
+                ) : vorschauMemory ? (
                   <MemoryPreview
+                    key="vorschau"
                     memory={vorschauMemory}
                     ohneVorhang
                     onClose={() => setVorschauMemory(null)}
                     onEdit={(m) => { setVorschauMemory(null); setEditingMemory(m); setIsEditorOpen(true); }}
                   />
-                )}
+                ) : null}
               </AnimatePresence>
-              {!vorschauMemory && (
+              {!isEditorOpen && !vorschauMemory && (
                 <div className="detail-leer" data-testid="detail-leer">
                   <p className="fs-3 font-semibold" style={{ color: 'var(--text-2)', margin: 0 }}>Nothing selected</p>
                   <p className="fs-2" style={{ color: 'var(--text-3)', margin: 0 }}>Choose a note on the left — it opens here.</p>
@@ -2447,16 +2459,8 @@ export function Dashboard() {
 
       <OnboardingWizard open={wizardOpen} onClose={closeWizard} onComplete={closeWizard} />
 
-      <AnimatePresence>
-        {isEditorOpen && (
-          <MemoryEditor
-            memory={editingMemory}
-            onSave={handleSave}
-            onClose={() => setIsEditorOpen(false)}
-            onDelete={editingMemory ? () => handleDelete(editingMemory.id) : undefined}
-          />
-        )}
-      </AnimatePresence>
+      {/* P202: die Editor-Schublade flog — der Editor steht als Detail-Spalte im
+          Knowledge-Fenster (Drei-Spalten-Grammatik, wie Mail sein Formular). */}
       <MachineScan
         open={scanOpen}
         autoPreview={scanAusAssistent}

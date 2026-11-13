@@ -729,7 +729,7 @@ export function Settings() {
   const inputClass = "hud-input w-full rounded-xl px-4 py-3 fs-4 lh-lesbar";
 
   return (
-    <div className="h-full flex min-h-0">
+    <div className="h-full flex flex-col min-h-0">
       {/* P199: der Mount-Lauf spielte unsichtbar — Einstellungen bleiben
           dauerhaft gemountet; die Umhüllung im Dashboard blendet bei jedem
           Einblenden (ansicht-blende). */}
@@ -1614,6 +1614,11 @@ curl -X POST ${API_BASE}/api/memory \\
             </p>
           </div>
         )}
+      </div>
+      {/* Die Statuszeile der Fläche (P202, Mockup-Grammatik): die laufende Version
+          und der gewählte Abschnitt — rechts das Versprechen des Ortes. */}
+      <div className="flaechen-status">
+        <span className="gruen">{activeTab === 'system' ? 'AI & data' : activeTab === 'mcp' ? 'MCP / API' : 'Device Sync'}</span>
       </div>
     </div>
   );

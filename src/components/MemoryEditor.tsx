@@ -39,9 +39,15 @@ interface MemoryEditorProps {
   onSave: (data: Partial<Memory> & { beziehungen?: BehauptungEingabe[] }) => void;
   onClose: () => void;
   onDelete?: () => void;
+  /**
+   * P202, Mockup-Treue (k3pta-app-fenster): der Editor steht als DETAIL-SPALTE
+   * im Knowledge-Fenster (die Drei Spalten bleiben) — kein Vorhang über der
+   * Fläche. Ohne das Prop bleibt alles wie vorher (Schublade).
+   */
+  spalte?: boolean;
 }
 
-export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditorProps) {
+export function MemoryEditor({ memory, onSave, onClose, onDelete, spalte = false }: MemoryEditorProps) {
   const [title, setTitle] = useState(memory?.title || '');
   const [content, setContent] = useState(memory?.content || '');
   const [tagsInput, setTagsInput] = useState('');
@@ -234,21 +240,23 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete }: MemoryEditor
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 hud-backdrop"
-        onClick={onClose}
-      />
+    <div className={spalte ? "relative h-full flex" : "fixed inset-0 z-50 flex justify-end"}>
+      {!spalte && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 hud-backdrop"
+          onClick={onClose}
+        />
+      )}
 
       <motion.div
-        initial={{ x: '100%', opacity: 0.5 }}
+        initial={spalte ? { x: 24, opacity: 0 } : { x: '100%', opacity: 0.5 }}
         animate={{ x: 0, opacity: 1 }}
-        exit={{ x: '100%', opacity: 0.5 }}
+        exit={spalte ? { x: 24, opacity: 0 } : { x: '100%', opacity: 0.5 }}
         transition={FEDER_SCHUBLADE}
-        className="relative w-full max-w-2xl h-full flex flex-col z-10 glass-strong"
+        className={`relative ${spalte ? 'w-full' : 'w-full max-w-2xl'} h-full flex flex-col z-10 glass-strong`}
         style={{ borderLeft: '1px solid var(--border-subtle)' }}
       >
         <header className="flex items-center justify-between p-5 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>

@@ -6986,6 +6986,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           </div>
         </div>
       </div>
+      {/* Die Statuszeile der Fläche (P202, Mockup-Grammatik): welches Bild, wie weit
+          herausgezoomt. */}
+      <div className="flaechen-status">
+        <span>{ansichtLabel(ansicht)}</span>
+        <span className="strich">·</span>
+        <span className="tnum">{Math.round(zoomAnzeige * 100)} %</span>
+      </div>
     </div>
   );
 }
