@@ -9,15 +9,17 @@ const ThemeContext = createContext<ThemeContextType>({ isDark: false, toggle: ()
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    // P202: die Standard-Farbe ist WHITE-MODE — wer K3PTA neu installiert, startet
-    // hell (die App-Fenster-Welt, Damian 13.11.: „die Standard-Farbe soll immer
-    // White-Mode sein"). Wer dunkel wählt, speichert es — die Wahl bleibt gewahrt.
+    // P202, der Weltwechsel: die Werkbank ist HELL — und eine gespeicherte
+    // „dark"-Wahl aus der Welt VOR dem Umbau ist keine Wahl für das neue Design,
+    // sondern die Alt-Last des früheren dunklen Defaults. Darum trägt die Wahl
+    // seit dem Umbau ihren eignen Schlüssel: die alte stirbt mit der alten Welt,
+    // wer danach dunkel wählt, speichert bewusst.
+    const saved = localStorage.getItem('theme-werkbank');
     return saved ? saved === 'dark' : false;
   });
 
   useEffect(() => {
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('theme-werkbank', isDark ? 'dark' : 'light');
     if (isDark) {
       document.documentElement.classList.add('dark');
     } else {

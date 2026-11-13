@@ -2054,7 +2054,7 @@ belegen kann.
     Urteil; aber jeder dieser Läufe sah aus wie ein Messergebnis.
 43. **Die Sonde las ein leeres Bild und hielt es für eine Aussage.** Zweimal (01:13:00 und
     01:18:35/01:18:56) maß sie den ruhenden Rahmen, obwohl die Bildschleife nur malt, solange
-    sich etwas bewegt (`KnowledgeGraph.tsx:5058`). Ohne den Nachschuss hätte der Fall grün
+    sich etwas bewegt (`KnowledgeGraph.tsx:5047`). Ohne den Nachschuss hätte der Fall grün
     werden können, weil nichts gemalt wurde — dieselbe Sorte grün ohne Beweis wie ein Zähler,
     der über einer leeren Liste läuft.
 44. **Ein Siegel, das niemand prüft, ist kein Siegel.** Die REGISTER-Zeilen der zwei

@@ -933,11 +933,9 @@ const erwartet = [
   // gemessen 6.11.2026 00:07:23 MEZ im Fenster waren 13 Glieder sichtbar und eines ohne Auskunft
   // ("datum", die Weiche fiel auf `default: return ""`). Die Erklaerung ist jetzt Text,
   // 12 Woerter, und der neue Zyklus `erklaerungen` meldet jedes stumme Glied beim Namen.
-  ["The day the picture is read from", 1],
   // P81b (3.2.171): die zweite stumme Menue-Stelle, bei 390 px gefunden (gemessen
   // 6.11.2026 00:19:31 MEZ: 17 Glieder, `zeitregler` ohne Auskunft; am installierten
   // 3.2.170 stand der neue Satz dort 0 mal). Gezaehlt am installierten 3.2.171: 1 mal.
-  ["right is today, applied on release", 1],
   // P82 (3.2.172): `server/` ist eine Census-Lage geworden, weil fuenf Stellen den Leib
   // einer Antwort in die Flaeche schreiben (Settings.tsx:340 und :379, Chat.tsx:680,
   // store.ts:327 und :489). Gezaehlt am installierten 3.2.171 (6.11.2026 00:34:11 MEZ,
@@ -1117,7 +1115,6 @@ const erwartet = [
   // unten in `verboten` stehen dort 1 mal (die neun Flaechen-Saetze, ein Bund) bzw. 2 mal
   // (K3PTA-Absage, memory_search, memory_save -- in zwei Bunds). Am gebauten 3.2.169 kehrt
   // sich das um: neue Enden je 1 bis 2, alte Formen 0.
-  ["Under 50 % the legend says why", 1],
   ["Unexpected rule shape, so none were read", 1],
   ["this view shows, never edits", 1],
   ["The logs keep it.", 1],
@@ -1147,6 +1144,11 @@ const erwartet = [
 // Kommentar ueber dem neuen Marker und keine Pruefung — diese Liste macht sie maschinell.
 // Aufgenommen ist nur, was eine bewusste Landung ersetzt hat, mit ihrem Schnitt dahinter.
 const verboten = [
+  // P202 (k3pta-app-fenster): die Menü-Erklärungen der More-Klappe flogen — die
+  // Auskunft wohnt an den Titeln der Glieder im Ansicht-Panel.
+  "The day the picture is read from",
+  "right is today, applied on release",
+  "Under 50 % the legend says why",
   // P202 (k3pta-app-fenster): die drei Bausteine, die der Mockup-Umbau los ist —
   // die quer laufende Graph-Klappe, die Vorschlags-Pillen im Chat-Leerauftritt
   // und die Fuß-Karten der Leiste. Ihre Rückkehr wäre die alte Fläche.

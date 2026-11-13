@@ -226,17 +226,6 @@ const BEWEGUNG_KEY = "kepta_graph_bewegung";
  */
 const LEGENDE_KEY = "kepta_graph_legende";
 const TAG_FILTER_KEY = "kepta_graph_tag_filter";
-/**
- * P197: die Sinn-Gruppen des More-Menüs — eine flache Liste von 13+ Reglern
- * („everything here works the same") ist keine Auskunft. Jede Gruppe sagt, wozu
- * ihre Regler gehören; was nicht passt, landet unter „Everything else".
- */
-const MENUE_GRUPPEN: { titel: string; teile: string[] }[] = [
-  { titel: "What the picture carries", teile: ["schema", "connected", "selbst", "aehnlichkeit", "nurmit"] },
-  { titel: "Shape & colour", teile: ["kanal", "farben", "richtung", "dicke", "tiefe", "namen"] },
-  { titel: "Motion", teile: ["bewegung", "krafte"] },
-  { titel: "Time & scope", teile: ["zeitstand", "zeitregler", "datum", "tagfilter"] },
-];
 const NUR_MIT_KEY = "kepta_graph_nur_mit_verbindungen";
 /**
  * G-76 — die Dicke der gemalten Verbindungen. Eine Masste, die das Bild hoert:
@@ -6170,42 +6159,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * Auskunft, die die Zeile nicht unterbringen konnte, wird nicht wieder ein
    * Tooltip.
    */
-  const erklaerung = (g: Leistenglied): string => {
-    switch (g) {
-      case "suche": return "Only the matching notes stay in the picture — the rest leaves it.";
-      case "ansicht": return "Which picture: claims as a field, knowledge as a tree, meaning as a map.";
-      // P83: die Stufenerklaerung traegt ihren Punkt schon (`NAMEN_STUFE`, Zeile 759) --
-      // der Anhang machte aus "as many as fit." ein "fit..". Gemessen 00:58:58 MEZ im
-      // 390-Fenster, und die Wache sitzt auf der gemalten Ebene (Zyklus erklaerungen):
-      // an der Quelle ist das eine Zeichenfolge, kein Satz.
-      case "namen": { const stufe = NAMEN_STUFE[etikettenModus]; return `Density of names. Now: ${stufe.wort.toLowerCase()} — ${stufe.erklaerung.toLowerCase().replace(/\.$/, "")}.`; }
-      case "kanal": return "What the colours mean: kind of knowledge, or where the note came from.";
-      case "tiefe": return `How many steps the picture asks the door for around each concept. Now: ${graphTiefe}. The door knows 1 to 4 and defaults to 2 — a fifth step is not invented here.`;
-      case "farben": return "The four colours of the kinds, reused on the cards.";
-      case "aehnlichkeit": return "Similarity links guess from shared tags. Off, the graph claims nothing, so check first.";
-      case "selbst": return "A note about itself, looped on its own dot.";
-      case "richtung": return "Wide end claims; narrow end is claimed. Under 50 % the legend says why.";
-      case "schema": return "What the store holds: kinds, concepts, claims.";
-      case "krafte": return "How hard the field gathers, repels and spaces itself.";
-      // P81: `datum` fehlte in dieser Weiche und fiel auf `default: return ""` -- das
-      // Menue-Glied zeigte sein Feld, aber keine Auskunft. Gemessen 6.11.2026 00:07:23 MEZ im
-      // Fensterlauf: 13 Glieder, eines ohne Erklaerung ("datum").
-      case "datum": return "The day the picture is read from, so later notes stay out.";
-      // P81, zweite stumme Stelle: bei 390 px wandert der Zeitregler ins Menue und
-      // fiel dort durch dieselbe Weiche -- gemessen 6.11.2026 00:19:31 MEZ, 17 Glieder,
-      // eines ohne Auskunft.
-      case "zeitregler": return "Scrub time: left is the oldest note, right is today, applied on release.";
-      case "bewegung": return `Whether the picture moves by itself. Now: ${bewegungAn ? "on — the field settles after each change" : "off — the picture holds still, and a pan still paints"}.`;
-      case "tagfilter": return tagFilter
-        ? `Only notes tagged “${tagFilter}”. The tag list is the same census the shelf uses.`
-        : "All tags — every note the time and search allow is in the picture.";
-      case "nurmit": return nurMitVerbindungen
-        ? `Only notes with a connection. Hidden right now: ${grundMasse.alleinVersteckt}.`
-        : "Notes that nothing links to stay in the picture, counted in the aisle below.";
-      case "dicke": return `How thick every link is drawn. Now: ${verbindungsdicke}x — 1x is the picture's own weight, and a guess stays thinner than a claim.`;
-      default: return "";
-    }
-  };
   // P202, Mockup-Grammatik (k3pta-app-fenster .graph-flaeche + .graph-panel):
   // die Fläche ist ein Fenster — die Leinwand links (weiß, ohne Kasten), das
   // Ansicht-Panel rechts trägt die Werkzeuge VERTIKAL. Die frühere Steuer-
