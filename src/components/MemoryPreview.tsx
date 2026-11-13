@@ -20,6 +20,13 @@ interface MemoryPreviewProps {
   memory: Memory;
   onClose: () => void;
   onEdit: (m: Memory) => void;
+  /**
+   * P202, App-Fenster-Übernahme: "ohneVorhang" stellt die Vorschau als PANEL
+   * in das Knowledge-Fenster (Spalte rechts, kein Overlay, kein Vorhang) —
+   * die App-Fenster-Grammatik zeigt die geöffnete Akte NEBEN der Liste, nicht
+   * über ihr. Ohne das Prop bleibt alles wie vorher (Schublade über der Fläche).
+   */
+  ohneVorhang?: boolean;
 }
 
 // Die vier Rechen-Arten haben keinen Korb-Namen mehr in der Flaeche — was
@@ -34,7 +41,7 @@ interface Stand {
   createdAt: number;
 }
 
-export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
+export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: MemoryPreviewProps) {
   const toast = useToast();
   const [kopiert, setKopiert] = useState(false);
   const kopierTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,22 +168,24 @@ export function MemoryPreview({ memory, onClose, onEdit }: MemoryPreviewProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 hud-backdrop"
-        onClick={onClose}
-      />
+    <div className={ohneVorhang ? "relative h-full flex justify-end" : "fixed inset-0 z-50 flex justify-end"}>
+      {!ohneVorhang && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 hud-backdrop"
+          onClick={onClose}
+        />
+      )}
 
       <motion.div
-        initial={{ x: "100%", opacity: 0.5 }}
+        initial={ohneVorhang ? { x: 24, opacity: 0 } : { x: "100%", opacity: 0.5 }}
         animate={{ x: 0, opacity: 1 }}
-        exit={{ x: "100%", opacity: 0.5 }}
+        exit={ohneVorhang ? { x: 24, opacity: 0 } : { x: "100%", opacity: 0.5 }}
         transition={FEDER_SCHUBLADE}
-        className="relative w-full max-w-2xl h-full flex flex-col z-10 glass-strong"
-        style={{ borderLeft: "1px solid var(--border-subtle)" }}
+        className={`relative ${ohneVorhang ? "w-[420px] max-w-none" : "w-full max-w-2xl"} h-full flex flex-col z-10 glass-strong`}
+        style={{ borderLeft: ohneVorhang ? "1px solid var(--kante-flaeche)" : "1px solid var(--border-subtle)" }}
         data-testid="memory-preview"
       >
         <header className="flex items-start justify-between gap-3 p-5 pb-4 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>

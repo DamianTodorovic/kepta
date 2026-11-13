@@ -1081,8 +1081,13 @@ export function Dashboard() {
   /** Opens a note from Today, a dossier or the activity — by its id. */
   const oeffneNotiz = useCallback((id: string) => {
     const m = memories.find((x) => x.id === id);
-    if (m) setVorschauMemory(m);
-    else toast.push({ message: 'This note is no longer there — it may have been deleted or replaced.', kind: 'warn' });
+    if (m) {
+      // P202: die geöffnete Akte steht als Panel im Knowledge-Fenster — Klicks aus
+      // Today/Dossier/Activity führen dorthin (ein Panel in einer unsichtbaren
+      // Fläche wäre eine geöffnete Tür ohne Raum).
+      setCurrentView('memories');
+      setVorschauMemory(m);
+    } else toast.push({ message: 'This note is no longer there — it may have been deleted or replaced.', kind: 'warn' });
   }, [memories, toast]);
 
   const handleSave = async (memoryData: Partial<Memory> & { beziehungen?: BehauptungEingabe[] }) => {
@@ -1972,6 +1977,7 @@ export function Dashboard() {
             )}
           </div>
 
+          <div className="flex-1 flex min-h-0">
           <div className="flex-1 overflow-y-auto px-5 py-4">
             <div className="max-w-6xl mx-auto h-full flex flex-col">
               {/* Persönlicher Kopf — Datum als Zeile, Aussage als Display */}
@@ -2271,6 +2277,20 @@ export function Dashboard() {
               )}
             </div>
           </div>
+          {/* P202, App-Fenster-Übernahme: die geöffnete Akte steht als Panel NEBEN dem
+              Register (Spalte rechts, ohne Vorhang) — die App-Fenster-Grammatik zeigt
+              Liste und Detail nebeneinander, wie Mail und Linear. */}
+          <AnimatePresence>
+            {vorschauMemory && (
+              <MemoryPreview
+                memory={vorschauMemory}
+                ohneVorhang
+                onClose={() => setVorschauMemory(null)}
+                onEdit={(m) => { setVorschauMemory(null); setEditingMemory(m); setIsEditorOpen(true); }}
+              />
+            )}
+          </AnimatePresence>
+          </div>
 
           {/* Die App-Statuszeile: was das Fenster unten dauerhaft sagt. Der Gehirn-Status
               (Version, Bestand, Verschlüsselung, Embeddings) wanderte hierher — er ist
@@ -2409,16 +2429,6 @@ export function Dashboard() {
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} actions={paletteActions} />
 
       <OnboardingWizard open={wizardOpen} onClose={closeWizard} onComplete={closeWizard} />
-
-      <AnimatePresence>
-        {vorschauMemory && (
-          <MemoryPreview
-            memory={vorschauMemory}
-            onClose={() => setVorschauMemory(null)}
-            onEdit={(m) => { setVorschauMemory(null); setEditingMemory(m); setIsEditorOpen(true); }}
-          />
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {isEditorOpen && (
