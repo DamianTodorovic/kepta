@@ -88,14 +88,15 @@ describe("Punkt 4 und 7: die Chat-Flaeche behauptet einen Zustand, nicht zwei", 
     expect(n, `derselbe Zustand wird mehrfach behauptet (${n} mal): ${text.slice(0, 300)}`).toBe(1);
   });
 
-  it("erklaert den Vorschlaegen, dass sie nur die Zeile fuellen", async () => {
+  it("liest die erste Blase des leeren Gespraechs (P202, Mockup .nachricht)", async () => {
     const anbieter = PROVIDERS.find((p) => p.needsKey)!;
     saveAISettings({ providerId: anbieter.id, apiKey: "", baseUrl: FERN, model: anbieter.defaultModel });
     const { container } = render(<ToastProvider><Chat activeMemories={SEITE} /></ToastProvider>);
-    await waitFor(() => expect(container.textContent).toMatch(/Summarise/));
-    const pille = [...container.querySelectorAll("button")].find((b) => /Summarise/.test(b.textContent || ""));
-    expect(pille, "der Vorschlag ist nicht zu treffen").toBeTruthy();
-    const titel = pille!.getAttribute("title") || "";
-    expect(titel, `kein Wort, was der Vorschlag tut: "${titel}"`).toMatch(/fills|in the box|types it in/i);
+    await waitFor(() => expect(container.textContent).toMatch(/No questions yet/));
+    // P202, Mockup-Grammatik: der Leerauftritt ist die erste K3PTA-Blase — die
+    // Vorschlags-Pillen flogen, die Blase sagt, was sie liest.
+    const blasen = container.querySelector(".nachricht .blasen");
+    expect(blasen, "die Blase fehlt im Leerauftritt").toBeTruthy();
+    expect(blasen!.textContent || "").toMatch(/I read only the notes you connected/);
   });
 });

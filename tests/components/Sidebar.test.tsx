@@ -69,7 +69,7 @@ describe("Sidebar: Zaehlung und Tags", () => {
   it("laesst die Zahl bei einem einzelnen Vorkommen weg", () => {
     const { container } = zeige();
     const einzeln = [...container.querySelectorAll("button")].find((b) => /einzeln/.test(b.textContent ?? ""));
-    expect(einzeln?.textContent?.trim()).toBe("einzeln");
+    expect(einzeln?.textContent?.trim()).toBe("#einzeln");
   });
 
   it("meldet die Auswahl eines Tags", async () => {
@@ -109,10 +109,10 @@ describe("Sidebar: viele Tags", () => {
   it("laesst den Rest aufklappen", async () => {
     const user = userEvent.setup();
     const { container } = zeige({ tags: viele });
-    const vorher = [...container.querySelectorAll("button")].filter((b) => /^thema\d+/.test(b.textContent ?? "")).length;
+    const vorher = [...container.querySelectorAll("button")].filter((b) => /^#?thema\d+/.test(b.textContent ?? "")).length;
     await user.click(screen.getByText(/more/i));
     await waitFor(() => {
-      const nachher = [...container.querySelectorAll("button")].filter((b) => /^thema\d+/.test(b.textContent ?? "")).length;
+      const nachher = [...container.querySelectorAll("button")].filter((b) => /^#?thema\d+/.test(b.textContent ?? "")).length;
       expect(nachher).toBeGreaterThan(vorher);
     });
   });
@@ -132,8 +132,9 @@ describe("Sidebar: Fusszeile", () => {
     // Fenster einen Chip „Not encrypted" trug (gemessen 10.10., leerer
     // Datenordner mit KEPTA_ENCRYPTION=off — e3-screens/
     // vorher-dark-1440px-erststart.png). Der Zustand gehört dorthin, wo er
-    // gemessen wird: Systemstatus und die Chip-Leiste der Fläche.
-    expect(screen.getByText(/^local · private$/)).toBeTruthy();
+    // gemessen wird: Systemstatus und die Statuszeile der Flächen (P202,
+    // Mockup-Fuß: die Marke trägt keine Unterzeile mehr).
+    expect(screen.queryByText(/^local · private$/)).toBeNull();
     expect(screen.queryByText(/encrypt/i)).toBeNull();
     // Die alte Fußzeile warb mit „A key removes the limits". Es gibt weder
     // Grenzen noch Schlüssel (09.10.2026), also darf kein Wort davon bleiben.
@@ -151,13 +152,13 @@ describe("Sidebar: Fusszeile", () => {
     expect(screen.queryByText(/\d+\.\d+\.\d+/)).toBeNull();
   });
 
-  it("schaltet das Thema um", async () => {
+  it("schaltet das Thema über die zwei Ikons (P202, Mockup-Fuß)", async () => {
     const user = userEvent.setup();
     zeige();
-    const knopf = screen.getByRole("button", { name: /Switch theme/i });
-    const vorher = knopf.textContent;
-    await user.click(knopf);
-    await waitFor(() => expect(screen.getByRole("button", { name: /Switch theme/i }).textContent).not.toBe(vorher));
+    const dunkel = screen.getByRole("button", { name: /Dark theme/i });
+    await user.click(dunkel);
+    // Nach dem Wechsel trägt das andere Ikon seine Färbung — beide stehen immer.
+    await waitFor(() => expect(screen.getByRole("button", { name: /Light theme/i })).toBeTruthy());
   });
 
   it("schaltet den Fokusmodus", async () => {

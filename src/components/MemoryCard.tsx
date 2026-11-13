@@ -1,13 +1,11 @@
 import { memo } from 'react';
 import { cn } from '../lib/utils';
-type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
-import { formatDistanceToNow } from 'date-fns';
 import { Memory } from '../types';
-import { Brain } from "../lib/icons";
-import { Hash, Clock, Zap, FileText, ExternalLink, Lock } from "../lib/icons";
+import { Hash, FileText, ExternalLink, Lock } from "../lib/icons";
 import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from '../lib/quelle';
 import { gruppenVonNotiz, THEMA_HINWEISE, THEMA_LABELS, TRAEGER_HINWEISE, TRAEGER_LABELS } from '../lib/graphHierarchy';
 import { spurChip } from '../lib/spuren';
+import { kurzeZeit, typFarbe } from '../lib/zeit';
 import { useToast } from './ui/Toast';
 
 interface MemoryCardProps {
@@ -28,34 +26,17 @@ interface MemoryCardProps {
   aktiv?: boolean;
 }
 
-/**
- * Die vier Rechen-Arten: sie liefern Icon und Farbe (Token `--type-*`, hält E1).
- * Ihr NAME steht hier nicht mehr auf der Karte — was der Nutzer liest, ist der
- * Traeger aus Zeile 1 ("Notes · Files · Code"), siehe unten.
- */
-const TYPE_META: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; weight?: IconWeight }> }> = {
-  semantic: { icon: Brain },
-  episodic: { icon: Clock },
-  reference: { icon: FileText },
-  procedural: { icon: Zap },
-};
 export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, matchedTerms, herkunft, aktiv = false }: MemoryCardProps) {
   const toast = useToast();
   const pct = typeof score === "number" ? Math.round(score * 100) : null;
   const now = Date.now();
   const expired = memory.validTo != null && memory.validTo < now;
   const superseded = !!memory.supersededBy;
-  const meta = memory.type ? TYPE_META[memory.type] : undefined;
-  const TypeIcon = meta?.icon;
-  // P196b: der Grat und die Flächen tragen den Roh-Ton (`--type-X`); die SCHRIFT
-  // (Etikett) liest die abgeleitete Fassung (`--type-X-text`), dunkle Wahlen
-  // bleiben also lesbar, ohne dass die Wahl selbst verändert wird.
-  const typeColor = memory.type ? `var(--type-${memory.type})` : null;
-  const typeText = memory.type ? `var(--type-${memory.type}-text, var(--type-${memory.type}))` : null;
-  // Zeile 1 und 2 — was der Nutzer auf der Karte liest. Ein Lauf durch dieselben
-  // Regeln wie in den Tests; Traeger und Themen sind ableitbar, nicht gespeichert.
+  // P196b: der Punkt trägt den Roh-Ton (`--type-X`); die abgeleitete Fassung
+  // (`--type-X-text`) bleibt für die SCHRIFT reserviert.
+  const typeColor = memory.type ? `var(--type-${memory.type})` : typFarbe(memory.type);
+  // Zeile 1 — was der Nutzer auf der Karte liest.
   const gruppe = gruppenVonNotiz(memory);
-  const traegerEtikett = TRAEGER_LABELS[gruppe.traeger];
   // Woher die Notiz stammt und ob sie Teil eines mehrteiligen Imports ist —
   // beides steht in Titel/Content (Konvention der Import-Wege).
   const quelle = parseQuelle(memory);
@@ -72,37 +53,17 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
       onClick={onClick}
       className={cn("row-entry cursor-pointer group relative", aktiv && "aktiv")}
     >
-      {/* Farbstreich links: der Typ färbt den Kartenrand */}
-      {/* P197: 6 px statt 4 px — die Art-Farbe muss auf einen Blick sichtbar sein
-          (Damian: „die Farben, die man einstellt, bleiben ja überall"). Die Kapsel
-          malt dasselbe Bild wie 2 px, nennt aber eine Form statt eines Werts
-          ausserhalb der Stufen. */}
-      {typeColor && (
-        <span
-          aria-hidden
-          className="row-grat absolute left-0 top-2 bottom-2 w-[6px]"
-          style={{ background: `linear-gradient(180deg, ${typeColor}, color-mix(in srgb, ${typeColor} 30%, transparent))`, borderRadius: 999 }}
-        />
-      )}
-
-      {/* Standarte: Glyph, Art-Farbe als weicher Chip, Wort aus Zeile 1 — die Art
-          ist auf der Karte SEHBAR, nicht nur am Streifen (P197). */}
+      {/* Der Art-Punkt (Mockup .zeile-item .punkt): 8×8 mit Radius 3 in der
+          Art-Farbe — die Art ist auf der Zeile SEHBAR, mit derselben Auskunft
+          im Schwebetext wie vorher die Pille. */}
       <span
-        className="row-type"
-        style={{
-          color: typeText ?? 'var(--text-2)',
-          background: typeColor ? `color-mix(in srgb, ${typeColor} 14%, transparent)` : undefined,
-          borderRadius: 999,
-          paddingInline: 8,
-          paddingBlock: 2,
-        }}
-        title={TRAEGER_HINWEISE[gruppe.traeger]}
-      >
-        {TypeIcon && <TypeIcon className="w-3.5 h-3.5 shrink-0" weight="duotone" />}
-        <span className="row-type-label">{traegerEtikett}</span>
-      </span>
+        aria-hidden
+        className="row-punkt"
+        style={{ background: typeColor }}
+        title={`${TRAEGER_LABELS[gruppe.traeger]} — ${TRAEGER_HINWEISE[gruppe.traeger]}`}
+      />
 
-      {/* Die Akte selbst: Titel in Serif, darunter der bereinigte Text */}
+      {/* Die Akte selbst: Titel in Sans in EINER Zeile, darunter der Text */}
       <div className="row-body">
         <h3>{memory.title || 'Untitled'}</h3>
         <p>{lesetext || memory.content}</p>
@@ -178,7 +139,8 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         </div>
       </div>
 
-      {/* Register-Meta rechts: Treffer, Tags, Alter */}
+      {/* Register-Meta rechts: kurze Zeit und Herkunft (Mockup .rechts .zeit +
+          .herkunft), die Treffer-Auskunft bei Suche */}
       <div className="row-meta">
         {pct !== null && (
           <span
@@ -199,7 +161,10 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
             <span className="row-quiet truncate max-w-[130px]">{matchedTerms.slice(0, 2).join(', ')}</span>
           )}
         </div>
-        <span className="row-time tnum">{formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}</span>
+        <span className="row-time tnum">{kurzeZeit(memory.updatedAt)}</span>
+        {/* Die Herkunft als eigenes Glied (Mockup: „md file“, „Claude Code“, „MCP“). */}
+        {quelle && <span className="row-herkunft truncate max-w-[120px]">{quelle.name}</span>}
+        {chunk && !quelle && <span className="row-herkunft">{chunk.von} parts</span>}
       </div>
     </div>
   );

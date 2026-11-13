@@ -81,25 +81,16 @@ describe("Stilvertrag der Flächen-Hülle", () => {
     expect(r!.korper).toMatch(/flex-wrap:\s*nowrap/);
   });
 
-  it("gibt dem Assistenten eine Spalte, keine Schicht über dem Bild (A7-10)", () => {
+  // P202, Mockup-Grammatik (.assistent-vorhang): der Assistent steht als Voll-
+  // Overlay auf der Grundfläche — Damian's Mockup (k3pta-app-fenster, „Set up
+  // K3PTA") trägt ihn so. Die frühere Spalten-Grammatik (A7-10) war die Heilung
+  // einer Messung über einer GEFÜLLTEN Fläche; die erste Fläche hinter dem
+  // Assistenten ist leer (Nothing selected), es gibt kein Bild, das er deckt.
+  it("legt den Assistenten als Voll-Overlay auf die Grundfläche (P202, Mockup .assistent-vorhang)", () => {
     const r = regel(".wizard-taefelchen");
-    expect(r, "das Täfelchen hat keine Spalte, die es dem Bild abnimmt").toBeDefined();
-    expect(r!.korper).toMatch(/flex:\s*0/);
-    expect(r!.korper, "eine feste Breite in einem schmalen Fenster frisst das Bild").toMatch(/min\(/);
-  });
-
-  // Die rote Phase dieser Regel ist die Messung selbst: heil390-erst am 10.10.,
-  // 12:19 — im 390-px-Fenster stand das Taefelchen als gelegtes Blatt ueber dem
-  // Bild (Ueberlappung 360 x 466 = 167 760 px2). Eine Nebenbreite gibt es dort
-  // nicht, also nimmt das Blatt dem Bild *Raum* statt es zu decken: der Rahmen
-  // stapelt im schmalen Fenster untereinander.
-  it("setzt das Täfelchen im schmalen Fenster unter die Fläche, nicht darüber (A7-10)", () => {
-    const stapel = regelGenau(".huelle-schmal");
-    expect(stapel, "der Rahmen stapelt im schmalen Fenster nicht").toBeDefined();
-    expect(stapel!.korper).toMatch(/flex-direction:\s*column/);
-    const r = regel(".huelle-schmal", ".wizard-taefelchen");
-    expect(r, "im schmalen Fenster hat das Täfelchen keine eigene Abmachung").toBeDefined();
-    expect(r!.korper, "ein Blatt, das das Bild deckt, ist keine Seitensäule").not.toMatch(/position:\s*fixed/);
-    expect(r!.korper).toMatch(/flex:\s*0\s*0/);
+    expect(r, "der Assistent hat keine Schicht auf der Grundfläche").toBeDefined();
+    expect(r!.korper).toMatch(/position:\s*fixed/);
+    expect(r!.korper, "der Vorhang trägt die Grundfläche des Mockups").toMatch(/var\(--feld\)/);
+    expect(r!.korper).toMatch(/place-items:\s*center/);
   });
 });

@@ -106,8 +106,6 @@ describe("Today", () => {
 
     await user.click(screen.getByRole("button", { name: "Prefers short answers" }));
     expect(oeffne).toHaveBeenCalledWith("n1");
-    await user.click(screen.getByRole("button", { name: "See everything they did" }));
-    expect(gehe).toHaveBeenCalledWith("activity");
   });
 
   it("„Keep the older“ ersetzt die neuere; ein Fehler wird gesagt", async () => {
@@ -148,9 +146,10 @@ describe("Today", () => {
     await userEvent.setup().click(screen.getByRole("button", { name: "The successor" }));
     expect(oeffne).toHaveBeenCalledWith("succ");
     expect(screen.getByText("Scratch")).toBeTruthy();
-    expect(screen.getByText(/in the trash — restore it there/)).toBeTruthy();
+    expect(screen.getByText(/deleted — in the trash/)).toBeTruthy();
     // Kopf-Chip, Kategorie-Tag und „replaced by“ zeigen die Bewegung mehrfach an.
-    expect(screen.getAllByText(/replaced/).length).toBeGreaterThanOrEqual(2);
+    // P202, Mockup-Zeile: die Bewegung trägt ihre Art am Punkt — das Wort steht in der Zeile und im Fuß.
+    expect(screen.getAllByText(/replaced/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/deleted/).length).toBeGreaterThanOrEqual(2);
     expect(aufrufe.filter((a) => a.url.startsWith("/api/briefing")).length).toBeGreaterThan(0);
   });
@@ -225,7 +224,7 @@ describe("Dossier", () => {
     stubFetch({ "/api/dossier/suggestions": { status: 500, body: {} }, "/api/dossier?": { status: 400, body: { error: "Tell K3PTA who or what the dossier is about." } } });
     mitToast(<DossierView onOpenMemory={vi.fn()} />);
     await user.type(screen.getByRole("textbox", { name: /Who or what/ }), "Zebra");
-    await user.click(screen.getByRole("button", { name: /Create dossier/ }));
+    await user.click(screen.getByRole("button", { name: /^Create$/ }));
     await screen.findByText("The dossier did not arrive. (Tell K3PTA who or what the dossier is about.)");
   });
 
@@ -535,7 +534,9 @@ describe("Seitenleiste", () => {
     // 09.10.2026 steht darunter auch kein Countdown und kein Werbe-Satz mehr —
     // es gibt weder einen gratis ersten Tag noch einen Schlüssel.
     expect(screen.getAllByText(/^K3PTA$/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/^local · private$/)).toBeTruthy();
+    // P202, Mockup-Fuß: die Marke ohne Unterzeile — „local · private" steht
+    // in der Statuszeile der Flächen.
+    expect(screen.queryByText(/^local · private$/)).toBeNull();
     expect(screen.queryByText(/unlimited|key|limit/i)).toBeNull();
   });
 });

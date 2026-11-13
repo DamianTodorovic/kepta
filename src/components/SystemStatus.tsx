@@ -59,20 +59,22 @@ function schluesselOrt(ablage?: string): string {
   return `, key in the ${ablage}`;
 }
 
+/* P202, Mockup-Grammatik (k3pta-app-fenster .zustandszeile): die Zeile trägt
+   ihr Zustands-WORT links („Arbeitet“ grün, „Einrichten“ bernstein, das
+   Fragende als Loader), den Satz mit dem Betreff fett rechts, den Weg als
+   warn-Wort im selben Absatz — keine Icon-Zeile mehr. */
 function Row({ ok, label, detail, fix, seal, unknown }: { ok: boolean; label: string; detail: string; fix?: string; seal?: boolean; unknown?: boolean }) {
   return (
-    <div className="flex items-start gap-3 py-3">
-      {unknown
-        ? <Loader2 className="w-4 h-4 mt-1 shrink-0 animate-spin" style={{ color: 'var(--text-3)' }} />
-        : ok
-          ? seal
-            ? <ShieldCheck className="w-4.5 h-4.5 mt-1 shrink-0" style={{ color: 'var(--accent)' }} />
-            : <CheckCircle2 className="w-4 h-4 mt-1 shrink-0" style={{ color: 'var(--ok)' }} />
-          : <XCircle className="w-4 h-4 mt-1 shrink-0" style={{ color: '#e6a100' }} />}
-      <div className="min-w-0">
-        <div className="fs-4 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>{label}</div>
-        <div className="fs-2 lh-dicht mt-1" style={{ color: 'var(--text-2)' }}>{detail}</div>
-        {!unknown && !ok && fix && <div className="fs-2 lh-dicht mt-1 font-semibold" style={{ color: '#d97706' }}>How to fix it: {fix}</div>}
+    <div className="zustandszeile" style={{ alignItems: 'flex-start' }}>
+      <span className="art" style={{ color: unknown ? 'var(--text-3)' : ok ? 'var(--accent)' : 'var(--warn)', paddingTop: 3 }}>
+        {unknown
+          ? <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'var(--text-3)' }} />
+          : ok ? 'Arbeitet' : 'Einrichten'}
+      </span>
+      <div className="inhalt">
+        <b style={{ color: 'var(--text-1)', fontWeight: 650 }}>{label}</b>
+        {' — '}{detail}
+        {!unknown && !ok && fix && <span style={{ color: 'var(--warn)' }}> How to fix it: {fix}</span>}
       </div>
     </div>
   );
@@ -191,7 +193,7 @@ export function SystemStatus() {
   const coverage = health && health.embeddings.total > 0 ? Math.round((health.embeddings.embedded / health.embeddings.total) * 100) : 0;
 
   return (
-    <div className="rounded-2xl p-3 sm:p-5" style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
+    <div className="gruppen-tisch" style={{ maxWidth: 680, padding: '14px 16px' }}>
       <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="fs-5 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>System status</h3>
@@ -199,7 +201,7 @@ export function SystemStatus() {
         </div>
       </div>
 
-      <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+      <div>
         <Row
           ok
           label={`Version ${APP_VERSION}`}

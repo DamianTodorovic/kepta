@@ -15,6 +15,7 @@
 // Herkunft. Ein Fall, der nur die eine Seite prueft, waere die Haelfte eines Beweises.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Dashboard } from "../../src/components/Dashboard";
 import { AuthProvider } from "../../src/contexts/AuthContext";
 import { ThemeProvider } from "../../src/contexts/ThemeContext";
@@ -111,8 +112,12 @@ describe("Punkt 5: drei Achsen, drei Fragen", () => {
   });
 
   it("fuehrt die Chips-Gruppe mit demselben Wort wie den Streifen", async () => {
+    const user = userEvent.setup();
     const { container } = await zeige();
     await waitFor(() => expect(container.textContent).toMatch(/all of your notes/i), { timeout: 6000 });
+    // P202, Mockup-Grammatik: die Chips stehen bei ihrer Frage — der Test
+    // wählt „By type", dann trägt die Gruppe ihr Wort.
+    await user.click(screen.getByRole("button", { name: "By type" }));
     expect(screen.getByRole("group", { name: new RegExp(TRAEGER_FRAGE, "i") }),
       "die Traeger-Chips tragen ein andres Wort als ihre Zahlen oben").toBeTruthy();
     expect(screen.queryByRole("group", { name: /where it came from/i }),

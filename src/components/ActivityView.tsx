@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Bot, ShieldCheck, Download, Loader2, CheckCircle2, AlertTriangle } from '../lib/icons';
 import { absage } from '../lib/absage';
 import { ConnectApps } from './ConnectApps';
+import { benutzeFensterStatus } from './ui/FensterStatus';
 
 interface Eintrag { id: number; at: number; who: string; tool: string; text: string | null; noteId: string | null; count: number | null }
 interface Agent { who: string; lastSeen: number; calls: number }
@@ -300,6 +301,22 @@ function Protokoll() {
 
 export function ActivityView({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMemory: (id: string) => void }) {
   const [reiter, setReiter] = useState<'live' | 'audit'>('live');
+  const melde = benutzeFensterStatus();
+  useEffect(() => {
+    if (!aktiv) return;
+    // Die Statuszeile wohnt am Fenster-Slot (volle Breite, Mockup .statuszeile);
+    // die Fläche meldet ihre Wörter dorthin.
+    melde({
+      links: (
+        <>
+          <span className="gruen">Sealed record</span>
+          <span className="strich">·</span>
+          <span>every access, local</span>
+        </>
+      ),
+      rechts: reiter === 'live' ? 'Live' : 'Audit log',
+    });
+  }, [aktiv, reiter, melde]);
   return (
     <div className="flex-1 flex flex-col min-h-0" data-testid="activity-view">
       {/* P202, Mockup-Grammatik: der Titel steht im Kopf der Fläche, die Wahl
@@ -326,11 +343,6 @@ export function ActivityView({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMe
       </div>
       <div className="detail-korper">
         {reiter === 'live' ? <Live aktiv={aktiv} onOpenMemory={onOpenMemory} /> : <Protokoll />}
-      </div>
-      <div className="flaechen-status">
-        <span className="gruen">Sealed record</span>
-        <span className="strich">·</span>
-        <span>every access, local</span>
       </div>
     </div>
   );

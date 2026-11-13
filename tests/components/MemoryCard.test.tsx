@@ -57,7 +57,8 @@ describe("MemoryCard", () => {
   // verworfen wurden. Icon und Farbe bleiben an die Rechen-Art gebunden.
   it("nennt den Traeger statt der Rechen-Art — eine eigene Notiz ist Notes", () => {
     render(<MemoryCard memory={mem({ type: "procedural" })} onClick={() => {}} />);
-    expect(screen.getByText("Notes")).toBeInTheDocument();
+    // P202, Mockup-Zeile: die Traeger-Auskunft wohnt im Schwebetext des Art-Punkts.
+    expect(screen.getByTitle(/^Notes — /)).toBeInTheDocument();
     expect(screen.queryByText("How-to")).not.toBeInTheDocument();
   });
 
@@ -73,8 +74,9 @@ describe("MemoryCard", () => {
         onClick={() => {}}
       />,
     );
-    // Traeger ueber die Quelldatei-Endung im Tag, Themen aus dem Text.
-    expect(screen.getByText("Files")).toBeInTheDocument();
+    // Traeger ueber die Quelldatei-Endung im Tag (Schwebetext des Art-Punkts),
+    // Themen aus dem Text.
+    expect(screen.getByTitle(/^Files — /)).toBeInTheDocument();
     expect(screen.getByText("People")).toBeInTheDocument();
     expect(screen.getByText("Events")).toBeInTheDocument();
     expect(screen.getByText("Tasks")).toBeInTheDocument();
@@ -92,7 +94,7 @@ describe("MemoryCard", () => {
         onClick={() => {}}
       />,
     );
-    expect(screen.getByText("Code")).toBeInTheDocument();
+    expect(screen.getByTitle(/^Code — /)).toBeInTheDocument();
     for (const wort of ["People", "Projects", "Events", "Tasks", "Guides", "Links"]) {
       expect(screen.queryByText(wort), wort).not.toBeInTheDocument();
     }
@@ -110,7 +112,10 @@ describe("MemoryCard: Quelle öffnen", () => {
     render(<MemoryCard memory={mem({
       content: "Text\n\n— Source: /Users/da/Docs/weg.pdf",
     })} onClick={() => {}} />);
-    await user.click(screen.getByText("weg.pdf"));
+    // P202: die Herkunft steht auch am rechten Zeilenrand — der Klick geht auf den Quellen-Knopf.
+    const quelle = [...document.querySelectorAll("button")].find((b) => (b.textContent || "").includes("weg.pdf"));
+    expect(quelle).toBeTruthy();
+    await user.click(quelle!);
     await waitFor(() => expect(toastPush).toHaveBeenCalledOnce());
     expect(String(toastPush.mock.calls[0][0].message)).toMatch(/could not be opened/i);
   });

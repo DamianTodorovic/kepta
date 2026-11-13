@@ -104,6 +104,7 @@ import {
 import { gemeinschaftenBaue, grundHexVon, haufenBildBaue, haufenKantenAus, haufenNamen, unterscheidetVonArt } from "../lib/gemeinschaften";
 import { KAPPE_PANEL } from "../lib/kappe";
 import { ansichtBeschreibung, ansichtLabel } from "../lib/ansichten";
+import { benutzeFensterStatus } from "./ui/FensterStatus";
 
 // P197: der Baum (dendrogram) ist aus dem Produkt geflogen — der Knopf ist weg,
 // eine gemerkte Baum-Ansicht fällt aufs Kraftfeld zurück. Der interne Weg bleibt
@@ -5672,6 +5673,32 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const karteZeigbar =
     ansicht !== "semantic" || (!karteFehler && karte !== null && karte.punkte.length >= 2);
 
+  // Die Statuszeile wohnt am Fenster-Slot (volle Breite, Mockup .statuszeile):
+  // der Zeitanteil, der Bestand des Bildes, rechts das Bild-Wort. Die Hooks
+  // stehen VOR dem frühen Return des leeren Bestands — React zählt sie auf
+  // jedem Pfad gleich.
+  const melde = benutzeFensterStatus();
+  const zeitProzent = (() => {
+    if (!zeitAchse || zeitStandMs === null) return 100;
+    const spanne = Math.max(1, zeitAchse.heute - zeitAchse.min);
+    return Math.max(0, Math.min(100, Math.round(((zeitStandMs - zeitAchse.min) / spanne) * 100)));
+  })();
+  useEffect(() => {
+    melde({
+      links: (
+        <>
+          <span className="gruen tnum">{zeitProzent} % recent</span>
+          <span className="strich">·</span>
+          <span className="tnum">
+            {mengenzahl(grundMasse.notizen.length)} nodes
+            {haufenBild?.groessen?.length ? `, ${haufenBild.groessen.length} clusters` : ""}
+          </span>
+        </>
+      ),
+      rechts: ansichtLabel(ansicht),
+    });
+  }, [melde, zeitProzent, grundMasse.notizen.length, haufenBild?.groessen?.length, ansicht]);
+
   if (memories.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -5988,11 +6015,13 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     </div>
   );
   const farbenReihe = (
-    // P196: vier beschriftete Wähler statt anonymer Punkte — jede Wahl gilt
-    // (Helligkeit wird nur auf die Leiter geführt) und trägt app-weit.
-    <div className="flex items-start gap-3 shrink-0" title="Dot colours — each colour tints its type across the graph, cards and list">
+    // P202, Mockup-Grammatik (.farbwahl-zeile): die vier Farben stehen VERTIKAL
+    // im Panel — swatch, Name; jede Wahl gilt (Helligkeit wird nur auf die
+    // Leiter geführt) und trägt app-weit. Darunter die Kantengerüche (das
+    // Mockup trägt „claimed link · mention“ als kleine Legende).
+    <div className="legende-graph" title="Dot colours — each colour tints its type across the graph, cards and list">
       {TYP_FOLGE.map((t) => (
-        <label key={t} className="flex flex-col items-center gap-1 cursor-pointer select-none">
+        <label key={t} className="farbwahl-zeile cursor-pointer select-none" style={{ padding: "5px 8px" }}>
           <input
             type="color"
             value={TYPE_COLORS[t] ?? ""}
@@ -6002,9 +6031,15 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             className="graph-swatch"
             style={{ color: `var(${TYP_TOKEN[t]})`, pointerEvents: "auto" }}
           />
-          <span className="fs-1" style={{ color: "var(--text-3)" }}>{TYP_BESCHREIBUNG[t]}</span>
+          <span className="fs-2 truncate" style={{ color: "var(--text-2)" }}>{TYP_BESCHREIBUNG[t]}</span>
         </label>
       ))}
+      <div className="flex items-center gap-1.5 fs-1" style={{ padding: "5px 8px", color: "var(--text-3)" }}>
+        <i aria-hidden style={{ display: "inline-block", width: 18, borderTop: "2px solid var(--text-3)" }} />
+        claimed link
+        <i aria-hidden style={{ display: "inline-block", width: 18, borderTop: "2px dotted var(--text-3)" }} />
+        mention
+      </div>
     </div>
   );
   const schalterAehnlichkeit = schalter(ahnlichkeit, "Show similarity links — guesses from shared tags and titles, off by default", () => setAhnlichkeit((v) => !v), "Similar");
@@ -6171,173 +6206,61 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       default: return "";
     }
   };
+  // P202, Mockup-Grammatik (k3pta-app-fenster .graph-flaeche + .graph-panel):
+  // die Fläche ist ein Fenster — die Leinwand links (weiß, ohne Kasten), das
+  // Ansicht-Panel rechts trägt die Werkzeuge VERTIKAL. Die frühere Steuer-
+  // leiste quer über der Leinwand flog: sie war der Grund, warum Glieder aus
+  // dem Fenster fielen (D1-01) und die More-Klappe das Bild überschwemmte.
+  // Im Panel passt alles — die Glieder stehen in Reihen, der Körper rollt.
   return (
-    <div className="relative flex flex-col h-full min-h-0">
-      {/* Die Leiste: EINE Zeile, und was nicht hineinpasst, ist ein Knopf mit
-          einer Zahl — kein seitlicher Rollner, der Bedienelemente ausserhalb
-          des Fensters legt (D1-01, Z-03).
-
-          Gemessen am vorher-Stand (400 Notizen, 1 440 px,
-          `e2-rohdaten/e2-400-leiste.json`): die Zeile war 1 132 px breit und
-          trug 1 680 px. Ausserhalb des Fensters lagen Datumsfeld (+191 px),
-          Zeitregler (+333 px) und alle drei Zoom-Knoepfe (+433 bis +509 px);
-          auf keinen von ihnen antwortete `elementFromPoint`. Die Flaeche zeigt
-          ein Gedaechtnis, das man durch die Zeit blaettern kann, und das Blatt,
-          das sagt, welche Zeit eingestellt ist und wie weit man herausgezoomt
-          hat, war ausser Reichweite.
-
-          Der Abbau folgt einer Rangfolge, und ihre Ordnung ist die Reihenfolge
-          der Fragen, die diese Flaeche beantwortet — nicht die Reihenfolge der
-          Knoepfe: wo stehe ich (Zoom), wann (Zeitstand), welches Bild
-          (Ansicht), wie viel ist benannt (Dichte), finden. */}
-      <div
+    <div className="relative flex flex-row h-full min-h-0">
+      <aside
         ref={leistenMessen}
         data-testid="graph-leiste"
-        className="relative flex items-center gap-2 px-2 py-3 shrink-0 flex-nowrap"
+        className="graph-panel"
         onKeyDown={(e) => {
-          if (e.key === "Escape" && mehrOffen) {
+          if (e.key === "Escape") {
             e.stopPropagation();
-            setzeMehrOffen(false);
+            setSchemaOffen(false);
+            setzeKrafteOffen(false);
           }
         }}
       >
-        {drin("suche") && sucheBlock}
-        {drin("ansicht") && schieneAnsicht}
-        {drin("namen") && schieneNamen}
-        {drin("richtung") && schalterRichtung}
-        {drin("aehnlichkeit") && schalterAehnlichkeit}
-        {drin("selbst") && schalterSelbst}
-        {drin("schema") && schalterSchema}
-        {drin("krafte") && schalterKrafte}
-        {drin("kanal") && schieneKanal}
-        {drin("tiefe") && schieneTiefe}
-        {drin("farben") && farbenReihe}
-        {drin("tagfilter") && steuerelementTagFilter}
-        {drin("nurmit") && schalterNurMit}
-        {drin("dicke") && steuerelementDicke}
-        {drin("bewegung") && schalterBewegung}
-        <div className="flex items-center gap-2 ml-auto shrink-0">
-          {zeitAchse && drin("zeitstand") && zeitStand}
-          {zeitAchse && drin("datum") && datumsFeld}
-          {zeitAchse && drin("zeitregler") && zeitRegler(false)}
-          {drin("zoom") && zoomReihe}
-          {plan.menue.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                const neu = !mehrOffen;
-                setzeMehrOffen(neu);
-                // Eine Klappe nach der andern: das Bild soll nicht hinter drei
-                // Ueberschichten verschwinden.
-                if (neu) {
-                  setSchemaOffen(false);
-                  setzeKrafteOffen(false);
-                }
-              }}
-              aria-expanded={mehrOffen ? "true" : "false"}
-              aria-controls="graph-mehr-panel"
-              className="btn-ghost px-2 py-2 rounded-lg fs-1 inline-flex items-center gap-2 whitespace-nowrap shrink-0"
-              title={`${plan.menue.length} controls do not fit this row — they are here, each with its explanation`}
-              data-testid="graph-mehr"
-            >
-              {/* Kein Punkt: der ist das Zeichen eines Schalters, und das hier
-                  ist eine Klappe — ihre Antwort ist das Panel selbst. */}
-              More ({plan.menue.length})
-            </button>
-          )}
+        <div className="graph-panel-kopf">View</div>
+        <div className="graph-panel-korper">
+          <div className="graph-panel-zeile">{sucheBlock}</div>
+          <div className="graph-panel-zeile">{schieneAnsicht}</div>
+          <div className="graph-panel-zeile">{schieneKanal}</div>
+          <div className="graph-panel-zeile">{schieneTiefe}</div>
+          <div className="graph-panel-zeile">{schieneNamen}</div>
+          <div className="graph-panel-zeile">{farbenReihe}</div>
+          {/* Der Zeitstrahl (Mockup-Block): der Stand, der Regler, das Feld. */}
+          <div className="graph-panel-zeile">{zeitStand}</div>
+          <div className="graph-panel-zeile">{zeitRegler(true)}</div>
+          <div className="graph-panel-zeile">{datumsFeld}</div>
+          <div className="graph-panel-zeile">{schalterRichtung}</div>
+          <div className="graph-panel-zeile">{schalterAehnlichkeit}</div>
+          <div className="graph-panel-zeile">{schalterSelbst}</div>
+          <div className="graph-panel-zeile">{schalterSchema}</div>
+          <div className="graph-panel-zeile">{schalterKrafte}</div>
+          <div className="graph-panel-zeile">{schalterBewegung}</div>
+          <div className="graph-panel-zeile">{schalterNurMit}</div>
+          <div className="graph-panel-zeile">{steuerelementTagFilter}</div>
+          <div className="graph-panel-zeile">{steuerelementDicke}</div>
         </div>
-      </div>
-      {/* Das Menue: die Geraete vollstaendig, und die Zeile, die vorher nur im
-          Schwebetext stand, als Text.
-
-          Es haengt als Schicht unter der Zeile, im Rahmen der Flaeche — nicht im
-          Rollner der Zeile selbst (E1s A7-07-Regel, index.css:955, giebt ihr
-          `overflow-x: auto`, und der schnitte jede absolute Schicht ab), und
-          nicht im Fluss unter ihr: ein Streifen im Fluss macht die Leinwand
-          kuerzer, die Leinwand meldet ihren neuen Rahmen, und der Fit rückt die
-          Kamera — gemessen 10.10.: das Menue aufgemacht und aus 27 % Zoom wurden
-          9 %. Eine Klappe darf nicht umziehen. */}
-      {mehrOffen && plan.menue.length > 0 && (
-        <div
-          id="graph-mehr-panel"
-          role="group"
-          aria-label="Controls that did not fit the row"
-          data-testid="graph-mehr-panel"
-          ref={klappeRef}
-          /* Die Klappe kappt sich nicht mehr bei 55 %: gemessen 22.10. 22:37 MESZ an der
-             ausgelieferten 3.2.38 zeigt sie bei 390 px 382 von 1 576 px Inhalt, und die drei
-             bild-wirksamen Glieder liegen 258,1 / 347,1 / 436,1 px unter der Kante. Am Fuss
-             der Leinwand sind es 788 px, und ab 820 px Breite tragen zwei Kolonnen die 17
-             Glieder in neun Reihen. */
-          className="hud-panel klappe-auf absolute left-2 right-2 top-[47px] bottom-2 z-30 rounded-lg px-3 pt-2 pb-0 space-y-2 max-h-[calc(100%-56px)] overflow-y-auto"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="hud-label" style={{ color: "var(--text-2)" }}>
-              Everything the picture can do, in four groups
-            </div>
-            <button onClick={() => setzeMehrOffen(false)} className="btn-ghost px-2 py-1 rounded fs-1" title="Close">
-              Close
-            </button>
-          </div>
-          {/* P197: vier Sinn-Gruppen statt einer flachen Liste — jede Gruppe sagt,
-              wozu ihre Regler gehören. Zeilen außerhalb der Gruppen landen unter
-              „Everything else". */}
-          {MENUE_GRUPPEN.map((gruppe) => {
-            const zeilen = plan.menue.filter((g) => gruppe.teile.includes(g));
-            if (zeilen.length === 0) return null;
-            return (
-              <div key={gruppe.titel}>
-                <div className="hud-label font-semibold" style={{ color: "var(--text-1)", marginTop: 10 }}>{gruppe.titel}</div>
-                {zeilen.map((g) => (
-                  <div key={g} className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`graph-mehr-${g}`} data-mehr-reihe={g}>
-                    <div className="shrink-0">{geraet(g)}</div>
-                    {erklaerung(g) && (
-                      <span className="hud-label" style={{ color: "var(--text-2)" }}>{erklaerung(g)}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-          {(() => {
-            const rest = plan.menue.filter((g) => !MENUE_GRUPPEN.some((gruppe) => gruppe.teile.includes(g)));
-            if (rest.length === 0) return null;
-            return (
-              <div>
-                <div className="hud-label font-semibold" style={{ color: "var(--text-1)", marginTop: 10 }}>Everything else</div>
-                {rest.map((g) => (
-                  <div key={g} className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`graph-mehr-${g}`} data-mehr-reihe={g}>
-                    <div className="shrink-0">{geraet(g)}</div>
-                    {erklaerung(g) && (
-                      <span className="hud-label" style={{ color: "var(--text-2)" }}>{erklaerung(g)}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
-          {mehrDraussen > 0 && (
-            <div
-              data-testid="graph-mehr-draussen"
-              className="sticky bottom-0 z-10 -mx-3 border-t px-3 py-2 hud-label pointer-events-none"
-              style={{ background: "var(--bg-panel-solid)", color: "var(--text-2)", borderColor: "var(--border-subtle)" }}
-            >
-              {mehrDraussen} more below — keep scrolling
-            </div>
-          )}
+        <div className="graph-panel-fuss">
+          {/* Der Ausgewählt-Block (Mockup .regler-block): der gewählte Knoten
+              und die Zahl der Verbindungen des Bildes, darunter die drei Griffe. */}
+          <div className="graph-fuss-zeile"><span>Selected</span><span className="wert">{tastaturId ? (titelVonId.get(tastaturId) ?? tastaturId.slice(0, 18)) : "—"}</span></div>
+          <div className="graph-fuss-zeile"><span>Links</span><span className="wert tnum">{(netz.erwahnungen.length + netz.behauptungen.length).toLocaleString("en-US")}</span></div>
+          <div className="graph-fuss-knoepfe">{zoomReihe}</div>
         </div>
-      )}
+      </aside>
 
       <div
         ref={containerRef}
-        className="flex-1 min-h-[420px] rounded-xl overflow-hidden relative"
-        style={{
-          background: "var(--glass-panel)",
-          backdropFilter: "blur(14px) saturate(1.35)",
-          WebkitBackdropFilter: "blur(14px) saturate(1.35)",
-          border: "1px solid var(--border-subtle)",
-          boxShadow: "inset 0 1px 0 var(--edge-light), var(--shadow-sm)",
-        }}
+        className="flex-1 min-h-[420px] overflow-hidden relative graph-leinwand"
+        style={undefined}
       >
         <p
           data-testid="gang-info"
@@ -6985,13 +6908,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             {ansicht === "semantic" ? uiT("hint.semantic") : uiT("hint.force")}
           </div>
         </div>
-      </div>
-      {/* Die Statuszeile der Fläche (P202, Mockup-Grammatik): welches Bild, wie weit
-          herausgezoomt. */}
-      <div className="flaechen-status">
-        <span>{ansichtLabel(ansicht)}</span>
-        <span className="strich">·</span>
-        <span className="tnum">{Math.round(zoomAnzeige * 100)} %</span>
       </div>
     </div>
   );

@@ -3,11 +3,13 @@
 import { absage } from '../lib/absage';
 import { ApiFehler, tuerSatz } from '../lib/api';
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { FileText, Copy, Check, Save, Loader2, AlertTriangle } from '../lib/icons';
+import { Copy, Check, Save, Loader2, AlertTriangle, Plus } from '../lib/icons';
 import { useToast } from './ui/Toast';
 import { inForm } from '../lib/antwort';
 import { DOSSIER_TITEL } from '../lib/dossierTitel';
 import { QUITTUNG_MS } from '../lib/quittung';
+import { kurzeZeit } from '../lib/zeit';
+import { benutzeFensterStatus } from './ui/FensterStatus';
 
 interface Eintrag { id: string; title: string; sentence: string; at: number }
 /** Ein Widerspruch im Dossier — mit ids, wenn der Server sie liefert (tut er). */
@@ -49,20 +51,28 @@ const LEERES_DOSSIER: Dossier = {
 
 const tag = (ms: number) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-function Liste({ titel, eintraege, mitDatum, onOpen }: { titel: string; eintraege: Eintrag[]; mitDatum?: boolean; onOpen: (id: string) => void }) {
+/* P202, Mockup-Grammatik (detail-gruppe + zustandszeile): die Abschnitte des
+   Dossiers stehen als Gruppen mit Name und Tabelle — jede Zeile trägt links
+   ihr Wort (Art, oder das Datum in der Zeitlinie) und rechts den Satz mit
+   dem Titel fett. */
+function Liste({ titel, eintraege, onOpen }: { titel: string; eintraege: Eintrag[]; mitDatum?: boolean; onOpen: (id: string) => void }) {
   if (!eintraege.length) return null;
   return (
-    <section className="mb-6">
-      <h3 className="fs-3 font-semibold mb-2" style={{ color: 'var(--text-1)' }}>{titel}</h3>
-      <ul className="space-y-3">
-        {eintraege.map((e) => (
-          <li key={e.id} className="fs-3 lh-prosa" style={{ color: 'var(--text-2)' }}>
-            {mitDatum && <span className="tnum fs-3 mr-2" style={{ color: 'var(--text-3)' }}>{tag(e.at)}</span>}
-            <button onClick={() => onOpen(e.id)} className="font-semibold hover:underline underline-offset-2 text-left" style={{ color: 'var(--text-1)' }}>{e.title}</button>
-            {e.sentence && e.sentence !== e.title && <> — {e.sentence}</>}
-          </li>
+    <section className="detail-gruppe">
+      <div className="detail-gruppe-name">{titel}</div>
+      <div className="gruppen-tisch">
+        {eintraege.map((e, i) => (
+          <div key={e.id} className="zustandszeile" style={i === eintraege.length - 1 ? { borderBottom: 'none' } : undefined}>
+            <span className="art tnum">{kurzeZeit(e.at)}</span>
+            <div className="inhalt">
+              <b style={{ color: 'var(--text-1)', fontWeight: 650 }}>
+                <button onClick={() => onOpen(e.id)} className="hover:underline underline-offset-2 text-left" style={{ color: 'var(--text-1)' }}>{e.title}</button>
+              </b>
+              {e.sentence && e.sentence !== e.title && <> — {e.sentence}</>}
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </section>
   );
 }
@@ -183,6 +193,26 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
 
   const chips = [...(vorschlaege?.topics ?? []), ...(vorschlaege?.tags ?? [])].filter((v, i, a) => a.findIndex((x) => x.name.toLowerCase() === v.name.toLowerCase()) === i).slice(0, 12);
 
+  // Die Statuszeile wohnt am Fenster-Slot (volle Breite, Mockup .statuszeile):
+  // „6 dossiers · 40 notes covered“ — hier ehrlich: das gebaute Dossier und
+  // sein Bestand, sonst das Wort des leeren Tisches.
+  const melde = benutzeFensterStatus();
+  const gebaut = !!daten && daten.total > 0;
+  useEffect(() => {
+    melde({
+      links: gebaut ? (
+        <>
+          <span className="gruen tnum">1 dossier</span>
+          <span className="strich">·</span>
+          <span className="tnum">{daten!.total} {daten!.total === 1 ? 'note' : 'notes'} covered</span>
+        </>
+      ) : (
+        <span className="tnum">No dossier built</span>
+      ),
+      rechts: 'local · private',
+    });
+  }, [gebaut, daten, melde]);
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="flex-1 flex min-h-0" data-testid="dossier-view">
@@ -191,32 +221,36 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
             und die zentrierte Form waren die Website-Signatur und flogen. */}
         <aside className="listen-spalte">
           <div className="listen-kopf">
-            <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>Dossier</h2>
+            <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>Dossiers</h2>
             {chips.length > 0 && <span className="listen-zahl fs-1 tnum">{chips.length}</span>}
           </div>
+          {/* Das Werkzeug als eine Zeile (das Mockup-Bild zeigt die Liste ohne
+              Tisch — das Schreiben bleibt, ohne die Spalte zu füllen). */}
+          <div className="listen-steuer">
+            <form onSubmit={absenden} className="flex flex-1 min-w-0 items-center gap-1">
+              <input
+                value={eingabe}
+                onChange={(e) => setEingabe(e.target.value)}
+                placeholder="A person, a client, a project, a topic…"
+                aria-label="Who or what is the dossier about?"
+                className="hud-input flex-1 min-w-0 rounded-lg px-2 py-1.5 fs-2 lh-dicht"
+              />
+              <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary shrink-0 px-2.5 py-1.5 rounded-lg fs-2 font-semibold flex items-center gap-1 disabled:opacity-50">
+                {laedt ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Create
+              </button>
+            </form>
+          </div>
           <div className="listen-zeilen">
-            <div className="px-3 pt-3">
-              <form onSubmit={absenden} className="flex flex-col gap-2">
-                <input
-                  value={eingabe}
-                  onChange={(e) => setEingabe(e.target.value)}
-                  placeholder="A person, a client, a project, a topic…"
-                  aria-label="Who or what is the dossier about?"
-                  className="hud-input w-full rounded-xl px-3 py-2 fs-3 lh-lesbar"
-                />
-                <button type="submit" disabled={laedt || !eingabe.trim()} className="btn-primary w-full justify-center px-3 py-2 rounded-xl fs-3 font-semibold flex items-center gap-2 disabled:opacity-50">
-                  {laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Create dossier
-                </button>
-              </form>
-            </div>
             {chips.length > 0 && !daten && (
-              <div className="px-3 pt-2">
-                <div className="fs-1 font-semibold" style={{ color: 'var(--text-3)', padding: '6px 2px 4px' }}>For example</div>
-                {chips.map((c) => (
-                  <button key={c.name} onClick={() => void erstelle(c.name)} className="w-full text-left min-h-7 inline-flex items-center px-3 py-1 rounded-full fs-3 hover:opacity-80 mb-1" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
-                    {c.name}
-                  </button>
-                ))}
+              <div className="px-2 pt-2">
+                <div className="fs-1 font-semibold" style={{ color: 'var(--text-3)', padding: '4px 10px 4px' }}>For example</div>
+                <div className="flex flex-wrap gap-1 px-2">
+                  {chips.map((c) => (
+                    <button key={c.name} onClick={() => void erstelle(c.name)} className="min-h-7 inline-flex items-center px-2.5 py-0.5 rounded-full fs-2 hover:opacity-80" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {vorschlagGrund && chips.length === 0 && !daten && (
@@ -250,19 +284,25 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
                     {daten.first !== null && daten.last !== null ? ` · ${tag(daten.first)} – ${tag(daten.last)}` : ''}
                   </p>
                   <Liste titel={DOSSIER_TITEL.punkte} eintraege={daten.facts} onOpen={onOpenMemory} />
-                  <Liste titel={DOSSIER_TITEL.zeit} eintraege={daten.timeline} mitDatum onOpen={onOpenMemory} />
+                  <Liste titel={DOSSIER_TITEL.zeit} eintraege={daten.timeline} onOpen={onOpenMemory} />
                   <Liste titel={DOSSIER_TITEL.anleitungen} eintraege={daten.howtos} onOpen={onOpenMemory} />
                   <Liste titel={DOSSIER_TITEL.papiere} eintraege={daten.documents} onOpen={onOpenMemory} />
                   {daten.todos.length > 0 && (
-                    <section className="mb-6">
-                      <h3 className="fs-3 font-semibold mb-2" style={{ color: 'var(--text-1)' }}>Open to-dos</h3>
-                      <ul className="space-y-2">
+                    <section className="detail-gruppe">
+                      <div className="detail-gruppe-name">Open to-dos</div>
+                      <div className="gruppen-tisch">
                         {daten.todos.map((t, i) => (
-                          <li key={`${t.id}-${i}`} className="fs-3" style={{ color: 'var(--text-1)' }}>
-                            ☐ {t.text} <button onClick={() => onOpenMemory(t.id)} className="fs-1 hover:underline" style={{ color: 'var(--text-3)' }}>({t.title})</button>
-                          </li>
+                          <div key={`${t.id}-${i}`} className="app-zeile" style={i === daten.todos.length - 1 ? { borderBottom: 'none' } : undefined}>
+                            <span aria-hidden className="app-icon" style={{ background: 'transparent' }}>
+                              <span className="block w-3.5 h-3.5 rounded-[4px]" style={{ border: '1.5px solid var(--text-3)' }} />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="app-name">{t.text}</div>
+                              <div className="app-zustand">{t.title}</div>
+                            </div>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </section>
                   )}
                   {daten.contradictions.length > 0 && (
@@ -338,13 +378,6 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
             </div>
           )}
         </section>
-      </div>
-      <div className="flaechen-status">
-        <span className={daten && daten.total > 0 ? 'gruen' : undefined}>
-          {daten && daten.total > 0
-            ? `${daten.total} ${daten.total === 1 ? 'note' : 'notes'} covered`
-            : 'No dossier built'}
-        </span>
       </div>
     </div>
   );

@@ -299,9 +299,8 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
       >
         <div className="flex items-start gap-3 px-5 py-4 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <div className="flex-1 min-w-0">
-            <div className="hud-label">Scan this computer</div>
-            <h2 className="fs-5 font-semibold mt-1" style={{ color: "var(--text-1)" }}>
-              Let K3PTA read your documents
+            <h2 className="fs-5 font-semibold" style={{ color: "var(--text-1)" }}>
+              Scan this computer
             </h2>
             <p className="fs-3 mt-1" style={{ color: "var(--text-2)" }}>
               Off by default. Nothing is read until you have seen what would be imported and agreed to both points below.

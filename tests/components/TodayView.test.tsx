@@ -22,7 +22,7 @@ describe("Eine Teilantwort wirft Today nicht raus", () => {
     // Der Beleg, dass die Antwort wirklich in der Fläche angekommen ist: die
     // zwei neuen Notizen stehen da. Ohne diesen Nachweis besteht der Test
     // gegen einen leeren Bildschirm.
-    await waitFor(() => expect(container.textContent).toMatch(/2 new notes/));
+    await waitFor(() => expect(container.textContent).toMatch(/2 new\b/));
     expect(container.textContent).not.toMatch(/Cannot read/);
   });
 });

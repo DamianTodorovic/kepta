@@ -131,23 +131,20 @@ describe("die Stufe wird nicht wieder weggerechnet", () => {
 });
 
 describe("die Trefferflaeche am Zeitregler", () => {
-  it("traegt den 14-px-Polster, der die Linie auf 44 px hebt", async () => {
+  it("traegt den 14-px-Polster im Panel, ohne den Gegenrand der früheren Zeile", async () => {
     await feld([note(), note(), note()], [1000, 700]);
     const regler = document.querySelector('input[type="range"][aria-label="Time of the knowledge shown"]') as HTMLInputElement | null;
     expect(regler, "der Zeitregler fehlt — in diesem Bestand ist keine Zeitspanne").toBeTruthy();
-    // VIER Zeilen: 44 px Box, 16 px Zeichnung. Die Zahl lebt in der Zeile, damit
-    // ein Wegfallen des Polsters rot wird — nicht erst im Browserbild.
+    // VIER Zeilen: 44 px Box, 16 px Zeichnung (P202: der Regler steht im Panel —
+    // der Gegenrand der quer-Zeile flog mit ihr, er würde die Nachbarreihe überlappen).
     expect(regler!.style.boxSizing, "ohne content-box frisst der Polster die Zeichnung").toBe("content-box");
     expect(regler!.style.paddingBlock, `Polster ${regler!.style.paddingBlock} — die Box bleibt unter 44 px`).toBe("14px");
-    expect(regler!.style.marginBlock, "ohne gegenlaeufigen Rand blaeht die Leiste die Zeichnung").toBe("-14px");
+    expect(regler!.style.marginBlock, "ein Gegenrand überlappt die Nachbarreihe im Panel").toBe("");
   });
 
-  it("laesst im Menue dem Nachbarn die Flaeche, die sie in der Zeile nicht braucht", async () => {
-    // In der Zeile traegt der gegenlaeufige Rand die 44 px in die 12-px-Polster
-    // der Leiste — gemessen am 11.10. im Browser: alle vier Saume treffen den
-    // Regler selbst. Im Menue stehen die Reihen 12 px auseinander; derselbe
-    // Gegenrand stahlte dem Nachbarn die Trefferflaeche (gemessen: `unten` traf
-    // den Direction-Knopf, `oben` das Suchfeld). Also wachst dort die Reihe.
+  it("traegt den Zeitregler als Panel-Reihe, die die Nachbarn nicht ueberlappt", async () => {
+    // P202, Mockup-Panel: der Regler steht als eigene Reihe im Ansicht-Panel —
+    // die frühere Menue-Klappe (und ihr Gegenrand-Spiel) flog mit ihr.
     const { container } = await feld([note(), note(), note()], [420, 700]);
     const bar = container.querySelector('[data-testid="graph-leiste"]') as HTMLElement;
     expect(bar, "die Zeile fehlt").toBeTruthy();
@@ -156,17 +153,10 @@ describe("die Trefferflaeche am Zeitregler", () => {
       setzeGroesse(300, 700);
       await new Promise((r) => setTimeout(r, 140));
     });
-    const mehr = container.querySelector('[data-testid="graph-mehr"]') as HTMLButtonElement;
-    expect(mehr, "bei 284 px innerer Breite fehlt die Klappe").toBeTruthy();
-    await act(async () => {
-      mehr.click();
-      await new Promise((r) => setTimeout(r, 140));
-    });
-    const panel = container.querySelector('[data-testid="graph-mehr-panel"]');
-    const regler = panel?.querySelector('input[type="range"][aria-label="Time of the knowledge shown"]') as HTMLInputElement | null;
-    expect(regler, "der Regler ist nicht ins Menue umgezogen — die Klappe zeigt ihn nicht").toBeTruthy();
-    expect(regler!.style.paddingBlock, "ohne Polster bleibt die Box im Menue 16 px").toBe("14px");
-    expect(regler!.style.marginBlock, "ein Gegenrand im Menue ueberlappt die Nachbarreihe").toBe("");
+    const regler = bar.querySelector('input[type="range"][aria-label="Time of the knowledge shown"]') as HTMLInputElement | null;
+    expect(regler, "der Regler steht nicht im Panel").toBeTruthy();
+    expect(regler!.style.paddingBlock, "ohne Polster bleibt die Box im Panel 16 px").toBe("14px");
+    expect(regler!.style.marginBlock, "ein Gegenrand ueberlappt die Nachbarreihe").toBe("");
   });
 
   it("meldet sich, sobald index.css die Zeichnung selbst groesser macht", () => {

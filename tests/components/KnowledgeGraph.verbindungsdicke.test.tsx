@@ -238,23 +238,23 @@ describe("G-76 — der Dicken-Regler", () => {
   });
 });
 
-describe("G-76 bei Telefonbreite — das Glied liegt im Menue, der Klickpfad muss fuehren", () => {
-  it("traegt die Zeile bei 362 px nicht, das Menue fuehrt, und das Bild hoert trotzdem", async () => {
+describe("G-76 bei Telefonbreite (P202, Mockup-Panel) — das Glied steht im Panel, das Bild hoert trotzdem", () => {
+  it("traegt den Regler im Panel und das Bild hoert trotzdem", async () => {
     localStorage.setItem("kepta_graph_bewegung", "0");
     // 362 px sind die im echten Fenster bei 390 px gemessene Zeilenbreite.
     const view = await flaeche(362);
     expect(
       view.container.querySelector('[data-testid="graph-verbindungsdicke"]'),
-      "der Dicken-Regler liegt bei 362 px in der Zeile — der Klickpfad ist damit keine Frage mehr"
-    ).toBeNull();
+      "der Dicken-Regler fehlt im Ansicht-Panel"
+    ).toBeTruthy();
     const vorher = await rahmenVermessen(view);
     const regler = await steuerelement(view);
-    const panel = regler.closest('[data-testid="graph-mehr-panel"]');
-    expect(panel, "das Steuer kam nicht aus dem Menue — der Klickpfad ist nicht gefahren").toBeTruthy();
+    const panel = regler.closest('[data-testid="graph-leiste"]');
+    expect(panel, "das Steuer steht nicht im Ansicht-Panel").toBeTruthy();
     await setzeDicke(regler, "3");
     const nachher = await rahmenVermessen(view);
-    expect(nachher.length, `aus dem Menue gesetzt, 3x: andere Zahl von Strichen (${vorher.length} -> ${nachher.length})`).toBe(vorher.length);
-    nachher.forEach((wert, i) => expect(wert, `Strich ${i} bei 3x aus dem Menue: gemessen ${wert}, erwartet ${skaere(vorher, 3)[i]}`).toBeCloseTo(skaere(vorher, 3)[i], 6));
-    expect((view.container.querySelector('[data-testid="graph-verbindungsdicke-wert"]') as HTMLElement).textContent!.trim(), "die Zeile im Menue nennt 3x nicht").toBe("3x");
+    expect(nachher.length, `aus dem Panel gesetzt, 3x: andere Zahl von Strichen (${vorher.length} -> ${nachher.length})`).toBe(vorher.length);
+    nachher.forEach((wert, i) => expect(wert, `Strich ${i} bei 3x aus dem Panel: gemessen ${wert}, erwartet ${skaere(vorher, 3)[i]}`).toBeCloseTo(skaere(vorher, 3)[i], 6));
+    expect((view.container.querySelector('[data-testid="graph-verbindungsdicke-wert"]') as HTMLElement).textContent!.trim(), "die Zeile im Panel nennt 3x nicht").toBe("3x");
   });
 });

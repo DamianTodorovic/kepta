@@ -214,7 +214,8 @@ describe("Dashboard: Suche", () => {
     const { container } = await zeige([note()]);
     const regler = container.querySelector('input[aria-label="Number of results shown"]') as HTMLInputElement;
     expect(regler).not.toBeNull();
-    const etikett = () => regler.parentElement?.querySelector(".chip")?.textContent?.trim();
+    // P202, Mockup-Fuß: das Etikett ist die Zahl im Wort „Meaning search <b>5</b>"; der Regler selbst steht verdeckt in der Verwahrung.
+    const etikett = () => regler.closest(".listen-fuss")?.querySelector("label b")?.textContent?.trim();
     expect(Number(regler.min)).toBe(0);
     expect(Number(regler.max)).toBe(6); // sieben Positionen, Schrittweite 1
     expect(Number(regler.step)).toBe(1);
@@ -277,7 +278,7 @@ describe("Dashboard: Duplikate", () => {
     const user = userEvent.setup();
     const { container } = await zeige([note({ title: "Gleich" }), note({ title: "Gleich" })]);
     await waitFor(() => expect(container.textContent).toMatch(/1 duplicate/));
-    await user.click(screen.getByRole("button", { name: /duplicate.*Review/i }));
+    await user.click(screen.getByRole("button", { name: /duplicates/i }));
     await waitFor(() => expect(document.querySelector('[role="dialog"][aria-label="Duplicates"]')).not.toBeNull());
     // Aus dem Panel heraus: eine Kopie in den Papierkorb legen (Dashboard-
     // Callback onDelete -> derselbe Papierkorb-Fluss wie beim Löschen)
@@ -460,12 +461,12 @@ describe("Dashboard: viele Notizen", () => {
 });
 
 describe("Dashboard: Befehlspalette", () => {
-  it("oeffnet sich per Knopf", async () => {
-    const user = userEvent.setup();
+  it("oeffnet sich per ⌘K (P202: der Listen-Kopf trägt die drei Mockup-Werkzeuge)", async () => {
     await zeige([note()]);
-    const knopf = document.querySelector('button[title="Command palette"]') as HTMLButtonElement;
-    expect(knopf, "kein Palette-Knopf").toBeTruthy();
-    await user.click(knopf);
+    // Der Zugang ist die Tastatur (⌘K, wie die Leiste es nennt) — kein Kopf-Knopf mehr.
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }));
+    });
     await waitFor(() => expect(document.body.textContent).toMatch(/New note|Search|Switch/i));
   });
 });
@@ -1057,25 +1058,35 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
   }
   const zeile1 = () => within(screen.getByRole("group", { name: /in what form/i }));
   const zeile2 = () => within(screen.getByRole("group", { name: /what it is about/i }));
+  // P202, Mockup-Grammatik: die Filter-Chips stehen bei ihrer Frage — By type
+  // zeigt die Form-Zeile, By topic die About-Zeile. Der Test stellt die Frage
+  // zuerst, dann klickt er den Chip.
+  const waehleFrage = async (user: ReturnType<typeof userEvent.setup>, frage: "By type" | "By topic") => {
+    await user.click(screen.getByRole("button", { name: frage }));
+  };
 
-  it("zeigt beide Zeilen, bevor irgendetwas leer ist", async () => {
+  it("zeigt die Form-Zeile bei ihrer Frage und die About-Zeile bei ihrer", async () => {
+    const user = userEvent.setup();
     await zeige(ohneCode());
+    await waehleFrage(user, "By type");
     expect(zeile1().getByRole("button", { name: "Code" })).toBeTruthy();
+    await waehleFrage(user, "By topic");
     expect(zeile2().getByRole("button", { name: "Tasks" })).toBeTruthy();
   });
 
-  it("laesst beide Zeilen stehen, wenn ein Traeger ins Leere laeuft", async () => {
+  it("laesst die Frage-Zeile stehen, wenn ein Traeger ins Leere laeuft", async () => {
     const user = userEvent.setup();
     const { container } = await zeige(ohneCode());
+    await waehleFrage(user, "By type");
     await user.click(zeile1().getByRole("button", { name: "Code" }));
     await waitFor(() => expect(container.textContent).toMatch(/no notes/i), { timeout: 4000 });
-    expect(screen.getByRole("group", { name: /in what form/i }), "Zeile 1 ist bei leerem Filter aus dem Baum — die Sackgasse").toBeTruthy();
-    expect(screen.getByRole("group", { name: /what it is about/i }), "Zeile 2 ist bei leerem Filter aus dem Baum — die Sackgasse").toBeTruthy();
+    expect(screen.getByRole("group", { name: /in what form/i }), "die Frage-Zeile ist beim leeren Traeger aus dem Baum — die Sackgasse").toBeTruthy();
   });
 
   it("bietet einen Zurueck-Knopf, der mit einem Klick alles wieder zeigt", async () => {
     const user = userEvent.setup();
     const { container } = await zeige(ohneCode());
+    await waehleFrage(user, "By type");
     await user.click(zeile1().getByRole("button", { name: "Code" }));
     await waitFor(() => expect(container.textContent).toMatch(/no notes/i), { timeout: 4000 });
     await user.click(screen.getByRole("button", { name: /show everything again/i }));
@@ -1086,6 +1097,7 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
   it("nennt die Gruppe als Grund der Leerheit, nicht 'No entries yet'", async () => {
     const user = userEvent.setup();
     const { container } = await zeige(ohneCode());
+    await waehleFrage(user, "By type");
     await user.click(zeile1().getByRole("button", { name: "Code" }));
     await waitFor(() => expect(container.textContent).toMatch(/no notes in code/i), { timeout: 4000 });
     expect(container.textContent, "vier Notizen sind geladen — 'noch keine Eintraege' ist eine Luege").not.toMatch(/No notes yet/i);
@@ -1094,9 +1106,9 @@ describe("Dashboard: die neun Woerter fuehren in keine Sackgasse", () => {
   it("faengt auch das duenne Themenwort ab: Tasks ohne Treffer", async () => {
     const user = userEvent.setup();
     const { container } = await zeige(ohneCode());
+    await waehleFrage(user, "By topic");
     await user.click(zeile2().getByRole("button", { name: "Tasks" }));
     await waitFor(() => expect(container.textContent).toMatch(/no notes filed under tasks/i), { timeout: 4000 });
-    expect(screen.getByRole("group", { name: /in what form/i })).toBeTruthy();
     expect(screen.getByRole("group", { name: /what it is about/i })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: /show everything again/i }));
     await waitFor(() => expect(container.textContent).not.toMatch(/no notes/i), { timeout: 4000 });

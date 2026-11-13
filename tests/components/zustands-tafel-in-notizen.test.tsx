@@ -55,8 +55,10 @@ function stubFetch() {
 
 /** Die Zeile einer Beschriftung: Blatt mit dem Label plus das Detail darunter. */
 function zeile(anfang: RegExp, wurzel: ParentNode): string {
-  const blatt = [...wurzel.querySelectorAll("div")].find((d) => d.children.length === 0 && anfang.test((d.textContent || "").trim()));
-  return blatt?.parentElement?.textContent ?? "";
+  // P202, Mockup-Zeile (.zustandszeile): das Label steht als fett gebundener
+  // Titel im Absatz — die Sonde liest das <b> und seinen Absatz.
+  const blatt = [...wurzel.querySelectorAll("b")].find((b) => anfang.test((b.textContent || "").trim()));
+  return blatt?.closest(".inhalt")?.textContent ?? blatt?.parentElement?.textContent ?? "";
 }
 
 beforeEach(() => {

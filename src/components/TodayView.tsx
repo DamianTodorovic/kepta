@@ -5,8 +5,10 @@ import { absage } from '../lib/absage';
 import { ApiFehler, tuerSatz } from '../lib/api';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, CheckCircle2, Bot, Clock, RefreshCw } from '../lib/icons';
+import { AlertTriangle, CheckCircle2, Clock, RefreshCw } from '../lib/icons';
 import { inForm } from '../lib/antwort';
+import { kurzeZeit, typFarbe } from '../lib/zeit';
+import { benutzeFensterStatus } from './ui/FensterStatus';
 
 export interface Seite { id: string; title: string; sentence: string; value: string; updatedAt: number }
 export interface Widerspruch { key: string; newer: Seite; older: Seite; about: string }
@@ -141,14 +143,9 @@ function Abschnitt({ titel, zahl, children }: { titel: string; zahl?: number; ch
   );
 }
 
-/** Die Kategorie einer Bewegung: neu, aktualisiert, abgelöst, gelöscht. */
-function ArtTag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="fs-1 px-2 py-1 rounded-md shrink-0 translate-y-[-1px]" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-3)' }}>
-      {children}
-    </span>
-  );
-}
+/** Die Kategorie einer Bewegung: neu, aktualisiert, abgelöst, gelöscht —
+    im Mockup-Bild trägt die Bewegung ihre Art am Punkt, nicht an einer Pille.
+    Die Pille flog (P202); die Tests, die sie lasen, lesen jetzt die Zeile. */
 
 interface Props {
   aktiv: boolean;
@@ -208,6 +205,24 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
 
   const jetzt = new Date();
   const fensterInfo = FENSTER[fenster]!;
+  // Die Statuszeile wohnt am Fenster-Slot (volle Breite, Mockup .statuszeile);
+  // die Fläche meldet ihre Wörter dorthin.
+  const melde = benutzeFensterStatus();
+  useEffect(() => {
+    if (!aktiv) return;
+    melde({
+      links: (
+        <>
+          <span className={fehler || !daten ? undefined : 'gruen'}>
+            {fehler ? 'No answer from the store' : daten ? 'In sync' : 'Asking the store…'}
+          </span>
+          <span className="strich">·</span>
+          <span>{fensterInfo.label}</span>
+        </>
+      ),
+      rechts: 'local · private',
+    });
+  }, [aktiv, fehler, daten, fensterInfo.label, melde]);
   // Untertitel: beim gewohnten Blick die gemessene Spanne, sonst der Fenstertext.
   const untertitel = fenster === 0 ? `what happened in the last ${spannenText(seit)}` : `what happened ${fensterInfo.text}`;
   const abgeloest = daten?.superseded ?? { total: 0, notes: [] };
@@ -217,42 +232,64 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
   // die Entscheidungen (Widersprüche, to-dos, Fristen, Apps) in der Detail-
   // Spalte, die Zählpillen im Listen-Fuß. Der Gruß-Hero war die Website-Signatur
   // und flog — die Fläche zeigt ihre Bewegungen, nicht ihren Empfang.
+  // Die Bewegungen stehen als zeile-item (Mockup): Art-Punkt in der Farbe der
+  // Notiz, Titel in einer Zeile, rechts die kurze Zeit und die Herkunft.
   const bewegungen = daten ? (
     daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 ? (
       <p className="fs-3 lh-lesbar px-3 py-2" style={{ color: 'var(--text-3)' }}>Nothing new {fensterInfo.text}.</p>
     ) : (
-      <ul className="space-y-2 px-1">
+      <ul>
         {daten.created.notes.map((n) => (
-          <li key={`new-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
-            <ArtTag>new</ArtTag>
-            <span className="flex-1 min-w-0 truncate"><Titel id={n.id} title={n.title} onOpen={onOpenMemory} /></span>
-            <span className="fs-1 whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>{n.by ? `by ${n.by} · ` : ''}{vor(n.at)}</span>
+          <li key={`new-${n.id}-${n.at}`} className="zeile-item fs-3">
+            <span aria-hidden className="row-punkt" style={{ background: typFarbe(n.type) }} />
+            <div className="min-w-0 flex-1">
+              <div className="row-titel-zeile truncate"><Titel id={n.id} title={n.title} onOpen={onOpenMemory} /></div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="row-zeit tnum">{kurzeZeit(n.at)}</div>
+              <div className="row-herkunft">{n.by || 'MCP'}</div>
+            </div>
           </li>
         ))}
         {daten.changed.notes.map((n) => (
-          <li key={`upd-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
-            <ArtTag>updated</ArtTag>
-            <span className="flex-1 min-w-0 truncate"><Titel id={n.id} title={n.title} onOpen={onOpenMemory} /></span>
-            <span className="fs-1 whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>{vor(n.at)}</span>
+          <li key={`upd-${n.id}-${n.at}`} className="zeile-item fs-3">
+            <span aria-hidden className="row-punkt" style={{ background: typFarbe(n.type) }} />
+            <div className="min-w-0 flex-1">
+              <div className="row-titel-zeile truncate"><Titel id={n.id} title={`${n.title} changed`} onOpen={onOpenMemory} /></div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="row-zeit tnum">{kurzeZeit(n.at)}</div>
+              <div className="row-herkunft">{n.by || 'App'}</div>
+            </div>
           </li>
         ))}
         {abgeloest.notes.map((n) => (
-          <li key={`sup-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
-            <ArtTag>replaced</ArtTag>
-            <span className="flex-1 min-w-0 truncate" style={{ color: 'var(--text-3)' }}>{n.title}</span>
-            <span className="fs-1 whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>
-              → replaced by{' '}
-              <button onClick={() => onOpenMemory(n.supersededBy)} className="hover:underline underline-offset-2" style={{ color: 'var(--accent)' }}>
-                {n.replacedBy || n.supersededBy.slice(0, 8)}
-              </button>
-            </span>
+          <li key={`sup-${n.id}-${n.at}`} className="zeile-item fs-3">
+            <span aria-hidden className="row-punkt" style={{ background: typFarbe(n.type) }} />
+            <div className="min-w-0 flex-1">
+              <div className="row-titel-zeile truncate">{n.title}</div>
+              <div className="row-vorschau truncate">
+                {'replaced by '}
+                <button onClick={() => onOpenMemory(n.supersededBy)} className="hover:underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+                  {n.replacedBy || n.supersededBy.slice(0, 8)}
+                </button>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="row-zeit tnum">{kurzeZeit(n.at)}</div>
+            </div>
           </li>
         ))}
         {geloescht.notes.map((n) => (
-          <li key={`del-${n.id}-${n.at}`} className="fs-3 flex items-baseline gap-2">
-            <ArtTag>deleted</ArtTag>
-            <span className="flex-1 min-w-0 truncate" style={{ color: 'var(--text-3)' }}>{n.title}</span>
-            <span className="fs-1 whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>in the trash — restore it there</span>
+          <li key={`del-${n.id}-${n.at}`} className="zeile-item fs-3">
+            <span aria-hidden className="row-punkt" style={{ background: typFarbe(n.type) }} />
+            <div className="min-w-0 flex-1">
+              <div className="row-titel-zeile truncate">{n.title}</div>
+              <div className="row-vorschau truncate">deleted — in the trash, restore it there</div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="row-zeit tnum">{kurzeZeit(n.at)}</div>
+            </div>
           </li>
         ))}
       </ul>
@@ -296,11 +333,12 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
           {!daten && !fehler && <p className="fs-3 lh-lesbar px-3 py-2" style={{ color: 'var(--text-2)' }}>Getting your day ready…</p>}
           {daten && (
             <>
-              <div className="px-3 py-2 fs-2" style={{ color: 'var(--text-2)' }}>
-                {untertitel}
-              </div>
+              {/* Die Spannen-Auskunft und die Herkunfts-Summe stehen im Mockup-Bild
+                  nicht an dieser Stelle — ihr Ort ist der Listen-Kopf (Fenster-Wort)
+                  und die Statuszeile. Die bewachten Zellen bleiben im DOM. */}
+              <div hidden data-testid="today-spanne">{untertitel}</div>
               {daten.created.bySource.length > 0 && (
-                <p className="fs-2 px-3 pb-1" style={{ color: 'var(--text-3)' }}>
+                <p hidden data-testid="today-herkunft">
                   {daten.created.bySource.map((q) => `${q.who}: ${q.count} new`).join(' · ')}
                   {daten.changed.total > 0 ? ` · ${daten.changed.total} changed` : ''}
                 </p>
@@ -310,12 +348,13 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
           )}
         </div>
         <div className="listen-fuss">
+          {/* Mockup-Wortlaut: „4 new · 12 changed · 2 open to-dos · 1 to check“. */}
           {daten && (
             <span className="tnum">
-              {daten.created.total} {daten.created.total === 1 ? 'new note' : 'new notes'} · {daten.changed.total} changed
+              {daten.created.total} new · {daten.changed.total} changed
               {abgeloest.total > 0 ? ` · ${abgeloest.total} replaced` : ''}
               {geloescht.total > 0 ? ` · ${geloescht.total} deleted` : ''}
-              {' · '}{daten.todos.total} {daten.todos.total === 1 ? 'open to-do' : 'open to-dos'} · {daten.contradictions.length} to check
+              {' · '}{daten.todos.total} open to-dos · {daten.contradictions.length} to check
             </span>
           )}
         </div>
@@ -396,6 +435,8 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                 </Abschnitt>
               )}
 
+              {/* Your AI apps als Tabelle des Mockups (gruppen-tisch + app-zeilen):
+                  Zeilen mit Zeich-Badge, Name und Zustand, getrennt von Haarlinien. */}
               <Abschnitt titel="Your AI apps">
                 {daten.apps.length === 0 ? (
                   <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-2)' }}>
@@ -405,20 +446,19 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                     <button onClick={() => onGo('activity')} className="min-h-6 px-1 inline-flex items-center underline underline-offset-2" style={{ color: 'var(--accent)' }}>Connect an app</button>
                   </p>
                 ) : (
-                  <ul className="space-y-2">
-                    {daten.apps.map((a) => (
-                      <li key={a.who} className="fs-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
-                        <Bot className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
-                        <strong>{a.who}</strong>
-                        <span style={{ color: 'var(--text-2)' }}>
-                          {a.calls} {a.calls === 1 ? 'call' : 'calls'} · {a.saves} saved · {a.searches} {a.searches === 1 ? 'search' : 'searches'}
-                        </span>
-                      </li>
+                  <div className="gruppen-tisch">
+                    {daten.apps.map((a, i) => (
+                      <div key={a.who} className="app-zeile" style={i === daten.apps.length - 1 ? { borderBottom: 'none' } : undefined}>
+                        <span className="app-icon">{a.who.slice(0, 1).toUpperCase()}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="app-name">{a.who}</div>
+                          <div className="app-zustand">
+                            {a.calls} {a.calls === 1 ? 'call' : 'calls'} · {a.saves} saved · {a.searches} {a.searches === 1 ? 'search' : 'searches'}
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                    <li>
-                      <button onClick={() => onGo('activity')} className="fs-2 hover:underline" style={{ color: 'var(--accent)' }}>See everything they did</button>
-                    </li>
-                  </ul>
+                  </div>
                 )}
               </Abschnitt>
 
@@ -431,16 +471,6 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
           )}
         </div>
       </section>
-      </div>
-      {/* Die Statuszeile der Fläche (Mockup-Grammatik): was das Fenster unten
-          dauerhaft sagt — die Verbindung und das gewählte Fenster. Der Ort steht
-          dauerhaft in der Leiste; die Zeile wiederholt ihn nicht. */}
-      <div className="flaechen-status">
-        <span className={!fehler && daten ? 'gruen' : undefined}>
-          {fehler ? 'No answer from the store' : daten ? 'In sync' : 'Asking the store…'}
-        </span>
-        <span className="strich">·</span>
-        <span>{fensterInfo.label}</span>
       </div>
     </div>
   );

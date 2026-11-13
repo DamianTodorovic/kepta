@@ -66,7 +66,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center pt-[20vh] px-4">
       <div className="absolute inset-0 hud-backdrop" onClick={onClose} />
-      <div className="relative w-full max-w-xl palette-lens flex flex-col" style={{ maxHeight: "min(64vh, 520px)" }}>
+      <div className="relative w-full max-w-[540px] palette-lens flex flex-col" style={{ maxHeight: "min(64vh, 520px)" }}>
         <div className="flex items-center gap-3 px-5 h-14 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <Search className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />
           <input
@@ -100,9 +100,9 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
               className="palette-row w-full text-left"
               style={{ color: i === idx ? "var(--text-1)" : "var(--text-2)" }}
             >
-              <span className="shrink-0 flex items-center justify-center" style={{ color: i === idx ? "var(--accent)" : "var(--text-3)" }}>{a.icon}</span>
+              <span className="pal-ikon">{a.icon}</span>
               <span className="flex-1 min-w-0">
-                <span className="block fs-4 lh-lesbar font-semibold truncate">{a.label}</span>
+                <span className="block fs-3 lh-lesbar font-semibold truncate">{a.label}</span>
                 {a.desc && <span className="block fs-2 lh-dicht truncate" style={{ color: "var(--text-3)" }}>{a.desc}</span>}
               </span>
               {a.hotkey && <span className="kbd shrink-0">{a.hotkey}</span>}

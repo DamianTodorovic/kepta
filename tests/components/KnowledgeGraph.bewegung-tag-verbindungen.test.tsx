@@ -279,8 +279,9 @@ describe("G-75 — nur mit Verbindungen: das Alleinstehende bleibt weg, und die 
   });
 });
 
-// Der Klickpfad bei Telefonbreite: ein Glied im Menue ist erst mit dem Klick anfassbar.
-describe("Klickpfad bei 362 px — die Zeile traegt die drei Glieder nicht, das Menue muss fuehren", () => {
+// Der Klickpfad bei Telefonbreite (P202, Mockup-Panel): die Glieder stehen
+// vertikal im Ansicht-Panel — der Klickpfad ist ohne Klappe da.
+describe("Klickpfad bei 362 px — das Panel traegt die drei Glieder, ohne Klappe", () => {
   // 362 px sind die im echten Fenster bei 390 px gemessene Zeilenbreite
   // (belege-2210/g73-end-2/g73-end.json, Schlag 12:57:26 MESZ).
   const TELEFON = 362;
@@ -291,23 +292,14 @@ describe("Klickpfad bei 362 px — die Zeile traegt die drei Glieder nicht, das 
     const view = await flaeche((n) => {
       kopfZahl = n;
     }, TELEFON);
+    const panel = view.container.querySelector('[data-testid="graph-leiste"]') as HTMLElement;
+    expect(panel, "das Ansicht-Panel fehlt").toBeTruthy();
     for (const k of KENNNUNGEN) {
       expect(
-        view.container.querySelector(`[data-testid="${k}"]`),
-        `${k} liegt bei ${TELEFON} px in der Zeile — der Klickpfad ist damit keine Frage mehr`
-      ).toBeNull();
+        panel.querySelector(`[data-testid="${k}"]`),
+        `${k} fehlt im Ansicht-Panel — der Klickpfad waere eine Frage`
+      ).toBeTruthy();
     }
-    const mehr = view.container.querySelector('[data-testid="graph-mehr"]') as HTMLElement;
-    expect(mehr, "die Zeile sagt nicht, dass Glieder im Menue liegen").toBeTruthy();
-    expect(mehr.textContent, "der Menue-Knopf nennt seine Zahl nicht").toMatch(/More \(\d+\)/);
-    expect(mehr.getAttribute("aria-expanded"), "das Menue steht offen, bevor jemand klickt").toBe("false");
-    await act(async () => {
-      fireEvent.click(mehr);
-      await new Promise((r) => setTimeout(r, 80));
-    });
-    expect(mehr.getAttribute("aria-expanded"), "der Klick macht das Menue nicht auf").toBe("true");
-    const panel = view.container.querySelector('[data-testid="graph-mehr-panel"]') as HTMLElement;
-    expect(panel, "das Menue bleibt zu — die drei Steuerungen sind versteckt und unanfassbar").toBeTruthy();
     for (const k of KENNNUNGEN) {
       expect(panel.querySelector(`[data-testid="${k}"]`), `${k} steht nicht im Menue`).toBeTruthy();
     }

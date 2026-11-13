@@ -43,8 +43,10 @@ afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
  * Flaeche ueber einen Zustand behauptet.
  */
 function zeile(anfang: RegExp, wurzel: ParentNode = document.body): string {
-  const blatt = [...wurzel.querySelectorAll("div")].find((d) => d.children.length === 0 && anfang.test((d.textContent ?? "").trim()));
-  return blatt?.parentElement?.textContent ?? "";
+  // P202, Mockup-Zeile (.zustandszeile): das Label steht als fett gebundener
+  // Titel im Absatz — die Sonde liest das <b> und seinen Absatz.
+  const blatt = [...wurzel.querySelectorAll("b")].find((b) => anfang.test((b.textContent ?? "").trim()));
+  return blatt?.closest(".inhalt")?.textContent ?? blatt?.parentElement?.textContent ?? "";
 }
 const kernZeile = (wurzel: ParentNode = document.body) => zeile(/^The database on this computer/, wurzel);
 
@@ -123,8 +125,10 @@ describe("SystemStatus: was die App ueber sich behauptet", () => {
   // Die Nachbildung hier haelt die Hydration zurueck, damit derselbe Zustand
   // betretbar wird, ohne auf einen Zeitpunkt zu wetten.
   const providerZeile = (container: HTMLElement) => {
-    const blatt = [...container.querySelectorAll("div")].find((d) => d.children.length === 0 && /^Provider/.test((d.textContent ?? "").trim()));
-    return blatt?.parentElement?.textContent ?? "";
+    // P202, Mockup-Zeile (.zustandszeile): das Label steht als fett gebundener
+    // Titel im Absatz — die Sonde liest das <b> und seinen Absatz.
+    const blatt = [...container.querySelectorAll("b")].find((b) => /^Provider/.test((b.textContent ?? "").trim()));
+    return blatt?.closest(".inhalt")?.textContent ?? blatt?.parentElement?.textContent ?? "";
   };
 
   it("behauptet keinen fehlenden Schluessel, waehrend die Verbindung noch gelesen wird", async () => {

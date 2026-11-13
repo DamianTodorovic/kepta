@@ -99,23 +99,37 @@
   color: var(--s-tinte-3);
 }
 .seiten-leiste .seiten-kante-oben { border-top: 1px solid var(--s-kante); }
+/* P202, Mockup-Grammatik (k3pta-app-fenster .nav-fuss): der Fuß ist EINE Zeile
+   über der Haarlinie — das K-Zeichen mit der Marke links, die kleinen Ikons
+   rechts. Die früheren Karten (seiten-flaeche) und Knopf-Reihen flogen. */
+.seiten-leiste .nav-fuss-leiste {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px 10px;
+  min-height: 44px;
+}
+.seiten-leiste .nav-fuss-konto {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+.seiten-leiste .nav-fuss-ikonen { display: flex; align-items: center; gap: 2px; }
+.seiten-leiste .nav-fuss-ikon {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-btn);
+  display: grid;
+  place-items: center;
+  color: var(--s-tinte-2);
+  transition: background var(--dur-fast) var(--ease-apple), color var(--dur-fast) var(--ease-apple);
+}
+.seiten-leiste .nav-fuss-ikon:hover { background: var(--s-flaeche-heben); color: var(--s-tinte-1); }
+.seiten-leiste .nav-fuss-ikon[data-on="true"] { color: var(--s-akzent); }
 /* P202, 13.11.: .seiten-kante-unten fiel als Waise — die Marke über der Leiste
    (ihr letzter Rufer) zog in die Fuß-Konto-Zeile (Mockup-Grammatik). */
-.seiten-leiste .seiten-flaeche {
-  background: var(--s-flaeche-heben);
-  border: 1px solid var(--s-kante);
-}
-.seiten-leiste .seiten-knopf {
-  background: var(--s-flaeche-heben);
-  border: 1px solid var(--s-kante);
-  color: var(--s-tinte-2);
-}
-.seiten-leiste .seiten-knopf:hover { border-color: var(--s-kante-sichtbar); }
-.seiten-leiste .seiten-knopf-einrichten {
-  background: var(--s-akzent-flaeche);
-  border: 1px solid var(--s-akzent-kante);
-  color: var(--s-tinte-1);
-}
 .seiten-leiste .seiten-punkt { background: var(--s-punkt-lebendig); }
 
 /* ---------- Z-14: das Fenster weiß, ob es den Schlüssel hat ----------
@@ -151,20 +165,3 @@
   box-shadow: none;
 }
 
-/* ---------- Erststart: der Assistent darf den Wegen nicht das Wort abschneiden ----------
-   Gemessen bei 1 440 px mit leerem Bestand (e3-screens/vorher-dark-1440px-erststart.png):
-   das Täfelchen hielt 547 px, die Fläche behielt 617 px, und die Importzeile
-   schnitt genau die beiden Wege ab, die der Leere-Zustand direkt darunter
-   nennt — „D…" statt „Drag files here", „Paste" statt „Paste a URL and
-   import…". Ein abgeschnittener Weg ist kein Weg. Also: schmalere Spalte, und
-   solange der Assistent spricht, bricht die Zeile um statt zu kürzen. */
-.huelle:not(.huelle-schmal) .wizard-taefelchen {
-  flex-basis: min(420px, 32vw);
-  width: min(420px, 32vw);
-}
-.huelle[data-einrichtung="offen"] .import-band {
-  flex-wrap: wrap;
-}
-.huelle[data-einrichtung="offen"] .import-divider {
-  display: none;
-}

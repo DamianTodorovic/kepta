@@ -263,7 +263,6 @@ const erwartet = [
   // needed", 0). Gezaehlt 05:36:28 MEZ im gebauten Objekt: der Rumpf steht 2 mal (Chat-Kopf
   // und System-Status), die alte Kette 0 mal.
   ["A local program on this machine", 2],
-  ["px-3 pt-2 pb-0", 1],
   ["core as one marker", 1],
   // 3.2.50, SECHS Koerper (Leitung, 24.10. 01:2x MESZ). Vier davon haben ein Wort, das der
   // Minifier woertlich laesst; zwei haben keins und das steht hier als Befund, nicht als Luecke:
@@ -717,7 +716,6 @@ const erwartet = [
   // der Fall tests/components/dashboard-keine-duplikate-kein-befehl.test.tsx am gemalten
   // Chip, nicht ein Zaehler.
   ["No questions yet", 1],
-  ["nothing is sent until you press Enter", 1],
   // Punkt 7, 2.11. (3.2.117, die Zustands-Tafel): gegen das installierte 3.2.116 gezaehlt je **0**.
   // Die Zeile "No notes yet - drop files…" waere ein Nicht-ASCII-Marker (Gedankenstrich) und ist
   // darum durch den ASCII-freien Teil derselben Zeile ersetzt — ein Nicht-ASCII-Marker zaehlt hier
@@ -1083,8 +1081,6 @@ const erwartet = [
   ["--treff:44px", 1],
   ["btn-ghost treff", 4],
   ["btn-primary treff", 1],
-  ["seiten-knopf treff w-9 h-9", 1],
-  ["seiten-knopf-einrichten treff", 1],
   // P94 (3.2.180): der Gedankenstrich des Hauses in sechs Saetzen, die ein Mensch liest.
   // Ein Marker darf hier kein Nicht-ASCII-Zeichen tragen (die latin1-Lesung zerlegt es in
   // Bytes, ihre Zaehlung waere eine Dauer-Null), also gilt der Beweis von beiden Seiten:
@@ -1151,6 +1147,12 @@ const erwartet = [
 // Kommentar ueber dem neuen Marker und keine Pruefung — diese Liste macht sie maschinell.
 // Aufgenommen ist nur, was eine bewusste Landung ersetzt hat, mit ihrem Schnitt dahinter.
 const verboten = [
+  // P202 (k3pta-app-fenster): die drei Bausteine, die der Mockup-Umbau los ist —
+  // die quer laufende Graph-Klappe, die Vorschlags-Pillen im Chat-Leerauftritt
+  // und die Fuß-Karten der Leiste. Ihre Rückkehr wäre die alte Fläche.
+  "px-3 pt-2 pb-0",
+  "nothing is sent until you press Enter",
+  "seiten-knopf treff w-9 h-9",
   // P99 (landet in 3.2.181): die fuenf alten Wortlaute der gekuerzten Hover-Titel. Sie sind
   // hier, weil ein gekuerzter Satz, der am alten Wortlaut im Objekt haengt, keine Kuerzung
   // ist, sondern ein zweiter Text. Gezaehlt am **installierten** 3.2.180 vor dem Tausch:

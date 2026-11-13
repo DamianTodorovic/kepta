@@ -165,10 +165,11 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   data-active={active}
                   className="sidebar-tag-btn w-full min-h-7 flex items-center gap-2 px-2 py-[5px] fs-3 text-left"
                 >
-                  {/* P202, Mockup-Grammatik: der Tag trägt die Art-Farbe der Fakten —
-                      kein grauer Hash-Glyph daneben; das Wort bleibt das Wort. */}
+                  {/* P202, Mockup-Grammatik: der Tag trägt die Art-Farbe der Fakten und
+                      das #-Zeichen, wie das Mockup ihn druckt (#compliance) — kein
+                      grauer Hash-Glyph daneben, das Zeichen sitzt im Wort. */}
                   <span className="truncate flex-1" style={{ color: 'var(--type-semantic)', fontWeight: 550 }}>
-                    {name}
+                    {'#' + name}
                   </span>
                   {count !== null && count > 1 && (
                     <span className="seiten-plakette fs-1 tnum px-2 py-px rounded-md shrink-0">{count}</span>
@@ -203,55 +204,59 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
         </div>
       )}
 
-      {/* Fußzeile */}
-      <div className="seiten-kante-oben p-3 space-y-2">
-        <div className="seiten-flaeche px-2 py-2 rounded-lg flex items-center gap-2">
-          <KeptaMark size={24} />
-          <div className="min-w-0 flex-1">
-            <div className="seiten-marke fs-3 truncate font-semibold tracking-[0.01em]">
-              {/* Branding 3.1.1: schlicht K3PTA — keine Stufen-Anzeige mehr.
-                  Seit 09.10.2026 sagt auch die zweite Zeile nichts über Grenzen,
-                  weil es sie nicht mehr gibt: die App läuft unbegrenzt.
-                  Die Versionszahl steht bewusst NICHT in der Sidebar (Damian, 25.9.) —
-                  sie bleibt über Systemstatus und /api/health abrufbar. */}
-              {'K3PTA'}
-            </div>
-            <div className="seiten-erklarung fs-1 truncate">
-              {/* Vorher: „local · private · encrypted". Die App hat im selben
-                  Fenster einen Zustand dafür — die Chip-Leiste meldet
-                  „Not encrypted", gemessen am selben Lauf (e3-screens/
-                  vorher-dark-1440px-erststart.png). Eine Marke behauptet
-                  keinen Zustand, den ein Statusfeld neben ihr misst. */}
-              local · private
-            </div>
-          </div>
+      {/* Fußzeile — Mockup-Grammatik (k3pta-app-fenster .nav-fuss): EINE Zeile über
+          einer Haarlinie, das K-Zeichen mit der Marke, rechts die kleinen Ikons
+          (Thema hell/dunkel, Setup, Leiste einklappen). Die früheren Karten und
+          Knopf-Reihen flogen; „local · private" steht allein in der Statuszeile
+          der Flächen (Lehre 32: ein Ort, ein Wort). */}
+      <div className="seiten-kante-oben nav-fuss-leiste">
+        <div className="nav-fuss-konto">
+          <KeptaMark size={20} />
+          <span className="seiten-marke fs-3 truncate font-semibold tracking-[0.01em]">
+            {/* Branding 3.1.1: schlicht K3PTA — keine Stufen-Anzeige mehr.
+                Die Versionszahl steht bewusst NICHT in der Sidebar (Damian, 25.9.) —
+                sie bleibt über Systemstatus und /api/health abrufbar. */}
+            {'K3PTA'}
+          </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="nav-fuss-ikonen">
           {showSetup && onOpenSetup && (
             <button
               onClick={onOpenSetup}
-              className="seiten-knopf-einrichten treff w-9 h-9 flex items-center justify-center rounded-lg shrink-0"
+              className="nav-fuss-ikon treff"
               aria-label="Open setup"
               title="Open setup"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3.5 h-3.5" />
             </button>
           )}
+          {/* Die zwei Thema-Ikons des Mockups: das aktive Thema trägt seine
+              Färbung, das andere steht daneben — kein Wort, nur das Zeichen. */}
           <button
-            onClick={toggleTheme}
-            className="seiten-knopf flex-1 h-9 flex items-center justify-center gap-2 rounded-lg fs-2 font-semibold"
-            aria-label="Switch theme"
+            onClick={() => { if (isDark) toggleTheme(); }}
+            className="nav-fuss-ikon treff"
+            data-on={!isDark ? "true" : undefined}
+            aria-label="Light theme"
+            title="Light theme"
           >
-            {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
+            <Sun className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => { if (!isDark) toggleTheme(); }}
+            className="nav-fuss-ikon treff"
+            data-on={isDark ? "true" : undefined}
+            aria-label="Dark theme"
+            title="Dark theme"
+          >
+            <Moon className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={toggleFocusMode}
-            className="seiten-knopf treff w-9 h-9 flex items-center justify-center rounded-lg"
+            className="nav-fuss-ikon treff"
             aria-label="Focus mode"
             title="Hide sidebar"
           >
-            <PanelLeftClose className="w-4 h-4" />
+            <PanelLeftClose className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { KURVE_APPLE } from '../lib/motionTokens';
 import { Sparkles, Check, ChevronRight, ChevronLeft, Cpu, Database, Globe, User, Target, Loader2, PartyPopper, AlertCircle, Info } from "../lib/icons";
 import { normalizeTopics, MAX_TOPICS, type DetectedAI, detectLocalAIs, suggestProvider, saveProfile, createDefaultProfile, type UserProfileAdaptive } from '../lib/profile';
 import { starterNotes } from '../lib/starter';
-import { KeptaMark } from './KeptaMark';
+import { cn } from '../lib/utils';
 import { loadAISettings, saveAISettings, providerById } from '../lib/ai';
 
 interface Props {
@@ -153,27 +153,23 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
   return (
     <aside
       data-testid="wizard-taefelchen"
-      className="wizard-taefelchen relative z-[80] flex min-w-0 my-3 mr-3"
+      className="wizard-taefelchen"
       aria-label="Set up K3PTA"
     >
-      <motion.div initial={{scale:0.96, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.96, opacity:0}}
+      <motion.div initial={{scale:0.98, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.98, opacity:0}}
         transition={{ ease: KURVE_APPLE, duration: 0.3 }}
-        className="relative w-full h-full max-h-full overflow-hidden palette-lens flex flex-col">
-        {/* Progress */}
-        <div className="h-1 w-full flex gap-1 p-1" style={{background:'var(--bg-inset)'}}>
-          {[1,2,3,4].map(i=> <div key={i} className="flex-1 rounded-full transition-colors" style={{background: step>=i ? 'var(--accent)' : 'var(--bg-inset-strong)'}} />)}
+        className="assistent w-full max-w-[460px]">
+        {/* Der Schritte-Balken (Mockup .schritte): vier Haarlinien, die Antwort
+            zählt die gefüllten. */}
+        <div className="assistent-schritte" aria-hidden>
+          {[1,2,3,4].map(i=> <i key={i} className={cn(step >= i && "on")} />)}
         </div>
-        <div className="px-7 pt-6 pb-4 flex items-center gap-4" style={{borderBottom:'1px solid var(--border-subtle)'}}>
-          <KeptaMark size={38} />
-          <div className="flex-1">
-            <h2 className="fs-5 font-semibold tracking-[-0.015em]" style={{color:'var(--text-1)'}}>Set up K3PTA</h2>
-            {/* „one minute" war eine ungeprüfte Anwerbung und {step}/4 stand
-                zweimal auf demselben Schirm — einmal in Worten, einmal in Ziffern. */}
-            <p className="fs-2 lh-dicht mt-1" style={{color:'var(--text-2)'}}>Step {step} of 4 — four questions, all on this computer.</p>
-          </div>
-        </div>
+        <h2 className="assistent-titel">Set up K3PTA</h2>
+        {/* „one minute" war eine ungeprüfte Anwerbung und {step}/4 stand
+            zweimal auf demselben Schirm — einmal in Worten, einmal in Ziffern. */}
+        <p className="assistent-schritt">Step {step} of 4 — four questions, all on this computer.</p>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
           <AnimatePresence mode="wait">
           {step===1 && (
             <motion.div key="s1" initial={{x:20, opacity:0}} animate={{x:0, opacity:1}} exit={{x:-20, opacity:0}} transition={{ ease: KURVE_APPLE, duration: 0.3 }} className="space-y-5">
@@ -368,14 +364,14 @@ export function OnboardingWizard({ open, onClose, onComplete }: Props) {
           </AnimatePresence>
         </div>
 
-        <div className="p-4 flex items-center justify-between" style={{borderTop:'1px solid var(--border-subtle)'}}>
-          <button onClick={()=> step>1 ? setStep((s=> (s-1) as Step)) : onClose()} className="btn-ghost px-4 py-2 rounded-xl fs-4 lh-lesbar flex items-center gap-2"><ChevronLeft className="w-4 h-4"/>{step===1 ? 'Later' : 'Back'}</button>
+        <div className="assistent-takte">
+          <button onClick={()=> step>1 ? setStep((s=> (s-1) as Step)) : onClose()} className="assistent-spaeter"><ChevronLeft className="w-4 h-4"/>{step===1 ? 'Later' : 'Back'}</button>
           {step<4 ? (
-            <button onClick={()=> setStep((s=> (s+1) as Step))} disabled={step===1 && !name.trim()} title={step===1 && !name.trim() ? 'A name first — or leave the setup any time with „Later".' : undefined} className="btn-primary px-6 py-3 rounded-xl fs-4 lh-lesbar flex items-center gap-2 disabled:opacity-40">
+            <button onClick={()=> setStep((s=> (s+1) as Step))} disabled={step===1 && !name.trim()} title={step===1 && !name.trim() ? 'A name first — or leave the setup any time with „Later".' : undefined} className="assistent-weiter">
               Next <ChevronRight className="w-4 h-4"/>
             </button>
           ) : (
-            <button onClick={handleFinish} disabled={importing} className="btn-primary px-6 py-3 rounded-xl fs-4 lh-lesbar flex items-center gap-2">
+            <button onClick={handleFinish} disabled={importing} className="assistent-weiter">
               {importing ? <><Loader2 className="w-4 h-4 animate-spin"/> Saving your notes…</> : <><Sparkles className="w-4 h-4"/> Save these {starterPreview.length} notes</>}
             </button>
           )}

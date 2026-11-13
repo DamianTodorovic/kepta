@@ -114,27 +114,16 @@ describe("Z-03: die Zeile traegt, was sie zeigt", () => {
     expect(ohne.zeile).toContain("zoom");
   });
 
-  it("legt, was aus der Zeile faellt, ins Menue — mit Zahl und Erklaerung", async () => {
+  it("traegt alle Glieder im Panel — bei schmaler Breite faellt keins aus dem Fenster", async () => {
+    // P202, Mockup-Grammatik (k3pta-app-fenster .graph-panel): die Werkzeuge
+    // stehen VERTIKAL im Ansicht-Panel — die frühere quer-Zeile war der Grund,
+    // warum Glieder aus dem Fenster fielen (D1-01) und die More-Klappe das
+    // Bild überschwemmte. Bei 362 px steht das Panel rechts und trägt alles.
     const { container } = await flaeche(362);
     const leiste = container.querySelector('[data-testid="graph-leiste"]')!;
-    const worte = [...leiste.querySelectorAll("button")].map((b) => (b.textContent ?? "").replace(/\s+/g, " ").trim());
-    // Die Dichtestufe ist bei 362 px draussen — und nicht verloren.
-    expect(worte.join(" ")).not.toMatch(/Many/);
+    expect(leiste.textContent).toMatch(/Many/);
     const mehr = [...leiste.querySelectorAll("button")].find((b) => (b.textContent ?? "").startsWith("More"));
-    expect(mehr, "bei 362 px faellt etwas aus der Zeile, aber niemand sagt es").toBeTruthy();
-    expect(mehr!.getAttribute("aria-expanded")).toBe("false");
-    expect(mehr!.textContent).toMatch(/More \(\d+\)/);
-    await act(async () => {
-      fireEvent.click(mehr!);
-      await new Promise((r) => setTimeout(r, 80));
-    });
-    const panel = container.querySelector('[data-testid="graph-mehr-panel"]')!;
-    expect(panel, "das Menue bleibt zu").toBeTruthy();
-    expect(mehr!.getAttribute("aria-expanded")).toBe("true");
-    expect([...panel.querySelectorAll("button")].map((b) => b.textContent?.trim()).join(" ")).toMatch(/Many/);
-    // A8-08: die Auskunft war ein Schwebetext. Im Menue ist sie ein Satz.
-    expect(panel.textContent).toMatch(/Density of names/);
-    expect(panel.textContent).toMatch(/What the picture carries/);
+    expect(mehr, "die Klappe ist keine mehr — das Panel trägt alles").toBeUndefined();
   });
 });
 

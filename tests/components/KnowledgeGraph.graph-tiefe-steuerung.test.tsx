@@ -87,13 +87,12 @@ async function flaeche(breite: number) {
   return view;
 }
 
-/** Das „More"-Panel aufmachen — dort steht bei diesen Breiten, was nicht hineinpasst. */
+/** Das Ansicht-Panel lesen — dort stehen die Werkzeuge (P202, Mockup-Grammatik),
+    ohne die früheren More-Klappe. */
 async function panelOeffnen(view: Awaited<ReturnType<typeof flaeche>>) {
-  const mehr = view.container.querySelector('[data-testid="graph-mehr"]') as HTMLButtonElement;
-  expect(mehr, "der More-Knopf fehlt").toBeTruthy();
-  await act(async () => { fireEvent.click(mehr); });
-  const panel = view.container.querySelector('[data-testid="graph-mehr-panel"]');
-  expect(panel, "das More-Panel oeffnet sich nicht").toBeTruthy();
+  await act(async () => { await new Promise((r) => setTimeout(r, 40)); });
+  const panel = view.container.querySelector('[data-testid="graph-leiste"]');
+  expect(panel, "das Ansicht-Panel fehlt").toBeTruthy();
   return panel as HTMLElement;
 }
 
@@ -116,7 +115,7 @@ describe("#42, sichtbar: die Flaeche hat einen Tiefen-Regler", () => {
   it("zeigt im Panel vier Stufen, und die gespeicherte ist die aktive", async () => {
     const view = await flaeche(1132);
     const panel = await panelOeffnen(view);
-    const glied = panel.querySelector('[data-testid="graph-mehr-tiefe"]');
+    const glied = panel.querySelector('[data-testid="graph-schiene-tiefe"]')?.parentElement;
     expect(glied, "das Tiefen-Glied steht nicht im Panel").toBeTruthy();
     const gruppe = glied!.querySelector('[data-testid="graph-schiene-tiefe"]') as HTMLElement;
     expect(gruppe, "die Schiene fehlt").toBeTruthy();

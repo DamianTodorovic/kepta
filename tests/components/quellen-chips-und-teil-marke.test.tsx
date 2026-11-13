@@ -90,7 +90,8 @@ describe("P165, Quellen-Chips: die Antwort nennt, welche Notizen sie benutzt hat
       if (!/Antwort/.test(t)) throw new Error(`keine Antwort da — die Wache prueft ins Leere: "${t.slice(0, 200)}"`);
       return t;
     });
-    expect(text, "die Antwort traegt die Quellen-Keile nicht").toMatch(/Sources:/);
+    // P202, Mockup-Grammatik: die Pillen tragen die Titel direkt — kein Label-Wort.
+    expect(text, "die Antwort traegt die Quellen-Pillen nicht").toMatch(/Quelle Eins/);
     for (const n of ["Quelle Eins", "Quelle Zwei", "Quelle Drei", "Quelle Vier", "Quelle Fuenf", "Quelle Sechs"]) {
       expect(text, `der Chip fuer "${n}" fehlt`).toContain(n);
     }
@@ -104,8 +105,8 @@ describe("P165, Quellen-Chips: die Antwort nennt, welche Notizen sie benutzt hat
     await user.type(screen.getByRole("textbox"), "Was weisst du?");
     await user.keyboard("{Enter}");
     await waitFor(() => expect(container.textContent).toMatch(/Antwort/));
-    expect(container.textContent, "ohne benutzte Notizen gibt es nichts zu nennen — ein leerer Keil waere eine Luege")
-      .not.toMatch(/Sources:/);
+    expect(container.textContent, "ohne benutzte Notizen gibt es nichts zu nennen — eine leere Pille waere eine Luege")
+      .not.toMatch(/Quelle Eins/);
   });
 });
 

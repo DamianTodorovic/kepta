@@ -260,7 +260,6 @@
   --lh-dicht: 1.24;
   --lh-lesbar: 1.55;
   --lh-prosa: 1.65;
-  --lh-marke: 1;      /* optischer Reset: Seitenmarke und Mono-Zeichen, vorher leading-none */
   --treff: 44px;      /* Kleinste Treffflaeche eines Knopfs ohne Wort — WCAG 2.5.5 und Apple HIG, dieselbe Zahl, die P92 am Loesch-Knopf nannte */
 
   /* Gewichte: eine nicht-variable Schrift (Segoe UI auf Windows) kennt
@@ -314,7 +313,11 @@
   --node-hi: 0.34;
   --node-mid: 0.66;
   --node-low: 0.4;
-  --node-rim: rgba(34, 48, 60, 0.4);
+  /* P202, Mockup-Grammatik: auf weißem Grund trägt der Knoten den WEIßEN Rand
+     (k3pta-app-fenster-Maler: rgba(255,255,255,0.9)) — er übermalt die Kanten
+     an der Kante und trennt die Knoten vom Gewebe, statt eine dunkle Kante zu
+     zeichnen. Auf dunklem Grund bleibt der helle Rand. */
+  --node-rim: rgba(255, 255, 255, 0.9);
   --node-shine: rgba(240, 242, 235, 0.9);
   --node-shade: rgba(20, 28, 34, 0.18);
 }
@@ -540,7 +543,6 @@ select:focus-visible {
 @utility lh-dicht { line-height: var(--lh-dicht); }     /* 1,24: Meta, Zahlen, Titel */
 @utility lh-lesbar { line-height: var(--lh-lesbar); }   /* 1,55: Regel, Eingabe, Chat */
 @utility lh-prosa { line-height: var(--lh-prosa); }     /* 1,65: fliessender Text in Karte und Antwort */
-@utility lh-marke { line-height: var(--lh-marke); }     /* 1: optischer Reset, keine Zeile unter der Zahl */
 
 /* P93: die Treffflaeche eines Knopfs ohne Wort. Gemessen 04:59:59 MEZ im echten Fenster
    ueber alle sieben Sichten: 19 Knopfe fuehren nur ein Icon, und 19 von 19 lagen unter
@@ -724,6 +726,52 @@ select:focus-visible {
 .flaechen-status .strich { color: var(--text-3); }
 .flaechen-status .rechts { margin-left: auto; }
 
+/* ─────────── Das App-Fenster (P202, Mockup k3pta-app-fenster): Titelbalken
+   über der ganzen Breite — Ampel (nur im Browser; Electron zeichnet seine
+   eigenen Lichter an dieselbe Stelle), zentrierter Fenstertitel, Platz rechts.
+   Darunter der Körper (Leiste · Spalten), unten die Statuszeile. ─────────── */
+.fenster-titelleiste {
+  flex: none;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--border-subtle);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.fenster-titelleiste .fenster-ampel { display: flex; gap: 7px; width: 62px; flex: none; }
+.fenster-titelleiste .fenster-ampel i {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--text-3);
+  opacity: 0.5;
+}
+.fenster-titelleiste .fenster-ampel i:nth-child(1) { background: #ff5f57; }
+.fenster-titelleiste .fenster-ampel i:nth-child(2) { background: #febc2e; }
+.fenster-titelleiste .fenster-ampel i:nth-child(3) { background: #28c840; }
+.fenster-titelleiste .fenster-titel {
+  flex: 1;
+  text-align: center;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fenster-titelleiste .fenster-platz { width: 62px; flex: none; }
+
+/* Die Statuszeile läuft über die volle Fensterbreite (Mockup .statuszeile) —
+   sie sitzt als Slot UNTER dem Körper, die Flächen melden ihren Inhalt. */
+.fenster-status-slot { flex: none; }
+/* Der Fenster-Körper (Mockup .korper): Leiste · Spalten unter dem Titelbalken. */
+.fenster-korper { display: flex; min-height: 0; }
+/* Der Chat-Fluss (Mockup .chat-fluss): die Blasen stehen im Abstand von 10 px. */
+.chat-fluss { display: flex; flex-direction: column; gap: 10px; }
+
 /* ─────────── Die ständige Drei-Spalten-Architektur (P202, Mockup k3pta-app-fenster)
    Navigation (Sidebar) | Liste | Detail — die Detail-Spalte STEHT IMMER, auch leer
    („Nothing selected"). Die Liste ist eine schmale Spalte mit eigenem Kopf, Auskunft,
@@ -781,6 +829,148 @@ select:focus-visible {
   padding: 0 8px 8px;
 }
 .listen-spalte .apple-seg { flex-wrap: wrap; }
+/* ─────────── Mockup-Brücke (P202, k3pta-app-fenster): die Zeilen- und
+   Tischecken der App-Fenster-Grammatik. Nur die Regeln, die die Flächen
+   teilen; die Werte stehen wörtlich wie im Mockup-HTML. ─────────── */
+
+/* Die zeile-item-Zeile: Art-Punkt 8×8 (Radius 3), Titel 13/600, Vorschau 12,
+   rechts kurze Zeit + Herkunft — die Grammatik der Mockup-Zeile. */
+.zeile-item {
+  display: flex;
+  gap: 9px;
+  padding: 8px 9px;
+  border-radius: var(--r-btn);
+  cursor: default;
+  transition: background 100ms var(--ease-apple);
+  align-items: flex-start;
+}
+.zeile-item:hover { background: rgba(31, 30, 28, 0.045); }
+.row-punkt {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-badge);
+  margin-top: 4px;
+  flex: none;
+  background: var(--type-semantic);
+}
+.row-titel-zeile { font-size: var(--fs-2); font-weight: var(--fw-halbfest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-vorschau { font-size: var(--fs-2); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.row-zeit { font-size: var(--fs-1); color: var(--text-3); }
+.row-herkunft { font-size: var(--fs-1); color: var(--text-3); margin-top: 2px; }
+
+/* ─────────── Graph als App-Fenster (P202, Mockup .graph-flaeche + .graph-panel):
+   die Leinwand liegt auf weißem Grund (kein Karten-Kasten), das Ansicht-Panel
+   rechts trägt die Werkzeuge vertikal — wie das Mockup-Bild „Ansicht“. ─────────── */
+.graph-leinwand {
+  background: var(--feld);
+  min-height: 420px;
+}
+.graph-panel {
+  width: 250px;
+  flex: none;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--bg-inset);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.graph-panel-kopf {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-1);
+}
+.graph-panel-korper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px;
+}
+.graph-panel-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+}
+.graph-panel-zeile .apple-seg { width: 100%; background: transparent; border: none; padding: 0; gap: 2px; }
+.graph-panel-zeile .apple-seg .apple-seg-btn { flex: 1; justify-content: center; }
+.graph-panel-zeile input[type="range"] { flex: 1; min-width: 0; }
+.graph-panel-fuss {
+  flex: none;
+  padding: 9px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.graph-fuss-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-1);
+  color: var(--text-2);
+  padding: 3px 0;
+}
+.graph-fuss-zeile .wert { margin-left: auto; color: var(--text-1); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.graph-fuss-knoepfe { display: flex; gap: 5px; margin-top: 6px; }
+.graph-fuss-knoepfe .btn-ghost { flex: 1; justify-content: center; }
+/* Die Farbwahl-Zeile des Panels (Mockup .farbwahl-zeile): swatch + Name. */
+.farbwahl-zeile { display: flex; align-items: center; gap: 9px; padding: 7px 12px; }
+.farbwahl-zeile + .farbwahl-zeile { border-top: 1px solid var(--border-subtle); }
+.legende-graph {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-btn);
+  overflow: hidden;
+}
+.legende-graph .farbwahl-zeile { padding: 5px 8px; }
+.legende-graph .graph-swatch { width: 12px; height: 12px; padding: 0; border: none; background: none; cursor: pointer; }
+
+/* Die Gruppe im Detail: Name klein über dem Tisch, der Tisch als Karte
+   auf der Grundfläche. */
+.detail-gruppe { margin-top: 22px; }
+.detail-gruppe .detail-gruppe-name,
+.detail-gruppe-name { font-size: var(--fs-1); font-weight: var(--fw-halbfest); color: var(--text-3); padding-bottom: 6px; }
+.gruppen-tisch {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-panel, 9px);
+  overflow: hidden;
+}
+.zustandszeile { display: flex; gap: 12px; padding: 8px 12px; font-size: var(--fs-2); }
+.zustandszeile + .zustandszeile { border-top: 1px solid var(--border-subtle); }
+.zustandszeile .art {
+  width: 66px;
+  flex: none;
+  font-weight: var(--fw-halbfest);
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.zustandszeile .inhalt { flex: 1; min-width: 0; color: var(--text-2); }
+.app-zeile { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+.app-zeile + .app-zeile { border-top: 1px solid var(--border-subtle); }
+.app-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-btn);
+  background: rgba(31, 30, 28, 0.06);
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-fest);
+  color: var(--text-2);
+  flex: none;
+}
+.app-name { font-size: var(--fs-2); font-weight: var(--fw-halbfest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-zustand { font-size: var(--fs-1); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* Die Zeile ist das zeile-item des Mockups (k3pta-app-fenster): farbiger
    Art-Punkt, Titel in Sans in EINER Zeile, Vorschau in einer Zeile, rechts
    Zeit und Herkunft — keine Serife, keine Pillen, keine Tag-Kette, keine
@@ -793,12 +983,6 @@ select:focus-visible {
   contain-intrinsic-size: auto 64px;
 }
 .listen-spalte .row-entry:hover { background: rgba(31,30,28,.045); border-color: transparent; }
-.listen-spalte .row-type { align-items: center; margin-top: 0; gap: 0; }
-.listen-spalte .row-type svg { width: 10px; height: 10px; }
-.listen-spalte .row-type-label { display: none; }
-/* Der Farb-Grat (P196) wohnt am breiten Blatt — die schmale Zeile trägt die
-   Farbe am Punkt (wie das Mockup: nur der Art-Punkt neben dem Titel). */
-.listen-spalte .row-grat { display: none; }
 /* Die Bedien-Chips im Filter-Band: klein über den generischen Knopf im Band —
    die .row-quiet-Regel selbst bleibt unangetastet (H-3 liest sie wörtlich). */
 .listen-filter button { min-height: 22px; padding: 0 7px; }
@@ -838,8 +1022,20 @@ select:focus-visible {
 /* Die Quelle-/Badge-Zeile wohnt im Detail, nicht an der Kante der schmalen
    Zeile (das Mockup trägt dort Punkt · Titel · Vorschau · Zeit). */
 .listen-spalte .row-body-foot { display: none; }
-.listen-spalte .row-meta { gap: 2px; }
+.listen-spalte .row-meta { gap: 2px; flex: none; text-align: right; flex-direction: column; align-items: flex-end; justify-content: flex-start; }
 .listen-spalte .row-time { font-size: var(--fs-1); }
+/* Die Herkunft unter der Zeit (Mockup .rechts .herkunft): 10.5px, getragen
+   von der Quelle der Notiz (md file, Claude Code, MCP). */
+.listen-spalte .row-herkunft {
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Der Art-Punkt steht oben neben der Titel-Zeile (Mockup .punkt margin-top 4). */
+.listen-spalte .row-punkt { width: 8px; height: 8px; border-radius: var(--r-badge); margin-top: 4px; }
 /* Die Tag-Kette gehört in der schmalen Zeile nicht an die Kante — die Tags
    leben als About-Filter und im Detail. display:none bleibt für die Tests im
    Textbestand (jsdom zählt sie), das Bild ruht. */
@@ -1032,21 +1228,71 @@ select:focus-visible {
 .einstellungen-liste .navi button:hover { background: var(--bg-hover); color: var(--text-1); }
 .einstellungen-liste .navi button[data-on='true'] { background: var(--accent-soft); color: var(--accent); }
 .settings-panel-fenster { flex: 1; min-width: 0; overflow-y: auto; padding: 20px 24px; }
-.msg-user {
-  margin-left: auto;
-  max-width: min(78%, 58ch);
-  padding: 9px 14px;
-  border-radius: var(--r-btn);
-  background: var(--accent-fuell);
-  color: var(--on-accent);
-  font-size: var(--fs-4);
-  line-height: 1.55;
-  box-shadow: var(--shadow-sm);
+/* ─────────── Chat-Nachricht (P202, Mockup k3pta-app-fenster .nachricht):
+   wer-Zeile (K-Zeichen + Name) über der Blase; die eigene Frage rechts mit
+   „You" und der getönten Blase. Die früheren Füll-Blasen (weiß auf Grün) und
+   der Rand-Streich flogen — das Mockup trägt Blasen mit Haar-Rand. ─────────── */
+.nachricht { max-width: 68ch; }
+.nachricht.ich { margin-left: auto; }
+.nachricht .wer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  margin-bottom: 3px;
 }
-.msg-ai {
-  max-width: 100%;
-  padding-left: 14px;
-  border-left: 2px solid var(--border-strong);
+.nachricht .wer .zeichen {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-chip);
+  background: var(--accent);
+  color: var(--on-accent);
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-fest);
+}
+.nachricht .blasen {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-panel, 9px);
+  padding: 9px 12px;
+  font-size: var(--fs-3);
+  color: var(--text-1);
+  line-height: 1.55;
+}
+.nachricht.ich .blasen {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text-1);
+}
+.quellen-zeile { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.quellen-zeile .quelle {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-chip);
+  padding: 2px 7px;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.quellen-zeile .quelle:hover { border-color: var(--accent-fuell); color: var(--text-1); }
+/* Die Arbeits-Knöpfe einer Antwort (Copy/Save/Metadaten) stehen in der Ruhe —
+   sie erscheinen, wenn die Zeiger über der Nachricht steht (Hover-Gatter). */
+.chat-werk {
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-apple);
+}
+.nachricht:hover .chat-werk,
+.nachricht:focus-within .chat-werk { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .chat-werk { opacity: 1; }
 }
 /* Composer: ein Aktenblatt mit klarer Kante; Fokus zieht Tinte nach */
 .composer {
@@ -1087,8 +1333,20 @@ select:focus-visible {
 }
 .palette-row[data-active="true"] {
   background: var(--accent-soft-2);
-  box-shadow: inset 2px 0 0 var(--accent);
 }
+/* Die Icon-Fläche der Palette (Mockup .pal-zeile .app-icon): ein 22-px-Kreis,
+   aktiv in Akzent-Fläche. */
+.palette-row .pal-ikon {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-btn);
+  background: rgba(31, 30, 28, 0.06);
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  flex: none;
+}
+.palette-row[data-active="true"] .pal-ikon { background: rgba(46, 125, 91, 0.14); color: var(--accent); }
 
 /* ---------- Inputs ---------- */
 .hud-input {
@@ -1326,22 +1584,6 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
 .import-divider { width: 1px; background: var(--border-subtle); margin: 8px 14px; flex-shrink: 0; }
 
 /* Vorschlags-Pills: Kartonzettel */
-.suggestion-pill {
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-size: var(--fs-2);
-  font-weight: var(--fw-halbfest);
-  background: var(--bg-inset);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-2);
-  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
-}
-.suggestion-pill:hover {
-  background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
-  color: var(--text-1);
-}
-.suggestion-pill:active { transform: scale(0.97); }
 
 /* Toasts — Kartonzettel mit klarer Kante */
 .toast-lens {
@@ -1744,29 +1986,31 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
   contain-intrinsic-size: auto 118px;
 }
 .row-entry:last-child { border-bottom: none; }
-.row-entry .row-type { flex: none; }
+/* P202, Mockup-Grammatik: die Zeile trägt den Art-Punkt (8×8) — die frühere
+   Standarte-Pille (.row-type) flog zusammen mit ihrem Renderer (MemoryCard). */
+.row-entry .row-punkt { flex: none; margin-top: 6px; }
 .row-entry .row-body { flex: 1; min-width: 0; }
-.row-entry:hover { border-color: var(--border-hover); background: var(--glass-strong); }
+.row-entry:hover { border-color: var(--border-hover); background: rgba(31, 30, 28, 0.045); }
 .row-entry:active { transform: scale(0.995); transition-duration: var(--dur-fast); }
-.row-type {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--fs-2);
-  font-weight: var(--fw-halbfest);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+/* Die Register-Meta rechts: die kurze Zeit oben, die Herkunft darunter —
+   eine Spalte wie im Mockup (.rechts .zeit + .herkunft). */
+.row-entry .row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+  text-align: right;
 }
-/* Der gerufene Name fehlt. Der Stand von 13.10. (Zensus, Befund K-4): ohne diese
-   Regel läuft die Typ-Standarte über lange Namen („procedural knowledge") starr
-   bis zum Kartenrand und schneidet ihn ab — nowrap geerbt von .row-type, kein
-   eigener Umbruch. Mit min-width:0 darf das Label schrumpfen und verkürzen, die
-   Karte hält ihr Maß. */
-.row-type-label {
-  min-width: 0;
+.row-entry .row-herkunft {
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 120px;
 }
+.row-entry .row-time { font-size: var(--fs-1); color: var(--text-3); }
 .row-body { min-width: 0; }
 .row-body h3 {
   font-family: var(--font-display);
@@ -1921,12 +2165,57 @@ button.hud-label:active { transform: scale(0.97); }
    eigenen Graphen ging hinter einem Dialog verloren (a7-screens/12-wizard2-
    erschienen.png, gemessene Deckung 1 682 542 px²). Er steht jetzt als Spalte
    neben der Fläche: die Fläche bleibt sichtbar und vermessbar, solange er redet. */
+/* P202, Mockup-Grammatik (.assistent-vorhang): der Assistent steht als Voll-
+   Overlay auf der Grundfläche, der Inhalt zentriert in 460 px — kein Kasten,
+   kein Rändern-Glas. Der frühere Seiten-Spiegel (A7-10) flog mit Damian's
+   Mockup-Wort: die erste Fläche ist hier leer, es gibt kein Bild dahinter. */
 .wizard-taefelchen {
-  flex: 0 0 min(560px, 38vw);
-  width: min(560px, 38vw);
-  max-width: 560px;
-  min-height: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: var(--feld);
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
 }
+/* Der Assistent-Körper des Mockups (.assistent): die 460-px-Säule auf dem
+   Vorhang — kein Kasten, die Fragen stehen direkt auf der Grundfläche. */
+.assistent { max-width: 460px; }
+.assistent-schritte { display: flex; gap: 5px; margin-bottom: 18px; }
+.assistent-schritte i { height: 3px; border-radius: 999px; flex: 1; background: rgba(31, 30, 28, 0.12); }
+.assistent-schritte i.on { background: var(--accent); }
+.assistent-titel { font-size: var(--fs-6); font-weight: var(--fw-halbfest); color: var(--text-1); letter-spacing: -0.01em; margin: 0; }
+.assistent-schritt { font-size: var(--fs-2); color: var(--text-2); margin-top: 4px; }
+.assistent-takte { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; gap: 12px; }
+.assistent-spaeter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  padding: 6px 9px;
+  border-radius: var(--r-btn);
+  transition: background var(--dur-fast) var(--ease-apple), color var(--dur-fast) var(--ease-apple);
+}
+.assistent-spaeter:hover { background: rgba(31, 30, 28, 0.05); color: var(--text-1); }
+.assistent-weiter {
+  margin-left: auto;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: var(--r-btn);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-halbfest);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background var(--dur-fast) var(--ease-apple);
+}
+.assistent-weiter:hover { background: var(--accent); filter: brightness(0.95); }
+.assistent-weiter:disabled { opacity: 0.4; }
 /* Im schmalen Fenster ist eine nebenständige Spalte das Bild selbst. Der Rahmen
    stapelt dort untereinander: das Täfelchen *nimmt* dem Bild Raum, statt es zu
    decken — die obere Kante des Gedächtnisses bleibt frei, und kein Strich des

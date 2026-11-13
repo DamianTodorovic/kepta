@@ -4,6 +4,7 @@ import { absage } from '../lib/absage';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './huelle.css';
 import { Sidebar } from './Sidebar';
+import type { Ansicht } from './Sidebar';
 import { MemoryCard } from './MemoryCard';
 import { MemoryEditor } from './MemoryEditor';
 import { MemoryPreview } from './MemoryPreview';
@@ -41,8 +42,23 @@ import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadClou
 import { motion, AnimatePresence } from 'motion/react';
 import { FEDER_OVERLAY } from '../lib/motionTokens';
 import { cn } from '../lib/utils';
+import { FensterStatusAnbieter, type FensterStatusZeile } from './ui/FensterStatus';
 
 type ViewKey = 'memories' | 'today' | 'chat' | 'graph' | 'dossier' | 'activity' | 'team' | 'settings';
+
+/* P202, Mockup-Grammatik: der Fenstertitel nennt die Fläche mit ihrem echten
+   Namen („Knowledge — K3PTA“). Die Wörter sind die Mockup-Namen, nicht die
+   technischen Schlüssel. */
+const FLAECHE_TITEL: Record<ViewKey, string> = {
+  memories: 'Knowledge',
+  today: 'Today',
+  chat: 'Chat',
+  graph: 'Graph',
+  dossier: 'Dossier',
+  activity: 'Activity',
+  team: 'Team',
+  settings: 'Settings',
+};
 
 /**
  * Was "alles" gegenueber der Engine bedeutet — dieselbe Grenze wie im Kern.
@@ -276,11 +292,14 @@ export function Dashboard() {
   // vier Faelle zwischen 7,90 und 48,38 %; der Traeger halbiert (51,08 / 48,48 %), und
   // Tags sind Staub (95,17 % seiner Notizen tragen kein Wort, 30.10.). Eine eigene
   // Vorbelegung hebt das auf -- ein gemachter Stand wird nicht umgestellt.
+  // P202, Mockup-Treue: die Liste startet FLACH („All“) — das Mockup zeigt den
+  // All-Modus als den Zustand, den der Nutzer zuerst sieht; eine gemachte Wahl
+  // bleibt gespeichert.
   const [gruppierung, setGruppierung] = useState<'alle' | 'datei' | 'typ' | 'thema' | 'zeitraum'>(() => {
     try {
       const v = localStorage.getItem('ki_gehirn_gruppierung');
-      return v === 'datei' || v === 'typ' || v === 'zeitraum' || v === 'alle' ? v : 'thema';
-    } catch { return 'thema'; }
+      return v === 'datei' || v === 'typ' || v === 'zeitraum' || v === 'thema' || v === 'alle' ? v : 'alle';
+    } catch { return 'alle'; }
   });
   useEffect(() => {
     try { localStorage.setItem('ki_gehirn_gruppierung', gruppierung); } catch { /* ignore */ }
@@ -742,6 +761,7 @@ export function Dashboard() {
     embedModelle: { name: string; anzahl: number }[];
     embedTotal: number;
     embedEmbedded: number;
+    mcpTools: number | null;
   }
   const [gehirn, setGehirn] = useState<GehirnStatus | null>(null);
   /**
@@ -768,6 +788,7 @@ export function Dashboard() {
       const e = (d.embeddings ?? {}) as Record<string, unknown>;
       const v = (d.encryption ?? {}) as Record<string, unknown>;
       const modelle = (e.models ?? {}) as Record<string, unknown>;
+      const m = (d.mcp ?? {}) as Record<string, unknown>;
       setGehirn({
         version: typeof d.version === 'string' ? d.version : null,
         count: typeof d.count === 'number' ? d.count : 0,
@@ -777,6 +798,7 @@ export function Dashboard() {
         embedTotal: typeof e.total === 'number' ? e.total : 0,
         embedEmbedded: typeof e.embedded === 'number' ? e.embedded : 0,
         embedModelle: Object.entries(modelle).map(([name, anzahl]) => ({ name, anzahl: Number(anzahl) })),
+        mcpTools: typeof m.tools === 'number' ? m.tools : null,
       });
       setTuerLebt("antwortete");
     } catch {
@@ -1534,7 +1556,7 @@ export function Dashboard() {
         </div>
       )}
       {visibleCount >= displayedMemories.length && displayedMemories.length > PAGE_SIZE && (
-        <div className="text-center fs-1 mt-4 tnum" style={{ color: 'var(--text-3)' }}>
+        <div data-testid="blatt-grenze" className="text-center fs-1 mt-4 tnum" style={{ color: 'var(--text-3)' }}>
           {/* „All 100 entries shown" über einer Tür, die 14.702 hält, war die
               stille Kappe: das „All" galt der Ladung, nicht dem Bestand. Seit dem
               Brief gilt die Kappe selbst als Zeugnis — nicht nur die Zahl. */}
@@ -1582,13 +1604,51 @@ export function Dashboard() {
     return () => obs.disconnect();
   }, [visibleCount, displayedMemories.length]);
 
+  // P202, Mockup-Grammatik: der Fenstertitel nennt die Fläche — im Editor den
+  // Modus, im Assistenten die Einrichtung (das Mockup trägt „K3PTA einrichten“).
+  const istElectron = typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron');
+  const fensterTitel = wizardOpen
+    ? 'K3PTA einrichten'
+    : isEditorOpen
+      ? 'Editor — K3PTA'
+      : `${FLAECHE_TITEL[currentView]} — K3PTA`;
+
+  // Die Statuszeile ist ein Slot am Fenster (volle Breite, Mockup .statuszeile).
+  // Die Flächen melden ihren Inhalt; bei Flächenwechsel beginnt die Zeile leer,
+  // bis die neue Fläche ihre Wörter meldet — keine alte Zeile aus der anderen
+  // Fläche bleibt stehen.
+  const [flaechenStatus, setzeFlaechenStatus] = useState<FensterStatusZeile>({});
+  const meldeStatuszeile = useCallback((zeile: FensterStatusZeile) => {
+    setzeFlaechenStatus((vorher) => {
+      const gleich = vorher.links === zeile.links && vorher.rechts === zeile.rechts;
+      return gleich ? vorher : { links: zeile.links, rechts: zeile.rechts };
+    });
+  }, []);
+  useEffect(() => { setzeFlaechenStatus({}); }, [currentView, isEditorOpen]);
+
   return (
     <div
-      className={cn("huelle flex h-full overflow-hidden", schmal && "huelle-schmal")}
+      className={cn("huelle flex flex-col h-full overflow-hidden", schmal && "huelle-schmal")}
       data-fenster={schluessel ? "schluessel" : "gedaempft"}
       data-einrichtung={wizardOpen ? "offen" : undefined}
       data-ansicht={currentView}
     >
+      {/* P202, Mockup-Grammatik (k3pta-app-fenster .titelbalken): der Titelbalken
+          läuft über die volle Fensterbreite — im Browser trägt er die Ampel,
+          im Electron stehen die nativen Lichter an derselben Stelle
+          (electron.js: hiddenInset, x 14 · y 14) und die Leiste hält nur den
+          Platz frei. Der Titel nennt die Fläche, im Editor den Modus. */}
+      <div className="fenster-titelleiste" data-testid="fenster-titelleiste">
+        {!istElectron && (
+          <span className="fenster-ampel" aria-hidden><i /><i /><i /></span>
+        )}
+        {istElectron && <span className="fenster-ampel" aria-hidden style={{ visibility: 'hidden' }}><i /><i /><i /></span>}
+        <span className="fenster-titel">{fensterTitel}</span>
+        <span className="fenster-platz" />
+      </div>
+
+      <div className="fenster-korper flex flex-1 min-h-0">
+      <FensterStatusAnbieter melde={meldeStatuszeile}>
       <Sidebar
         tags={allTags}
         selectedTags={selectedTags}
@@ -1657,7 +1717,7 @@ export function Dashboard() {
             JEDEM Einblenden 200 ms Deckkraft ein; Bewegung in Deckkraft,
             keine Doppelbelichtung, reduced-motion folgt der CSS-Wache. */}
         <div
-          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 rounded-2xl overflow-hidden", currentView === 'memories' ? 'flex' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'memories' ? 'flex' : 'hidden')}
         >
           {/* P202, Mockup-Treue (k3pta-app-fenster): der App-Kopf über der Liste flog.
               Die Suche steht jetzt oben in der Navigation (wie Mail), die Werkzeuge
@@ -1749,10 +1809,13 @@ export function Dashboard() {
                   )
                 )}
                 <div className="kopf-handlungen">
-                  {/* Das Import-Werkzeug im Listen-Kopf (P202, Mockup-Grammatik): das Band
-                      öffnet auf Wunsch — die Liste startet ohne Tisch darüber. */}
+                  {/* P202, Mockup-Grammatik (k3pta-app-fenster .listen-kopf): der Kopf
+                      trägt drei Werkzeuge — Import (öffnet das Scan-Modal direkt,
+                      wie das Mockup-Bild „Scan this computer“), Duplicates, New.
+                      Der Papierkorb wohnt im Listen-Fuß, die Palette an ⌘K (Leiste
+                      und Tastatur), der Kontext-Kopierriff am Chat. */}
                   <button
-                    onClick={() => setImportBandOffen((v) => !v)}
+                    onClick={() => setScanOpen(true)}
                     className="btn-ghost treff p-1.5 rounded-lg"
                     title="Import"
                     aria-label="Import"
@@ -1760,43 +1823,12 @@ export function Dashboard() {
                     <UploadCloud className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={async () => {
-                      setTrashOpen((v) => !v);
-                      try {
-                        const res = await fetch('/api/storage-info');
-                        // P64: Status zuerst, Koerper verzeihend gelesen, und der Grund durch den
-                        // Helfer -- die eigne Zahl der Tuer darf auf dem Knopf stehen.
-                        const data = (await res.json().catch(() => null)) as { trashed?: unknown; error?: unknown } | null;
-                        if (!res.ok) throw new ApiFehler(tuerSatz(data?.error, `HTTP ${res.status}`), res.status);
-                        if (typeof data?.trashed !== 'number') throw new ApiFehler('The count did not arrive in this answer.', res.status);
-                        setTrashCount(data.trashed);
-                        setTrashGrund(null);
-                      } catch (err: unknown) {
-                        // "nicht gelesen" ist kein leerer Papierkorb: der Zaehler geht auf null,
-                        // und ein alter Wert steht nicht als aktueller da.
-                        setTrashCount(null);
-                        setTrashGrund(absage("Trash — the count did not arrive", err));
-                      }
-                    }}
+                    onClick={() => setDuplicatesOpen(true)}
                     className="btn-ghost treff p-1.5 rounded-lg"
-                    title={trashGrund ?? "Trash — restore deleted notes"}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    {trashCount !== null && trashCount > 0 && <span className="tnum">{trashCount}</span>}
-                  </button>
-                  <button
-                    onClick={() => setPaletteOpen(true)}
-                    className="btn-ghost p-1.5 rounded-lg"
-                    title="Command palette"
+                    title="Review duplicates"
+                    aria-label="Duplicates"
                   >
                     <ScanSearch className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={copyContextForAI}
-                    className="btn-ghost p-1.5 rounded-lg"
-                    title={`${chatMemories.length} notes in the chat context — copy as a prompt`}
-                  >
-                    {copied ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
                   </button>
                   <button
                     onClick={() => {
@@ -1931,8 +1963,30 @@ export function Dashboard() {
                   {/* P202, Mockup-Treue: die Form/About-Wörter stehen als EINE dünne
                       Zeile mit kleinen Kanten-Chips — die Gruppen und ihre Rollen
                       bleiben (die Wachen klicken sie über die Rollennamen). */}
-                  <div className="listen-filter">
-                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={TRAEGER_FRAGE}>
+                  <div className="apple-seg mb-3" role="group" aria-label="Grouping of the list">
+                    {([['alle', t('list.all')], ['datei', t('list.byFile')], ['thema', t('list.byTopic')], ['typ', t('list.byType')], ['zeitraum', t('list.period')]] as const).map(([key, label]) => (
+                      <button
+                        key={key}
+                        onClick={() => setGruppierung(key)}
+                        disabled={!!debouncedSearchQuery.trim()}
+                        className="apple-seg-btn min-h-7 fs-1 font-semibold disabled:opacity-40"
+                        data-on={effektivGruppierung === key ? "true" : "false"}
+                        title={debouncedSearchQuery.trim()
+                          ? 'Grouping is off while you search — results are ranked by relevance'
+                          : key === 'alle' ? 'Flat grid, newest relevance first'
+                          : key === 'datei' ? 'Group every piece under the file or link it came from'
+                          : key === 'thema' ? 'Group every piece under each topic it carries; a piece can stand in more than one topic, and the last group names the pieces without one'
+                          : key === 'typ' ? Object.values(TYP_BESCHREIBUNG).join(' · ')
+                          : 'Today, this week, older'}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  </>
+                  )}
+                  <div className="listen-filter" data-nach-frage={gruppierung === 'typ' || gruppierung === 'thema' ? 'offen' : 'zu'} style={gruppierung !== 'typ' && gruppierung !== 'thema' ? { display: 'none' } : undefined}>
+                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={TRAEGER_FRAGE} style={gruppierung !== 'typ' ? { display: 'none' } : undefined}>
                     <span className="fs-1 shrink-0" style={{ color: 'var(--text-3)' }}>Form</span>
                     {TRAEGER_REIHENFOLGE.map((t) => {
                       const an = aktiveTraeger.includes(t);
@@ -1972,7 +2026,7 @@ export function Dashboard() {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={THEMA_FRAGE}>
+                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={THEMA_FRAGE} style={gruppierung !== 'thema' ? { display: 'none' } : undefined}>
                     <span className="fs-1 shrink-0" style={{ color: 'var(--text-3)' }}>About</span>
                     {THEMA_REIHENFOLGE.map((t) => {
                       const an = aktiveThemen.includes(t);
@@ -1994,28 +2048,6 @@ export function Dashboard() {
                   </div>
                   </div>
 
-                  <div className="apple-seg mb-3" role="group" aria-label="Grouping of the list">
-                    {([['alle', t('list.all')], ['datei', t('list.byFile')], ['thema', t('list.byTopic')], ['typ', t('list.byType')], ['zeitraum', t('list.period')]] as const).map(([key, label]) => (
-                      <button
-                        key={key}
-                        onClick={() => setGruppierung(key)}
-                        disabled={!!debouncedSearchQuery.trim()}
-                        className="apple-seg-btn min-h-7 fs-1 font-semibold disabled:opacity-40"
-                        data-on={effektivGruppierung === key ? "true" : "false"}
-                        title={debouncedSearchQuery.trim()
-                          ? 'Grouping is off while you search — results are ranked by relevance'
-                          : key === 'alle' ? 'Flat grid, newest relevance first'
-                          : key === 'datei' ? 'Group every piece under the file or link it came from'
-                          : key === 'thema' ? 'Group every piece under each topic it carries; a piece can stand in more than one topic, and the last group names the pieces without one'
-                          : key === 'typ' ? Object.values(TYP_BESCHREIBUNG).join(' · ')
-                          : 'Today, this week, older'}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  </>
-                  )}
                   {/* Der leer gefilterte Zustand steht innerhalb derselben
                       Zweige wie die Zeilen: ein Klick auf ein Wort, das die
                       geladene Seite nicht trifft, darf die Kontrolle nicht
@@ -2160,56 +2192,78 @@ export function Dashboard() {
                     {inboxScanBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Scan'}
                   </button>
                 </span>
-                {duplicateGroups.length === 0 ? (
-                  <span className="chip hidden lg:inline-flex" title="Nothing to do — the knowledge base has no obvious duplicates">
+                {/* Der Duplett-Zweig (Punkt 7): bei 0 ist es ein Zustand
+                    („No duplicates"), bei >0 der Mockup-Wortlaut als Griff zur
+                    Prüfansicht. */}
+                {duplicateCount === 0 ? (
+                  <span
+                    className="chip hidden lg:inline-flex"
+                    title="Nothing to do — the knowledge base has no obvious duplicates"
+                  >
                     <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--ok)' }} /> No duplicates
                   </span>
                 ) : (
                   <button
                     onClick={() => setDuplicatesOpen(true)}
-                    className="chip"
-                    style={{ color: 'var(--warn)', background: 'var(--warn-soft)', borderColor: 'transparent', cursor: 'pointer' }}
+                    className="chip hidden lg:inline-flex tnum"
+                    style={{ color: 'var(--warn)', cursor: 'pointer' }}
                     title="Review every duplicate side by side and remove the copies you do not want"
                   >
-                    <AlertCircle className="w-3 h-3" /> {duplicateCount} duplicate{duplicateCount === 1 ? '' : 's'}
-                    <span className="ml-1 font-semibold underline underline-offset-2">Review</span>
+                    {duplicateCount} duplicate{duplicateCount === 1 ? '' : 's'}
                   </button>
                 )}
-                {/* Die Such-Steuer am Fuß-Ende (Mockup: „Meaning search 5"). */}
-                <div className="flex items-center gap-2 ml-auto pl-2">
-                  <label className="flex items-center gap-2 cursor-pointer select-none" title="Searches the meaning of your question, not only the words">
+                {/* Der Papierkorb als Auskunftswort im Fuß (der Kopf trägt nur die
+                    drei Mockup-Werkzeuge): die Zahl der gelöschten Notizen, klickbar. */}
+                <button
+                  onClick={async () => {
+                    setTrashOpen((v) => !v);
+                    try {
+                      const res = await fetch('/api/storage-info');
+                      const data = (await res.json().catch(() => null)) as { trashed?: unknown; error?: unknown } | null;
+                      if (!res.ok) throw new ApiFehler(tuerSatz(data?.error, `HTTP ${res.status}`), res.status);
+                      if (typeof data?.trashed !== 'number') throw new ApiFehler('The count did not arrive in this answer.', res.status);
+                      setTrashCount(data.trashed);
+                      setTrashGrund(null);
+                    } catch (err: unknown) {
+                      setTrashCount(null);
+                      setTrashGrund(absage("Trash — the count did not arrive", err));
+                    }
+                  }}
+                  className="chip hover:!border-[var(--accent)]"
+                  title={trashGrund ?? "Trash — restore deleted notes"}
+                >
+                  <Trash2 className="w-3 h-3" /> Trash{trashCount !== null && trashCount > 0 ? ` ${trashCount}` : ''}
+                </button>
+                {/* Die Such-Steuer (Mockup: „Meaning search 5"): das Wort schaltet die
+                    Bedeutungssuche, die Zahl nennt die Stufe des Treffer-Reglers — der
+                    Regler selbst wohnt im DOM (die Wachen klicken ihn), das Bild der
+                    Zeile ruht. */}
+                <span className="ml-auto" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <label className="cursor-pointer select-none inline-flex items-center gap-1.5" title="Searches the meaning of your question, not only the words">
                     <input
                       type="checkbox"
                       checked={semanticEnabled}
                       onChange={(e) => setSemanticEnabled(e.target.checked)}
                       className="sr-only"
                     />
-                    <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
-                    <span className="fs-1 font-semibold whitespace-nowrap" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
-                      {ansichtLabel("semantic")} search
+                    <span className="fs-1 font-semibold whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
+                      {ansichtLabel("semantic")} search <b style={{ color: 'var(--text-1)' }}>{resultLabel(topK)}</b>
                     </span>
                   </label>
-                  <span className="fs-1" style={{ color: 'var(--text-3)' }}>Results</span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={RESULT_STOPS.length - 1}
-                    step={1}
-                    value={Math.max(0, RESULT_STOPS.indexOf(topK as typeof RESULT_STOPS[number]))}
-                    onChange={(e) => setTopK(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
-                    className="h-7 w-20"
-                    aria-label="Number of results shown"
-                    title="How many results to show. The last step shows everything that matches."
-                  />
-                  <span
-                    className="chip tnum !px-2"
-                    title={topK === 0
-                      ? 'Showing every note that matches — nothing is cut off. The chat still gets only the most relevant ones.'
-                      : `Showing at most ${topK} hits. Slide to the end for all of them.`}
-                  >
-                    {resultLabel(topK)}
+                  <span hidden data-testid="suche-regler-verwahrt">
+                    <input
+                      type="range"
+                      min={0}
+                      max={RESULT_STOPS.length - 1}
+                      step={1}
+                      value={Math.max(0, RESULT_STOPS.indexOf(topK as typeof RESULT_STOPS[number]))}
+                      onChange={(e) => setTopK(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
+                      className="h-7 w-20"
+                      aria-label="Number of results shown"
+                      title="How many results to show. The last step shows everything that matches."
+                    />
                   </span>
-                </div>
+                </span>
               </div>
             </aside>
             {/* Die Detail-Spalte STEHT IMMER (Mockup-Grammatik): die geöffnete Akte füllt
@@ -2326,45 +2380,10 @@ export function Dashboard() {
             )}
           </div>
 
-          {/* Die App-Statuszeile: was das Fenster unten dauerhaft sagt. Der Gehirn-Status
-              (Version, Bestand, Verschlüsselung, Embeddings) wanderte hierher — er ist
-              Dauerinformation, keine Arbeitsinfo — zusammen mit der Verbindung, die vorher
-              die rechte Zelle des Index-Streifens trug. Mail und Linear tragen ihre
-              Zustandszeile unten; eine Fläche, die beim Lesen nie wegscrollt, macht die
-              Zahl glaubwürdig (P202, App-Fenster-Übernahme). */}
-          {/* Die Zeile steht IMMER — auch wenn die Tür nie geantwortet hat (dann mit dem
-              Grund statt der Behauptung, Punkt 4): eine Zustandszeile, die nur bei
-              Gesundheit erscheint, ist keine. Nur die Gehirn-Segmente hängen an der Antwort. */}
-          <div className="flaechen-status" data-testid="gehirn-status">
-            <span className="gruen">
-              {agentActive ? <span className="agent-dot" data-laeuft="true" />
-                : tuerLebt === "antwortete" ? <span className="status-dot" />
-                  : <span className="status-dot status-dot-leise" />}
-              {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync'
-                : tuerLebt === "verweigerte" ? 'No answer from the store' : 'Asking the store'}
-            </span>
-            {gehirn && (
-              <>
-                <span className="strich">·</span>
-                {/* P202, Mockup-Wortlaut: "40 notes, 6 tags" — der Bestand des
-                    Fensters. Die Version wohnt im Systemstatus (Settings), die
-                    Verschlüsselungs-Auskunft im selben Tisch. */}
-                <span className="tnum" title="Notes in the database on this computer — the same count the sidebar shows.">
-                  {groessenZahl(gehirn.count)} {gehirn.count === 1 ? 'note' : 'notes'}, {allTags.length} tags
-                </span>
-                {(gehirn.embedModelle.length > 0 || gehirn.embedTotal > 0) && (
-                  <>
-                    <span className="strich">·</span>
-                    <span className="tnum" title="The search model, and how many of your notes carry its vectors">
-                      Embeddings: {gehirn.embedModelle.map((m) => `${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} pieces ready`).join(' · ')}
-                      {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces ready` : ''}
-                    </span>
-                  </>
-                )}
-              </>
-            )}
-            <span className="rechts">local · private · MCP</span>
-          </div>
+          {/* Die Statuszeile wohnt am Fenster (Slot unter dem Körper, volle
+              Breite, Mockup .statuszeile) — hier steht sie nicht mehr, damit
+              sie beim Lesen nie wegrollt und „local · private“ ein einziges
+              Blatt bleibt (Lehre 32/33). */}
         </div>
 
         <div
@@ -2376,11 +2395,13 @@ export function Dashboard() {
             onSaveToBrainWithMeta={handleSaveToBrainWithMeta}
             isFocusMode={isFocusMode}
             onToggleFocus={() => setIsFocusMode(!isFocusMode)}
+            onCopyContext={copyContextForAI}
+            kontextKopiert={copied}
           />
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden px-2 py-3 md:px-5", currentView === 'graph' ? 'flex' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'graph' ? 'flex' : 'hidden')}
         >
           <div className="flex items-center gap-3 mb-2 shrink-0">
             <div className="fs-3 font-semibold shrink-0" style={{ color: 'var(--text-1)' }}>Graph</div>
@@ -2414,35 +2435,96 @@ export function Dashboard() {
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 px-5 h-full overflow-y-auto", currentView === 'today' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'today' ? 'block' : 'hidden')}
         >
           <TodayView aktiv={currentView === 'today'} onOpenMemory={oeffneNotiz} onGo={(v) => setCurrentView(v)} />
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 px-5 h-full overflow-y-auto", currentView === 'dossier' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'dossier' ? 'block' : 'hidden')}
         >
           <DossierView dossierThema={dossierThema} onOpenMemory={oeffneNotiz} onEditMemory={(id) => { const m = memories.find((x) => x.id === id); if (m) { setEditingMemory(m); setIsEditorOpen(true); } }} />
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 px-5 h-full overflow-y-auto", currentView === 'activity' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'activity' ? 'block' : 'hidden')}
         >
           <ActivityView aktiv={currentView === 'activity'} onOpenMemory={oeffneNotiz} />
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 px-5 h-full overflow-y-auto", currentView === 'team' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'team' ? 'block' : 'hidden')}
         >
           <TeamView aktiv={currentView === 'team'} />
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 p-3 sm:p-5 h-full overflow-y-auto", currentView === 'settings' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'settings' ? 'block' : 'hidden')}
         >
           <Settings />
         </div>
       </main>
+      </FensterStatusAnbieter>
+      </div>
+
+      {/* Der Status-Slot: die Zeile des Mockups (.statuszeile) — volle Breite
+          unter dem Körper, fix am Fenster. Auf Knowledge steht die Gehirn-Zeile,
+          die anderen Flächen melden ihren Inhalt über den Kontext. Die Zeile
+          steht IMMER — auch wenn die Tür nie geantwortet hat (dann mit dem
+          Grund statt der Behauptung, Punkt 4): eine Zustandszeile, die nur bei
+          Gesundheit erscheint, ist keine. */}
+      <div className="fenster-status-slot">
+        <div className="flaechen-status" data-testid="gehirn-status">
+          {currentView === 'memories' ? (
+            <>
+              <span className="gruen">
+                {agentActive ? <span className="agent-dot" data-laeuft="true" />
+                  : tuerLebt === "antwortete" ? <span className="status-dot" />
+                    : <span className="status-dot status-dot-leise" />}
+                {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync'
+                  : tuerLebt === "verweigerte" ? 'No answer from the store' : 'Asking the store'}
+              </span>
+              {gehirn && (
+                <>
+                  <span className="strich">·</span>
+                  {/* P202, Mockup-Wortlaut: "40 notes, 6 tags" — der Bestand des
+                      Fensters. Die Version wohnt im Systemstatus (Settings), die
+                      Verschlüsselungs-Auskunft im selben Tisch. */}
+                  <span className="tnum" title="Notes in the database on this computer — the same count the sidebar shows.">
+                    {groessenZahl(gehirn.count)} {gehirn.count === 1 ? 'note' : 'notes'}, {allTags.length} tags
+                  </span>
+                  {(gehirn.embedModelle.length > 0 || gehirn.embedTotal > 0) && (
+                    <>
+                      <span className="strich">·</span>
+                      <span className="tnum" title="The search model, and how many of your notes carry its vectors">
+                        Embeddings: {gehirn.embedModelle.map((m) => `${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} pieces ready`).join(' · ')}
+                        {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces ready` : ''}
+                      </span>
+                    </>
+                  )}
+                </>
+              )}
+              {/* Mockup-Wortlaut der rechten Zelle: „local · private“ als eigenes
+                  Wort, der MCP-Hinweis mit der echten Zahl der Werkzeuge als
+                  eigenes Glied (Lehre 33). */}
+              <span className="rechts">
+                <span>local · private</span>
+                {gehirn?.mcpTools != null && (
+                  <>
+                    <span className="strich">·</span>
+                    <span>MCP: {gehirn.mcpTools} tools</span>
+                  </>
+                )}
+              </span>
+            </>
+          ) : (
+            <>
+              {flaechenStatus.links}
+              {flaechenStatus.rechts && <span className="rechts">{flaechenStatus.rechts}</span>}
+            </>
+          )}
+        </div>
+      </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} actions={paletteActions} />
 

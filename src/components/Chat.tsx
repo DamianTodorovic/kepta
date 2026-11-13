@@ -2,7 +2,6 @@ import { absage } from "../lib/absage";
 import { ApiFehler, tuerSatz } from "../lib/api";
 import { useState, useRef, useEffect, useMemo, useCallback, FormEvent } from "react";
 import { motion } from "motion/react";
-import { formatDistanceToNow } from "date-fns";
 import { Send, AlertTriangle, Database, Trash2, PanelLeftOpen, Square, Copy, Check, CheckCircle2, Coins, Hash, FileText, Sparkles, ShieldCheck } from "../lib/icons";
 import { istLokaleAdresse } from "../lib/schild";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
@@ -15,7 +14,11 @@ import { shouldLearn, buildExtractPrompt, parseNode, AUTO_LEARN_TIMEOUT_MS, isAu
 import { useToast } from "./ui/Toast";
 import { QUITTUNG_MS } from "../lib/quittung";
 import { grundText } from "../lib/tuergrund";
+import { kurzeZeit } from "../lib/zeit";
 import { spurChip } from "../lib/spuren";
+import { cn } from "../lib/utils";
+import { parseQuelle } from "../lib/quelle";
+import { benutzeFensterStatus } from "./ui/FensterStatus";
 
 /** Extrahiert Rohtext aus ReactMarkdown-Children (für Copy-Buttons). */
 function extractCodeText(node: unknown): string {
@@ -59,6 +62,10 @@ interface ChatProps {
   onSaveToBrainWithMeta?: (payload: { title: string; content: string; tags: string[] }) => void;
   isFocusMode?: boolean;
   onToggleFocus?: () => void;
+  /** Der Prompt des Chats als Text für ein fremdes KI-Fenster (P202: der
+      Kopiergriff wohnt am Chat, nicht am Knowledge-Kopf). */
+  onCopyContext?: () => void;
+  kontextKopiert?: boolean;
 }
 
 // ---------- Pricing pro Provider (pro 1k Tokens, USD) ----------
@@ -101,11 +108,8 @@ const RETRIEVAL_TTL_MS = 30_000;
 const SERVER_DEBOUNCE_MS = 300;
 
 /** Hat eines der drei Beine den Treffer gesehen? Für die Herkunfts-Badges der Quellen. */
-function spurenSichtbar(tracks: NonNullable<ScoredMemory["tracks"]> | undefined): boolean {
-  return !!tracks && (tracks.bm25 !== null || tracks.vektor !== null || tracks.graph !== null);
-}
 
-export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isFocusMode, onToggleFocus }: ChatProps) {
+export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isFocusMode, onToggleFocus, onCopyContext, kontextKopiert }: ChatProps) {
   const toast = useToast();
   const [messages, setMessages] = useState<ExtendedChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -808,6 +812,22 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   // Slider Prozent für Track-Füllung — der Regler lebt im Kontext-Panel (P202),
   // die scaleX-Füllung des alten Bands ist mit ihm gezogen.
 
+  // Die Statuszeile wohnt am Fenster-Slot (volle Breite, Mockup .statuszeile):
+  // „Context 5/5 · ~390 tokens | local · private“.
+  const melde = benutzeFensterStatus();
+  useEffect(() => {
+    melde({
+      links: (
+        <>
+          <span className="gruen">Context {budgetedMemories.length}/{activeMemories.length}</span>
+          <span className="strich">·</span>
+          <span className="tnum">~{contextTokens.toLocaleString('en-GB')} tokens</span>
+        </>
+      ),
+      rechts: 'local · private',
+    });
+  }, [budgetedMemories.length, activeMemories.length, contextTokens, melde]);
+
   return (
     <div className="flex flex-col h-full w-full relative">
       {/* ---------- Kopf (P202, Mockup-Grammatik) ---------- */}
@@ -841,7 +861,17 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             </>
           )}
         </span>
-        <div className="kopf-handlungen">
+          <div className="kopf-handlungen">
+            {/* Der Kontext-Kopiergriff (P202): der Prompt des Chats als Text für
+                ein fremdes KI-Fenster — er gehört hierher, nicht in den
+                Knowledge-Listen-Kopf (Mockup: drei Werkzeuge dort). */}
+            <button
+              onClick={onCopyContext}
+              className="btn-ghost treff p-1.5 rounded-lg"
+              title={`${activeMemories.length} notes in the chat context — copy as a prompt`}
+            >
+              {kontextKopiert ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
+            </button>
           {connection.state === "connected" ? (
             <button
               onClick={() => { disconnectAI(); stossVerbindungAn((n) => n + 1); }}
@@ -921,31 +951,15 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       <div className="flex-1 flex min-h-0">
       <div className="flex-1 flex flex-col min-w-0">
 
-      {/* ---------- Messages ---------- */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
+      {/* ---------- Messages (P202, Mockup .nachricht) ----------
+          Der Leerauftritt ist die erste K3PTA-Blase (kein Hero, keine Pills) —
+          die App-Fenster-Grammatik beginnt im Fluss. */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-5 chat-fluss min-h-0">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 1px 0 var(--edge-light)' }}>
-              <KeptaMark size={34} />
-            </div>
-            <div className="hud-label mb-2">No questions yet</div>
-            <p className="fs-3 max-w-sm lh-prosa" style={{ color: "var(--text-2)" }}>
-              Ask something about your notes — {budgetedMemories.length} of {activeMemories.length} fit the budget ({tokenBudget.toLocaleString("en-GB")} tokens).
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2 justify-center max-w-md">
-              {["Summarise", "Find contradictions", "Next steps", "As a table"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setInput(s)}
-                  // Der Knopf sendet nichts — er tippt die Frage in die Zeile. Ohne dieses Wort
-                  // liest sich die Leiste wie vier fertige Befehle, und genau das haben beide
-                  // Erstleser gefragt ("what happens if I click this?").
-                  title={`Puts “${s}” in the box below — nothing is sent until you press Enter`}
-                  className="suggestion-pill cursor-pointer"
-                >
-                  {s}
-                </button>
-              ))}
+          <div className="nachricht">
+            <div className="wer"><span className="zeichen k" aria-hidden>K</span>K3PTA</div>
+            <div className="blasen">
+              No questions yet. Ask something about your notes — I read only the notes you connected.
             </div>
           </div>
         )}
@@ -956,13 +970,17 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className={`flex ${msg.role === "user" ? "justify-end" : ""}`}
+            className={cn("nachricht", msg.role === "user" && "ich")}
           >
             {msg.role === "user" ? (
-              <div className="msg-user whitespace-pre-wrap break-words">{msg.content}</div>
+              <>
+                <div className="wer" style={{ justifyContent: 'flex-end' }}>You</div>
+                <div className="blasen whitespace-pre-wrap break-words">{msg.content}</div>
+              </>
             ) : (
-              <div className="msg-ai w-full">
-                <div className="chat-prose max-w-none break-words" style={{ color: "var(--text-1)" }}>
+              <div className="w-full">
+                <div className="wer"><span className="zeichen k" aria-hidden>K</span>K3PTA</div>
+                <div className="blasen chat-prose max-w-none break-words" style={{ color: "var(--text-1)" }}>
                   <ReactMarkdown
                     urlTransform={antwortUrlPfad}
                     components={{
@@ -1055,39 +1073,41 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                   )}
                 </div>
 
-                {/* Quellen-Chips + Metadaten nur für Assistant */}
+                {/* Quellen als Pillen (Mockup .quellen-zeile); die Spuren-Auskunft
+                    (BM25/Vektor/Graph) wohnt im Schwebetext der Pille. Die Arbeits-
+                    Zeilen (Metadaten, Copy/Save) stehen in der Ruhe und erscheinen
+                    unter dem Zeiger (Hover-Gatter) — der Fluss trägt keine Zeilen, die
+                    das Mockup nicht trägt. */}
                 {msg.role === "assistant" && (
                 <div className="mt-3 space-y-2">
                   {msg.sources && msg.sources.length > 0 && (
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <span className="hud-label fs-1 flex items-center gap-1">
-                        <Hash className="w-3 h-3" /> Sources:
-                      </span>
+                    <div className="quellen-zeile">
                       {msg.sources.slice(0, 6).map((s) => (
                         <span
                           key={s.id}
-                          className="inline-flex flex-col items-start px-2 py-1 rounded-lg fs-1 font-semibold border max-w-[180px]"
-                          style={{ background: "var(--accent-soft)", borderColor: "var(--border-subtle)", color: "var(--text-1)" }}
+                          className="quelle"
                           title={s.id}
                         >
-                          <span className="inline-flex items-center gap-1 max-w-full">
-                            <FileText className="w-3 h-3 shrink-0" style={{ color: "var(--accent)" }} />
-                            <span className="truncate">{s.title.length > 18 ? s.title.slice(0, 18) + "…" : s.title}</span>
-                          </span>
-                          {/* Herkunfts-Badge (Paket 3): welches Bein (BM25/Vektor/Graph) den
-                              Knoten wo im Ranking sah — dieselbe Wahrheit wie auf der Karte. */}
-                          {spurenSichtbar(s.tracks) && (
-                            <span className="flex flex-wrap gap-1 font-mono fs-1 font-normal lh-marke">
-                              {s.tracks!.bm25 !== null && <span style={{ color: "var(--accent)" }}>{spurChip("bm25")} #{s.tracks!.bm25 + 1}</span>}
-                              {s.tracks!.vektor !== null && <span style={{ color: "var(--accent)" }}>{spurChip("vektor")} #{s.tracks!.vektor + 1}</span>}
-                              {s.tracks!.graph !== null && <span style={{ color: "var(--accent)" }}>{spurChip("graph")} #{s.tracks!.graph + 1}</span>}
-                            </span>
-                          )}
+                          {s.title}
                         </span>
                       ))}
                       {msg.sources.length > 6 && (
-                        <span className="fs-1 hud-label">+{msg.sources.length - 6}</span>
+                        <span className="fs-1" style={{ color: "var(--text-3)" }}>+{msg.sources.length - 6}</span>
                       )}
+                    </div>
+                  )}
+                  {/* Die Spur-Herkunft (Paket 2/3): welches Bein (BM25/Vektor/Graph)
+                      jeden Treffer wo sah — in der Ruhe der Werk-Zone, sichtbar,
+                      sobald der Zeiger auf der Antwort steht. */}
+                  {msg.sources && msg.sources.some((s) => s.tracks && (s.tracks.bm25 !== null || s.tracks.vektor !== null || s.tracks.graph !== null)) && (
+                    <div className="chat-werk flex flex-wrap items-center gap-2 fs-1" data-testid="chat-spuren">
+                      {msg.sources.slice(0, 6).flatMap((s) => {
+                        const glieder: React.ReactNode[] = [];
+                        if (s.tracks?.bm25 !== null && s.tracks?.bm25 !== undefined) glieder.push(<span key={`${s.id}-b`} style={{ color: "var(--accent)" }}>{spurChip("bm25")} #{s.tracks.bm25 + 1}</span>);
+                        if (s.tracks?.vektor !== null && s.tracks?.vektor !== undefined) glieder.push(<span key={`${s.id}-v`} style={{ color: "var(--accent)" }}>{spurChip("vektor")} #{s.tracks.vektor + 1}</span>);
+                        if (s.tracks?.graph !== null && s.tracks?.graph !== undefined) glieder.push(<span key={`${s.id}-g`} style={{ color: "var(--accent)" }}>{spurChip("graph")} #{s.tracks.graph + 1}</span>);
+                        return glieder;
+                      })}
                     </div>
                   )}
                   {msg.shield && (
@@ -1102,13 +1122,13 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
                       </span>
                     </div>
                   )}
-                  <div className="flex flex-wrap items-center gap-2 fs-1 font-mono" style={{ color: "var(--text-3)" }}>
+                  <div className="chat-werk flex flex-wrap items-center gap-2 fs-1 font-mono" style={{ color: "var(--text-3)" }}>
                     {typeof msg.inputTokens === "number" && <span className="inline-flex items-center gap-1"><Hash className="w-3 h-3" /> In {msg.inputTokens}</span>}
                     {typeof msg.outputTokens === "number" && <span className="inline-flex items-center gap-1">→ {msg.outputTokens} tokens</span>}
                     {msg.costLabel && <span className="inline-flex items-center gap-1"><Coins className="w-3 h-3" /> {msg.costLabel}</span>}
                     <span>{new Date(msg.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
                   </div>
-                  <div className="flex justify-end gap-2 pt-1">
+                  <div className="chat-werk flex justify-end gap-2 pt-1">
                     <button
                       onClick={() => handleCopy(msg.content, msg.id)}
                       className="flex items-center gap-2 fs-1 font-semibold px-2 py-1 rounded hud-inset tap-reihum hover:!border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
@@ -1142,13 +1162,16 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         ))}
 
         {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="msg-ai flex items-center gap-2 fs-4 lh-lesbar" style={{ color: "var(--text-2)" }}>
-            <span className="flex items-center gap-1">
-              <span className="typing-dot" />
-              <span className="typing-dot" />
-              <span className="typing-dot" />
-            </span>
-            Thinking…
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="nachricht">
+            <div className="wer"><span className="zeichen k" aria-hidden>K</span>K3PTA</div>
+            <div className="blasen flex items-center gap-2" style={{ color: "var(--text-2)" }}>
+              <span className="flex items-center gap-1">
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+              </span>
+              Thinking…
+            </div>
           </motion.div>
         )}
 
@@ -1224,18 +1247,23 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       <div className="chat-panel">
         <div className="chat-panel-kopf">
           <span>Context</span>
-          <span className="chat-panel-zahl tnum"># {budgetedMemories.length}/{activeMemories.length}</span>
+          {/* Mockup-Grammatik der Kopf-Zahl: „# 5/5 · $0.0003" — die Zahl und der
+              Preis der laufenden Frage an einem Ort. */}
+          <span className="chat-panel-zahl tnum"># {budgetedMemories.length}/{activeMemories.length}{estimatedCostNow ? ` · ${estimatedCostNow}` : ""}</span>
         </div>
         <div className="chat-panel-zeilen">
-          {budgetedMemories.map((m) => (
-            <div key={m.id} className="chat-panel-zeile" title={`${m.title} — ${m.id}`}>
-              <span className="punkt" style={m.type ? { background: `var(--type-${m.type})` } : undefined} />
-              <span className="mitte">
-                <span className="titel">{m.title || "Untitled"}</span>
-                <span className="alter tnum">{formatDistanceToNow(new Date(m.updatedAt), { addSuffix: true })}</span>
-              </span>
-            </div>
-          ))}
+          {budgetedMemories.map((m) => {
+            const herkunft = parseQuelle(m);
+            return (
+              <div key={m.id} className="chat-panel-zeile" title={`${m.title} — ${m.id}`}>
+                <span className="punkt" style={m.type ? { background: `var(--type-${m.type})` } : undefined} />
+                <span className="mitte">
+                  <span className="titel">{m.title || "Untitled"}</span>
+                  <span className="alter tnum">{[herkunft?.name, kurzeZeit(m.updatedAt)].filter(Boolean).join(" · ")}</span>
+                </span>
+              </div>
+            );
+          })}
           {budgetedMemories.length === 0 && (
             <p className="chat-panel-leer">No notes in the prompt yet — raise the budget or save notes.</p>
           )}
@@ -1254,7 +1282,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
               [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-knopf [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
             aria-label="Token Budget"
           />
-          <div className="zeile" style={{ marginTop: 6 }}><span>Cost estimate</span><span className="wert mono" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>{estimatedCostNow}</span></div>
+          <div className="zeile" hidden data-testid="chat-cost-zeile"><span>Cost estimate</span><span className="wert mono" style={{ color: pricing.input === 0 ? "var(--ok)" : "var(--text-1)" }}>{estimatedCostNow}</span></div>
           <div className="zeile"><span>In</span><span className="wert mono tnum">~{totalInputTokensEstimate.toLocaleString("en-GB")} tokens</span></div>
           <div className="zeile"><span>Out</span><span className="wert mono tnum">~{liveOutputTokens || "—"}</span></div>
         </div>

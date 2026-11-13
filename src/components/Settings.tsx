@@ -9,6 +9,8 @@ import { AUTO_LEARN_TIMEOUT_MS } from '../lib/autolearn';
 import { QUITTUNG_MS } from '../lib/quittung';
 import { refreshMemories } from '../lib/store';
 import { SystemStatus } from './SystemStatus';
+import { APP_VERSION } from '../core/version';
+import { benutzeFensterStatus } from './ui/FensterStatus';
 import { TYP_BESCHREIBUNG } from '../lib/graphHierarchy';
 import { TYP_ROLLEN, leseTypFarben, schreibeTypFarbe } from '../lib/typFarben';
 import PraxisSync from './PraxisSync';
@@ -201,6 +203,22 @@ function TypFarbenReihe() {
 
 export function Settings() {
   const [activeTab, setActiveTab] = useState<TabId>(tabLesen);
+
+  // Die Statuszeile wohnt am Fenster-Slot (Mockup .statuszeile):
+  // „Version <x> · AI & data | local · private“.
+  const melde = benutzeFensterStatus();
+  useEffect(() => {
+    melde({
+      links: (
+        <>
+          <span className="gruen">Version {APP_VERSION}</span>
+          <span className="strich">·</span>
+          <span>{activeTab === 'system' ? 'AI & data' : activeTab === 'mcp' ? 'MCP / API' : 'Device Sync'}</span>
+        </>
+      ),
+      rechts: 'local · private',
+    });
+  }, [activeTab, melde]);
 
   // Punkt 4: der Tab merkt sich, wo die Hand war — `useState` allein verlor ihn beim naechsten
   // Oeffnen, und die Seite lag wieder auf 'system'.
@@ -1610,11 +1628,9 @@ curl -X POST ${API_BASE}/api/memory \\
           </div>
         )}
       </div>
-      {/* Die Statuszeile der Fläche (P202, Mockup-Grammatik): die laufende Version
-          und der gewählte Abschnitt — rechts das Versprechen des Ortes. */}
-      <div className="flaechen-status">
-        <span className="gruen">{activeTab === 'system' ? 'AI & data' : activeTab === 'mcp' ? 'MCP / API' : 'Device Sync'}</span>
-      </div>
+      {/* Die Statuszeile wohnt am Fenster-Slot (volle Breite, Mockup .statuszeile):
+          „Version 3.2.213 · AI & data | local · private“ — die Fläche meldet sie
+          über den Kontext; hier steht sie nicht mehr. */}
     </div>
   );
 }

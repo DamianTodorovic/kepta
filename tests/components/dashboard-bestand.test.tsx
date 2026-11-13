@@ -169,8 +169,11 @@ describe("Bestand statt Seitenlänge: die Fläche nennt, was die Tür sagt", () 
       if (!knopf) break;
       await akt.click(knopf);
     }
-    const zeile = [...container.querySelectorAll("div")].map((d) => (d.textContent ?? "").trim()).filter((t) => /^All\b/.test(t)).pop();
+    // P202: die Grenz-Zeile trägt ihre Marke — der Text-Heuristik-Pop über die
+    // ganze Fläche traf andere „All"-Zeilen (Graph-Blende, Leiste).
+    const zeile = container.querySelector('[data-testid="blatt-grenze"]')?.textContent?.trim();
     expect(zeile, "die Zeilengrenze erscheint nicht — Fall greift nicht").toBeTruthy();
+    expect(zeile, "die Grenz-Zeile steht").not.toBe("");
     expect(zeile).toMatch(/14,702 notes saved/);
     expect(zeile, 'ein „All 100 notes shown" über einer Tür mit 14.702').not.toMatch(/All 100 notes shown/);
   });
