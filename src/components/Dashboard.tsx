@@ -1613,6 +1613,12 @@ export function Dashboard() {
         toggleFocusMode={() => setIsFocusMode(!isFocusMode)}
         showSetup={(() => { try { const p = loadProfile(); return !p?.hasCompletedOnboarding; } catch { return false; } })()}
         onOpenSetup={() => setWizardOpen(true)}
+        // P202, Mockup-Treue: das Suchfeld steht oben in der Navigation (wie Mail),
+        // nicht in einer Werkzeugleiste über der Fläche.
+        suchWert={searchQuery}
+        anSuchAenderung={setSearchQuery}
+        suchRef={searchInputRef}
+        anPalette={() => setPaletteOpen(true)}
       />
 
       {/* P195: `clip` statt `hidden` — ein overflow-hidden-Feld bleibt IMMER
@@ -1650,93 +1656,10 @@ export function Dashboard() {
         <div
           className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 rounded-2xl overflow-hidden", currentView === 'memories' ? 'flex' : 'hidden')}
         >
-          <header className="h-14 px-5 flex items-center gap-3 shrink-0 border-gradient-b">
-            {isFocusMode && (
-              <button
-                onClick={() => setIsFocusMode(false)}
-                className="btn-ghost p-2 rounded-lg"
-                aria-label="Show sidebar"
-              >
-                <PanelLeftOpen className="w-4.5 h-4.5" />
-              </button>
-            )}
-            <div className="flex items-center gap-2 shrink-0" style={{ color: 'var(--text-1)' }}>
-              <KeptaMark size={22} />
-              <span className="hidden md:block font-semibold fs-3 tracking-[-0.02em]">K3PTA</span>
-            </div>
-            <div className="flex-1 max-w-xl relative group">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: 'var(--text-3)' }} />
-              {/* D1-15, nachgemessen: „Search… (⌘K for commands)" brauchte bei
-                  390 px 188,6 px in 106 px Raum und schnitt bei „…(⌘K foi" hart
-                  ab — ein Eingabefeld kennt keine Ellipse von selbst. Der
-                  ⌘-Hinweis steht schon auf dem eigenen Knopf daneben; eine
-                  Fläche, die beim Schmalwerden 82 px verliert, trägt keine
-                  zweite Behauptung. */}
-              <input
-                ref={searchInputRef}
-                type="text"
-                aria-label="Search your memory"
-                placeholder={schmal ? "Search" : "Search your memory"}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen(true); } }}
-                className="hud-input w-full min-w-0 truncate pl-9 pr-4 py-2 rounded-lg fs-4 lh-lesbar"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={async () => {
-                  setTrashOpen((v) => !v);
-                  try {
-                    const res = await fetch('/api/storage-info');
-                    // P64: Status zuerst, Koerper verzeihend gelesen, und der Grund durch den
-                    // Helfer -- die eigne Zahl der Tuer darf auf dem Knopf stehen.
-                    const data = (await res.json().catch(() => null)) as { trashed?: unknown; error?: unknown } | null;
-                    if (!res.ok) throw new ApiFehler(tuerSatz(data?.error, `HTTP ${res.status}`), res.status);
-                    if (typeof data?.trashed !== 'number') throw new ApiFehler('The count did not arrive in this answer.', res.status);
-                    setTrashCount(data.trashed);
-                    setTrashGrund(null);
-                  } catch (err: unknown) {
-                    // "nicht gelesen" ist kein leerer Papierkorb: der Zaehler geht auf null,
-                    // und ein alter Wert steht nicht als aktueller da.
-                    setTrashCount(null);
-                    setTrashGrund(absage("Trash — the count did not arrive", err));
-                  }
-                }}
-                className="btn-ghost treff hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg fs-2 lh-dicht font-semibold"
-                title={trashGrund ?? "Trash — restore deleted notes"}
-              >
-                <Trash2 className="w-4 h-4" />
-                {trashCount !== null && trashCount > 0 && <span className="tnum">{trashCount}</span>}
-              </button>
-              <button
-                onClick={() => setPaletteOpen(true)}
-                className="btn-ghost hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg fs-2 lh-dicht font-semibold"
-                title="Command palette"
-              >
-                <ScanSearch className="w-4 h-4" /> <span className="kbd !py-px">⌘K</span>
-              </button>
-              <button
-                onClick={copyContextForAI}
-                className="btn-ghost flex items-center gap-2 px-3 py-2 rounded-lg font-semibold fs-2 lh-dicht"
-                title={`${chatMemories.length} notes in the chat context — copy as a prompt`}
-              >
-                {copied ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
-                <span className="hidden sm:inline">{copied ? 'Copied' : `Context (${chatMemories.length})`}</span>
-              </button>
-              <button
-                onClick={() => {
-                  setEditingMemory(null);
-                  setIsEditorOpen(true);
-                }}
-                className="btn-primary flex items-center gap-2 px-3 py-2 rounded-lg font-semibold fs-2 lh-dicht"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">New</span>
-              </button>
-            </div>
-          </header>
+          {/* P202, Mockup-Treue (k3pta-app-fenster): der App-Kopf über der Liste flog.
+              Die Suche steht jetzt oben in der Navigation (wie Mail), die Werkzeuge
+              sitzen im Listen-Kopf, die Zustands-Chips im Listen-Fuß. Ein Fenster
+              trägt keinen Website-Header über seinen Spalten. */}
 
           {/* Papierkorb */}
           {trashOpen && (
@@ -1778,221 +1701,113 @@ export function Dashboard() {
             </div>
           )}
 
-          {/* Werkzeugleiste: Suche-Modus, Kontextgröße, Quellen-Status */}
-          <div className="px-5 py-3 flex flex-wrap items-center gap-x-6 gap-y-2 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-            <label className="flex items-center gap-2 cursor-pointer select-none" title="Searches the meaning of your question, not only the words">
-              <input
-                type="checkbox"
-                checked={semanticEnabled}
-                onChange={(e) => setSemanticEnabled(e.target.checked)}
-                className="sr-only"
-              />
-              <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
-              <span className="fs-3 font-semibold" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
-                {ansichtLabel("semantic")} search
-              </span>
-            </label>
+          {/* P202, Mockup-Treue: die breite Werkzeugleiste flog. Die Suche-Modus-Steuer
+              und der Results-Regler stehen als schlanke Zeile in der Listen-Spalte
+              (.listen-steuer), die Import-Ikone im Listen-Kopf, die Zustands-Chips
+              (Cache, Treffer, Inbox, Duplicates, In-sync) im Listen-Fuß — genau die
+              Grammatik, die Mail und Linear für eine Liste tragen. */}
 
-            <div className="flex items-center gap-2">
-              <span className="fs-3" style={{ color: 'var(--text-2)' }}>Results</span>
-              <input
-                type="range"
-                min={0}
-                max={RESULT_STOPS.length - 1}
-                step={1}
-                value={Math.max(0, RESULT_STOPS.indexOf(topK as typeof RESULT_STOPS[number]))}
-                onChange={(e) => setTopK(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
-                className="h-7 w-24"
-                aria-label="Number of results shown"
-                title="How many results to show. The last step shows everything that matches."
-              />
-              <span
-                className="chip tnum !px-2"
-                title={topK === 0
-                  ? 'Showing every note that matches — nothing is cut off. The chat still gets only the most relevant ones.'
-                  : `Showing at most ${topK} hits. Slide to the end for all of them.`}
-              >
-                {resultLabel(topK)}
-              </span>
-            </div>
+          {/* Quellen: Datei-Import + URL-Clipper — das Band steht im DOM HINTER der
+              Drei-Spalten-Zeile (Punkt-4-Griff: der erste „Scan"-Knopf im Baum ist
+              der Inbox-Scan im Listen-Fuß) und rückt visuell via order vor die
+              Spalten. Aufgeklappt liegt es über der Fensterbreite, wie bisher. */}
 
-            <div className="ml-auto flex items-center gap-2 fs-2 lh-dicht">
-              {/* Das Import-Werkzeug im Regal (P202): das Band öffnet auf Wunsch —
-                  die Liste startet ohne Tisch darüber (Mockup-Grammatik). */}
-              <button
-                onClick={() => setImportBandOffen((v) => !v)}
-                className="btn-ghost treff p-2 rounded-lg"
-                title="Import"
-                aria-label="Import"
-              >
-                <UploadCloud className="w-4 h-4" />
-              </button>
-              {/* Such-Cache-Status: der Kern baut den Suchindex beim ersten
-                  Zugriff einmal auf und patcht ihn danach nur noch — die App
-                  misst die Antwortzeit und zeigt, wenn das Gehirn warm ist. */}
-              {gehirnWaermt && (
-                <span className="chip" title="Built once — every saved note only patches it afterwards">
-                  <span className="agent-dot" data-laeuft="true" /> Warming the search index…
-                </span>
-              )}
-              {gehirnWarm && !gehirnWaermt && (
-                <span className="chip tnum" title="Ready — each note only patches it; the time is your last search here">
-                  <span className="status-dot" />
-                  Search index warm — answer in {suchDauerMs ?? 0} ms
-                </span>
-              )}
-              {/* Die Zahl muss zu den gezeigten Karten passen: hier stand vorher das
-                  LOKALE Ranking (150 Treffer), waehrend die Liste daneben die 261
-                  Treffer der Server-Engine zeigte. Zwei Zahlen fuer dieselbe Sache. */}
-              {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && effectiveScored && effectiveScored.length > 0 && (
-                <span
-                  className="chip tnum"
-                  title={`${effectiveScored.length} hits · similarity of the best match ${Math.round(effectiveScored[0].cosineScore * 100)} %`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--ok)' }} />
-                  {/* Punkt 4: die Zahl im Streifen ist, was die Tuer **geschickt** hat. Passt
-                      mehr, als die Bestellung hergab, sagt der Streifen beide Zahlen — sonst
-                      steht "16 hits" ueber einer Liste, deren Rueckweg "5 of 30 matches" heisst.
-                      Gemessen 31.10. 11:51 im echten Fenster an dreissig gesaeten Notizen. */}
-                  <span>{serverTotal !== null && serverTotal > effectiveScored.length
-                    ? `${effectiveScored.length} of ${serverTotal} ${serverTotal === 1 ? 'hit' : 'hits'}`
-                    : `${effectiveScored.length} ${effectiveScored.length === 1 ? 'hit' : 'hits'}`}</span>
-                  {/* Nicht der Fusionswert: der ist ein RRF-Rohwert (rund 0,02) und
-                      ergibt als Prozentzahl "best 2 %" — hier steht die echte
-                      Vektor-Aehnlichkeit, oder gar nichts, wenn ohne Vektoren gesucht wird. */}
-                  {effectiveScored[0].cosineScore > 0 && (
-                    <span style={{ color: 'var(--text-3)' }}>best {Math.round(effectiveScored[0].cosineScore * 100)} %</span>
-                  )}
-                </span>
-              )}
-              {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && effectiveScored && effectiveScored.length === 0 && (
-                <span className="chip" style={{ color: 'var(--warn)' }}>
-                  <AlertCircle className="w-3 h-3" /> No matches
-                </span>
-              )}
-              {!semanticEnabled && debouncedSearchQuery.trim() && (
-                <span className="chip tnum">{displayedMemories.length} {displayedMemories.length === 1 ? 'hit' : 'hits'}</span>
-              )}
-
-              <span
-                className="chip"
-                title={inbox?.inboxDir ? `Inbox folder: ${inbox.inboxDir}` : 'Watch the inbox folder'}
-              >
-                <UploadCloud className="w-3 h-3" style={{ color: inbox?.watching ? 'var(--ok)' : 'var(--text-3)' }} />
-                {inboxGrund === "verweigerte" ? "No answer from the inbox" : inbox ? `${inbox.files.length} in Inbox` : 'Inbox…'}
-                <button
-                  onClick={handleInboxScan}
-                  disabled={inboxScanBusy}
-                  className="ml-1 -mr-1 min-h-6 px-2 inline-flex items-center rounded fs-1 font-semibold hover:opacity-80 disabled:opacity-40"
-                  style={{ color: 'var(--accent)' }}
-                  title="Scan the inbox now and import"
-                >
-                  {inboxScanBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Scan'}
-                </button>
-              </span>
-
-              {duplicateGroups.length === 0 ? (
-                <span className="chip hidden lg:inline-flex" title="Nothing to do — the knowledge base has no obvious duplicates">
-                  <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--ok)' }} /> No duplicates
-                </span>
-              ) : (
-                <button
-                  onClick={() => setDuplicatesOpen(true)}
-                  className="chip"
-                  style={{ color: 'var(--warn)', background: 'var(--warn-soft)', borderColor: 'transparent', cursor: 'pointer' }}
-                  title="Review every duplicate side by side and remove the copies you do not want"
-                >
-                  <AlertCircle className="w-3 h-3" /> {duplicateCount} duplicate{duplicateCount === 1 ? '' : 's'}
-                  <span className="ml-1 font-semibold underline underline-offset-2">Review</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Quellen: Datei-Import + URL-Clipper — eine Fläche, eine Geste.
-              P202: das Band ist EINGEKLAPPT (data-zu) — der Listen-Kopf trägt das
-              Werkzeug, die Liste startet ohne Tisch darüber (Mockup-Grammatik).
-              Das Band bleibt gerendert: die Wege (Choose/Drop/URL) arbeiten auch
-              aus dem eingeklappten Zustand. */}
-          <div className="import-huelle px-5 py-3 shrink-0" data-zu={!importBandOffen} style={{ borderBottom: importBandOffen ? '1px solid var(--border-subtle)' : 'none' }}>
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={onDrop}
-              className="import-band"
-              data-drag={dragOver}
-            >
-              <div className="flex-1 flex items-center gap-3 px-4 py-3">
-                {importing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: "var(--accent)" }} /> : <UploadCloud className="w-4 h-4 shrink-0" style={{ color: dragOver ? "var(--accent)" : "var(--text-3)" }} />}
-                <div className="flex-1 min-w-0">
-                  <div className="fs-3 font-semibold truncate" style={{ color: "var(--text-1)" }}>
-                    {importing ? "Importing…" : dragOver ? "Drop to import" : "Drag files here"}
-                  </div>
-                  {/* Die Formate auf eigener Zeile: in einer Reihe mit dem Satz
-                      abgeschnitten, gemessen +137 px bei 1 024 px und +130 px bei
-                      820 px Fensterbreite — ein `sm:inline` misst die Breite des
-                      Fensters, die Zeile kriegt die Breite der Fläche. */}
-                  <div className="fs-1 tnum" style={{ color: "var(--text-2)" }}>
-                    PDF · MD · TXT · JSON
-                  </div>
-                  {importMsg && <div className="fs-1 mt-1 flex items-center gap-1" style={{ color: "var(--ok)" }}><CheckCircle2 className="w-3 h-3" />{importMsg}</div>}
-                  {importErr && <div className="fs-1 mt-1 flex items-center gap-1" style={{ color: "var(--danger)" }}><AlertCircle className="w-3 h-3" />{importErr}</div>}
-                </div>
-                <label className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold cursor-pointer shrink-0">
-                  Choose
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept=".pdf,.md,.txt,.json,text/markdown,text/plain,application/json,application/pdf"
-                    className="hidden"
-                    onChange={(e) => { if (e.target.files?.length) processFiles(e.target.files); e.target.value = ""; }}
-                  />
-                </label>
-              </div>
-              <div className="import-divider hidden md:block" />
-              <div className="hidden lg:flex items-center px-4 py-3 shrink-0">
-                <button
-                  onClick={() => setScanOpen(true)}
-                  className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold flex items-center gap-2"
-                  title="Scan this computer — the preview shows what would be imported before anything is read"
-                >
-                  <HardDriveDownload className="w-3.5 h-3.5" /> Scan this computer
-                </button>
-              </div>
-              <div className="import-divider hidden lg:block" />
-              <div className="flex-1 hidden md:flex items-center gap-3 px-4 py-3">
-                <Globe className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />
-                <input
-                  ref={clipInputRef}
-                  value={clipUrl}
-                  onChange={(e) => setClipUrl(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleClip(); }}
-                  aria-label="Paste a URL to import"
-                  placeholder="Paste a URL…"
-                  className="flex-1 min-w-0 bg-transparent fs-4 lh-lesbar outline-none"
-                  style={{ color: "var(--text-1)" }}
-                />
-                <button
-                  onClick={handleClip}
-                  disabled={clipping || !clipUrl.trim()}
-                  className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold shrink-0 disabled:opacity-40"
-                >
-                  {clipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Import'}
-                </button>
-              </div>
-            </div>
-            {(clipErr || clipOk) && (
-              <div className="fs-1 flex items-center gap-2 mt-2" style={{ color: clipErr ? "var(--danger)" : "var(--ok)" }}>
-                {clipErr ? <AlertCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
-                {clipErr || clipOk}
-              </div>
-            )}
-          </div>
-
+          {/* P202, Mockup-Treue (k3pta-app-fenster): die STÄNDIGE Drei-Spalten-Architektur —
+              die Liste als schmale Spalte mit eigenem Kopf und Fuß, die Detail-Spalte
+              rechts STEHT IMMER (auch ohne gewählte Notiz: dann zeigt sie ihren leeren
+              Zustand). Die frühere max-width-Komposition flog — das Fenster hat Spalten,
+              keinen zentrierten Fließtext. */}
           <div className="flex-1 flex min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 py-4">
-            <div className="max-w-6xl mx-auto h-full flex flex-col">
+            <aside className="listen-spalte">
+              <div className="listen-kopf">
+                {isFocusMode && (
+                  <button
+                    onClick={() => setIsFocusMode(false)}
+                    className="btn-ghost p-1.5 rounded-lg shrink-0"
+                    aria-label="Show sidebar"
+                  >
+                    <PanelLeftOpen className="w-4 h-4" />
+                  </button>
+                )}
+                <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>Knowledge</h2>
+                <span className="listen-zahl fs-1 tnum">{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'notes'}</span>
+                {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
+                  serverTotal !== null && serverTotal > displayedMemories.length ? (
+                    <button
+                      onClick={() => setTopK(0)}
+                      className="chip !py-px"
+                      style={{ color: 'var(--warn)', cursor: 'pointer' }}
+                      title="More notes match this topic than are shown — click to show all of them"
+                    >
+                      {displayedMemories.length} of {serverTotal} matches · show all
+                    </button>
+                  ) : (
+                    <span className="chip !py-px">{topK === 0 ? 'All matches' : `Top ${topK}`}</span>
+                  )
+                )}
+                <div className="kopf-handlungen">
+                  {/* Das Import-Werkzeug im Listen-Kopf (P202, Mockup-Grammatik): das Band
+                      öffnet auf Wunsch — die Liste startet ohne Tisch darüber. */}
+                  <button
+                    onClick={() => setImportBandOffen((v) => !v)}
+                    className="btn-ghost treff p-1.5 rounded-lg"
+                    title="Import"
+                    aria-label="Import"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setTrashOpen((v) => !v);
+                      try {
+                        const res = await fetch('/api/storage-info');
+                        // P64: Status zuerst, Koerper verzeihend gelesen, und der Grund durch den
+                        // Helfer -- die eigne Zahl der Tuer darf auf dem Knopf stehen.
+                        const data = (await res.json().catch(() => null)) as { trashed?: unknown; error?: unknown } | null;
+                        if (!res.ok) throw new ApiFehler(tuerSatz(data?.error, `HTTP ${res.status}`), res.status);
+                        if (typeof data?.trashed !== 'number') throw new ApiFehler('The count did not arrive in this answer.', res.status);
+                        setTrashCount(data.trashed);
+                        setTrashGrund(null);
+                      } catch (err: unknown) {
+                        // "nicht gelesen" ist kein leerer Papierkorb: der Zaehler geht auf null,
+                        // und ein alter Wert steht nicht als aktueller da.
+                        setTrashCount(null);
+                        setTrashGrund(absage("Trash — the count did not arrive", err));
+                      }
+                    }}
+                    className="btn-ghost treff p-1.5 rounded-lg"
+                    title={trashGrund ?? "Trash — restore deleted notes"}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {trashCount !== null && trashCount > 0 && <span className="tnum">{trashCount}</span>}
+                  </button>
+                  <button
+                    onClick={() => setPaletteOpen(true)}
+                    className="btn-ghost p-1.5 rounded-lg"
+                    title="Command palette"
+                  >
+                    <ScanSearch className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={copyContextForAI}
+                    className="btn-ghost p-1.5 rounded-lg"
+                    title={`${chatMemories.length} notes in the chat context — copy as a prompt`}
+                  >
+                    {copied ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--ok)' }} /> : <Copy className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingMemory(null);
+                      setIsEditorOpen(true);
+                    }}
+                    className="btn-primary p-1.5 rounded-lg"
+                    aria-label="New"
+                    title="New note"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
               {/* P202, Mockup-Grammatik: kein Gruß-Hero über der Liste — das Fenster
                   zeigt sofort die Akten (der Gruß war die Website-Signatur). */}
 
@@ -2074,41 +1889,50 @@ export function Dashboard() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between mb-3 shrink-0">
-                <div className="flex items-center gap-3 fs-2 tnum" style={{ color: 'var(--text-3)' }}>
-                  <h2 className="fs-5 font-semibold" style={{ color: 'var(--text-1)', margin: 0 }}>Knowledge</h2>
-                  <span>{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'notes'}</span>
-                  {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
-                    serverTotal !== null && serverTotal > displayedMemories.length ? (
-                      <button
-                        onClick={() => setTopK(0)}
-                        className="chip !py-px"
-                        style={{ color: 'var(--warn)', cursor: 'pointer' }}
-                        title="More notes match this topic than are shown — click to show all of them"
-                      >
-                        {displayedMemories.length} of {serverTotal} matches · show all
-                      </button>
-                    ) : (
-                      <span className="chip !py-px">{topK === 0 ? 'All matches' : `Top ${topK}`}</span>
-                    )
-                  )}
-                </div>
-                <div className="flex items-center gap-2 fs-2" style={{ color: 'var(--text-3)' }}>
-                  {agentActive ? (
-                    <>
-                      <span className="agent-dot" data-laeuft="true" />
-                      <span style={{ color: 'var(--accent)', fontWeight: 'var(--fw-halbfest)' }}>Agent active</span>
-                    </>
-                  ) : tuerLebt === "antwortete" ? (
-                    <span className="status-dot" title="In sync: this window shows the newest copy stored on this computer" />
-                  ) : tuerLebt === "verweigerte" ? (
-                    <span className="status-dot status-dot-leise" title="The store is not answering — this window still shows what it last loaded" />
-                  ) : (
-                    <span className="status-dot status-dot-leise" title="Asking the store…" />
-                  )}
+              {/* P202, Mockup-Treue: die Such-Steuer steht als schlanke Zeile in der
+                  Listen-Spalte (das Mockup trägt „Meaning search 5" am Listen-Fuß);
+                  die Zustands-Behauptung zog in den Listen-Fuß und die Statuszeile. */}
+              <div className="listen-steuer">
+                <label className="flex items-center gap-2 cursor-pointer select-none" title="Searches the meaning of your question, not only the words">
+                  <input
+                    type="checkbox"
+                    checked={semanticEnabled}
+                    onChange={(e) => setSemanticEnabled(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <span className="switch" data-on={semanticEnabled}><span className="knob" /></span>
+                  <span className="fs-2 font-semibold whitespace-nowrap" style={{ color: semanticEnabled ? 'var(--text-1)' : 'var(--text-2)' }}>
+                    {ansichtLabel("semantic")} search
+                  </span>
+                </label>
+
+                <div className="flex items-center gap-2 ml-auto min-w-0">
+                  <span className="fs-2" style={{ color: 'var(--text-3)' }}>Results</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={RESULT_STOPS.length - 1}
+                    step={1}
+                    value={Math.max(0, RESULT_STOPS.indexOf(topK as typeof RESULT_STOPS[number]))}
+                    onChange={(e) => setTopK(RESULT_STOPS[parseInt(e.target.value, 10)] ?? 5)}
+                    className="h-7 w-24"
+                    aria-label="Number of results shown"
+                    title="How many results to show. The last step shows everything that matches."
+                  />
+                  <span
+                    className="chip tnum !px-2"
+                    title={topK === 0
+                      ? 'Showing every note that matches — nothing is cut off. The chat still gets only the most relevant ones.'
+                      : `Showing at most ${topK} hits. Slide to the end for all of them.`}
+                  >
+                    {resultLabel(topK)}
+                  </span>
                 </div>
               </div>
 
+              {/* Nur die Zeilen rollen (Mockup-Grammatik): Kopf, Auskunft, Steuer und
+                  Fuß stehen fest — die Liste ist das rollende Blatt der Spalte. */}
+              <div className="listen-zeilen">
               {displayedMemories.length === 0 && !initialLoaded ? (
                 <div className="flex flex-col ledger">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -2281,21 +2105,208 @@ export function Dashboard() {
                   ) : listenInhalt}
                 </>
               )}
-            </div>
+              </div>
+              {/* Der Listen-Fuß (Mockup-Grammatik): die Zustands-Zeile der Liste —
+                  In sync wie im Mockup, der Such-Cache, die Treffer-Auskunft, Inbox
+                  und Duplicates. Dieselbe Information trägt auch die Statuszeile
+                  unten; hier steht sie an der Liste, wo sie gelesen wird. */}
+              <div className="listen-fuss">
+                {/* Die Quittungen der Import- und Scan-Wegs stehen im Fuß — sichtbar
+                    an der Stelle, an der der Auslöser liegt (das Band ist eingeklappt;
+                    eine Quittung im eingeklappten Band wäre eine stille). */}
+                {importMsg && (
+                  <span className="chip" style={{ color: 'var(--ok)' }}>
+                    <CheckCircle2 className="w-3 h-3" />{importMsg}
+                  </span>
+                )}
+                {importErr && (
+                  <span className="chip" style={{ color: 'var(--danger)' }}>
+                    <AlertCircle className="w-3 h-3" />{importErr}
+                  </span>
+                )}
+                <span className={agentActive || tuerLebt === "antwortete" ? "gruen" : undefined}>
+                  {agentActive ? <span className="agent-dot" data-laeuft="true" /> : tuerLebt === "antwortete" ? <span className="status-dot" /> : <span className="status-dot status-dot-leise" />}
+                  {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync' : tuerLebt === "verweigerte" ? 'No answer' : 'Asking…'}
+                </span>
+                {/* Such-Cache-Status: der Kern baut den Suchindex beim ersten
+                    Zugriff einmal auf und patcht ihn danach nur noch — die App
+                    misst die Antwortzeit und zeigt, wenn das Gehirn warm ist. */}
+                {gehirnWaermt && (
+                  <span className="chip" title="Built once — every saved note only patches it afterwards">
+                    <span className="agent-dot" data-laeuft="true" /> Warming the search index…
+                  </span>
+                )}
+                {gehirnWarm && !gehirnWaermt && (
+                  <span className="chip tnum" title="Ready — each note only patches it; the time is your last search here">
+                    <span className="status-dot" />
+                    Search index warm — answer in {suchDauerMs ?? 0} ms
+                  </span>
+                )}
+                {/* Die Zahl muss zu den gezeigten Zeilen passen: hier stand vorher das
+                    LOKALE Ranking (150 Treffer), waehrend die Liste daneben die 261
+                    Treffer der Server-Engine zeigte. Zwei Zahlen fuer dieselbe Sache. */}
+                {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && effectiveScored && effectiveScored.length > 0 && (
+                  <span
+                    className="chip tnum"
+                    title={`${effectiveScored.length} hits · similarity of the best match ${Math.round(effectiveScored[0].cosineScore * 100)} %`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--ok)' }} />
+                    {/* Punkt 4: die Zahl im Streifen ist, was die Tuer **geschickt** hat. Passt
+                        mehr, als die Bestellung hergab, sagt der Streifen beide Zahlen — sonst
+                        steht "16 hits" ueber einer Liste, deren Rueckweg "5 of 30 matches" heisst.
+                        Gemessen 31.10. 11:51 im echten Fenster an dreissig gesaeten Notizen. */}
+                    <span>{serverTotal !== null && serverTotal > effectiveScored.length
+                      ? `${effectiveScored.length} of ${serverTotal} ${serverTotal === 1 ? 'hit' : 'hits'}`
+                      : `${effectiveScored.length} ${effectiveScored.length === 1 ? 'hit' : 'hits'}`}</span>
+                    {/* Nicht der Fusionswert: der ist ein RRF-Rohwert (rund 0,02) und
+                        ergibt als Prozentzahl "best 2 %" — hier steht die echte
+                        Vektor-Aehnlichkeit, oder gar nichts, wenn ohne Vektoren gesucht wird. */}
+                    {effectiveScored[0].cosineScore > 0 && (
+                      <span style={{ color: 'var(--text-3)' }}>best {Math.round(effectiveScored[0].cosineScore * 100)} %</span>
+                    )}
+                  </span>
+                )}
+                {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && effectiveScored && effectiveScored.length === 0 && (
+                  <span className="chip" style={{ color: 'var(--warn)' }}>
+                    <AlertCircle className="w-3 h-3" /> No matches
+                  </span>
+                )}
+                {!semanticEnabled && debouncedSearchQuery.trim() && (
+                  <span className="chip tnum">{displayedMemories.length} {displayedMemories.length === 1 ? 'hit' : 'hits'}</span>
+                )}
+                <span
+                  className="chip"
+                  title={inbox?.inboxDir ? `Inbox folder: ${inbox.inboxDir}` : 'Watch the inbox folder'}
+                >
+                  <UploadCloud className="w-3 h-3" style={{ color: inbox?.watching ? 'var(--ok)' : 'var(--text-3)' }} />
+                  {inboxGrund === "verweigerte" ? "No answer from the inbox" : inbox ? `${inbox.files.length} in Inbox` : 'Inbox…'}
+                  <button
+                    onClick={handleInboxScan}
+                    disabled={inboxScanBusy}
+                    className="ml-1 -mr-1 min-h-6 px-2 inline-flex items-center rounded fs-1 font-semibold hover:opacity-80 disabled:opacity-40"
+                    style={{ color: 'var(--accent)' }}
+                    title="Scan the inbox now and import"
+                  >
+                    {inboxScanBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Scan'}
+                  </button>
+                </span>
+                {duplicateGroups.length === 0 ? (
+                  <span className="chip hidden lg:inline-flex" title="Nothing to do — the knowledge base has no obvious duplicates">
+                    <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--ok)' }} /> No duplicates
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setDuplicatesOpen(true)}
+                    className="chip"
+                    style={{ color: 'var(--warn)', background: 'var(--warn-soft)', borderColor: 'transparent', cursor: 'pointer' }}
+                    title="Review every duplicate side by side and remove the copies you do not want"
+                  >
+                    <AlertCircle className="w-3 h-3" /> {duplicateCount} duplicate{duplicateCount === 1 ? '' : 's'}
+                    <span className="ml-1 font-semibold underline underline-offset-2">Review</span>
+                  </button>
+                )}
+              </div>
+            </aside>
+            {/* Die Detail-Spalte STEHT IMMER (Mockup-Grammatik): die geöffnete Akte füllt
+                sie, ohne gewählte Notiz zeigt sie ihren leeren Zustand — kein Panel,
+                das erst bei Klick erscheint. */}
+            <section className="detail-spalte">
+              <AnimatePresence>
+                {vorschauMemory && (
+                  <MemoryPreview
+                    memory={vorschauMemory}
+                    ohneVorhang
+                    onClose={() => setVorschauMemory(null)}
+                    onEdit={(m) => { setVorschauMemory(null); setEditingMemory(m); setIsEditorOpen(true); }}
+                  />
+                )}
+              </AnimatePresence>
+              {!vorschauMemory && (
+                <div className="detail-leer" data-testid="detail-leer">
+                  <p className="fs-3 font-semibold" style={{ color: 'var(--text-2)', margin: 0 }}>Nothing selected</p>
+                  <p className="fs-2" style={{ color: 'var(--text-3)', margin: 0 }}>Choose a note on the left — it opens here.</p>
+                </div>
+              )}
+            </section>
           </div>
-          {/* P202, App-Fenster-Übernahme: die geöffnete Akte steht als Panel NEBEN dem
-              Register (Spalte rechts, ohne Vorhang) — die App-Fenster-Grammatik zeigt
-              Liste und Detail nebeneinander, wie Mail und Linear. */}
-          <AnimatePresence>
-            {vorschauMemory && (
-              <MemoryPreview
-                memory={vorschauMemory}
-                ohneVorhang
-                onClose={() => setVorschauMemory(null)}
-                onEdit={(m) => { setVorschauMemory(null); setEditingMemory(m); setIsEditorOpen(true); }}
-              />
+
+          {/* Quellen: Datei-Import + URL-Clipper — eine Fläche, eine Geste.
+              P202: das Band ist EINGEKLAPPT (data-zu) — der Listen-Kopf trägt das
+              Werkzeug, die Liste startet ohne Tisch darüber (Mockup-Grammatik).
+              Das Band bleibt gerendert: die Wege (Choose/Drop/URL) arbeiten auch
+              aus dem eingeklappten Zustand. */}
+          <div className="import-huelle px-5 py-3 shrink-0" data-zu={!importBandOffen} style={{ borderBottom: importBandOffen ? '1px solid var(--border-subtle)' : 'none' }}>
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={onDrop}
+              className="import-band"
+              data-drag={dragOver}
+            >
+              <div className="flex-1 flex items-center gap-3 px-4 py-3">
+                {importing ? <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: "var(--accent)" }} /> : <UploadCloud className="w-4 h-4 shrink-0" style={{ color: dragOver ? "var(--accent)" : "var(--text-3)" }} />}
+                <div className="flex-1 min-w-0">
+                  <div className="fs-3 font-semibold truncate" style={{ color: "var(--text-1)" }}>
+                    {importing ? "Importing…" : dragOver ? "Drop to import" : "Drag files here"}
+                  </div>
+                  {/* Die Formate auf eigener Zeile: in einer Reihe mit dem Satz
+                      abgeschnitten, gemessen +137 px bei 1 024 px und +130 px bei
+                      820 px Fensterbreite — ein `sm:inline` misst die Breite des
+                      Fensters, die Zeile kriegt die Breite der Fläche. */}
+                  <div className="fs-1 tnum" style={{ color: "var(--text-2)" }}>
+                    PDF · MD · TXT · JSON
+                  </div>
+                </div>
+                <label className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold cursor-pointer shrink-0">
+                  Choose
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.md,.txt,.json,text/markdown,text/plain,application/json,application/pdf"
+                    className="hidden"
+                    onChange={(e) => { if (e.target.files?.length) processFiles(e.target.files); e.target.value = ""; }}
+                  />
+                </label>
+              </div>
+              <div className="import-divider hidden md:block" />
+              <div className="hidden lg:flex items-center px-4 py-3 shrink-0">
+                <button
+                  onClick={() => setScanOpen(true)}
+                  className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold flex items-center gap-2"
+                  title="Scan this computer — the preview shows what would be imported before anything is read"
+                >
+                  <HardDriveDownload className="w-3.5 h-3.5" /> Scan this computer
+                </button>
+              </div>
+              <div className="import-divider hidden lg:block" />
+              <div className="flex-1 hidden md:flex items-center gap-3 px-4 py-3">
+                <Globe className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />
+                <input
+                  ref={clipInputRef}
+                  value={clipUrl}
+                  onChange={(e) => setClipUrl(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleClip(); }}
+                  aria-label="Paste a URL to import"
+                  placeholder="Paste a URL…"
+                  className="flex-1 min-w-0 bg-transparent fs-4 lh-lesbar outline-none"
+                  style={{ color: "var(--text-1)" }}
+                />
+                <button
+                  onClick={handleClip}
+                  disabled={clipping || !clipUrl.trim()}
+                  className="btn-ghost px-3 py-2 fs-2 lh-dicht font-semibold shrink-0 disabled:opacity-40"
+                >
+                  {clipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Import'}
+                </button>
+              </div>
+            </div>
+            {(clipErr || clipOk) && (
+              <div className="fs-1 flex items-center gap-2 mt-2" style={{ color: clipErr ? "var(--danger)" : "var(--ok)" }}>
+                {clipErr ? <AlertCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
+                {clipErr || clipOk}
+              </div>
             )}
-          </AnimatePresence>
           </div>
 
           {/* Die App-Statuszeile: was das Fenster unten dauerhaft sagt. Der Gehirn-Status

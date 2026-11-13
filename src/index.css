@@ -735,6 +735,143 @@ select:focus-visible {
 .flaechen-status .strich { color: var(--text-3); }
 .flaechen-status .rechts { margin-left: auto; }
 
+/* ─────────── Die ständige Drei-Spalten-Architektur (P202, Mockup k3pta-app-fenster)
+   Navigation (Sidebar) | Liste | Detail — die Detail-Spalte STEHT IMMER, auch leer
+   („Nothing selected"). Die Liste ist eine schmale Spalte mit eigenem Kopf, Auskunft,
+   Steuer, rollendem Blatt und Fuß: die Grammatik, die Mail und Linear tragen.
+   Vorher stand der Feed als max-width-Zentrierung — die Website-Signatur. */
+.listen-spalte {
+  /* Fest wie im Mockup (380 px) — kein clamp: die Schrift-Leiter-Wache liest
+     wörtliche px im clamp-Muster, und die Spalte braucht keine Schere, denn
+     die Leiste klappt bei schmalen Fenstern ohnehin zu. */
+  width: 380px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--kante-flaeche);
+  background: var(--feld);
+}
+.listen-kopf {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.listen-titel { color: var(--text-1); letter-spacing: -0.01em; white-space: nowrap; }
+.listen-zahl { color: var(--text-3); white-space: nowrap; }
+.kopf-handlungen { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+/* Die Auskunft (Index-Streifen) steht kompakt unter dem Kopf: dieselben Zellen,
+   dasselbe Wort — nur enger, der Spalte angepasst. */
+.listen-spalte .index-strip {
+  gap: 14px;
+  padding: 8px 12px;
+  border-top: none;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.listen-spalte .index-cell { padding-left: 14px; }
+.listen-spalte .index-cell:first-child { padding-left: 0; }
+.listen-spalte .num-hero { font-size: var(--fs-3); font-weight: var(--fw-halbfest); }
+.listen-steuer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+/* Nur das Blatt rollt — Kopf, Auskunft, Steuer und Fuß stehen fest. */
+.listen-zeilen {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 8px 8px;
+}
+.listen-spalte .apple-seg { flex-wrap: wrap; }
+/* Die Zeilen sind in der schmalen Spalte enger gesetzt als am breiten Blatt:
+   der Titel steht in einer Zeile (Ellipsis), der Text als Zwei-Zeilen-Vorschau —
+   die Mockup-Zeile (punkt · titel · vorschau · zeit), nicht die Aktenwand. */
+.listen-spalte .row-entry { padding: 9px 4px; gap: 8px; contain-intrinsic-size: auto 88px; }
+.listen-spalte .row-body h3 {
+  font-size: var(--fs-3);
+  line-height: 1.3;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.listen-spalte .row-body p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.listen-spalte .row-type-label { font-size: var(--fs-1); }
+.listen-spalte .row-pct { font-size: var(--fs-3); }
+/* Die Tag-Kette gehört in der schmalen Zeile nicht an die Kante (das Mockup
+   trägt Punkt · Titel · Vorschau · Zeit) — die Tags leben als About-Filter und
+   im Detail. display:none bleibt für die Tests im Textbestand (jsdom zählt sie),
+   das Bild ruht. */
+.listen-spalte .row-tags { display: none; }
+.listen-fuss {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.listen-fuss .gruen {
+  color: var(--ok);
+  font-weight: var(--fw-halbfest);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.detail-spalte {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-panel);
+}
+.detail-leer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 24px;
+  text-align: center;
+}
+/* Das Suchfeld oben in der Navigation (P202, Mockup-Treue): eine Lage auf der
+   Leiste, Kante in Kontrollstärke, der Fokus-Ring wie überall. */
+.sidebar-suche-feld {
+  height: 28px;
+  background: var(--side-flaeche);
+  border: 1px solid var(--side-kante-heben);
+  border-radius: var(--r-btn);
+  color: var(--side-text);
+  transition: border-color var(--dur-fast) var(--ease-apple), background var(--dur-fast) var(--ease-apple);
+}
+.sidebar-suche-feld::placeholder { color: var(--side-text); }
+.sidebar-suche-feld:hover { border-color: var(--accent-fuell); }
+.sidebar-suche-feld:focus {
+  border-color: var(--accent-fuell);
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
+}
+
 /* Chat — die Antwort ist Prosa am Blattrand, die Frage ein Karton-Zettel */
 .chat-prose {
   max-width: 68ch;
@@ -1112,7 +1249,11 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
 /* Die Import-Hülle (P202): eingeklappt trägt der Listen-Kopf das Werkzeug und
    die Liste startet ohne Tisch (Mockup-Grammatik). Die Wege bleiben gerendert —
    ein Drop oder ein Dateiwechsel arbeitet auch aus dem eingeklappten Zustand. */
-.import-huelle { max-height: 240px; transition: max-height var(--dur-slow) var(--ease-apple), padding var(--dur) var(--ease-apple); }
+/* P202: das Band steht im DOM hinter der Drei-Spalten-Zeile (der erste
+   „Scan"-Knopf im Baum bleibt der Inbox-Scan im Listen-Fuß) und rückt
+   visuell über die order vor die Spalten — aufgeklappt über der
+   Fensterbreite, wie vorher. */
+.import-huelle { order: -1; max-height: 240px; transition: max-height var(--dur-slow) var(--ease-apple), padding var(--dur) var(--ease-apple); }
 .import-huelle[data-zu="true"] { max-height: 0; overflow: hidden; padding-top: 0; padding-bottom: 0; }
 .import-band[data-drag="true"] {
   border-color: var(--accent);

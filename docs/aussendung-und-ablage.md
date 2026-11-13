@@ -1054,7 +1054,7 @@ das Fenster-Event, mit dem die zweite Fläche nachzieht.
 `fireEvent.change` auf jede der sieben Positionen, nach jeder Bewegung das Etikett gelesen — 5, 10,
 20, 50, 100, 250, All — dazu min 0, max 6, step 1 und der Rückweg. `:234` ist neu und zeugt die
 zweite Hälfte des Satzes: die Tür schickt drei Treffer und sagt total 7, der Streifen muss „3 of 7
-hits" nennen (`src/components/Dashboard.tsx:1818`; der Defekt, gegen den das schreibt, steht im
+hits" nennen (`src/components/Dashboard.tsx:1857`; der Defekt, gegen den das schreibt, steht im
 Quelltext bei `:1805` — dort führte die Fläche zwei Zahlen für dieselbe Sache).
 
 **Biss, beide Male an der Produktion, beide Male zurückgebaut.** Patch: `250` aus `RESULT_STOPS`.
@@ -1084,7 +1084,7 @@ Gesamtzahl der Treffer. Ein Zeuge, der eine davon stützt, darf nicht die ganze 
 war mein Fehler 27 in P135). Jetzt sind es zwei Sätze, und der erste nennt drei Messzeuge, der zweite
 eines. Die hintere Hälfte war nicht widerlegt, aber **ungenau bezeichnet**: „the index says how many
 notes match in total" schreibt dem Index eine Auskunft zu, die der Streifen über der Liste gibt
-(`src/components/Dashboard.tsx:1818`), und was dort steht, ist ein Paar (gezeigt / insgesamt), nicht
+(`src/components/Dashboard.tsx:1857`), und was dort steht, ist ein Paar (gezeigt / insgesamt), nicht
 eine Totalzahl. Die Fläche sagt „3 of 7 hits", und so steht es jetzt da.
 
 ## 30. P142 — „Every memory carries a validity window": zwei Drittel stimmen, eines nicht (7.11. 00:43 MEZ)

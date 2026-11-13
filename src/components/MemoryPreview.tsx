@@ -184,7 +184,7 @@ export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: 
         animate={{ x: 0, opacity: 1 }}
         exit={ohneVorhang ? { x: 24, opacity: 0 } : { x: "100%", opacity: 0.5 }}
         transition={FEDER_SCHUBLADE}
-        className={`relative ${ohneVorhang ? "w-[420px] max-w-none" : "w-full max-w-2xl"} h-full flex flex-col z-10 glass-strong`}
+        className={`relative ${ohneVorhang ? "w-full max-w-none" : "w-full max-w-2xl"} h-full flex flex-col z-10 glass-strong`}
         style={{ borderLeft: ohneVorhang ? "1px solid var(--kante-flaeche)" : "1px solid var(--border-subtle)" }}
         data-testid="memory-preview"
       >

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, type RefObject } from 'react';
 import { Brain } from "../lib/icons";
-import { Hash, MessageSquare, SettingsIcon, Moon, Sun, PanelLeftClose, Network, Sparkles, Clock, FileText, Bot, User } from "../lib/icons";
+import { Hash, MessageSquare, SettingsIcon, Moon, Sun, PanelLeftClose, Network, Sparkles, Clock, FileText, Bot, User, Search } from "../lib/icons";
 import { useTheme } from '../contexts/ThemeContext';
 import { cn } from '../lib/utils';
 import { KeptaMark } from './KeptaMark';
@@ -30,6 +30,14 @@ interface SidebarProps {
   /** Ersteinrichtung noch nicht abgeschlossen → dezentes Setup-Icon in der Fußzeile */
   showSetup?: boolean;
   onOpenSetup?: () => void;
+  /** P202, Mockup-Treue: die Suche steht oben in der Navigation (wie Mail) —
+      Wert und Griff leben im Dashboard, das Feld hier. Optional, damit die
+      Leiste auch ohneSuche steht (Tests, Team-Ansichten). */
+  suchWert?: string;
+  anSuchAenderung?: (wert: string) => void;
+  suchRef?: RefObject<HTMLInputElement | null>;
+  /** ⌘K im Feld öffnet die Befehls-Palette. */
+  anPalette?: () => void;
 }
 
 /* Die Sidebar ist bewusst IMMER dunkel (wie bei Slack/Linear) — sie bildet
@@ -43,7 +51,7 @@ interface SidebarProps {
 /** So viele Tags stehen sofort da; der Rest kommt auf Wunsch. */
 const TAGS_SICHTBAR = 40;
 
-export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, tagsAusLadung, appsLive, teamVisible, isFocusMode, toggleFocusMode, showSetup, onOpenSetup }: SidebarProps) {
+export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentView, onNavigate, totalMemories, tagsAusLadung, appsLive, teamVisible, isFocusMode, toggleFocusMode, showSetup, onOpenSetup, suchWert = "", anSuchAenderung = () => {}, suchRef, anPalette = () => {} }: SidebarProps) {
   const { isDark, toggle: toggleTheme } = useTheme();
   // Die Liste war hart auf 40 geschnitten — ohne ein Wort darueber. Wer viel
   // Wissen hat, sah den Rest schlicht nicht und konnte ihn auch nicht suchen.
@@ -91,6 +99,27 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           <div className="seiten-zahl fs-1 mt-1 tnum">
             {totalMemories.toLocaleString('en-GB')} {totalMemories === 1 ? 'note' : 'notes'}
           </div>
+        </div>
+      </div>
+
+      {/* P202, Mockup-Treue (k3pta-app-fenster): die Suche steht oben in der
+          Navigation — das Feld filtert die Liste, ⌘K daneben öffnet die Palette.
+          Vorher lebte sie in einer Werkzeugleiste über der Fläche; Mail, Linear
+          und das Mockup tragen das Feld an der Leiste. */}
+      <div className="px-3 pb-1 shrink-0">
+        <div className="relative flex items-center">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 pointer-events-none" style={{ color: 'var(--side-text)' }} />
+          <input
+            ref={suchRef}
+            type="text"
+            aria-label="Search your memory"
+            placeholder="Search your memory"
+            value={suchWert}
+            onChange={(e) => anSuchAenderung(e.target.value)}
+            onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); anPalette(); } }}
+            className="sidebar-suche-feld w-full pl-8 pr-9 fs-2"
+          />
+          <span className="kbd absolute right-2 !py-px pointer-events-none">⌘K</span>
         </div>
       </div>
 
