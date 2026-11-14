@@ -66,54 +66,54 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center pt-[10vh] px-4">
       <div className="absolute inset-0 hud-backdrop" onClick={onClose} />
+      {/* P202, Mockup-Grammatik (s-palette): das Suchfeld über die volle Breite,
+          darunter die Aktionen-Liste (380px, Haarlinie rechts) neben der leeren
+          Vorschau-Zone — die Fußzeile mit Navigate/Open/ESC flog, die Tastatur
+          bleibt (die globale Hörer steuern Zeile und Enter wie zuvor). */}
       <div className="relative w-full max-w-[540px] palette-lens flex flex-col" style={{ maxHeight: "min(64vh, 520px)" }}>
-        <div className="flex items-center gap-3 px-5 h-14 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-          <Search className="w-4 h-4 shrink-0" style={{ color: "var(--text-3)" }} />
+        <div className="flex items-center gap-[9px] px-[14px] py-[11px] shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+          <Search className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--text-3)" }} />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Command or search"
             placeholder="Command or search… (e.g. graph, new note, settings)"
-            className="flex-1 bg-transparent outline-none fs-4 lh-lesbar placeholder:text-[var(--text-3)]"
+            className="flex-1 bg-transparent outline-none fs-3 lh-lesbar placeholder:text-[var(--text-3)]"
             style={{ color: "var(--text-1)" }}
           />
-          <span className="hud-label hidden sm:inline-flex items-center gap-1"><span className="kbd">⌘</span>K</span>
         </div>
 
-        <div ref={listRef} className="overflow-y-auto flex-1 py-2 space-y-1">
-          {filtered.length === 0 && (
-            <div className="py-10 px-6 text-center fs-4 lh-prosa" style={{ color: "var(--text-2)" }}>
-              Nothing here answers “{query}”.
-              <span className="block fs-2 mt-1" style={{ color: "var(--text-2)" }}>
-                One word of a title, a tag, or the first letters of a command — Esc closes this.
-              </span>
-            </div>
-          )}
-          {filtered.map((a, i) => (
-            <button
-              key={a.id}
-              data-idx={i}
-              data-active={i === idx}
-              onMouseEnter={() => setIdx(i)}
-              onClick={() => { onClose(); a.action(); }}
-              className="palette-row w-full text-left"
-              style={{ color: i === idx ? "var(--text-1)" : "var(--text-2)" }}
-            >
-              <span className="pal-ikon">{a.icon}</span>
-              <span className="flex-1 min-w-0">
-                <span className="block fs-3 lh-lesbar font-semibold truncate">{a.label}</span>
-                {a.desc && <span className="block fs-2 lh-dicht truncate" style={{ color: "var(--text-3)" }}>{a.desc}</span>}
-              </span>
-              {a.hotkey && <span className="kbd shrink-0">{a.hotkey}</span>}
-            </button>
-          ))}
-        </div>
-
-        <div className="px-4 py-3 flex items-center gap-4 hud-label shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-          <span className="flex items-center gap-2"><span className="kbd !py-px">↑↓</span> Navigate</span>
-          <span className="flex items-center gap-2"><span className="kbd !py-px">↵</span> Open</span>
-          <span className="flex items-center gap-2"><span className="kbd !py-px">ESC</span> Close</span>
+        <div className="flex flex-1 min-h-0">
+          <div ref={listRef} className="overflow-y-auto w-[380px] shrink-0" style={{ borderRight: "1px solid var(--border-subtle)", padding: "5px" }}>
+            {filtered.length === 0 && (
+              <div className="py-10 px-6 text-center fs-3 lh-prosa" style={{ color: "var(--text-2)" }}>
+                Nothing here answers “{query}”.
+                <span className="block fs-2 mt-1" style={{ color: "var(--text-2)" }}>
+                  One word of a title, a tag, or the first letters of a command — Esc closes this.
+                </span>
+              </div>
+            )}
+            {filtered.map((a, i) => (
+              <button
+                key={a.id}
+                data-idx={i}
+                data-active={i === idx}
+                onMouseEnter={() => setIdx(i)}
+                onClick={() => { onClose(); a.action(); }}
+                className="palette-row w-full text-left"
+                style={{ color: i === idx ? "var(--text-1)" : "var(--text-2)" }}
+              >
+                <span className="pal-ikon">{a.icon}</span>
+                <span className="flex-1 min-w-0">
+                  <span className="block fs-3 lh-lesbar font-semibold truncate">{a.label}</span>
+                  {a.desc && <span className="block fs-2 lh-dicht truncate" style={{ color: "var(--text-3)" }}>{a.desc}</span>}
+                </span>
+                {a.hotkey && <span className="kbd shrink-0">{a.hotkey}</span>}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1" />
         </div>
       </div>
     </div>

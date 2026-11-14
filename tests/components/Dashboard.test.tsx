@@ -281,9 +281,11 @@ describe("Dashboard: Duplikate", () => {
     await user.click(screen.getByRole("button", { name: /duplicates/i }));
     await waitFor(() => expect(document.querySelector('[role="dialog"][aria-label="Duplicates"]')).not.toBeNull());
     // Aus dem Panel heraus: eine Kopie in den Papierkorb legen (Dashboard-
-    // Callback onDelete -> derselbe Papierkorb-Fluss wie beim Löschen)
+    // Callback onDelete -> derselbe Papierkorb-Fluss wie beim Löschen).
+    // P202, Mockup-Grammatik: die Kopie ist eine app-zeile (role="button"),
+    // kein Icon-Knopf mehr.
     const imPanel = [...document.querySelectorAll('[role="dialog"][aria-label="Duplicates"]')][0];
-    const loeschen = [...imPanel.querySelectorAll("button")].find((b) => b.getAttribute("aria-label")?.startsWith("Delete "));
+    const loeschen = [...imPanel.querySelectorAll('[role="button"]')].find((b) => b.getAttribute("aria-label")?.startsWith("Delete "));
     expect(loeschen).toBeTruthy();
     await user.click(loeschen!);
     await waitFor(() => expect(geloescht.length).toBeGreaterThan(0));

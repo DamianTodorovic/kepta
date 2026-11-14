@@ -54,22 +54,28 @@ describe("DuplicatesPanel: die Duplikate werden sichtbar", () => {
     oeffne([a, b]);
     expect(screen.getByText("Docker Setup")).toBeTruthy();
     expect(screen.getByText("docker setup")).toBeTruthy();
-    expect(screen.getByText(/Same title/i)).toBeTruthy();
+    // P202, Mockup-Grammatik (s-duplicates): die flachen Zeilen tragen Name und
+    // Zustand — der Gruppen-Grund („Same title") lebt im Server-Response und in
+    // der Statuszeile des Fensters, nicht mehr als Kopf-Kasten im Dialog.
   });
 
   it("zaehlt die ueberzaehligen Notizen, nicht die Gruppen", () => {
     const ms = [note({ title: "G" }), note({ title: "G" }), note({ title: "G" })];
     oeffne(ms);
-    expect(screen.getByText(/2 redundant notes/i)).toBeTruthy();
+    // Die Zahl lebt in der Statuszeile des Fensters („2 duplicates in 1 group“);
+    // das Dialog-Bild trägt die zwei Kopien-Zeilen selbst (der Titel-Buchstabe
+    // im Icon zählt nicht mit).
+    expect(screen.getAllByText(/Move this note to the trash/i).length).toBe(2);
   });
 
   it("markiert den Vorschlag zum Behalten", () => {
     const kurz = note({ title: "Gleich", content: "kurz" });
     const lang = note({ title: "Gleich", content: "Deutlich mehr Inhalt in dieser Fassung, die erhalten bleiben soll." });
     oeffne([kurz, lang]);
-    const keep = screen.getByText("Keep").closest("div")!.parentElement!;
+    const keep = screen.getByText(/^Suggested keeper/).closest(".app-zeile")!;
     expect(within(keep).getByText("Gleich")).toBeTruthy();
-    expect(within(keep).getByText(/Deutlich mehr Inhalt/)).toBeTruthy();
+    expect(within(keep).getByText(/Not a duplicate/i)).toBeTruthy();
+    expect(within(keep).getByText(/Open this note/i)).toBeTruthy();
   });
 
   it("sagt klar, dass geloeschte Notizen im Papierkorb landen", () => {
@@ -80,7 +86,9 @@ describe("DuplicatesPanel: die Duplikate werden sichtbar", () => {
   it("zeigt einen ruhigen Leerzustand, wenn nichts doppelt ist", () => {
     oeffne([note(), note()]);
     expect(screen.getByText(/No duplicates found/i)).toBeTruthy();
-    expect(screen.getByText(/Nothing to clean up/i)).toBeTruthy();
+    // Der Kopf heißt jetzt immer „Duplicates" (s-duplicates); die Zahl-Zeile
+    // steht in der Statuszeile des Fensters, nicht im Dialog.
+    expect(screen.getByRole("heading", { name: "Duplicates" })).toBeTruthy();
   });
 });
 
@@ -104,7 +112,9 @@ describe("DuplicatesPanel: aussortieren", () => {
 
     // EIN Sammelaufruf, nicht einer je Notiz: einzeln lief das Aufraeumen in
     // die Schreibdrossel des Servers und brach nach sechzig Notizen lautlos ab.
-    await user.click(screen.getByRole("button", { name: /Keep suggested/i }));
+    // P202: die Massen-Funktion sitzt am Gefahr-Wort des Fußes (s-duplicates).
+    await user.click(screen.getByRole("button", { name: /Delete every copy except the suggested one/i }));
+    await user.click(screen.getByRole("button", { name: /Yes, move 2 to the trash/i }));
     await waitFor(() => expect(onDeleteMany).toHaveBeenCalledTimes(1));
     expect(onDelete).not.toHaveBeenCalled();
     const geloescht = onDeleteMany.mock.calls[0][0] as string[];
@@ -121,7 +131,7 @@ describe("DuplicatesPanel: aussortieren", () => {
     ];
     const { onDelete, onDeleteMany } = oeffne(ms);
 
-    await user.click(screen.getByRole("button", { name: /Clean up all 2 groups/i }));
+    await user.click(screen.getByRole("button", { name: /Delete every copy except the suggested one/i }));
     expect(onDeleteMany).not.toHaveBeenCalled();
     expect(screen.getByText(/This moves 2 notes to the trash/i)).toBeTruthy();
 
@@ -135,11 +145,11 @@ describe("DuplicatesPanel: aussortieren", () => {
   it("laesst sich das Aufraeumen wieder abwaehlen", async () => {
     const user = userEvent.setup();
     const { onDelete, onDeleteMany } = oeffne([note({ title: "G" }), note({ title: "G" })]);
-    await user.click(screen.getByRole("button", { name: /Clean up all/i }));
+    await user.click(screen.getByRole("button", { name: /Delete every copy except the suggested one/i }));
     await user.click(screen.getByRole("button", { name: /^Cancel$/i }));
     expect(onDelete).not.toHaveBeenCalled();
     expect(onDeleteMany).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /Clean up all/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Delete every copy except the suggested one/i })).toBeTruthy();
   });
 
   it("oeffnet eine Notiz im Editor", async () => {
@@ -156,9 +166,11 @@ describe("DuplicatesPanel: „kein Duplikat“ bleibt merkbar", () => {
   it("nimmt eine abgelehnte Gruppe sofort aus der Liste", async () => {
     const user = userEvent.setup();
     oeffne([note({ title: "Gleich" }), note({ title: "Gleich" })]);
-    expect(screen.getByRole("heading", { name: /1 group · 1 redundant note/i })).toBeTruthy();
+    // Die Kopf-Zahl steht in der Statuszeile des Fensters; das Dialog-Bild trägt
+    // die Zeilen selbst (s-duplicates).
+    expect(screen.getAllByText("Gleich").length).toBeGreaterThanOrEqual(1);
     await user.click(screen.getByRole("button", { name: /Not a duplicate/i }));
-    await waitFor(() => expect(screen.getByText(/Nothing to clean up/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/No duplicates found/i)).toBeTruthy());
   });
 
   it("merkt sich die Ablehnung ueber einen Neustart hinweg", async () => {

@@ -142,13 +142,23 @@
    Dichte ist die Mockup-Wert-Familie rgba(31,30,28,.24)/.2 (im Toleranz-Fenster
    der Messung eine Dichte). ── */
 .huelle .fenster-titelleiste, .huelle .flaechen-status { position: relative !important; z-index: 80 !important; }
-.huelle .hud-backdrop { background: rgba(31,30,28,.24) !important; }
+/* Damian 14.11.: 100 % wie das Bild. Der Mockup-Vorhang ist rgba(31,30,28,.24)
+   über einer LEEREN Fläche — das Bild malt das einheitliche Grau ohne Durchsicht.
+   Die opake Fassung derselben Farbe trifft das Bild und schirmt die echte
+   Fläche ganz ab. */
+.huelle .hud-backdrop { background: #c3c2c0 !important; }
 /* Die Modal-Geometrie: das Mockup .modale ist 460px breit, radius 12 —
    die App-Dialoge zogen 672 (Scan) und 768 (Duplicates). */
 .huelle [role="dialog"][aria-label="Scan this computer"] .panel,
 .huelle [role="dialog"][aria-label="Duplicates"] .panel { width: 460px !important; max-width: 460px !important; border-radius: 12px !important; }
 
-/* ── Palette: 540 · zeile pad 7/9 r7 · ikon 22 ── */
+/* ── Palette (s-palette): 540 gesamt · Suchfeld pad 11/14 fs 13 · Liste 380 mit
+   Haarlinie rechts + leere Vorschau-Zone · Zeile pad 7/9 r7 · ikon 22 ·
+   name 13/600 · unter 11.5 · die aktive Zeile trägt die getönte Fläche und
+   das grüne Ikon ── */
 .huelle .palette-lens { width: 540px !important; max-width: 540px !important; }
-.huelle .palette-row { min-height: 40px !important; padding: 0 9px !important; margin: 0 5px !important; gap: 10px !important; border-radius: 7px !important; }
+.huelle .palette-row { min-height: 0 !important; padding: 7px 9px !important; margin: 0 !important; gap: 10px !important; border-radius: 7px !important; }
+.huelle .palette-row[data-active="true"] { background: var(--accent-soft) !important; }
+.huelle .palette-row[data-active="true"] .pal-ikon { background: rgba(46,125,91,.14) !important; color: var(--accent) !important; }
+.huelle .palette-row .fs-2 { font-size: 11.5px !important; }
 .huelle .huelle .palette-row .pal-ikon { width: 22px !important; height: 22px !important; border-radius: 6px !important; }
