@@ -789,8 +789,12 @@ async function main() {
   //     zum Rendern zwangen). 5.11. nennt der Baustein die Stufe selbst -- dieser Lauf beweist,
   //     dass das Bild gleich bleibt und dass keine halbe Stufe mehr gemalt wird. Gezaehlt wird
   //     nur, was ein Mensch wirklich sieht: ein Element mit eignem Text und eigenen Rects.
+  //     14.11.2026: Damian „genau 1:1 wie auf dem Mockup in jedem einzelnen Aspekt" — die
+  //     Mockup-Skala (10.5 · 11.5 · 12.5 · 13.5 px, k3pta-app-fenster.html) ist seitdem
+  //     erlaubte Leiter (src/mockup-masse.css trägt sie), 18px ist die Detail-h1 (fs-detail).
   if (NUR === "" || NUR === "schrift") {
-    const LEITER = new Set(["11px", "12px", "13px", "14px", "16px", "20px", "28px", "40px"]);
+    const LEITER = new Set(["10.5px", "11px", "11.5px", "12px", "12.5px", "13px", "13.5px", "14px", "16px", "18px", "20px", "28px", "40px"]);
+    const MOCKUP_HALBE = new Set(["10.5px", "11.5px", "12.5px", "13.5px"]);
     const stufen = async (nam) => {
       const geklickt = await knopf(cdp, nam);
       urteil(`der Knopf nach ${nam} steht im Blatt`, geklickt !== null, true);
@@ -822,7 +826,7 @@ async function main() {
     }
     const alle = new Map();
     for (const { z } of gesicht) for (const [k, n] of Object.entries(z)) alle.set(k, (alle.get(k) || 0) + n);
-    const halbe = [...alle].filter(([k]) => { const px = parseFloat(k.split(" :: ")[0]); return Number.isFinite(px) && !Number.isInteger(px); });
+    const halbe = [...alle].filter(([k]) => { const wert = k.split(" :: ")[0]; const px = parseFloat(wert); return Number.isFinite(px) && !Number.isInteger(px) && !MOCKUP_HALBE.has(wert); });
     console.log(`  halbe Pixelschritte im gerechneten Fenster: ${halbe.length} Namen, ${halbe.reduce((t, [, n]) => t + n, 0)} Stellen`);
     for (const [k, n] of halbe.slice(0, 10)) console.log(`      ${String(n).padStart(4)}  ${k}`);
     urteil("keine halbe Pixelschrift bleibt im Bild", halbe.length === 0, true);

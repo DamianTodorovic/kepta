@@ -81,6 +81,11 @@ try {
   // ── 1. das MOCKUP fotografiert, cropped auf die .fenster-Bounds ──
   await cdp.send("Page.navigate", { url: `file://${MOCKUP}?screen=${FLAECHE}` });
   await schlafe(900);
+  // Die .wahl-Leiste ist die Demo-Navigation des Bauplans (position:fixed,
+  // zum Durchschalten der Screens im Browser) — kein App-Fenster-Aspekt. Sie
+  // überlappt das .fenster und verschmierte sonst jeden Crop (graph/settings).
+  await aus(`(()=>{ const w = document.querySelector(".wahl"); if (w) w.style.display = "none"; return w ? "Demo-Wahl versteckt" : "keine Wahl"; })()`);
+  await schlafe(200);
   const mockShot = await cdp.send("Page.captureScreenshot", { format: "png" });
   fs.writeFileSync(path.join(ARBEIT, "mockup-voll.png"), Buffer.from(mockShot.data, "base64"));
   // Jeder Mockup-Screen trägt sein eigenes .fenster — das ERSTE sitzt in
