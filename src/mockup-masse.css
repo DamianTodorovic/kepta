@@ -35,7 +35,7 @@
 .huelle .seiten-leiste .px-3.pt-3.pb-1 { padding: 0 0 8px 0 !important; }
 .huelle .seiten-leiste .px-3.py-3 { padding: 0 !important; }
 .huelle .seiten-leiste .flex-1.px-3.py-2 { padding: 0 !important; }
-.huelle .seiten-leiste .sidebar-suche-feld { height: 28px !important; min-height: 28px !important; font-size: 12.5px !important; background: var(--karte) !important; border: 1px solid var(--k-form) !important; line-height: 1.45 !important; box-shadow: none !important; }
+.huelle .seiten-leiste .sidebar-suche-feld { height: 28px !important; min-height: 28px !important; font-size: 12.5px !important; background: var(--eb-2) !important; border: 1px solid var(--border-subtle) !important; line-height: 1.45 !important; box-shadow: none !important; }
 .huelle .seiten-leiste .sidebar-suche-feld ~ svg, .huelle .seiten-leiste .relative svg:first-child { width: 13px !important; height: 13px !important; }
 .huelle .seiten-leiste .sidebar-nav-btn { height: 30px !important; min-height: 30px !important; padding: 0 8px !important; gap: 8px !important; font-size: var(--fs-3) !important; font-weight: 500 !important; line-height: 1.45 !important; }
 .huelle .seiten-leiste .sidebar-nav-btn[data-active="true"] { font-weight: 600 !important; }
@@ -80,7 +80,7 @@
 .huelle .listen-spalte .row-punkt { width: 8px !important; height: 8px !important; border-radius: 3px !important; margin-top: 4px !important; }
 .huelle .listen-spalte .row-body h3 { font-size: var(--fs-3) !important; font-weight: 600 !important; line-height: 1.45 !important; margin: 0 !important; letter-spacing: 0 !important; font-family: inherit !important; }
 .huelle .listen-spalte .row-body p { font-size: var(--fs-2) !important; line-height: 1.45 !important; margin-top: 1px !important; }
-.huelle .listen-spalte .row-time { font-size: 11px !important; line-height: 15.95px !important; margin-top: 0 !important; }
+.huelle .listen-spalte .row-time { font-size: var(--fs-1) !important; line-height: 15.95px !important; margin-top: 0 !important; }
 .huelle .listen-spalte .row-herkunft { font-size: 10.5px !important; line-height: 15.225px !important; margin-top: 2px !important; }
 .huelle .listen-spalte .row-meta { gap: 0 !important; margin-top: 0 !important; padding-top: 0 !important; align-items: flex-start !important; }
 .huelle .listen-spalte .row-tags { display: none !important; }
