@@ -93,6 +93,12 @@ function createWindow() {
     return { action: 'deny' };
   });
 
+  // P202, Damian 14.11.: die Zoom-Stufe blieb pro Fenster dauerhaft hängen
+  // (~1.7×) und machte die Fläche unlesbar — der Boot setzt die Maschine auf
+  // 100 % und der Pinch-Zoom fliegt. Die Maße des Mockups gelten unvergrößert.
+  mainWindow.webContents.setZoomLevel(0);
+  mainWindow.webContents.setVisualZoomLevelLimits(1, 1);
+
   // Berechtigungen blocken (Kamera, Mikrofon, Standort …) — mit genau einer
   // Ausnahme: in die Zwischenablage SCHREIBEN. Ohne sie lief
   // navigator.clipboard.writeText ins Leere, und jeder Kopier-Knopf der App
