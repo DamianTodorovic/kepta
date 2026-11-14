@@ -29,7 +29,7 @@ describe("MemoryPreview", () => {
   it("zeigt Titel, Teil-Badge und den bereinigten Text ohne Quellzeile", () => {
     const { container } = render(<MemoryPreview memory={mem()} onClose={() => {}} onEdit={() => {}} />);
     expect(container.textContent).toContain("Gewerbe-Ummeldung — 2/5");
-    expect(container.textContent).toContain("Part 2/5");
+    expect(container.textContent).toContain("2/5");
     expect(container.textContent).toContain("Extracted text…");
     expect(container.textContent).not.toContain("— Source:");
   });

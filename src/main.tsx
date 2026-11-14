@@ -4,6 +4,7 @@ import {MotionConfig} from 'motion/react';
 import App from './App.tsx';
 import {Fehlerschirm} from './components/Fehlerschirm';
 import './index.css';
+import './mockup-masse.css';
 import {starteEinstellungen} from './lib/settings';
 import {spanneCrashWachter} from './lib/crashZeug';
 import {leseTypFarben, trageTypVar} from './lib/typFarben';

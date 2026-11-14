@@ -1793,7 +1793,7 @@ export function Dashboard() {
                   </button>
                 )}
                 <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>Knowledge</h2>
-                <span className="listen-zahl fs-1 tnum">{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')} {ladung !== null ? 'on this page' : 'notes'}</span>
+                <span className="listen-zahl fs-1 tnum">{displayedMemories.length.toLocaleString('en-GB')} of {tagFiltered.length.toLocaleString('en-GB')}</span>
                 {semanticEnabled && debouncedSearchQuery.trim().length >= 2 && (
                   serverTotal !== null && serverTotal > displayedMemories.length ? (
                     <button
@@ -1929,29 +1929,8 @@ export function Dashboard() {
 
               {/* Nur die Zeilen rollen (Mockup-Grammatik): Kopf, Auskunft, Steuer und
                   Fuß stehen fest — die Liste ist das rollende Blatt der Spalte. */}
-              <div className="listen-zeilen">
-              {displayedMemories.length === 0 && !initialLoaded ? (
-                <div className="flex flex-col ledger">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="card p-4 h-52 rounded-xl flex flex-col gap-3">
-                      <div className="skeleton h-3 w-16" />
-                      <div className="skeleton h-5 w-4/5" />
-                      <div className="skeleton h-3 w-full" />
-                      <div className="skeleton h-3 w-full" />
-                      <div className="skeleton h-3 w-2/3" />
-                      <div className="mt-auto flex gap-2">
-                        <div className="skeleton h-5 w-14 rounded-md" />
-                        <div className="skeleton h-5 w-12 rounded-md" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <>
-                  {/* Die Kontrolle bleibt stehen, solange etwas gefiltert werden
-                      kann — ein leerer Bestand ohne Auswahl braucht sie nicht. */}
-                  {(displayedMemories.length > 0 || gruppenFilterAktiv || memories.length > 0) && (
-                  <>
+                  {!(displayedMemories.length === 0 && !initialLoaded) && (displayedMemories.length > 0 || gruppenFilterAktiv || memories.length > 0) && (
+                  <div className="listen-seg-wand">
                   {/* NEUN WOERTER, ZWEI ZEILEN — Zeile 1 nach FORM (Notes · Files ·
                       Code, erschoepfend), Zeile 2 nach WORUM (sechs kombinierbare
                       Themen). Themen greifen nie in Code: die Sperre ist hier
@@ -1963,13 +1942,13 @@ export function Dashboard() {
                   {/* P202, Mockup-Treue: die Form/About-Wörter stehen als EINE dünne
                       Zeile mit kleinen Kanten-Chips — die Gruppen und ihre Rollen
                       bleiben (die Wachen klicken sie über die Rollennamen). */}
-                  <div className="apple-seg mb-3" role="group" aria-label="Grouping of the list">
+                  <div className="apple-seg" role="group" aria-label="Grouping of the list">
                     {([['alle', t('list.all')], ['datei', t('list.byFile')], ['thema', t('list.byTopic')], ['typ', t('list.byType')], ['zeitraum', t('list.period')]] as const).map(([key, label]) => (
                       <button
                         key={key}
                         onClick={() => setGruppierung(key)}
                         disabled={!!debouncedSearchQuery.trim()}
-                        className="apple-seg-btn min-h-7 fs-1 font-semibold disabled:opacity-40"
+                        className="apple-seg-btn min-h-7 fs-1 disabled:opacity-40"
                         data-on={effektivGruppierung === key ? "true" : "false"}
                         title={debouncedSearchQuery.trim()
                           ? 'Grouping is off while you search — results are ranked by relevance'
@@ -1983,8 +1962,6 @@ export function Dashboard() {
                       </button>
                     ))}
                   </div>
-                  </>
-                  )}
                   <div className="listen-filter" data-nach-frage={gruppierung === 'typ' || gruppierung === 'thema' ? 'offen' : 'zu'} style={gruppierung !== 'typ' && gruppierung !== 'thema' ? { display: 'none' } : undefined}>
                   <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={TRAEGER_FRAGE} style={gruppierung !== 'typ' ? { display: 'none' } : undefined}>
                     <span className="fs-1 shrink-0" style={{ color: 'var(--text-3)' }}>Form</span>
@@ -2047,6 +2024,27 @@ export function Dashboard() {
                     })}
                   </div>
                   </div>
+                  </div>
+                  )}
+              <div className="listen-zeilen">
+              {displayedMemories.length === 0 && !initialLoaded ? (
+                <div className="flex flex-col ledger">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="card p-4 h-52 rounded-xl flex flex-col gap-3">
+                      <div className="skeleton h-3 w-16" />
+                      <div className="skeleton h-5 w-4/5" />
+                      <div className="skeleton h-3 w-full" />
+                      <div className="skeleton h-3 w-full" />
+                      <div className="skeleton h-3 w-2/3" />
+                      <div className="mt-auto flex gap-2">
+                        <div className="skeleton h-5 w-14 rounded-md" />
+                        <div className="skeleton h-5 w-12 rounded-md" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
 
                   {/* Der leer gefilterte Zustand steht innerhalb derselben
                       Zweige wie die Zeilen: ein Klick auf ein Wort, das die
@@ -2127,7 +2125,6 @@ export function Dashboard() {
                   </span>
                 )}
                 <span className={agentActive || tuerLebt === "antwortete" ? "gruen" : undefined}>
-                  {agentActive ? <span className="agent-dot" data-laeuft="true" /> : tuerLebt === "antwortete" ? <span className="status-dot" /> : <span className="status-dot status-dot-leise" />}
                   {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync' : tuerLebt === "verweigerte" ? 'No answer' : 'Asking…'}
                 </span>
                 {/* Such-Cache-Status: der Kern baut den Suchindex beim ersten
@@ -2180,7 +2177,6 @@ export function Dashboard() {
                   className="chip"
                   title={inbox?.inboxDir ? `Inbox folder: ${inbox.inboxDir}` : 'Watch the inbox folder'}
                 >
-                  <UploadCloud className="w-3 h-3" style={{ color: inbox?.watching ? 'var(--ok)' : 'var(--text-3)' }} />
                   {inboxGrund === "verweigerte" ? "No answer from the inbox" : inbox ? `${inbox.files.length} in Inbox` : 'Inbox…'}
                   <button
                     onClick={handleInboxScan}
@@ -2189,7 +2185,7 @@ export function Dashboard() {
                     style={{ color: 'var(--accent)' }}
                     title="Scan the inbox now and import"
                   >
-                    {inboxScanBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Scan'}
+                    {inboxScanBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <span aria-hidden>↻</span>}
                   </button>
                 </span>
                 {/* Der Duplett-Zweig (Punkt 7): bei 0 ist es ein Zustand
@@ -2200,7 +2196,7 @@ export function Dashboard() {
                     className="chip hidden lg:inline-flex"
                     title="Nothing to do — the knowledge base has no obvious duplicates"
                   >
-                    <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--ok)' }} /> No duplicates
+                    No duplicates
                   </span>
                 ) : (
                   <button
@@ -2232,7 +2228,7 @@ export function Dashboard() {
                   className="chip hover:!border-[var(--accent)]"
                   title={trashGrund ?? "Trash — restore deleted notes"}
                 >
-                  <Trash2 className="w-3 h-3" /> Trash{trashCount !== null && trashCount > 0 ? ` ${trashCount}` : ''}
+                  <Trash2 className="w-3 h-3" />{trashCount !== null && trashCount > 0 ? <span className="tnum">{trashCount}</span> : null}
                 </button>
                 {/* Die Such-Steuer (Mockup: „Meaning search 5"): das Wort schaltet die
                     Bedeutungssuche, die Zahl nennt die Stufe des Treffer-Reglers — der
@@ -2289,6 +2285,7 @@ export function Dashboard() {
                     ohneVorhang
                     onClose={() => setVorschauMemory(null)}
                     onEdit={(m) => { setVorschauMemory(null); setEditingMemory(m); setIsEditorOpen(true); }}
+                    onDelete={(m) => { setVorschauMemory(null); void handleDelete(m.id); }}
                   />
                 ) : null}
               </AnimatePresence>
@@ -2497,8 +2494,8 @@ export function Dashboard() {
                     <>
                       <span className="strich">·</span>
                       <span className="tnum" title="The search model, and how many of your notes carry its vectors">
-                        Embeddings: {gehirn.embedModelle.map((m) => `${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} pieces ready`).join(' · ')}
-                        {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} pieces ready` : ''}
+                        Embeddings: {gehirn.embedModelle.map((m) => `${groessenZahl(m.anzahl)} of ${groessenZahl(gehirn.embedTotal)} ready`).join(' · ')}
+                        {gehirn.embedModelle.length === 0 ? `${groessenZahl(gehirn.embedEmbedded)} of ${groessenZahl(gehirn.embedTotal)} ready` : ''}
                       </span>
                     </>
                   )}

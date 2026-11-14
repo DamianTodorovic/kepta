@@ -39,6 +39,10 @@ export function mountImporte(app: express.Express, ctx: AppKontext): void {
         title: sanitizeTitle(m.title) || "Untitled",
         content: sanitizeText(m.content, 50000) || "",
         tags: sanitizeTags(m.tags),
+        // P202, Mockup-Korpus: die vier Kinds wandern mit dem Import — sonst
+        // trägt jede importierte Notiz den Neutral-Typ und die Art-Punkte
+        // verlieren ihre Farbe.
+        type: (["semantic", "episodic", "procedural", "reference"].includes(String(m.type)) ? String(m.type) : undefined) as never,
         createdAt: typeof m.createdAt === "number" && m.createdAt > 0 ? m.createdAt : Date.now(),
         updatedAt: typeof m.updatedAt === "number" && m.updatedAt > 0 ? m.updatedAt : Date.now(),
       })).filter(m=> m.content.length>0);

@@ -66,19 +66,19 @@ describe("#115 der Einbett-Chip nennt seine Grundgesamtheit", () => {
   it("zeigt die Zahl der Stuecke gegen den Gesamtumfang, wenn ein Modell arbeitet", async () => {
     stubpeTuer({ total: 1200, embedded: 256, models: { "nomic-embed-text": 256 } });
     const text = await chip();
-    expect(text, `der Chip nennt keinen Nenner: "${text}"`).toMatch(/256 of 1,200 pieces/);
+    expect(text, `der Chip nennt keinen Nenner: "${text}"`).toMatch(/256 of 1,200 ready/);
   });
 
   it("zeigt den Umfang auch, wenn die Queue fertig ist", async () => {
     stubpeTuer({ total: 1200, embedded: 1200, models: { "nomic-embed-text": 1200 } });
     const text = await chip();
-    expect(text, `der Chip nennt keinen Nenner: "${text}"`).toMatch(/1,200 of 1,200 pieces/);
+    expect(text, `der Chip nennt keinen Nenner: "${text}"`).toMatch(/1,200 of 1,200 ready/);
   });
 
   it("nennt die zwei Zahlen auch im Zweig ohne Modell, mit ihrer Einheit", async () => {
     stubpeTuer({ total: 1200, embedded: 256, models: {} });
     const text = await chip();
-    expect(text, `der Zweig ohne Modell ist umgefallen: "${text}"`).toMatch(/256 of 1,200 pieces ready/);
+    expect(text, `der Zweig ohne Modell ist umgefallen: "${text}"`).toMatch(/256 of 1,200 ready/);
   });
 
   it("schweigt, wo die Tuer ueberhaupt keine Stuecke meldet", async () => {

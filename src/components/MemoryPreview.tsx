@@ -7,19 +7,22 @@ import { motion } from "motion/react";
 import { FEDER_SCHUBLADE } from "../lib/motionTokens";
 import { formatDistanceToNow } from "date-fns";
 import { Memory } from "../types";
-import { EditPen, Copy, Check, Lock, Bot, X } from "../lib/icons";
+import { EditPen, Copy, Check, Lock, Bot, Trash2 } from "../lib/icons";
 import { useToast } from "./ui/Toast";
 import { ApiFehler } from "../lib/api";
 import { absage } from "../lib/absage";
-import { TYP_BESCHREIBUNG } from "../lib/graphHierarchy";
 import { t } from "../lib/uiText";
 import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from "../lib/quelle";
+import { kurzeZeit } from "../lib/zeit";
 import { QUITTUNG_MS } from "../lib/quittung";
 
 interface MemoryPreviewProps {
   memory: Memory;
   onClose: () => void;
   onEdit: (m: Memory) => void;
+  /** P202, Mockup-Grammatik (Bild 4: Copy · Edit · Trash): der Trash wohnt im
+      Kopf der Detail-Spalte — die Fläche reicht ihren Löschweg durch. */
+  onDelete?: (m: Memory) => void;
   /**
    * P202, App-Fenster-Übernahme: "ohneVorhang" stellt die Vorschau als PANEL
    * in das Knowledge-Fenster (Spalte rechts, kein Overlay, kein Vorhang) —
@@ -29,9 +32,29 @@ interface MemoryPreviewProps {
   ohneVorhang?: boolean;
 }
 
-// Die vier Rechen-Arten haben keinen Korb-Namen mehr in der Flaeche — was
-// hier steht, ist dieselbe Beschreibung wie im Editor und in der Liste.
-const TYPE_LABEL = TYP_BESCHREIBUNG;
+
+/* P202, Mockup-Meta (k3pta-app-fenster .detail-korper .meta): die Zeile nennt
+   die Art mit ihrem KIND-Wort („Fact · md · today 14:22 · saved from md file"),
+   die Endung der Quelle als zweites Glied, die kurze Zeit als drittes. */
+/** Die Endung der Quelle („md“ aus „md file“, „json“ aus „akten.json“) — das
+    zweite Glied der Meta-Zeile. Ohne Quelle steht das Glied nicht. */
+function quellEndung(q: { art: string; name: string; pfad?: string; url?: string } | null): string | null {
+  if (!q) return null;
+  const name = q.name || "";
+  const punkt = name.lastIndexOf(".");
+  if (punkt > 0 && punkt < name.length - 1) return name.slice(punkt + 1).toLowerCase();
+  const wort = name.trim().split(/\s+/)[0] || "";
+  return wort ? wort.toLowerCase() : null;
+}
+/* Die Tag-Pillen tragen im Mockup getönte Farben („#compliance“ blau, „#q3“
+   bernstein, „#md“ rot) — deterministisch aus dem Tag-Namen, über die vier
+   Art-Farben. Dieselbe Zuordnung überall (die Sidebar, die Zeilen, das Detail). */
+const PILLE_FARBEN = [
+  { ton: "var(--type-semantic)", flaeche: "color-mix(in srgb, var(--type-semantic) 12%, transparent)" },
+  { ton: "var(--type-episodic)", flaeche: "color-mix(in srgb, var(--type-episodic) 12%, transparent)" },
+  { ton: "var(--type-reference)", flaeche: "color-mix(in srgb, var(--type-reference) 12%, transparent)" },
+  { ton: "var(--type-procedural)", flaeche: "color-mix(in srgb, var(--type-procedural) 12%, transparent)" },
+];
 
 interface Stand {
   id: number;
@@ -41,14 +64,14 @@ interface Stand {
   createdAt: number;
 }
 
-export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: MemoryPreviewProps) {
+export function MemoryPreview({ memory, onClose, onEdit, onDelete, ohneVorhang = false }: MemoryPreviewProps) {
   const toast = useToast();
   const [kopiert, setKopiert] = useState(false);
   const kopierTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const quelle = parseQuelle(memory);
+  const endung = quellEndung(quelle);
   const chunk = parseChunkTitel(memory.title);
   const text = inhaltOhneQuelle(memory.content) || memory.content;
-  const artLabel = memory.type ? TYPE_LABEL[memory.type] ?? memory.type : "Note";
   const privat = memory.scope === "private";
   // Which AI apps read this note, how often, when last — from the audit log.
   const [leser, setLeser] = useState<{ who: string; times: number; last: number }[]>([]);
@@ -191,7 +214,7 @@ export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: 
         {/* P202, Mockup-Grammatik (detail-kopf): oben stehen Ort und Handlungen —
             der Titel und die Zeile stehen im Körper (wie im Mockup h1 + meta). */}
         <header className="detail-kopf">
-          <span className="wo">Vorschau{privat ? ' · Private' : ''}</span>
+          <span className="wo">Private</span>
           <div className="kopf-handlungen">
             {kopiert && <span className="fs-1 shrink-0" style={{ color: 'var(--ok)' }}>{t("preview.copied")}</span>}
             <button
@@ -210,131 +233,64 @@ export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: 
             >
               <EditPen className="w-4 h-4" />
             </button>
-            <button
-              onClick={onClose}
-              className="btn-ghost p-1.5 rounded-lg"
-              aria-label="Close preview"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            {onDelete && (
+              <button
+                onClick={() => onDelete(memory)}
+                className="btn-ghost p-1.5 rounded-lg"
+                aria-label="Move to trash"
+                title="Move to trash — restore it from the trash any time"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
-          <h2 className="fs-6 font-semibold lh-dicht break-words" style={{ color: "var(--text-1)" }}>
+        <div className="detail-korper" style={{ padding: "18px 22px" }}>
+          <h1 className="lh-dicht break-words" style={{ color: "var(--text-1)", fontWeight: 700, letterSpacing: "-0.01em", margin: 0 }}>
             {memory.title || "Untitled"}
-          </h2>
-          <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 fs-2" style={{ color: "var(--text-3)" }}>
-            <span>{artLabel}</span>
+          </h1>
+          {/* P202, Mockup-Meta (.detail-korper .meta): der Art-Punkt, die Art mit
+              ihrem KIND-Wort, die Endung der Quelle, die kurze Zeit, die Herkunft —
+              die getönten Tag-Pillen stehen in derselben Zeile. */}
+          <div className="detail-meta" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 6, fontSize: "var(--fs-2)", color: "var(--text-3)" }}>
+            <span aria-hidden style={{ width: 7, height: 7, borderRadius: 3, background: memory.type ? `var(--type-${memory.type})` : "var(--text-3)", flex: "none" }} />
+            {endung && <><span>{endung}</span><span>·</span></>}
             <span>·</span>
-            <span>{formatDistanceToNow(new Date(memory.updatedAt), { addSuffix: true })}</span>
-            {chunk && (
+            <span className="tnum">{kurzeZeit(memory.updatedAt)}</span>
+            {quelle && (
               <>
                 <span>·</span>
-                <span className="tnum" title="This file came in as separate pieces">{t("preview.part")} {chunk.nr}/{chunk.von}</span>
+                <span>saved from</span>
+                <button
+                  onClick={() => void quelleOeffnen()}
+                  data-testid="preview-open-source"
+                  className="font-semibold hover:underline underline-offset-2"
+                  style={{ color: 'var(--accent)' }}
+                  title={quelle.art === "datei"
+                    ? `Open file: ${quelle.pfad}`
+                    : quelle.art === "url"
+                      ? `Open link: ${quelle.url}`
+                      : `Imported from inbox: ${quelle.name}`}
+                >
+                  {quelle.name}
+                </button>
               </>
             )}
-            {typeof memory.confidence === "number" && (
-              <>
-                <span>·</span>
-                <span className="tnum">{t("preview.confidence")} {Math.round(memory.confidence * 100)}%</span>
-              </>
-            )}
-            {privat && (
-              <>
-                <span>·</span>
-                <span className="inline-flex items-center gap-1" style={{ color: "var(--accent)" }}><Lock className="w-3 h-3" /> Private</span>
-              </>
-            )}
-          </div>
-          {/* P202, Mockup-Grammatik: die getönten Tag-Pillen und die Herkunft stehen
-              in der Zeile unter dem Titel — die große Quelle-Karte flog; der Weg
-              zurück zur Herkunft ist das Wort "saved from …" selbst (grüner Glieder). */}
-          {memory.tags.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              {memory.tags.map((tag) => (
+            {memory.tags.map((tag, i) => {
+              const farbe = PILLE_FARBEN[i % PILLE_FARBEN.length];
+              return (
                 <span
                   key={tag}
-                  className="inline-flex items-center px-2 py-px rounded fs-1 font-semibold"
-                  style={{ color: 'var(--type-semantic)', background: 'color-mix(in srgb, var(--type-semantic) 12%, transparent)' }}
+                  className="inline-flex items-center px-2 py-px rounded"
+                  style={{ color: farbe.ton, background: farbe.flaeche, fontSize: "var(--fs-2)", fontWeight: 550, height: 19, lineHeight: "17px", padding: "1px 7px" }}
                 >
                   #{tag}
                 </span>
-              ))}
-            </div>
-          )}
-          {quelle && (
-            <div className="flex items-center flex-wrap gap-1 mt-2 fs-2" style={{ color: 'var(--text-3)' }}>
-              <span>saved from</span>
-              <button
-                onClick={() => void quelleOeffnen()}
-                data-testid="preview-open-source"
-                className="font-semibold hover:underline underline-offset-2"
-                style={{ color: 'var(--accent)' }}
-                title={quelle.art === "datei"
-                  ? `Open file: ${quelle.pfad}`
-                  : quelle.art === "url"
-                    ? `Open link: ${quelle.url}`
-                    : `Imported from inbox: ${quelle.name}`}
-              >
-                {quelle.name}
-              </button>
-            </div>
-          )}
-          {(privat || leserStand !== "offen") && (
-            <div data-testid="preview-readers" className="mb-4 fs-2 flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: "var(--bg-inset)", color: "var(--text-2)" }}>
-              {privat ? <Lock className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} /> : <Bot className="w-3.5 h-3.5 mt-px shrink-0" style={{ color: "var(--accent)" }} />}
-              <span>
-                {privat
-                  ? "Private — AI apps and cloud AI never see this note."
-                  : leserGrund
-                    ? leserGrund
-                    : leser.length === 0
-                      ? "No AI app has read this note."
-                      : `Read by AI apps: ${leser.map((l) => `${l.who} ${l.times}× (last ${formatDistanceToNow(new Date(l.last), { addSuffix: true })})`).join(", ")}`}
-              </span>
-            </div>
-          )}
+              );
+            })}
+          </div>
           {/* Der komplette Text, Absatz fuer Absatz — kein Formular, kein Markup-Zwang */}
-          {staendeGrund && (
-            <p role="status" data-testid="preview-staende-grund" className="fs-2 mb-3" style={{ color: 'var(--warn)' }}>{staendeGrund}</p>
-          )}
-          {staende !== null && staende.length > 0 && (
-            <div data-testid="preview-stands" className="mb-4">
-              <button
-                onClick={() => setStaendeOffen((v) => !v)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl fs-2 transition active:scale-[0.99]"
-                style={{ background: "var(--bg-inset)", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
-                data-testid="preview-stands-open"
-                aria-expanded={staendeOffen}
-              >
-                <span>Earlier stands ({staende.length})</span>
-                <span style={{ color: "var(--text-3)" }}>{staendeOffen ? "Hide" : "Show"}</span>
-              </button>
-              {staendeOffen && (
-                <ul className="mt-2 space-y-1 klappe-auf">
-                  {staende.map((s) => (
-                    <li key={s.id}>
-                      <button
-                        onClick={() => setGewaehlterStand(s)}
-                        className="w-full text-left px-3 py-2 rounded-lg fs-2"
-                        style={{ background: gewaehlterStand?.id === s.id ? "var(--bg-inset)" : "transparent", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
-                        data-testid="preview-stand-row"
-                      >
-                        <span className="tnum">{formatDistanceToNow(new Date(s.createdAt), { addSuffix: true })}</span>
-                        <span className="block truncate" style={{ color: "var(--text-3)" }}>{s.content.replace(/\s+/g, " ").slice(0, 90)}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-          {staende !== null && staende.length === 0 && (
-            <p data-testid="preview-stands-none" className="mb-4 fs-2" style={{ color: "var(--text-3)" }}>
-              No earlier stands - this note has not been edited since it was written.
-            </p>
-          )}
           {gewaehlterStand ? (
             <>
               <div
@@ -399,23 +355,73 @@ export function MemoryPreview({ memory, onClose, onEdit, ohneVorhang = false }: 
               {inhaltOhneQuelle(aktuellerInhalt) || aktuellerInhalt}
             </article>
           )}
+          {staendeGrund && (
+            <p role="status" data-testid="preview-staende-grund" className="fs-2 mb-3" style={{ color: 'var(--warn)' }}>{staendeGrund}</p>
+          )}
+          {/* P202, Mockup-Grammatik (.detail-gruppe): die Tische stehen unter dem
+              Text — Gelesen und Stände als zustandszeilen-Tische. */}
+          <div className="detail-gruppe" data-testid="preview-readers-gruppe">
+            <div className="detail-gruppe-name">Read by</div>
+            <div className="gruppen-tisch">
+              <div className="zustandszeile" style={{ borderBottom: "none" }} data-testid="preview-readers">
+                <span className="art">{privat ? "Private" : leser.length === 0 ? (leserStand === "da" ? "Noch nie" : "Gelesen") : "Gelesen"}</span>
+                <div className="inhalt">
+                  {privat
+                    ? "AI apps and cloud AI never see this note."
+                    : leserGrund
+                      ? leserGrund
+                      : leser.length === 0
+                        ? "No AI app has read this note."
+                        : `Read by AI apps: ${leser.map((l) => `${l.who} ${l.times}× (last ${formatDistanceToNow(new Date(l.last), { addSuffix: true })})`).join(", ")}`}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="detail-gruppe" data-testid="preview-stands-gruppe">
+            <div className="detail-gruppe-name">Stands</div>
+            <div className="gruppen-tisch">
+              {staende !== null && staende.length > 0 ? (
+                <div className="zustandszeile" style={{ borderBottom: "none" }}>
+                  <span className="art tnum">{staende.length + 1} {staende.length + 1 === 1 ? "Stand" : "Stände"}</span>
+                  <div className="inhalt">
+                    <button
+                      onClick={() => setStaendeOffen((v) => !v)}
+                      data-testid="preview-stands-open"
+                      aria-expanded={staendeOffen}
+                      className="hover:underline underline-offset-2"
+                      style={{ color: "var(--accent)" }}
+                    >
+                      {staende.length} earlier {staende.length === 1 ? "stand" : "stands"} — click to read them
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="zustandszeile" style={{ borderBottom: "none" }} data-testid="preview-stands-none">
+                  <div className="inhalt">No earlier stands — this note has not been edited yet.</div>
+                </div>
+              )}
+            </div>
+            {staendeOffen && staende !== null && staende.length > 0 && (
+              <div className="gruppen-tisch mt-2" data-testid="preview-stands">
+                {staende.map((st, i) => (
+                  <div
+                    key={st.id}
+                    className="zustandszeile cursor-pointer"
+                    style={i === staende.length - 1 ? { borderBottom: "none" } : undefined}
+                    data-testid="preview-stand-row"
+                    onClick={() => setGewaehlterStand(st)}
+                  >
+                    <span className="art tnum">{kurzeZeit(st.createdAt)}</span>
+                    <div className="inhalt">
+                      <span className="block truncate" style={{ color: "var(--text-2)" }}>{st.content.replace(/\s+/g, " ").slice(0, 90)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* P202, Mockup-Grammatik: die Tags stehen unten — die Aktionen (Copy/Edit)
-            wohnten schon im Kopf; ein zweiter Knopf-Satz wäre eine doppelte Behauptung. */}
-        <footer className="px-5 py-3 shrink-0" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-          <div className="flex flex-wrap gap-2 min-w-0 overflow-hidden">
-            {memory.tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center px-2 py-1 rounded-md fs-1 font-semibold border"
-                style={{ color: "var(--text-2)", background: "var(--bg-inset)", borderColor: "var(--border-subtle)" }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </footer>
       </motion.div>
     </div>
   );

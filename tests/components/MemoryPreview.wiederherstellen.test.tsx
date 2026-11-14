@@ -97,7 +97,7 @@ describe("Flaeche: einen Stand zur aktuellen Fassung machen", () => {
     // Wirkung: der Text wechselt, die Stand-Ansicht geht, die Historie waechst um eins.
     await waitFor(() => expect(screen.getByTestId("preview-text").textContent).toBe("Der aeltere Text"));
     expect(screen.queryByTestId("preview-stand-text")).toBeNull();
-    await waitFor(() => expect(screen.getByTestId("preview-stands").textContent).toContain("3"));
+    await waitFor(() => expect(screen.getByTestId("preview-stands-gruppe").textContent).toContain("3"));
     expect(w.zustand.staende).toHaveLength(3);
     expect(w.zustand.staende.slice(1).map((s) => s.content)).toEqual(["Der alte Text", "Der aeltere Text"]);
   });

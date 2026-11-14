@@ -141,7 +141,7 @@ describe("#101 Kopf und Bilanz stellen dieselbe Menge", () => {
     // des vorherigen Falls als Schweigen der Tür auszugeben.
     const { refreshMemories } = await import("../../src/lib/store");
     await act(async () => { await refreshMemories(); });
-    await ruhe(container, /100 of 100 notes/);
+    await ruhe(container, /100 of 100/);
     const kopf = kopfZeile(container);
     expect(
       ersteZahl(kopf!.textContent ?? ""),

@@ -114,7 +114,7 @@ describe("Bestand statt Seitenlänge: die Fläche nennt, was die Tür sagt", () 
     await warteAuf(container, /14,702 notes/, "die Leiste nennt noch keinen Bestand");
     const zeile = [...container.querySelectorAll("*")].filter((e) => !e.children.length && /^100 notes$/.test((e.textContent ?? "").trim()));
     expect(zeile.length, "die Fläche behauptet nirgends ‚100 notes' — Pruefung greift nicht").toBe(0);
-    const marke = [...container.querySelectorAll("*")].find((e) => !e.children.length && /^14,702 notes$/.test((e.textContent ?? "").trim()));
+    const marke = [...container.querySelectorAll("*")].find((e) => !e.children.length && /^14,702$/.test((e.textContent ?? "").trim()));
     expect(marke, "die Seitenleiste nennt nicht den Bestand").toBeTruthy();
   });
 
@@ -193,7 +193,7 @@ describe("Bestand statt Seitenlänge: die Fläche nennt, was die Tür sagt", () 
     // Zusammensetzung von 14.702.
     expect(text).toMatch(/in the 100 loaded/);
     expect(text, "die Kategorien-Zelle zählt über die Ladung und nennt nur „tags'").toMatch(/tags in the 100 loaded/);
-    expect(text).toMatch(/of \d+ on this page/);
+    expect(text).toMatch(/of \d+/);
     expect(text, "das Verhältnis klingt nach Bestand, meint die Seite").not.toMatch(/100 of 100 notes/);
   });
 
@@ -230,7 +230,7 @@ describe("Bestand statt Seitenlänge: die Fläche nennt, was die Tür sagt", () 
     const { container } = rahmen();
     const { act } = await import("@testing-library/react");
     await act(async () => { await refreshMemories(); });
-    await waitFor(() => expect(container.textContent).toMatch(/100 of 100 notes/), { timeout: 6000 });
+    await waitFor(() => expect(container.textContent).toMatch(/100 of 100/), { timeout: 6000 });
     expect(container.textContent).not.toMatch(/in the [\d,]+ loaded/);
     expect(container.textContent).toMatch(/tags/);
     expect(container.textContent, "die Leiste erklärt eine Ladung, die sie nicht als solche nennt").not.toMatch(/counts cover the/);

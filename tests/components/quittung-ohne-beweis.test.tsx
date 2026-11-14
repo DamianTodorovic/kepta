@@ -132,8 +132,8 @@ describe("Punkt 4: der Inbox-Scan fragt den Status, bevor er Zahlen malt", () =>
     });
     const { container } = await zeige();
     const knopf = await waitFor(() => {
-      const k = [...container.querySelectorAll("button")].find((b) => /scan/i.test(b.textContent || ""));
-      if (!k) throw new Error("kein Scan-Knopf");
+      const k = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").includes("Scan the inbox now"));
+      if (!k) throw new Error("kein Inbox-Scan-Knopf");
       return k;
     });
     await act(async () => { knopf.click(); await new Promise((r) => setTimeout(r, 400)); });
@@ -151,8 +151,8 @@ describe("Punkt 4: der Inbox-Scan fragt den Status, bevor er Zahlen malt", () =>
     });
     const { container } = await zeige();
     const knopf = await waitFor(() => {
-      const k = [...container.querySelectorAll("button")].find((b) => /scan/i.test(b.textContent || ""));
-      if (!k) throw new Error("kein Scan-Knopf");
+      const k = [...container.querySelectorAll("button")].find((b) => (b.getAttribute("title") || "").includes("Scan the inbox now"));
+      if (!k) throw new Error("kein Inbox-Scan-Knopf");
       return k;
     });
     await act(async () => { knopf.click(); await new Promise((r) => setTimeout(r, 400)); });

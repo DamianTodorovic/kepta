@@ -144,6 +144,7 @@ export function buildPaletteActions(opts: {
   onGoGraph: () => void;
   onImportFileClick: () => void;
   onFocusUrl: () => void;
+  onOpenSetup?: () => void;
 }): PaletteAction[] {
   return [
     { id: "search", label: "Search the index", desc: "Search the knowledge index", icon: <Search className="w-4 h-4" />, keywords: "search find filter", action: opts.onFocusSearch },
@@ -155,5 +156,8 @@ export function buildPaletteActions(opts: {
     { id: "import", label: "Import a file", desc: "PDF / MD / TXT / JSON via a dialog", icon: <FileUp className="w-4 h-4" />, keywords: "import file upload drag drop", action: opts.onImportFileClick },
     { id: "url", label: "Import a URL", desc: "Focus the URL clipper", icon: <Globe className="w-4 h-4" />, keywords: "url clipper web import", action: opts.onFocusUrl },
     { id: "extract", label: "Extract the key point", desc: "Note: available in chat once an answer exists", icon: <Sparkles className="w-4 h-4" />, keywords: "kernaussage ki extraktion", action: () => { opts.onGoChat(); } },
+    // P202: der Weg zur Ersteinrichtung — der Fuß trägt die zwei Mockup-Ikons,
+    // die Palette hält den Setup-Weg offen.
+    ...(opts.onOpenSetup ? [{ id: "setup", label: "Set up K3PTA", desc: "Open the first-run assistant", icon: <Sparkles className="w-4 h-4" />, keywords: "einrichtung wizard setup", action: opts.onOpenSetup }] : []),
   ];
 }

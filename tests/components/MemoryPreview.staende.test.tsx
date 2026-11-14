@@ -62,8 +62,10 @@ describe("MemoryPreview: die Staende einer Notiz", () => {
     vi.stubGlobal("fetch", fetchMit([stand(1, "Der alte Text"), stand(2, "Der aeltere Text")]));
     render(<MemoryPreview memory={mem()} onClose={() => {}} onEdit={() => {}} />);
 
-    const abschnitt = await screen.findByTestId("preview-stands", {}, { timeout: 1500 });
-    expect(abschnitt.textContent).toContain("2");
+    // P202, Mockup-Tische: die Stände stehen als zustandszeile-Tisch — die Liste
+    // öffnet über den „click to read them"-Knopf in der Zeile.
+    const abschnitt = await screen.findByTestId("preview-stands-gruppe", {}, { timeout: 1500 });
+    expect(abschnitt.textContent).toContain("2 earlier");
 
     await userEvent.click(screen.getByTestId("preview-stands-open"));
     const zeilen = screen.getAllByTestId("preview-stand-row");
@@ -105,7 +107,9 @@ describe("MemoryPreview: die Staende einer Notiz", () => {
   it("Gratis-Stufe: die Stand-Flaeche traegt kein Bezahlwort und kein Schluesselfeld", async () => {
     vi.stubGlobal("fetch", fetchMit([stand(1, "Der alte Text")]));
     render(<MemoryPreview memory={mem()} onClose={() => {}} onEdit={() => {}} />);
-    const abschnitt = await screen.findByTestId("preview-stands", {}, { timeout: 1500 });
+    // P202, Mockup-Tische: die Stände stehen als zustandszeile-Tisch — die Liste
+    // öffnet über den Knopf in der Zeile, der Tisch bleibt die Stand-Fläche.
+    const abschnitt = await screen.findByTestId("preview-stands-gruppe", {}, { timeout: 1500 });
     await userEvent.click(screen.getByTestId("preview-stands-open"));
     const flaeche = screen.getByTestId("memory-preview");
     expect(hatBezahlwort(flaeche.textContent ?? "")).toBe(false);

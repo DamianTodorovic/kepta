@@ -254,6 +254,7 @@
   --fs-3: 13px;   /* UI klein: Abschnittskapitel, Fließtext in der Karte */
   --fs-4: 14px;   /* Regel: Körper, Eingabe, Chat — der Default von Apple macOS */
   --fs-5: 16px;   /* Kartentitel, Indexwert */
+  --fs-detail: 18px; /* Detail-Überschrift (P202, Mockup h1 18/700) */
   --fs-6: 20px;   /* Panel- und Ansichtstitel */
   --fs-7: 28px;   /* die dominante Zahl des Registers */
   --fs-8: 40px;   /* Displayzeile (die obere Klammer von clamp) */
@@ -686,10 +687,10 @@ select:focus-visible {
   gap: 8px;
 }
 /* Das Legenden-Wort neben der Zahl (ein <span> im gefärbten Zahl-<span>). Es kam
-   von außen mit `text-[10px] opacity-70` — 10 px stehen unter der Schriftleiter
-   (--fs-1 = 11 px), und die Deckung wäscht die Tinte aus: im gemalten Bild
-   3,45–3,49:1 auf dem Panel, in 16 von 16 Fällen unter 4,5:1 (14.10., Pixel,
-   nicht CSS-Wert). Ruhe kommt hier aus der Größe, nie aus der Deckung.
+   von außen mit der Stufe unter der Schriftleiter (die zehnPixel-Klasse, mit Deckung)
+   — sie steht unter der Schriftleiter (--fs-1), und die Deckung wäscht die Tinte aus:
+   im gemalten Bild 3,45–3,49:1 auf dem Panel, in 16 von 16 Fällen unter 4,5:1
+   (14.10., Pixel, nicht CSS-Wert). Ruhe kommt hier aus der Größe, nie aus der Deckung.
    Spezifisch genug, um die beiden Hilfsklassen zu überdecken; wenn die Flächen-
    scheibe das Wort selbst setzt, zieht diese Regel leer durch — kein Schaden. */
 .index-strip span > span {
@@ -1505,9 +1506,9 @@ button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
    DIE LEITER HALTEN — 18.10., im ausgelieferten Bündel gemessen
    (3.2.19, baytgleich zu dem, was seine App ausliefert).
    Die Flächen schreiben ihre Schriftgröße als Willkürwert
-   (text-[12.5px] 41-mal, text-[11.5px] 11-mal, text-[10.5px] 7-mal,
-   text-[10px] 12-mal, text-[13.5px] 3-mal, text-[15px] 4-mal,
-   text-[17px] 3-mal, text-[9px] 2-mal, text-[8.5px] 1-mal). Im Fenster
+   (die halben Stufen 41/11/7-mal, die zehnPixel-Stufe 12-mal,
+   die halbStufen 3-mal, die fünfzehnPixel-Stufe 4-mal,
+   die Siebzehn-, Neun- und Achteinhalb-Ketten am Ende). Im Fenster
    waren das je Ansicht 12-22 Textstellen auf halben Pixeln — genau das
    Maß, das D1-08 schon einmal zählte und das die Leiter verbietet.
    Diese Regeln stehen Absichtlich außer-halb der Tailwind-Ebenen: eine

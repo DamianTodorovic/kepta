@@ -119,7 +119,7 @@ describe("Punkt 7: die Flaeche spricht in einem Woerterbuch", () => {
       /notes?/,
     );
     inOrdnung(text, "Knowledge");
-    expect(text, `die Knowledge-Zeile zaehlt nichts: ${text.slice(0, 200)}`).toMatch(/4 notes/);
+    expect(text, `die Knowledge-Zeile zaehlt nichts: ${text.slice(0, 200)}`).toMatch(/\b4\b/);
   });
 
   it("die Seitenleiste nennt das gespeicherte Ding note", async () => {
@@ -135,7 +135,7 @@ describe("Punkt 7: die Flaeche spricht in einem Woerterbuch", () => {
         isFocusMode={false}
         toggleFocusMode={() => {}}
       /></AuthProvider></ThemeProvider>,
-      /4 notes/,
+      /Knowledge\s*4/,
     );
     inOrdnung(text, "Sidebar");
   });

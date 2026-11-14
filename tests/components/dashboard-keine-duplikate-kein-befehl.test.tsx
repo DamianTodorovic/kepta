@@ -54,7 +54,7 @@ async function zeige(memories: Memory[]) {
   );
   // Gewartet wird auf den Zustand, nicht auf den Rahmen: die Liste laeuft einem Takt nach,
   // und ein Snapshot beim ersten Streifen misst die Flaeche vor ihrem ersten Laden.
-  await waitFor(() => expect((container.textContent || "").replace(/\s+/g, " ")).toMatch(/3 of 3 notes/i), { timeout: 8000 });
+  await waitFor(() => expect((container.textContent || "").replace(/\s+/g, " ")).toMatch(/3 of 3/i), { timeout: 8000 });
   return (container.textContent || "").replace(/\s+/g, " ");
 }
 

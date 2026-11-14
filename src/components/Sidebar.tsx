@@ -1,6 +1,6 @@
 import { useState, type RefObject } from 'react';
 import { Brain } from "../lib/icons";
-import { MessageSquare, SettingsIcon, Moon, Sun, PanelLeftClose, Network, Sparkles, Clock, FileText, Bot, User, Search } from "../lib/icons";
+import { MessageSquare, SettingsIcon, Moon, Sun, Network, Clock, FileText, Bot, User, Search } from "../lib/icons";
 import { useTheme } from '../contexts/ThemeContext';
 import { cn } from '../lib/utils';
 import { KeptaMark } from './KeptaMark';
@@ -110,7 +110,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
 
       {/* Navigation */}
       <div className="px-3 py-3">
-        <div className="space-y-1">
+        <div className="flex flex-col gap-[1px]">
           {navItems.map(item => {
             const active = currentView === item.id;
             return (
@@ -132,7 +132,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                     Leiste ihn immer nannte. */}
                 {item.id === 'memories' && totalMemories > 0 && (
                   <span className="seiten-zahl fs-1 tnum shrink-0">
-                    {totalMemories.toLocaleString('en-GB')} {totalMemories === 1 ? 'note' : 'notes'}
+                    {totalMemories.toLocaleString('en-GB')}
                   </span>
                 )}
                 {item.id === 'activity' && appsLive && (
@@ -220,18 +220,10 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           </span>
         </div>
         <div className="nav-fuss-ikonen">
-          {showSetup && onOpenSetup && (
-            <button
-              onClick={onOpenSetup}
-              className="nav-fuss-ikon treff"
-              aria-label="Open setup"
-              title="Open setup"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-            </button>
-          )}
           {/* Die zwei Thema-Ikons des Mockups: das aktive Thema trägt seine
-              Färbung, das andere steht daneben — kein Wort, nur das Zeichen. */}
+              Färbung, das andere steht daneben — kein Wort, nur das Zeichen.
+              Der Setup-Weg wohnt in der Palette (⌘K), die Leisten-Klappe an
+              ⌘B/Shortcuts — der Fuß trägt nur die Mockup-Zeichen. */}
           <button
             onClick={() => { if (isDark) toggleTheme(); }}
             className="nav-fuss-ikon treff"
@@ -249,14 +241,6 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
             title="Dark theme"
           >
             <Moon className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={toggleFocusMode}
-            className="nav-fuss-ikon treff"
-            aria-label="Focus mode"
-            title="Hide sidebar"
-          >
-            <PanelLeftClose className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
