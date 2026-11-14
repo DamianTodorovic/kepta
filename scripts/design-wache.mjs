@@ -461,7 +461,7 @@ const SCHULD = new Map([
   ["icons:groesse-fremd", { sitze: 33, seit: "10.10.", wer: "E2/E3 (Bausteine)", warum: "w-2.5/w-3-Sitzungen; die Untergrenze --icon-min in index.css hebt sie beim Rendern auf 14 px, die Klasse selbst bleibt" }],
   ["icons:name-fremd", { sitze: 2, seit: "10.10.", wer: "DS, benannt", warum: "RefreshCw->loader (der Körper IST zwei Kreiselpfeile = erneuern) und PartyPopper->rocket (Namensrest aus der Phosphor-Zeit, Bild passt zur Absicht)" }],
   ["css:klassen-waisen", { sitze: 0, seit: "5.11. (gemeldeter Stand zuvor 18, seit 14.10.)", wer: "DS (eigene Scheibe)", warum: "Zensus 13.10.: 20 Regeln in index.css, die kein Baustein ruft; 14.10.: 18 Sitze, weil .tap und .tap-reihum in Chat.tsx anzogen. Entscheidung 5.11.: geloescht, nicht gemeldet -- der Vertrag selbst verbietet 'eine Regel in CSS, die niemand ruft' (design/DESIGN.md §10), und die einzige Begruendung, das Aufschieben zu lassen (E2/E3 koennten uncommittete Rufer haben), fiel mit dem ledigen Baum bei 104cf2e. Zwei eigne Methoden, null Rufer: Token-Zensus in src (className-Worte, getrennt an Whitespace und Klammern, damit inset-0 nicht .inset ruft) und class=-Suche in src, index.html, scripts, tests. Eine neue Waise macht rot." }],
-  ["schrift:größen-fremd", { sitze: 5, seit: "14.11.", wer: "P202 Mockup-Maß", warum: "die Mockup-Schrift-Skala 10/10.5/11.5/12.5/13.5px lebt in src/mockup-masse.css — Damians Wort 14.11.2026 ('K3PTA muss genau 1:1 so aussehen wie auf dem Mockup in jedem einzelnen Aspekt') macht die Mockup-Typo-Skala (k3pta-app-fenster.html) zum Gesetz; der Fensterlauf (pruefe-einstellungen-im-fenster.mjs, MOCKUP_HALBE) trägt dieselbe Ausnahme" }],
+  ["schrift:größen-fremd", { sitze: 6, seit: "14.11.", wer: "P202 Mockup-Maß", warum: "die Mockup-Schrift-Skala 10/10.5/11.5/12.5/13.5px lebt in src/mockup-masse.css — Damians Wort 14.11.2026 ('K3PTA muss genau 1:1 so aussehen wie auf dem Mockup in jedem einzelnen Aspekt') macht die Mockup-Typo-Skala (k3pta-app-fenster.html) zum Gesetz; 15px ist der Settings-h2 desselben Bauplans (.settings-panel h2); der Fensterlauf (pruefe-einstellungen-im-fenster.mjs, MOCKUP_HALBE) trägt dieselbe Ausnahme" }],
 ]);
 const schuld = (key, gemessen) => {
   const s = SCHULD.get(key);
@@ -1147,10 +1147,16 @@ const BILD = new Map();
         if (k !== null && k < min) { min = k; wo = s.name; }
       }
       if (min === Infinity) continue;
-      const ok = hält(min, SCHWELLE.text);
+      // P202, Damian 14.11. „100 % wie das Mockup": die Typ-Rollen sind FLÄCHEN-
+      // Rollen (die Punkte, die Pillen-Gründe) und tragen die Mockup-Werte — ihre
+      // Latte ist die Grafik-Latte (3:1); die Text-Rollen bleiben bei 4,50. Die
+      // Schrift-Anwendungen der Typ-Farben tragen die abgeleitete -text-Fassung.
+      const istTypRolle = TYPROLLEN.includes(name);
+      const ok = hält(min, istTypRolle ? SCHWELLE.kante : SCHWELLE.text);
       if (!ok) tiefer++;
       BILD.set(`${thema}·${name}`, min);
-      meld("schichten", `${thema}: ${name} auf dem härtesten Stapel`, dez(min), ">= 4,50",
+      meld("schichten", `${thema}: ${name} auf dem härtesten Stapel`, dez(min),
+        istTypRolle ? ">= 3,00 (Flächen-Rolle)" : ">= 4,50",
         `${wo} · ${hex(composite(ro, lagen.find((s) => s.name === wo).c))} auf ${hex(lagen.find((s) => s.name === wo).c)}`, ok);
       rollen++;
     }
@@ -1223,8 +1229,13 @@ const BILD = new Map();
         continue;
       }
       const k = kontrast(composite(ro, c), c);
-      meld("typ", `${thema}: ${name} auf der Leinwand`, dez(k), ">= 4,50",
-        `src/index.css:${def.zeile} ${hex(ro)} auf ${hex(c)}`, hält(k, SCHWELLE.text));
+      // P202, Damian 14.11. „100 % wie das Mockup": die Typ-Farben sind FLÄCHEN-
+      // Rollen (die Punkte, die Pillen-Gründe, die Legende) und tragen die
+      // Mockup-Werte (k3pta-app-fenster) — die Leinwand-Latte ist die Grafik-
+      // Latte (WCAG 1.4.11: 3:1). Die SCHRIFT-Anwendungen tragen die abgeleitete
+      // --type-X-text-Fassung, die die typFarben-Ableitung auf 4,5 hält.
+      meld("typ", `${thema}: ${name} auf der Leinwand`, dez(k), ">= 3,00",
+        `src/index.css:${def.zeile} ${hex(ro)} auf ${hex(c)}`, hält(k, SCHWELLE.kante));
     }
     // Der zweite Kanal: Leinwand und Farbregler sprechen sRGB-Hex, der Rest der
     // App oklch. Zwei Kanäle, eine Farbe — wer eine der beiden Zeilen ändert,

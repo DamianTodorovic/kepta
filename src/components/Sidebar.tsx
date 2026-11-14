@@ -168,7 +168,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   {/* P202, Mockup-Grammatik: der Tag trägt die Art-Farbe der Fakten und
                       das #-Zeichen, wie das Mockup ihn druckt (#compliance) — kein
                       grauer Hash-Glyph daneben, das Zeichen sitzt im Wort. */}
-                  <span className="truncate flex-1" style={{ color: 'var(--type-semantic)', fontWeight: 550 }}>
+                  <span className="truncate flex-1" style={{ color: 'var(--type-semantic-text)', fontWeight: 550 }}>
                     {'#' + name}
                   </span>
                   {count !== null && count > 1 && (

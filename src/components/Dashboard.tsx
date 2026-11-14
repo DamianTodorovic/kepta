@@ -192,12 +192,15 @@ const SATZ_BREITE_MIN = 390;
  * gemessen 22.10. 21:09:14, wo die Ruhe-Ebenen-Wache von 22 auf 16 Zeilen fiel.
  */
 const TRAEGER_KLEID: { key: Traeger; color: string }[] = [
-  { key: 'notes', color: 'var(--type-semantic)' },
-  { key: 'files', color: 'var(--type-reference)' },
-  { key: 'code', color: 'var(--type-procedural)' },
+  // P202: die Zeile trägt die Farbe ALS SCHRIFT — die -text-Fassung (die dunklere,
+  // lesbarere Abwandlung; der Roh-Ton bleibt auf den Flächen: den Punkten, den
+  // Pillen-Gründen).
+  { key: 'notes', color: 'var(--type-semantic-text)' },
+  { key: 'files', color: 'var(--type-reference-text)' },
+  { key: 'code', color: 'var(--type-procedural-text)' },
   // Derselbe Ton wie im Regal ueber dem Graphen (`GraphRegal.tsx → TRAEGER_TOKEN`): zwei
   // Flaechen, die dasselbe Fach in zwei verschiedenen Farben zeigen, sind zwei Luegen.
-  { key: 'daten', color: 'var(--type-episodic)' },
+  { key: 'daten', color: 'var(--type-episodic-text)' },
   { key: 'anderes', color: 'var(--type-neutral)' },
 ];
 

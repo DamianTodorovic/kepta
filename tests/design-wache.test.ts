@@ -56,7 +56,13 @@ describe("Design-Wache", () => {
   it("hält die Typ-Farb-Wache: acht Rollen auf der Leinwand, kein Hartwert in der Quelle", () => {
     const rollen = ergebnis.linien.filter((l) => l.sektion === "typ" && /auf der Leinwand/.test(l.befund));
     expect(rollen.length).toBe(16);                     // acht Rollen, beide Themen
-    for (const l of rollen) expect(parseFloat(l.zahl.replace(",", "."))).toBeGreaterThanOrEqual(4.5);
+    // P202, Damian 14.11. „100 % wie das Mockup": die Typ-Farben sind Flächen-
+    // Rollen — die Wache hält sie an der Grafik-Latte (3:1), die Zeile nennt
+    // ihre Latte selbst; die Schrift-Anwendungen tragen die -text-Fassung (4,5).
+    for (const l of rollen) {
+      const latte = l.schwelle.includes("3,00") ? 3 : 4.5;
+      expect(parseFloat(l.zahl.replace(",", "."))).toBeGreaterThanOrEqual(latte);
+    }
     const kanal = ergebnis.linien.filter((l) => l.sektion === "typ" && /beide Kanäle/.test(l.befund));
     expect(kanal.map((l) => l.zahl)).toEqual(["8/8", "8/8"]);
     const ratsche = ergebnis.linien.find((l) => l.sektion === "typ" && /Hex-Literal/.test(l.befund));

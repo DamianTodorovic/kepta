@@ -72,7 +72,7 @@ describe("DuplicatesPanel: die Duplikate werden sichtbar", () => {
     const kurz = note({ title: "Gleich", content: "kurz" });
     const lang = note({ title: "Gleich", content: "Deutlich mehr Inhalt in dieser Fassung, die erhalten bleiben soll." });
     oeffne([kurz, lang]);
-    const keep = screen.getByText(/^Suggested keeper/).closest(".app-zeile")!;
+    const keep = screen.getByText(/^Suggested keeper/).closest(".app-zeile") as HTMLElement;
     expect(within(keep).getByText("Gleich")).toBeTruthy();
     expect(within(keep).getByText(/Not a duplicate/i)).toBeTruthy();
     expect(within(keep).getByText(/Open this note/i)).toBeTruthy();

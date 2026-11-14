@@ -175,14 +175,25 @@
      härtesten Stapel; --type-*-hex ist derselbe Wert im sRGB-Kanal, den
      Leinwand (canvas.fillStyle) und Farbregler (<input type=color> verlangt
      #rrggbb) lesen. Generiert von scripts/design-wache.mjs --setzen. */
-  --type-semantic: oklch(0.3962 0.0571 247.6);
-  --type-semantic-hex: #2d4964;
-  --type-episodic: oklch(0.4060 0.0663 349.5);
-  --type-episodic-hex: #643a4f;
-  --type-procedural: oklch(0.3914 0.0553 148.0);
-  --type-procedural-hex: #304e34;
-  --type-reference: oklch(0.4016 0.0580 56.6);
-  --type-reference-hex: #604028;
+  /* P202, Damian 14.11. „100 % wie das Mockup": die Kind-Farben stehen auf den
+     Mockup-Werten (k3pta-app-fenster: #3A6EA8 / #A8742E / #2E7D5B / #A4553F) —
+     die dunkler gerechnete Lesbarkeits-Fassung ist damit zurückgedreht. */
+  --type-semantic: oklch(0.5297 0.1075 252.7);
+  --type-semantic-hex: #3a6ea8;
+  --type-episodic: oklch(0.5996 0.1072 70.9);
+  --type-episodic-hex: #a8742e;
+  --type-procedural: oklch(0.5314 0.0946 161.9);
+  --type-procedural-hex: #2e7d5b;
+  --type-reference: oklch(0.5399 0.1099 36.5);
+  --type-reference-hex: #a4553f;
+  /* Die Schrift-Fassung der Kind-Farben (P202): wo die Farbe als SCHRIFT steht
+     (die Tag-Zeile, die Träger-Zeile), trägt die dunklere, lesbarere Abwandlung
+     — der Farbton bleibt, die Helligkeit hält 4,5:1 auf dem hellen Papier. Die
+     Fläche-Anwendungen (die Punkte, die Pillen-Gründe) tragen den Roh-Ton. */
+  --type-semantic-text: #2d4964;
+  --type-episodic-text: #643a4f;
+  --type-procedural-text: #304e34;
+  --type-reference-text: #604028;
   /* Ein Knoten ohne Art ist kein Knoten ohne Farbe: der Fallback stand als
      Hartwert in der Fläche (#9a9a9a). Neutralton der Marke, Stufe gerechnet. */
   --type-neutral: oklch(0.3955 0.0000 89.9);
@@ -395,6 +406,12 @@
   --type-procedural-hex: #8fb89a;
   --type-reference: oklch(0.7463 0.0570 65.8);
   --type-reference-hex: #c6a687;
+  /* Die Schrift-Fassung im dunklen Thema: die hellere Fassung selbst (die
+     dunkle-Fassung-Werte halten 4,5:1 auf dem dunklen Papier). */
+  --type-semantic-text: #9cadc4;
+  --type-episodic-text: #c6a1ba;
+  --type-procedural-text: #8fb89a;
+  --type-reference-text: #c6a687;
   /* Ein Knoten ohne Art ist kein Knoten ohne Farbe — der Fallback stand als
      Hartwert in der Fläche (#9a9a9a). Neutralton, Stufe gerechnet. */
   --type-neutral: oklch(0.7436 0.0000 89.9);
@@ -971,6 +988,18 @@ select:focus-visible {
 }
 .app-name { font-size: var(--fs-2); font-weight: var(--fw-halbfest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .app-zustand { font-size: var(--fs-1); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* P202, Mockup .farbwahl-zeile .sw: der Farbwähler-Fleck in der Settings-
+   Farben-Zeile — die Maße trägt die Mockup-Maß-Schicht (10×10, r3). */
+.sw-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
 
 /* Die Zeile ist das zeile-item des Mockups (k3pta-app-fenster): farbiger
    Art-Punkt, Titel in Sans in EINER Zeile, Vorschau in einer Zeile, rechts

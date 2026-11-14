@@ -193,7 +193,9 @@ export function SystemStatus() {
   const coverage = health && health.embeddings.total > 0 ? Math.round((health.embeddings.embedded / health.embeddings.total) * 100) : 0;
 
   return (
-    <div className="gruppen-tisch" style={{ maxWidth: 680, padding: '14px 16px' }}>
+    <div>
+      {/* P202, Mockup-Grammatik (s-settings): der Kopf steht frei auf der Fläche,
+          der Tisch umschließt nur die Zustands-Zeilen (max-width 680). */}
       <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="fs-5 lh-lesbar font-semibold" style={{ color: 'var(--text-1)' }}>System status</h3>
@@ -201,7 +203,7 @@ export function SystemStatus() {
         </div>
       </div>
 
-      <div>
+      <div className="gruppen-tisch" style={{ maxWidth: 680, marginTop: 12 }}>
         <Row
           ok
           label={`Version ${APP_VERSION}`}

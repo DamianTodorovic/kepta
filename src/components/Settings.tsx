@@ -179,9 +179,11 @@ function TypFarbenReihe() {
     });
   }, []);
   return (
-    <div className="flex items-start gap-5 flex-wrap">
+    /* P202, Mockup-Grammatik (s-settings .farbwahl-zeile): die Farben stehen als
+       Zeilen im Tisch — der Fleck (der Farbwähler) · der Name · der Hex-Wert. */
+    <div className="gruppen-tisch" style={{ maxWidth: 680, marginTop: 12 }}>
       {TYP_ROLLEN.map((rolle) => (
-        <label key={rolle} className="flex flex-col items-center gap-1 cursor-pointer select-none">
+        <label key={rolle} className="farbwahl-zeile cursor-pointer select-none">
           <input
             type="color"
             value={farben[rolle] ?? "#cccccc"}
@@ -191,10 +193,11 @@ function TypFarbenReihe() {
             }}
             aria-label={`Colour for ${TYP_BESCHREIBUNG[rolle]}`}
             title="Colours the dots, the card ridge and the type label everywhere."
-            className="graph-swatch"
+            className="sw-input"
             style={{ color: `var(--type-${rolle})`, pointerEvents: "auto" }}
           />
-          <span className="fs-2" style={{ color: "var(--text-2)" }}>{TYP_BESCHREIBUNG[rolle]}</span>
+          <span className="name">{TYP_BESCHREIBUNG[rolle]}</span>
+          <span className="ton tnum">{(farben[rolle] ?? "").toUpperCase()}</span>
         </label>
       ))}
     </div>
@@ -781,14 +784,12 @@ export function Settings() {
             {/* P196: die Typ-Farben — dieselbe Wahl wie im Graph-Regal, dieselbe
                 Wirkung überall (Punkte, Karten-Grat, Etikett, Legende). Jede Wahl
                 wird angenommen; ihre Helligkeit führt nur auf die Lesbarkeits-
-                Leiter, der Farbton bleibt. */}
+                Leiter, der Farbton bleibt. P202, Mockup-Grammatik (s-settings):
+                der Kopf trägt den Mockup-Wortlaut und den Mockup-Satz. */}
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="fs-4 font-semibold" style={{ color: 'var(--text-1)' }}>Colours</h3>
-              </div>
+              <h2 className="settings-h" style={{ color: 'var(--text-1)' }}>Colours of the kinds</h2>
               <p className="fs-2 mb-3" style={{ color: 'var(--text-3)' }}>
-                One colour per kind of knowledge. The graph dots and the card ridge wear
-                your exact pick; text that sits on it lightens itself to stay readable.
+                These colours apply everywhere — in the graph, on cards, in the dossier.
               </p>
               <TypFarbenReihe />
             </div>

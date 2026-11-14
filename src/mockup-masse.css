@@ -131,10 +131,19 @@
 .huelle .huelle .quellen-zeile .quelle { font-size: var(--fs-1) !important; padding: 2px 7px !important; border-radius: 5px !important; }
 .huelle .chat-panel { width: 260px !important; }
 
-/* ── Settings: liste 190 pad 8 · button h30 pad 0 9 font 13 · panel pad 18/22 ── */
-.huelle .einstellungen-liste { width: 190px !important; padding: 8px !important; }
+/* ── Settings (s-settings): liste 190 pad 8 · Kante rechts · Hintergrund --seite ·
+   button h30 pad 0 9 font 13 · panel pad 18/22 frei (kein Kasten) ·
+   h2/h3 15/700 · farbwahl-zeile pad 7/12 · sw 10×10 r3 · name 12.5/550 · ton 11.5 ── */
+.huelle .einstellungen-liste { width: 190px !important; padding: 8px !important; border-right: 1px solid var(--border-subtle) !important; background: var(--bg-inset) !important; }
 .huelle .einstellungen-liste .navi button { height: 30px !important; padding: 0 9px !important; font-size: var(--fs-3) !important; }
 .huelle .settings-panel-fenster { padding: 18px 22px !important; }
+.huelle .settings-panel-fenster h2, .huelle .settings-panel-fenster h3 { font-size: 15px !important; font-weight: 700 !important; }
+.huelle .gruppen-tisch { background: var(--eb-2) !important; border: 1px solid var(--border-subtle) !important; border-radius: 9px !important; margin-top: 12px !important; max-width: 680px !important; }
+.huelle .farbwahl-zeile { display: flex !important; align-items: center !important; gap: 9px !important; padding: 7px 12px !important; }
+.huelle .farbwahl-zeile + .farbwahl-zeile { border-top: 1px solid var(--border-subtle) !important; }
+.huelle .farbwahl-zeile input[type="color"] { width: 10px !important; height: 10px !important; border-radius: 3px !important; padding: 0 !important; border: none !important; cursor: pointer !important; }
+.huelle .farbwahl-zeile .name { font-size: 12.5px !important; font-weight: 550 !important; color: var(--text-1) !important; }
+.huelle .farbwahl-zeile .ton { margin-left: auto !important; font-size: 11.5px !important; color: var(--text-3) !important; font-variant-numeric: tabular-nums !important; }
 
 /* ── Die Overlays (s-scan/s-duplicates/s-palette): der Vorhang liegt NUR über
    dem Körper — Titelbalken und Statuszeile stehen hell darüber (das Mockup
