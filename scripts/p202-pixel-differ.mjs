@@ -83,7 +83,10 @@ try {
   await schlafe(900);
   const mockShot = await cdp.send("Page.captureScreenshot", { format: "png" });
   fs.writeFileSync(path.join(ARBEIT, "mockup-voll.png"), Buffer.from(mockShot.data, "base64"));
-  const bounds = await aus(`JSON.stringify((() => { const r = document.querySelector(".fenster").getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })())`);
+  // Jeder Mockup-Screen trägt sein eigenes .fenster — das ERSTE sitzt in
+  // #s-knowledge (display:none bei jedem anderen Screen → 0×0-Bounds). Der
+  // Griff geht an das sichtbare Fenster des geschalteten Screens.
+  const bounds = await aus(`JSON.stringify((() => { const r = document.querySelector(".screen.on .fenster").getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })())`);
   const b = JSON.parse(bounds);
   const mockCrop = await cdp.send("Page.captureScreenshot", { format: "png", clip: { x: b.x, y: b.y, width: b.w, height: b.h, scale: 1 } });
   fs.writeFileSync(path.join(ARBEIT, "mockup.png"), Buffer.from(mockCrop.data, "base64"));
@@ -92,13 +95,50 @@ try {
   //     1244×734 — die App hat keinen 14px-Body-Rand), die erste Zeile aktiv ──
   await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1244, height: 734, deviceScaleFactor: 1, mobile: false });
   await cdp.send("Page.navigate", { url: APP });
-  await warteBis(async () => (await aus(`!!document.querySelector(".listen-zeilen")`)) === true, { maxMs: 30000 });
+  // Warte-Anker der Lade-Phase: die Titelleiste tragen alle 13 Flächen.
+  await warteBis(async () => (await aus(`!!document.querySelector('[data-testid="fenster-titelleiste"]')`)) === true, { maxMs: 30000 });
   // Die Ersteinrichtung der frischen Instanz räumt der dismissed-Merker weg —
-  // die Assistent-Messung fährt separat (KEPTA_FLAECHE=setup).
-  await aus(`localStorage.setItem("ki_gehirn_wizard_dismissed","1"); localStorage.setItem("kepta_scan_wunsch","0"); location.reload(); "geladen"`);
+  // die Assistent-Messung fährt separat (KEPTA_FLAECHE=setup, Merker bleibt 0).
+  const istSetup = FLAECHE === "setup";
+  await aus(`localStorage.setItem("ki_gehirn_wizard_dismissed","${istSetup ? "0" : "1"}"); localStorage.setItem("kepta_scan_wunsch","0"); location.reload(); "geladen"`);
   await schlafe(1800);
-  await warteBis(async () => (await aus(`document.querySelectorAll(".listen-zeilen .row-entry").length`)) >= 1, { maxMs: 30000 });
+  if (!istSetup) {
+    await warteBis(async () => (await aus(`document.querySelectorAll(".listen-zeilen .row-entry").length`)) >= 1, { maxMs: 30000 });
+  } else {
+    await warteBis(async () => (await aus(`!!document.querySelector(".assistent-vorhang")`)) === true, { maxMs: 15000 });
+  }
   await schlafe(900);
+
+  // ── 2b. die Fläche der Messung wählen: ⌘1–7 schaltet memories/chat/graph/
+  //     settings/today/dossier/activity (Dashboard-Mapping, sprachunabhängig);
+  //     palette/scan/duplicates öffnen ihre Overlay-Wegen, knowledge bleibt Landing ──
+  const FLAECHE_TASTEN = { chat: "2", graph: "3", settings: "4", today: "5", dossier: "6", activity: "7" };
+  const taste = FLAECHE_TASTEN[FLAECHE];
+  const druecke = (vk, zeichen) => {
+    cdp.send("Input.dispatchKeyEvent", { type: "keyDown", modifiers: 4, windowsVirtualKeyCode: vk, key: zeichen });
+    cdp.send("Input.dispatchKeyEvent", { type: "keyUp", modifiers: 4, windowsVirtualKeyCode: vk, key: zeichen });
+  };
+  if (taste) {
+    druecke(48 + Number(taste), taste);
+    await schlafe(900);
+  } else if (FLAECHE === "palette") {
+    // ⌘K hört im Suchfeld der Leiste — erst der Fokus, dann die Taste.
+    await aus(`(()=>{ const f = document.querySelector(".sidebar-suche-feld"); if (f) f.focus(); return f ? "Fokus" : "kein Suchfeld"; })()`);
+    await schlafe(200);
+    druecke(75, "k");
+    await warteBis(async () => (await aus(`!!document.querySelector(".palette-lens")`)) === true, { maxMs: 15000 });
+    await schlafe(600);
+  } else if (FLAECHE === "scan") {
+    await aus(`(()=>{ const k = document.querySelector('button[aria-label="Import"]'); if (k) k.click(); return k ? "geöffnet" : "kein Import-Knopf"; })()`);
+    await warteBis(async () => (await aus(`!!document.querySelector('[role="dialog"]')`)) === true, { maxMs: 15000 });
+    await schlafe(600);
+  } else if (FLAECHE === "duplicates") {
+    await aus(`(()=>{ const k = document.querySelector('button[aria-label="Duplicates"]'); if (k) k.click(); return k ? "geöffnet" : "kein Duplicates-Knopf"; })()`);
+    await warteBis(async () => (await aus(`!!document.querySelector('[role="dialog"][aria-label="Duplicates"]')`)) === true, { maxMs: 15000 });
+    await schlafe(600);
+  }
+  // Beweis im Log: der Fenstertitel sagt, welche Fläche fotografiert wurde.
+  console.log(`Fenstertitel: ${await aus(`document.querySelector(".fenster-titel")?.textContent || "kein Titel"`)}`);
   // die Mockup-Farben der vier Kinds (die Settings-Wahl der Mess-Instanz)
   await aus(`["semantic|#3a6ea8","episodic|#a8742e","procedural|#2e7d5b","reference|#a4553f"].forEach((p) => { const [k,v] = p.split("|"); document.documentElement.style.setProperty("--type-" + k, v); }); localStorage.setItem("ki_gehirn_gruppierung","alle");`);
   await aus(`(()=>{ const z = document.querySelector(".listen-zeilen .row-entry"); if (z) z.click(); return z ? "geklickt" : "keine Zeile"; })()`);
