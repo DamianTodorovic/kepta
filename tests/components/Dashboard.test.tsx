@@ -201,7 +201,7 @@ describe("Dashboard: Suche", () => {
     // Semantik aus -> reiner Stichwortfilter, kein Serveraufruf noetig
     const schalter = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
     await user.click(schalter);
-    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search/), "docker");
     await waitFor(() => expect(container.textContent).not.toMatch(/Kochen/), { timeout: 3000 });
   });
 
@@ -254,7 +254,7 @@ describe("Dashboard: Suche", () => {
       return new Response("{}", { status: 200 });
     }));
     const { container } = await zeige(drei);
-    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search/), "docker");
 
     const streifen = await waitFor(() => {
       const e = [...container.querySelectorAll(".chip")].find((c) => /of 7 hits/.test(c.textContent ?? ""));
@@ -505,7 +505,7 @@ describe("Dashboard: Such-Einstellungen stecken im Request (Paket 2 — Einstell
     await act(async () => {
       schreibeSuchPrefs({ tiefe: 32, spurBm25: false, spurVektor: true, spurGraph: true });
     });
-    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search/), "docker");
     await waitFor(() => {
       expect(letzteAnfrage).not.toBeNull();
       expect(letzteAnfrage!.topK).toBe(32);
@@ -527,7 +527,7 @@ describe("Dashboard: Such-Einstellungen stecken im Request (Paket 2 — Einstell
       return new Response("{}", { status: 200 });
     }));
     await zeige([note({ title: "Docker" })]);
-    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search/), "docker");
     await waitFor(() => expect(letzteAnfrage).not.toBeNull(), { timeout: 4000 });
     expect(letzteAnfrage!.topK).toBeGreaterThanOrEqual(16);
   });
@@ -703,7 +703,7 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
       return new Response("{}", { status: 200 });
     }));
     const { container } = await zeige([note({ title: "Docker" })]);
-    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search/), "docker");
     await waitFor(() => expect(container.textContent).toMatch(/5 of 57 matches/), { timeout: 4000 });
     await user.click(screen.getByRole("button", { name: /show all/i }));
     await waitFor(() => expect(container.textContent).toMatch(/All matches/));
@@ -719,7 +719,7 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
       return new Response("{}", { status: 200 });
     }));
     const { container } = await zeige([note({ title: "Docker" })]);
-    await user.type(screen.getByPlaceholderText(/Search your memory/), "quantenphysik");
+    await user.type(screen.getByPlaceholderText(/Search/), "quantenphysik");
     await waitFor(() => expect(container.textContent).toMatch(/No matches/i), { timeout: 4000 });
   });
 
@@ -734,7 +734,7 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
     }));
     const { container } = await zeige([note({ title: "Docker" })]);
     // Vor der ersten Antwort wärmt sich das Gehirn — spätestens danach ist es warm.
-    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search/), "docker");
     await waitFor(() => expect(container.textContent).toMatch(/Search index warm — answer in \d+ ms/), { timeout: 4000 });
   });
 
@@ -758,7 +758,7 @@ describe("Dashboard: Suche mit der Server-Engine", () => {
       return new Response("{}", { status: 200 });
     }));
     const { container } = await zeige([note({ title: "Docker" })]);
-    await user.type(screen.getByPlaceholderText(/Search your memory/), "docker");
+    await user.type(screen.getByPlaceholderText(/Search/), "docker");
     await waitFor(() => expect(container.textContent).toMatch(/Found via/), { timeout: 4000 });
     expect(container.textContent).toMatch(/words #1/);
     expect(container.textContent).toMatch(/meaning #3/);

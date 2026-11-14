@@ -97,8 +97,8 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           <input
             ref={suchRef}
             type="text"
-            aria-label="Search your memory"
-            placeholder="Search your memory"
+            aria-label="Search"
+            placeholder="Search"
             value={suchWert}
             onChange={(e) => anSuchAenderung(e.target.value)}
             onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); anPalette(); } }}
@@ -125,7 +125,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   active ? "font-semibold" : "font-semibold"
                 )}
               >
-                <item.icon className="seiten-ikone w-4 h-4 shrink-0" weight={item.weight ?? 'duotone'} />
+                <item.icon className="seiten-ikone w-4 h-4 shrink-0" weight={item.weight ?? 'regular'} />
                 <span className="flex-1">{item.label}</span>
                 {/* Die Zahl rechts in der Zeile (Mockup-Grammatik): der Bestand steht
                     beim Fach, nicht in einem eigenen Kopf — mit seinem Wort, wie die
@@ -168,7 +168,7 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
                   {/* P202, Mockup-Grammatik: der Tag trägt die Art-Farbe der Fakten und
                       das #-Zeichen, wie das Mockup ihn druckt (#compliance) — kein
                       grauer Hash-Glyph daneben, das Zeichen sitzt im Wort. */}
-                  <span className="truncate flex-1" style={{ color: 'var(--type-semantic-text)', fontWeight: 550 }}>
+                  <span className="truncate flex-1" style={{ color: 'var(--type-semantic)', fontWeight: 550 }}>
                     {'#' + name}
                   </span>
                   {count !== null && count > 1 && (

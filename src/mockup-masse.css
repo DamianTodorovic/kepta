@@ -79,7 +79,7 @@
 .huelle .listen-spalte .row-entry { padding: 8px 9px !important; gap: 9px !important; border-radius: 7px !important; }
 .huelle .listen-spalte .row-punkt { width: 8px !important; height: 8px !important; border-radius: 3px !important; margin-top: 4px !important; }
 .huelle .listen-spalte .row-body h3 { font-size: var(--fs-3) !important; font-weight: 600 !important; line-height: 1.45 !important; margin: 0 !important; letter-spacing: 0 !important; font-family: inherit !important; }
-.huelle .listen-spalte .row-body p { font-size: var(--fs-2) !important; line-height: 1.45 !important; margin-top: 1px !important; }
+.huelle .listen-spalte .row-body p { font-size: var(--fs-2) !important; line-height: 1.45 !important; margin-top: 1px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 .huelle .listen-spalte .row-time { font-size: var(--fs-1) !important; line-height: 15.95px !important; margin-top: 0 !important; }
 .huelle .listen-spalte .row-herkunft { font-size: 10.5px !important; line-height: 15.225px !important; margin-top: 2px !important; }
 .huelle .listen-spalte .row-meta { gap: 0 !important; margin-top: 0 !important; padding-top: 0 !important; align-items: flex-start !important; }
@@ -88,6 +88,7 @@
 /* Der Listen-Fuß: EINE Zeile — padding 6px 12 · font 11.5 · kein Umbrechen */
 .huelle .listen-spalte .listen-fuss { height: 30px !important; min-height: 30px !important; padding: 6px 12px !important; font-size: 11.5px !important; gap: 6px !important; flex-wrap: nowrap !important; overflow: hidden; }
 .huelle .listen-spalte .listen-fuss .chip { white-space: nowrap; }
+.huelle .listen-spalte .listen-fuss > * { white-space: nowrap !important; flex: none !important; }
 
 /* ── Detail: kopf h43 pad 8/14 wo 12 · korper pad 18/22 · h1 18/700 · meta 12 gap 10 ·
    koerper-text 13.5/1.65 mt16 max62ch · gruppe mt22 name 11.5/600 pb6 ── */

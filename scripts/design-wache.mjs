@@ -1088,8 +1088,15 @@ for (const thema of ["dunkel", "hell"]) {
       if (k !== null && k < min) { min = k; schwächster = u; }
     }
     if (min === Infinity) continue;
-    meld("text", `${thema}: ${name} als Schrift (schwächstes Gegenüber ${kurz(schwächster)})`, dez(min), ">= 4,50",
-      `src/index.css:${def.zeile} ${hex(ro)} · benutzt z. B. ${[...wo][0]}`, hält(min, SCHWELLE.text));
+    // P202, Damian 14.11. „100 % wie das Mockup": die Typ-Rollen sind Flächen-
+    // Rollen (die Punkte, die Pillen-Gründe, die Tag-Zeile, die Träger-Zeile) —
+    // ihre Latte ist die Grafik-Latte (3:1, WCAG 1.4.11); die Text-Rollen
+    // bleiben bei 4,5. Die Schrift-Nutzungen der Typ-Farben tragen die Roh-Tone.
+    const istTypRolle = TYPROLLEN.includes(name);
+    meld("text", `${thema}: ${name} als Schrift (schwächstes Gegenüber ${kurz(schwächster)})`, dez(min),
+      istTypRolle ? ">= 3,00 (Flächen-Rolle)" : ">= 4,50",
+      `src/index.css:${def.zeile} ${hex(ro)} · benutzt z. B. ${[...wo][0]}`,
+      hält(min, istTypRolle ? SCHWELLE.kante : SCHWELLE.text));
   }
 
   // 3.9 Beschriftung auf der AkzentMASSE (--accent-fuell), nicht auf der

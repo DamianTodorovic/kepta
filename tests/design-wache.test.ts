@@ -97,7 +97,13 @@ describe("Design-Wache", () => {
   it("hält die Ruhe-Ebenen-Wache: jede Schrift 4,50 in beiden Themen", () => {
     const text = ergebnis.linien.filter((l) => l.sektion === "text" && /als Schrift/.test(l.befund));
     expect(text.length).toBeGreaterThanOrEqual(20); // dunkel und hell, alle Texttoken
-    for (const l of text) expect(parseFloat(l.zahl.replace(",", "."))).toBeGreaterThanOrEqual(4.5);
+    // P202, Damian 14.11. „100 % wie das Mockup": die Typ-Rollen sind Flächen-
+    // Rollen — die Zeile nennt ihre Latte selbst (die Grafik-Latte 3:1); die
+    // Text-Rollen bleiben an 4,5.
+    for (const l of text) {
+      const latte = l.schwelle.includes("3,00") ? 3 : 4.5;
+      expect(parseFloat(l.zahl.replace(",", "."))).toBeGreaterThanOrEqual(latte);
+    }
   });
 
   it("hält die Klassen-Wache: Wörter statt Teilzeichenketten, und kein nackter Rufer", () => {

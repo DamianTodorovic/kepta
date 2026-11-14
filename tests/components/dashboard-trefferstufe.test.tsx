@@ -78,7 +78,7 @@ async function zeichne(und: { topK?: string; semantik?: string } = {}) {
     <AuthProvider><ThemeProvider><ToastProvider><Dashboard /></ToastProvider></ThemeProvider></AuthProvider>
   );
   await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
-  const feld = view.container.querySelector<HTMLInputElement>('input[aria-label="Search your memory"]');
+  const feld = view.container.querySelector<HTMLInputElement>('input[aria-label="Search"]');
   expect(feld, "das Suchfeld fehlt — die Flaeche hat ihre Form geaendert").not.toBeNull();
   fireEvent.change(feld!, { target: { value: "Fristenkontrolle" } });
   await act(async () => { await new Promise((r) => setTimeout(r, 1600)); });
