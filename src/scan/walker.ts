@@ -176,9 +176,11 @@ export function scanneVollstaendig(
   return schritt.value;
 }
 
-/** Verteilung der Funde auf ihre obersten Ordner — fuer die Vorschau. */
-export function nachOrdner(funde: readonly Fund[], wurzeln: readonly string[], grenze = 12): { ordner: string; anzahl: number }[] {
-  const zaehler = new Map<string, number>();
+/** Verteilung der Funde auf ihre obersten Ordner — fuer die Vorschau. Die
+ *  Typen (P202, Mockup-Zeile „14 files · PDF, MD") kommen aus den Endungen
+ *  der Funde, höchstens vier je Ordner, groß, wie das Mockup sie druckt. */
+export function nachOrdner(funde: readonly Fund[], wurzeln: readonly string[], grenze = 12): { ordner: string; anzahl: number; typen: string[] }[] {
+  const zaehler = new Map<string, { n: number; typen: Set<string> }>();
   for (const f of funde) {
     const wurzel = wurzeln.find((w) => f.pfad.startsWith(w)) ?? "";
     const rest = f.pfad.slice(wurzel.length).replace(/^[\\/]+/, "");
@@ -187,10 +189,15 @@ export function nachOrdner(funde: readonly Fund[], wurzeln: readonly string[], g
     // ||, und ein Windows-Pfad ohne ersten Ordner haette "" als Schluessel bekommen.
     const inUnterordner = rest.includes("/") || rest.includes("\\");
     const schluessel = erster && inUnterordner ? erster : "(top level)";
-    zaehler.set(schluessel, (zaehler.get(schluessel) ?? 0) + 1);
+    const eintrag = zaehler.get(schluessel) ?? { n: 0, typen: new Set<string>() };
+    eintrag.n += 1;
+    const stueck = f.pfad.split(/[\\/]/).pop() ?? "";
+    const punkt = stueck.lastIndexOf(".");
+    if (punkt > 0 && punkt < stueck.length - 1) eintrag.typen.add(stueck.slice(punkt + 1).toUpperCase());
+    zaehler.set(schluessel, eintrag);
   }
   return [...zaehler.entries()]
-    .map(([ordner, anzahl]) => ({ ordner, anzahl }))
+    .map(([ordner, e]) => ({ ordner, anzahl: e.n, typen: [...e.typen].sort().slice(0, 4) }))
     .sort((a, b) => b.anzahl - a.anzahl)
     .slice(0, grenze);
 }

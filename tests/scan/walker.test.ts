@@ -145,9 +145,12 @@ describe("nachOrdner", () => {
       ],
       [HEIM]
     );
-    expect(verteilung[0]).toEqual({ ordner: "Dokumente", anzahl: 2 });
+    expect(verteilung[0]).toEqual({ ordner: "Dokumente", anzahl: 2, typen: ["MD"] });
     expect(verteilung.find((v) => v.ordner === "Projekte")?.anzahl).toBe(1);
     expect(verteilung.find((v) => v.ordner === "(top level)")?.anzahl).toBe(1);
+    // P202, Mockup-Zeile „14 files · PDF, MD": die Typen kommen groß aus den
+    // Endungen, höchstens vier je Ordner — die Vorschau-Zeile druckt sie.
+    expect(verteilung[0].typen).toEqual(["MD"]);
   });
 
   it("haelt sich an die Grenze", () => {

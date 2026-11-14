@@ -1606,12 +1606,27 @@ export function Dashboard() {
 
   // P202, Mockup-Grammatik: der Fenstertitel nennt die Fläche — im Editor den
   // Modus, im Assistenten die Einrichtung (das Mockup trägt „K3PTA einrichten“).
+  // Die Overlays tragen den eigenen Titel (s-scan „Import“, s-duplicates
+  // „Duplicates“); die Palette bleibt auf ihrer Fläche (s-palette: „Knowledge“).
   const istElectron = typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron');
   const fensterTitel = wizardOpen
     ? 'K3PTA einrichten'
-    : isEditorOpen
-      ? 'Editor — K3PTA'
-      : `${FLAECHE_TITEL[currentView]} — K3PTA`;
+    : scanOpen
+      ? 'Import — K3PTA'
+      : duplicatesOpen
+        ? 'Duplicates — K3PTA'
+        : isEditorOpen
+          ? 'Editor — K3PTA'
+          : `${FLAECHE_TITEL[currentView]} — K3PTA`;
+  // Die Overlay-Zeile gewinnt deterministisch über die Flächen-Meldung (der
+  // Slot liest sie zuerst); die Mockup-Zeilen stehen in s-scan/s-duplicates/s-palette.
+  const overlayZeile: FensterStatusZeile | null = scanOpen
+    ? { links: 'Import läuft lokal', rechts: 'no cloud, no account' }
+    : duplicatesOpen
+      ? { links: `${duplicateCount} duplicates in ${duplicateGroups.length} groups`, rechts: 'keeper = richest copy' }
+      : paletteOpen
+        ? { links: '⌘K öffnet die Palette', rechts: `${paletteActions.length} actions` }
+        : null;
 
   // Die Statuszeile ist ein Slot am Fenster (volle Breite, Mockup .statuszeile).
   // Die Flächen melden ihren Inhalt; bei Flächenwechsel beginnt die Zeile leer,
@@ -2513,6 +2528,11 @@ export function Dashboard() {
                   </>
                 )}
               </span>
+            </>
+          ) : overlayZeile ? (
+            <>
+              {overlayZeile.links}
+              {overlayZeile.rechts && <span className="rechts">{overlayZeile.rechts}</span>}
             </>
           ) : (
             <>

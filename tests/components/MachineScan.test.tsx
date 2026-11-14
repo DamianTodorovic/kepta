@@ -80,15 +80,15 @@ describe("MachineScan: die Zustimmung laesst sich nicht umgehen", () => {
     const user = userEvent.setup();
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
-    const knopf = await screen.findByRole("button", { name: /Import 12 documents/i });
+    const knopf = await screen.findByRole("button", { name: /Import 12 files/i });
     expect((knopf as HTMLButtonElement).disabled).toBe(true);
 
     const haken = screen.getAllByRole("checkbox");
     expect(haken).toHaveLength(2);
     await user.click(haken[0]);
-    expect((screen.getByRole("button", { name: /Import 12 documents/i }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: /Import 12 files/i }) as HTMLButtonElement).disabled).toBe(true);
     await user.click(haken[1]);
-    await waitFor(() => expect((screen.getByRole("button", { name: /Import 12 documents/i }) as HTMLButtonElement).disabled).toBe(false));
+    await waitFor(() => expect((screen.getByRole("button", { name: /Import 12 files/i }) as HTMLButtonElement).disabled).toBe(false));
   });
 
   it("schickt erst nach beiden Haken ueberhaupt einen Start — und dann mit confirmed", async () => {
@@ -96,11 +96,11 @@ describe("MachineScan: die Zustimmung laesst sich nicht umgehen", () => {
     const aufrufe = stubFetch();
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
-    await screen.findByRole("button", { name: /Import 12 documents/i });
+    await screen.findByRole("button", { name: /Import 12 files/i });
     expect(aufrufe.some((a) => a.url.includes("/start"))).toBe(false);
 
     for (const h of screen.getAllByRole("checkbox")) await user.click(h);
-    await user.click(screen.getByRole("button", { name: /Import 12 documents/i }));
+    await user.click(screen.getByRole("button", { name: /Import 12 files/i }));
 
     const start = aufrufe.find((a) => a.url.includes("/api/scan/start"));
     expect(start).toBeTruthy();
@@ -114,7 +114,7 @@ describe("MachineScan: die Zustimmung laesst sich nicht umgehen", () => {
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
     for (const h of await screen.findAllByRole("checkbox")) await user.click(h);
-    expect((screen.getByRole("button", { name: /Import 0 documents/i }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: /Import 0 files/i }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
 
@@ -123,27 +123,25 @@ describe("MachineScan: Vorschau und Abschluss", () => {
     const user = userEvent.setup();
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
-    // "12" steht zweimal da: als Zahl der Dokumente und am Ordner-Chip.
-    await waitFor(() => expect(screen.getAllByText("12").length).toBeGreaterThanOrEqual(2));
-    // Das Wort hinter der Zahl ist kein festes Wort mehr: WA zieht die
-    // Träger-Etiketten auf seine zwei Zeilen (22:59:43, MachineScan.tsx:402).
-    // Abgeschrieben hätte meine Prüfung das bei jedem Etikettenzug gebrochen.
-    expect(screen.getByText(TRAEGER_LABELS.files)).toBeTruthy();
-    expect(screen.getByText("41 kB")).toBeTruthy();
+    // P202, Mockup-Grammatik (s-scan): die Vorschau trägt die Ordner-Zeilen
+    // („N files · TYPEN") und den Import-Knopf mit der Gesamt-Zahl — die drei
+    // Statistik-Kästen flogen (41 kB und die 108 = gesehen − genommen mit ihnen).
+    await waitFor(() => expect(screen.getAllByText(/12 files/).length).toBeGreaterThanOrEqual(1));
+    expect(screen.getByRole("button", { name: /Import 12 files/i })).toBeTruthy();
     expect(screen.getAllByText(/Dokumente/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Keys, passwords and credentials/)).toBeTruthy();
-    expect(screen.getByText("108")).toBeTruthy(); // 120 gesehen - 12 genommen
   });
 
   it("unterscheidet die Dateien, die durchfielen, von den Ordnern, die nie betreten wurden", async () => {
     // Ein Ordner, den die Regel von vornherein nicht betritt, steht in keiner
     // Datei-Zaehlung. „0 left out" ueber vier weggelassenen Ordnern war die Zahl,
-    // die im eigenen Bildbefund stand (1440 px, 14.10.).
+    // die im eigenen Bildbefund stand (1440 px, 14.10.). P202: die Diagnose-Zahl
+    // (gesehen − genommen) flog mit den Statistik-Kästen — die Ordner-Auskunft
+    // bleibt am Bild, der Zahlen-Unterschied lebt im Server-Response.
     const user = userEvent.setup();
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
-    await waitFor(() => expect(screen.getByText("108")).toBeTruthy());
-    expect(screen.getByText("not readable")).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("button", { name: /Import 12 files/i })).toBeTruthy());
     expect(screen.queryByText(/^left out$/)).toBeNull();
     expect(screen.getByText(/Left out — 4 folders not entered/i)).toBeTruthy();
   });
@@ -154,7 +152,7 @@ describe("MachineScan: Vorschau und Abschluss", () => {
     const user = userEvent.setup();
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
-    await screen.findByRole("button", { name: /Import 12 documents/i });
+    await screen.findByRole("button", { name: /Import 12 files/i });
     expect(screen.getByText(/Tick the two points in the list to enable the import/i)).toBeTruthy();
 
     for (const h of screen.getAllByRole("checkbox")) await user.click(h);
@@ -175,7 +173,7 @@ describe("MachineScan: Vorschau und Abschluss", () => {
     const { onImported } = oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
     for (const h of await screen.findAllByRole("checkbox")) await user.click(h);
-    await user.click(screen.getByRole("button", { name: /Import 12 documents/i }));
+    await user.click(screen.getByRole("button", { name: /Import 12 files/i }));
     await waitFor(() => expect(onImported).toHaveBeenCalledWith(12), { timeout: 4000 });
     expect(screen.getByText(/Done — 12 notes added/i)).toBeTruthy();
   });
@@ -185,7 +183,7 @@ describe("MachineScan: Vorschau und Abschluss", () => {
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
     for (const h of await screen.findAllByRole("checkbox")) await user.click(h);
-    await user.click(screen.getByRole("button", { name: /Import 12 documents/i }));
+    await user.click(screen.getByRole("button", { name: /Import 12 files/i }));
     await waitFor(() => expect(screen.getByText(/machine-scan/)).toBeTruthy(), { timeout: 4000 });
   });
 
@@ -224,7 +222,7 @@ describe("MachineScan: waehrend es laeuft", () => {
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
     for (const h of await screen.findAllByRole("checkbox")) await user.click(h);
-    await user.click(screen.getByRole("button", { name: /Import 12 documents/i }));
+    await user.click(screen.getByRole("button", { name: /Import 12 files/i }));
   }
 
   it("sperrt das Schliessen und bietet stattdessen Stoppen an", async () => {
@@ -283,7 +281,7 @@ describe("Die Maske wird gesagt, nicht still geschwiegen (#76)", () => {
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
     for (const h of await screen.findAllByRole("checkbox")) await user.click(h);
-    await user.click(screen.getByRole("button", { name: /Import 12 documents/i }));
+    await user.click(screen.getByRole("button", { name: /Import 12 files/i }));
     const zeile = await screen.findByTestId("maskiert-meldung");
     expect(zeile.textContent).toMatch(/3 key-shaped values were masked/);
     expect(zeile.textContent).toMatch(/sk-…MASKIERT\(43\)/);
@@ -300,7 +298,7 @@ describe("Die Maske wird gesagt, nicht still geschwiegen (#76)", () => {
     oeffne();
     await user.click(screen.getByRole("button", { name: /Show me what would be imported/i }));
     for (const h of await screen.findAllByRole("checkbox")) await user.click(h);
-    await user.click(screen.getByRole("button", { name: /Import 12 documents/i }));
+    await user.click(screen.getByRole("button", { name: /Import 12 files/i }));
     await waitFor(() => expect(screen.getByText(/Done — 12 notes added/i)).toBeTruthy(), { timeout: 4000 });
     expect(screen.queryByTestId("maskiert-meldung")).toBeNull();
   });
@@ -404,7 +402,7 @@ describe("Die Vorschau darf wirken, nicht nur informieren (#73)", () => {
     expect(body.zusaetzlichAusgelassen).toEqual(["Dokumente"]);
     await waitFor(() => expect(vorschau()).toBe(2), { timeout: 4000 });
     // Die neue Zahl ist die Antwort, nicht die alte: 12 -> 3.
-    await waitFor(() => expect(screen.getByRole("button", { name: /Import 3 documents/i })).toBeTruthy(), { timeout: 4000 });
+    await waitFor(() => expect(screen.getByRole("button", { name: /Import 3 files/i })).toBeTruthy(), { timeout: 4000 });
   });
 
   it("zeigt, dass die Liste nicht alles ist", async () => {
@@ -460,7 +458,7 @@ describe("Der Erststart nimmt ihr die erste Frage ab (#73)", () => {
     }));
     render(<MachineScan open onClose={() => {}} autoPreview />);
     await waitFor(() => expect(aufrufe.some((u) => u.includes("/api/scan/preview"))).toBe(true), { timeout: 4000 });
-    await waitFor(() => expect(screen.getByRole("button", { name: /Import 12 documents/i })).toBeTruthy(), { timeout: 4000 });
+    await waitFor(() => expect(screen.getByRole("button", { name: /Import 12 files/i })).toBeTruthy(), { timeout: 4000 });
     expect(screen.queryByRole("button", { name: /Show me what would be imported/i })).toBeNull();
   });
 

@@ -64,7 +64,7 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-start justify-center pt-[20vh] px-4">
+    <div className="fixed inset-0 z-[70] flex items-start justify-center pt-[10vh] px-4">
       <div className="absolute inset-0 hud-backdrop" onClick={onClose} />
       <div className="relative w-full max-w-[540px] palette-lens flex flex-col" style={{ maxHeight: "min(64vh, 520px)" }}>
         <div className="flex items-center gap-3 px-5 h-14 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>

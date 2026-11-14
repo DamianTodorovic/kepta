@@ -136,6 +136,11 @@ try {
   } else if (FLAECHE === "scan") {
     await aus(`(()=>{ const k = document.querySelector('button[aria-label="Import"]'); if (k) k.click(); return k ? "geöffnet" : "kein Import-Knopf"; })()`);
     await warteBis(async () => (await aus(`!!document.querySelector('[role="dialog"]')`)) === true, { maxMs: 15000 });
+    // Die Mockup-Stufe ist die ORDNER-Vorschau (s-scan zeigt „Scan this computer —
+    // which folders it would take"): der Fluss-Klick treibt die Vorschau, der Lauf
+    // wartet auf den Import-Knopf mit der gefundenen Zahl.
+    await aus(`(()=>{ const bs = [...document.querySelectorAll('button')]; const b = bs.find((x) => (x.textContent || "").includes("Show me what would be imported")); if (b) b.click(); return b ? "Vorschau angefordert" : "kein Vorschau-Knopf"; })()`);
+    await warteBis(async () => (await aus(`[...document.querySelectorAll('button')].some((b) => /^Import \\d+ files$/.test((b.textContent || "").trim()))`)) === true, { maxMs: 45000 });
     await schlafe(600);
   } else if (FLAECHE === "duplicates") {
     await aus(`(()=>{ const k = document.querySelector('button[aria-label="Duplicates"]'); if (k) k.click(); return k ? "geöffnet" : "kein Duplicates-Knopf"; })()`);

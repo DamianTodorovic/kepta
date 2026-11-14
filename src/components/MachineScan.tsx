@@ -34,7 +34,7 @@ export interface ScanVorschau {
   skipped: { grund: string; label: string; anzahl: number }[];
   /** Die Ordner, die zu blieben — beim Namen, nicht nur gezaehlt. */
   leftOutFolders: { ordner: string; grund: string }[];
-  byFolder: { ordner: string; anzahl: number }[];
+  byFolder: { ordner: string; anzahl: number; typen: string[] }[];
   /** Wie viele oberste Ordner es ueberhaupt gibt — die Liste zeigt nur einen Teil. */
   ordnerGesamt: number;
   sample: { path: string; bytes: number }[];
@@ -48,7 +48,7 @@ const LEERE_VORSCHAU: ScanVorschau = {
   roots: [""], seen: 0, found: 0, truncated: false, skippedFolders: 0,
   skipped: [{ grund: "", label: "", anzahl: 0 }],
   leftOutFolders: [{ ordner: "", grund: "" }],
-  byFolder: [{ ordner: "", anzahl: 0 }],
+  byFolder: [{ ordner: "", anzahl: 0, typen: [] }],
   ordnerGesamt: 0,
   sample: [{ path: "", bytes: 0 }],
   totalBytes: 0,
@@ -303,7 +303,11 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               Scan this computer
             </h2>
             <p className="fs-3 mt-1" style={{ color: "var(--text-2)" }}>
-              Off by default. Nothing is read until you have seen what would be imported and agreed to both points below.
+              {/* P202, Mockup-Grammatik (s-scan): der Unter nennt die Stufe — die
+                  Ordner-Vorschau trägt den Mockup-Satz, die erste Stufe den ihren. */}
+              {vorschau
+                ? "This step only looks. It writes nothing — and it tells you which folders it would take."
+                : "Off by default. Nothing is read until you have seen what would be imported and agreed to both points below."}
             </p>
           </div>
           <button onClick={onClose} disabled={!!status?.running} className="btn-ghost p-2 rounded-lg shrink-0 disabled:opacity-40" title="Close" aria-label="Close">
@@ -312,6 +316,11 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {/* P202, Mockup-Grammatik (s-scan): die Ordner-Stufe trägt nur die
+              Ordner-Zeilen — die Regeln-Boxen stehen in der ersten Stufe des
+              Flusses (vor „Show me what would be imported") und weichen in
+              der Vorschau. */}
+          {!vorschau && (<>
           {/* Was nie gelesen wird — steht bewusst VOR dem Knopf. */}
           <div className="rounded-xl p-4 space-y-2" style={{ background: "var(--bg-inset)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-2 fs-3 font-semibold" style={{ color: "var(--text-1)" }}>
@@ -415,7 +424,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                 </div>
               )}
             </div>
-          )}
+          )}</>)}
 
           {!vorschau && !status && (
             <div className="flex flex-col items-center py-6 gap-3">
@@ -427,24 +436,9 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
 
           {vorschau && !status && (
             <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="hud-inset rounded-lg p-3">
-                  <div className="fs-5 font-semibold tnum" style={{ color: "var(--text-1)" }}>{vorschau.found}</div>
-                  <div className="hud-label">{TRAEGER_LABELS.files}</div>
-                </div>
-                <div className="hud-inset rounded-lg p-3">
-                  <div className="fs-5 font-semibold tnum" style={{ color: "var(--text-1)" }}>{formatBytes(vorschau.totalBytes)}</div>
-                  <div className="hud-label">of text</div>
-                </div>
-                <div className="hud-inset rounded-lg p-3">
-                  {/* „left out" war die Zahl der Dateien, die im Lauf durchfielen.
-                      Ein Ordner, den die Regel von vornherein nicht betritt, ist
-                      nie „gesehen" worden — auf dem echten Schirm stand deshalb
-                      „0 left out", während 52 Dateien in drei Ordnern lagen. */}
-                  <div className="fs-5 font-semibold tnum" style={{ color: "var(--text-3)" }}>{vorschau.seen - vorschau.found}</div>
-                  <div className="hud-label">not readable</div>
-                </div>
-              </div>
+              {/* P202, Mockup-Grammatik (s-scan): die Vorschau-Stufe trägt nur die
+                  Ordner-Zeilen — die drei Statistik-Kästen flogen (die Gesamt-Zahl
+                  steht am Import-Knopf, die Typen je Ordner-Zeile). */}
 
               {vorschau.truncated && (
                 <div className="flex items-start gap-2 fs-3 rounded-lg p-3" style={{ background: "var(--warn-soft)", color: "var(--text-2)" }}>
@@ -454,37 +448,46 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
               )}
 
               {vorschau.byFolder.length > 0 && (
-                <div>
-                  <div className="hud-label mb-2">Where they come from</div>
-                  <div className="flex flex-wrap gap-2">
-                    {vorschau.byFolder.map((f) => {
+                <div className="space-y-1">
+                  {/* P202, Mockup-Grammatik (s-scan .modale-liste): die Ordner stehen
+                      als app-zeile-Zeilen (Haken · Name · „N files · TYPEN") — der
+                      Klick lässt den Ordner aus wie der frühere Chip. */}
+                  {vorschau.byFolder.map((f) => {
                       // „(top level)" ist kein Ordnername, sondern der Korb fuer
-                      // die Dateien nebenan — ein Ausschluss ins Leere waere ein
-                      // Chip, der etwas zu tun scheint und nichts tut.
+                      // die Dateien nebenan — ein Ausschluss ins Leere waere eine
+                      // Zeile, die etwas zu tun scheint und nichts tut.
                       const echt = f.ordner && f.ordner !== "(top level)";
+                      const typenWort = f.typen?.length ? ` · ${f.typen.join(", ")}` : "";
                       if (!echt) {
                         return (
-                          <span key={f.ordner || "(leer)"} className="chip tnum" data-testid="vorschau-ordner-ohne-wirkung">
-                            {f.ordner || "—"} <span style={{ color: "var(--text-3)" }}>{f.anzahl}</span>
-                          </span>
+                          <div key={f.ordner || "(leer)"} className="app-zeile" data-testid="vorschau-ordner-ohne-wirkung">
+                            <span className="app-icon ok" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" style={{ width: 12, height: 12 }}><path d="m5.5 12.5 4 4L18.5 7.5"/></svg></span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="app-name">{f.ordner || "—"}</div>
+                              <div className="app-zustand">{f.anzahl} files{typenWort}</div>
+                            </div>
+                          </div>
                         );
                       }
                       return (
-                        <button
+                        <div
                           key={f.ordner}
-                          type="button"
+                          role="button"
+                          tabIndex={0}
                           onClick={() => void ordnerAuslassen(f.ordner)}
-                          disabled={laeuftVorschau}
-                          className="chip tnum min-h-7 disabled:opacity-40"
+                          className="app-zeile cursor-pointer"
                           data-testid="vorschau-ordner"
                           title={`Leave ${f.ordner} out of the scan — the count updates`}
                           aria-label={`Leave ${f.ordner} out of the scan`}
                         >
-                          {f.ordner} <span style={{ color: "var(--text-3)" }}>{f.anzahl}</span>
-                        </button>
+                          <span className="app-icon ok" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" style={{ width: 12, height: 12 }}><path d="m5.5 12.5 4 4L18.5 7.5"/></svg></span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="app-name">{f.ordner}</div>
+                            <div className="app-zustand">{f.anzahl} files{typenWort}</div>
+                          </div>
+                        </div>
                       );
                     })}
-                  </div>
                   {vorschau.ordnerGesamt > vorschau.byFolder.length && (
                     <div className="fs-3 mt-1" style={{ color: "var(--text-3)" }}>
                       {vorschau.byFolder.length} of {vorschau.ordnerGesamt} folders shown — the rest holds fewer documents.
@@ -662,7 +665,7 @@ export function MachineScan({ open, onClose, onImported, autoPreview = false }: 
                   </button>
                 ) : (
                   <button onClick={starteImport} disabled={!bereit} className="btn-primary px-4 py-2 rounded-lg fs-3 disabled:opacity-40">
-                    {vorschau ? `Import ${vorschau.found} documents` : "Import"}
+                    {vorschau ? `Import ${vorschau.found} files` : "Import"}
                   </button>
                 )}
               </>
