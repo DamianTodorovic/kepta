@@ -6,8 +6,7 @@
 // wird NICHT ins Repo committed — nur sein SHA-256 landet im Ergebnis-JSON.
 //
 // Aufruf:  npx tsx tools/longmemeval/harness.ts <datensatz> [--analyse]
-//          [--limit N] [--offset N] [--topk K] [--modell NAME] [--store PFAD]
-//          [--ohne-judge] [--vektoren] [--zeitsplit] [--temporal] [--hyde]
+//          [--limit N] [--topk K] [--modell NAME] [--store PFAD] [--ohne-judge]
 
 import fs from "node:fs";
 import os from "node:os";
@@ -85,19 +84,6 @@ export function ladeDatensatz(pfad: string): LongMemEvalFrage[] {
   const kaputt = fragen.filter((f) => !f.question_id || !f.question || !f.answer);
   if (kaputt.length > 0) throw new Error(`${kaputt.length} Fragen ohne question_id/question/answer.`);
   return fragen;
-}
-
-/**
- * Die Fragen, die dieser Lauf beantwortet: [offset, offset + limit).
- *
- * Bisher war `--limit` die einzige Scheibe und schnitt immer die ERSTEN N
- * ab — egal wie oft man topk, HyDE oder den Judge wechselte, die Auswahl traf
- * immer denselben Anfang. Ein Holdout braucht aber den Rest: Konfiguration auf
- * Slice A festlegen, dann Slice B anfassen. Die Scheibe ist rein und getrennt
- * getestet, weil genau hier ein Lauf sonst still die falschen Fragen richtet.
- */
-export function frageScheibe<T>(fragen: T[], offset: number, limit: number): T[] {
-  return fragen.slice(offset, offset + limit);
 }
 
 /** Release- und Doku-Format auf die eine interne Form bringen. */
@@ -302,6 +288,33 @@ export function zerlegeZeitfrage(frage: string): string[] {
 }
 
 /**
+ * HyDE-lite: die Frage wird vom lokalen Modell in 1–2 kurze AUSSAGESÄTZE
+ * umgeschrieben — so würde ein Dokument formulieren, das die Antwort enthält.
+ * Multi-Session-Fragen scheitern oft am Wortlaut-Abstand zwischen Frage und
+ * Beleg; die Aussagesätze schließen genau diese Lücke. Die zusätzlichen
+ * Treffer sind ADDITIV (wie beim Zeitsplit) — die Vollfrage-Rankings bleiben
+ * vorne, nichts wird verdrängt.
+ */
+export const HYDE_PROMPT = `Rewrite the question as 1-2 short declarative sentences that a document containing the answer would state. Reply only with the sentences, nothing else.
+
+QUESTION: {frage}`;
+
+export async function erweitereFrage(frage: string, rufen: (prompt: string) => Promise<string>): Promise<string[]> {
+  let roh: string;
+  try {
+    roh = await rufen(HYDE_PROMPT.replace("{frage}", frage));
+  } catch {
+    return []; // Eine gescheiterte Erweiterung darf die Frage nie blockieren.
+  }
+  return [...new Set(
+    roh
+      .split(/\n+/)
+      .map((z) => z.replace(/^[-*\d.)\s]+/, "").trim())
+      .filter((z) => z.split(/\s+/).length >= 4 && /[a-z]{5,}/i.test(z))
+  )].slice(0, 2);
+}
+
+/**
  * Timeline-Block für Zeitfragen — reine Memory-Metadaten, kein Orakel.
  *
  * Der Judge bewertet Treffer EINZELN (Früh-Ausstieg, Pilotbefund 21.9.), eine
@@ -339,33 +352,6 @@ export function timelineBlock(
   ].filter(Boolean).join("\n");
 }
 
-/**
- * HyDE-lite: die Frage wird vom lokalen Modell in 1–2 kurze AUSSAGESÄTZE
- * umgeschrieben — so würde ein Dokument formulieren, das die Antwort enthält.
- * Multi-Session-Fragen scheitern oft am Wortlaut-Abstand zwischen Frage und
- * Beleg; die Aussagesätze schließen genau diese Lücke. Die zusätzlichen
- * Treffer sind ADDITIV (wie beim Zeitsplit) — die Vollfrage-Rankings bleiben
- * vorne, nichts wird verdrängt.
- */
-export const HYDE_PROMPT = `Rewrite the question as 1-2 short declarative sentences that a document containing the answer would state. Reply only with the sentences, nothing else.
-
-QUESTION: {frage}`;
-
-export async function erweitereFrage(frage: string, rufen: (prompt: string) => Promise<string>): Promise<string[]> {
-  let roh: string;
-  try {
-    roh = await rufen(HYDE_PROMPT.replace("{frage}", frage));
-  } catch {
-    return []; // Eine gescheiterte Erweiterung darf die Frage nie blockieren.
-  }
-  return [...new Set(
-    roh
-      .split(/\n+/)
-      .map((z) => z.replace(/^[-*\d.)\s]+/, "").trim())
-      .filter((z) => z.split(/\s+/).length >= 4 && /[a-z]{5,}/i.test(z))
-  )].slice(0, 2);
-}
-
 export async function beantworte(
   store: KeptaStore,
   frage: LongMemEvalFrage,
@@ -377,30 +363,19 @@ export async function beantworte(
   const such = await searchMemories(store, { query: frage.question, limit: topk });
   if (such.hits.length === 0) return { antwort: "", treffer: 0, usedVectors: such.usedVectors, hitKontexte: [], hitTitel: [] };
   const hits = [...such.hits];
-  if (zeitsplit) {
-    // Teilfragen liefern NUR zusätzliche Kandidaten — die Vollfrage-Rankings
+  const zusatzSuchen = [
+    ...(zeitsplit ? zerlegeZeitfrage(frage.question) : []),
+    ...erweiterungen,
+  ];
+  for (const teil of zusatzSuchen) {
+    // Zusatz-Suchen liefern NUR zusätzliche Kandidaten — die Vollfrage-Rankings
     // bleiben vorne, nichts wird verdrängt, nur der Kontext wird vollständiger.
     const gesehen = new Set(hits.map((h) => h.memory.id));
-    for (const teil of zerlegeZeitfrage(frage.question)) {
-      const s = await searchMemories(store, { query: teil, limit: 5 });
-      for (const h of s.hits) {
-        if (gesehen.has(h.memory.id)) continue;
-        gesehen.add(h.memory.id);
-        hits.push(h);
-      }
-    }
-  }
-  // HyDE-Erweiterungen: derselbe additive Weg wie der Zeitsplit — Aussagesätze
-  // schließen den Wortlaut-Abstand zwischen Frage und Beleg, verdrängen nichts.
-  if (erweiterungen.length > 0) {
-    const gesehen = new Set(hits.map((h) => h.memory.id));
-    for (const satz of erweiterungen) {
-      const s = await searchMemories(store, { query: satz, limit: 5 });
-      for (const h of s.hits) {
-        if (gesehen.has(h.memory.id)) continue;
-        gesehen.add(h.memory.id);
-        hits.push(h);
-      }
+    const s = await searchMemories(store, { query: teil, limit: 5 });
+    for (const h of s.hits) {
+      if (gesehen.has(h.memory.id)) continue;
+      gesehen.add(h.memory.id);
+      hits.push(h);
     }
   }
   const kontextTreffer = hits.slice(0, topk + 6);
@@ -554,8 +529,6 @@ export interface Bericht {
   datensatz: string;
   datensatz_sha256: string;
   fragen: number;
-  /** Übersprungene Fragen am Anfang des Splits (`--offset`) — 0 ist der volle Split. Ohne dieses Feld wäre ein Slice-Lauf nicht von einem Gesamtlauf zu unterscheiden. */
-  offset: number;
   topk: number;
   ingest: IngestErgebnis;
   genauigkeit_gesamt: number;
@@ -572,7 +545,9 @@ export interface Bericht {
   zeitsplit: boolean;
   /** Zeitfragen bekamen den Timeline-Block (Memory-Daten + Spannen) vorne. */
   temporal: boolean;
+  /** Fragen wurden per HyDE-lite in Aussagesätze erweitert (additiv gesucht). */
   hyde: boolean;
+  /** Insgesamt erzeugte HyDE-Erweiterungen (0 = Hebel nicht angefordert). */
   hyde_erweiterungen: number;
   laufzeit_ms: number;
 }
@@ -604,11 +579,22 @@ function gitCommit(): string | null {
 
 // ── CLI ──
 
+/**
+ * Fortsetzen nach Abbruch (Reboot-Schutz): fertige Fragen aus einer
+ * Checkpoint-Datei übernehmen — alles mit Urteil oder Fehler zählt, der Rest
+ * läuft neu. Rückgabe: übernommene Zeilen + Menge der fertigen IDs.
+ */
+export function ladeFortsetzen(pfad: string): { zeilen: FrageErgebnis[]; fertig: Set<string> } {
+  const teil = JSON.parse(fs.readFileSync(pfad, "utf8")) as { fragen?: FrageErgebnis[] };
+  const zeilen = (teil.fragen ?? []).filter((f) => f.urteil !== null || f.fehler);
+  return { zeilen, fertig: new Set(zeilen.map((z) => z.question_id)) };
+}
+
 async function hauptprogramm(): Promise<void> {
   const args = process.argv.slice(2);
   const pfad = args.find((a) => !a.startsWith("--"));
   if (!pfad) {
-    console.error("Aufruf: npx tsx tools/longmemeval/harness.ts <datensatz> [--analyse] [--limit N] [--offset N] [--topk K] [--modell NAME] [--store PFAD] [--ohne-judge] [--vektoren] [--zeitsplit] [--temporal] [--hyde]");
+    console.error("Aufruf: npx tsx tools/longmemeval/harness.ts <datensatz> [--analyse] [--limit N] [--topk K] [--modell NAME] [--store PFAD] [--ohne-judge] [--vektoren] [--zeitsplit] [--temporal] [--hyde]");
     process.exit(2);
   }
   const zahl = (name: string, standard: number): number => {
@@ -617,10 +603,6 @@ async function hauptprogramm(): Promise<void> {
     return Number.isFinite(v) && v > 0 ? v : standard;
   };
   const limit = zahl("--limit", Infinity);
-  // --offset reserviert Fragen: Tuning laeuft auf --offset 0, die eingefrorene
-  // Konfiguration danach auf dem Rest. Ohne diesen Flag schneidet --limit immer
-  // denselben Anfang ab — dann ist jede Messung in-sample.
-  const offset = zahl("--offset", 0);
   const topk = zahl("--topk", 8);
   const modell = args.includes("--modell") ? args[args.indexOf("--modell") + 1] : JUDGE_MODELL_STANDARD;
   const ohneJudge = args.includes("--ohne-judge");
@@ -631,11 +613,9 @@ async function hauptprogramm(): Promise<void> {
   const mitHyde = args.includes("--hyde");
 
   const start = Date.now();
-  const alleFragen = ladeDatensatz(pfad);
-  const fragen = frageScheibe(alleFragen, offset, limit);
+  const fragen = ladeDatensatz(pfad).slice(0, limit);
   const verteilung = analysiere(fragen);
   console.log(`Datensatz: ${pfad}`);
-  console.log(`Slice: Fragen ${offset + 1}–${offset + fragen.length} von ${alleFragen.length}${offset === 0 && fragen.length === alleFragen.length ? " (voll)" : ""}`);
   console.log(`Fragen: ${verteilung.fragen} · Sessions: ${verteilung.sessionsGesamt} · mit Orakel-Feldern: ${verteilung.oracleFelderVorhanden}`);
   for (const f of FAEHIGKEITEN) console.log(`  ${f}: ${verteilung.proFaehigkeit[f]}`);
   if (nurAnalyse) return;
@@ -677,7 +657,36 @@ async function hauptprogramm(): Promise<void> {
   let judgeAufrufe = 0;
   let hydeErweiterungen = 0;
   let usedVectorsIrgendwann = false;
+
+  // Reboot-Schutz: --fortsetzen PFAD übernimmt fertige Fragen; alle 25 Fragen
+  // schreibt der Lauf einen Checkpoint. Ein Abbruch kostet so höchstens 25
+  // Fragen statt des ganzen Laufs.
+  const fortsetzenPfad = args.includes("--fortsetzen") ? args[args.indexOf("--fortsetzen") + 1] : null;
+  const resume = fortsetzenPfad
+    ? ladeFortsetzen(fortsetzenPfad)
+    : { zeilen: [] as FrageErgebnis[], fertig: new Set<string>() };
+  ergebnisse.push(...resume.zeilen);
+  leer += resume.zeilen.filter((z) => z.treffer === 0 && z.urteil === "nein" && !z.fehler).length;
+  verbatim += resume.zeilen.filter((z) => z.verbatim).length;
+  judgeAufrufe += resume.zeilen.reduce((s, z) => s + (z.judge_aufrufe ?? 0), 0);
+  if (fortsetzenPfad) {
+    console.log(`\nFortsetzen: ${resume.zeilen.length} Fragen aus ${fortsetzenPfad} übernommen (${resume.fertig.size} fertig, ${fragen.length - resume.fertig.size} offen)`);
+  }
+
+  // Checkpoint-Pfad — liegt am Ende neben dem Ergebnis (gleiche Namenslogik).
+  // KEPTA_CHECKPOINT_SUFFIX macht Checkpoints stufen-eindeutig (Kette setzt sie),
+  // damit parallele/fortgesetzte Stufen sich nie gegenseitig ihre Fortsetzungen geben.
+  const checkpointSuffix = process.env.KEPTA_CHECKPOINT_SUFFIX ? `-${process.env.KEPTA_CHECKPOINT_SUFFIX}` : "";
+  const zielPfad = path.join(
+    "tools", "longmemeval", "ergebnisse",
+    `longmemeval-${new Date().toISOString().slice(0, 10)}-${datensatzHash(pfad).slice(0, 8)}.json`
+  );
+  const checkpointPfad = zielPfad.replace(/\.json$/, `${checkpointSuffix}.part.json`);
+  fs.mkdirSync(path.dirname(zielPfad), { recursive: true });
+  const fertigIds = resume.fertig;
+
   for (const [i, frage] of fragen.entries()) {
+    if (fertigIds.has(frage.question_id)) continue;
     const zeile: FrageErgebnis = { question_id: frage.question_id, typ: frage.question_type, faehigkeit: faehigkeitVon(frage.question_type), urteil: null, treffer: 0, trefferIndex: null, verbatim: false, judge_aufrufe: 0 };
     try {
       const erweiterungen = mitHyde ? await erweitereFrage(frage.question, standardOllama(modell)) : [];
@@ -709,6 +718,13 @@ async function hauptprogramm(): Promise<void> {
       console.log(`  ${i + 1}/${fragen.length} Fragen bearbeitet`);
     }
     ergebnisse.push(zeile);
+    // Checkpoint alle 25 Fragen — überlebt jeden Abbruch mit höchstens 25 Fragen Verlust:
+    if ((i + 1) % 25 === 0 || i + 1 === fragen.length) {
+      fs.writeFileSync(
+        checkpointPfad,
+        JSON.stringify({ fragen: ergebnisse, leer, topk, datensatz: path.basename(pfad), datensatz_sha256: datensatzHash(pfad) }, null, 2)
+      );
+    }
   }
   store.close();
 
@@ -747,7 +763,6 @@ async function hauptprogramm(): Promise<void> {
     datensatz: path.basename(pfad),
     datensatz_sha256: datensatzHash(pfad),
     fragen: fragen.length,
-    offset,
     topk,
     ingest: ingestErgebnis,
     genauigkeit_gesamt: genauigkeit,
@@ -765,10 +780,7 @@ async function hauptprogramm(): Promise<void> {
     hyde_erweiterungen: mitHyde ? hydeErweiterungen : 0,
     laufzeit_ms: Date.now() - start,
   };
-  // Ein Holdout-Lauf darf nicht den Tuning-Lauf desselben Tags ueberschreiben —
-  // sonst verliert ausgerechnet die unberührte Messung ihren Beleg.
-  const scheibenFragment = offset > 0 ? `-offset${offset}` : "";
-  const ziel = path.join("tools", "longmemeval", "ergebnisse", `longmemeval-${new Date().toISOString().slice(0, 10)}-${bericht.datensatz_sha256.slice(0, 8)}${scheibenFragment}.json`);
+  const ziel = path.join("tools", "longmemeval", "ergebnisse", `longmemeval-${new Date().toISOString().slice(0, 10)}-${bericht.datensatz_sha256.slice(0, 8)}.json`);
   fs.mkdirSync(path.dirname(ziel), { recursive: true });
   fs.writeFileSync(ziel, JSON.stringify({ bericht, fragen: ergebnisse }, null, 2));
   console.log(`\nGenauigkeit: ${(genauigkeit * 100).toFixed(1)} % (${gerichtet.length}/${fragen.length} gerichtet) · Leer: ${leer} · Verbatim-Ja: ${verbatim} · Judge-Aufrufe: ${judgeAufrufe} · Parse-Fehler: ${parseFehler}`);

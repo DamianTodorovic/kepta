@@ -3,10 +3,30 @@
 import type { KeptaStore } from "./store";
 import type { AuditSink } from "./extensions";
 
-export const DEFAULT_EMBED_MODEL = process.env.KEPTA_EMBED_MODEL || "nomic-embed-text";
-
+/**
+ * Der eine Loeser fuer die Ollama-Adresse. Seit dem 3.11. lesen ihn auch die Routen
+ * (server/router/chat.ts): vorher fragte die Modelle-Liste KEPTA_OLLAMA_URL, die
+ * Einbett-Route nur OLLAMA_HOST, und der Kern-Laeufer wieder KEPTA_OLLAMA_URL — drei
+ * Stellen, ein Dienst, zwei Knoepfe. Die Zustands-Tafel konnte "Ollama answers" melden,
+ * waehrend der Einbett-Lauf gegen eine andre Adresse ging. OLLAMA_HOST bleibt der
+ * uebernommene zweite Name (Ollama selbst benutzt ihn), KEPTA_OLLAMA_URL gewinnt.
+ */
 export function ollamaBaseUrl(): string {
-  return (process.env.KEPTA_OLLAMA_URL || "http://127.0.0.1:11434").replace(/\/+$/, "");
+  return (process.env.KEPTA_OLLAMA_URL || process.env.OLLAMA_HOST || "http://127.0.0.1:11434").replace(/\/+$/, "");
+}
+
+/** Dasselbe Muster für den Modellnamen, aber im Aufruf gelesen — eine Route darf nicht an einem Import-Wert aus dem Takt fallen. */
+export function einbettModell(): string {
+  return process.env.KEPTA_EMBED_MODEL || process.env.OLLAMA_EMBED_MODEL || "nomic-embed-text";
+}
+
+export const DEFAULT_EMBED_MODEL = einbettModell();
+
+/** P184: das AKTIVE Such-Modell — die Wahl aus den Einstellungen (Settings-Schalter)
+ * schlägt die Umgebung; ohne beide gilt das ausgelieferte nomic. */
+export function aktivesSuchModell(store: { einstellungen(): Record<string, string> }): string {
+  const gewaehlt = store.einstellungen()["such_modell"];
+  return typeof gewaehlt === "string" && gewaehlt.length > 0 ? gewaehlt : einbettModell();
 }
 
 // ---------- Chunking ----------
@@ -101,7 +121,7 @@ export async function embedTexts(
     const data = (await res.json()) as { embeddings?: number[][] };
     const vecs = (data.embeddings ?? []).map((e) => Float32Array.from(e));
     if (vecs.length !== inputs.length) {
-      return { ok: false, embeddings: [], model, error: "Embedding count does not match" };
+      return { ok: false, embeddings: [], model, error: "Embedding count does not match: the model answered fewer vectors than lines, so retry or rebuild the index" };
     }
     return { ok: true, embeddings: vecs, model };
   } catch (e) {
@@ -147,19 +167,8 @@ export interface EmbeddingQueueOptions {
   immediate?: boolean;
 }
 
-/**
- * Pause, die die Queue einem Schreibvorgang gönnt, bevor sie ihn bettet.
- *
- * Das Intervall (15 s) ist der Notbetrieb fuer nachgetragene Aenderungen, nicht die
- * Antwort auf "gerade eben gespeichert": eine frische Notiz blieb bis zum nächsten
- * Intervall semantisch unsichtbar — auch für die Duplettenprüfung beim Speichern.
- */
-const SOFORTLAUF_NACH_WRITE_MS = 400;
-
 export class EmbeddingQueue {
   private timer: ReturnType<typeof setInterval> | null = null;
-  private writeTimer: ReturnType<typeof setTimeout> | null = null;
-  private abmeldung: (() => void) | null = null;
   private running = false;
   private opts: Required<Omit<EmbeddingQueueOptions, "immediate">>;
   lastError: string | null = null;
@@ -179,51 +188,11 @@ export class EmbeddingQueue {
     };
   }
 
-  /**
-   * immediate=true (Standard) bettet sofort, was schon wartet: ein Hochlauf auf
-   * einer Datenbank mit Chunks ohne Vektor war sonst 15 Sekunden lang blind, und
-   * ein Erstimport von 1 000 Notizen rund 16 Minuten. Wer den alten Verlauf will,
-   * ruft start(false).
-   */
-  start(immediate = true): void {
+  start(immediate = false): void {
     if (this.timer) return;
-    // Erst den Timer setzen, dann laufen: der Lauf prüft ihn vor jeder Runde, und
-    // stop() soll ihn an der nächsten Batchgrenze beenden koennen.
-    this.timer = setInterval(() => void this.lauf(), this.opts.intervalMs);
+    if (immediate) void this.tick();
+    this.timer = setInterval(() => void this.tick(), this.opts.intervalMs);
     if (typeof this.timer.unref === "function") this.timer.unref();
-    this.abmeldung = this.store.onMemorieAenderung(() => this.kickeNachSchreib());
-    if (immediate) void this.lauf();
-  }
-
-  /**
-   * Ein Lauf: bettet Batch fuer Batch, bis nichts mehr wartet.
-   *
-   * Ohne das Nachziehen bliebe der Rest bis zum naechsten Intervall liegen — bei
-   * 1 000 importierten Notizen (63 Batchs) rund 16 Minuten semantisch blind, auch
-   * mit Sofortlauf am Hochlauf. Schlaegt eine Runde fehl (der Dienst ist nicht zu
-   * erreichen), endet der Lauf: 15 Sekunden Geduld sind die richtige Antwort, nicht
-   * eine Endlosschleife gegen einen toten Ollama.
-   */
-  private async lauf(): Promise<void> {
-    while (this.timer !== null) {
-      const runde = await this.tick();
-      if (runde === 0) return;
-    }
-  }
-
-  /**
-   * Getakteter Sofortlauf nach einem Write. Die Pause dämpft: speichert ein Agent
-   * hundert Notizen in Folge, entsteht ein Lauf nach der Pause statt hundert
-   * Timer und hundert Einzelaufrufe — und die erste Notiz ist nach Bruchteilen
-   * einer Sekunde auffindbar statt beim naechsten Intervall.
-   */
-  private kickeNachSchreib(): void {
-    if (this.writeTimer) return;
-    this.writeTimer = setTimeout(() => {
-      this.writeTimer = null;
-      void this.lauf();
-    }, SOFORTLAUF_NACH_WRITE_MS);
-    if (typeof this.writeTimer.unref === "function") this.writeTimer.unref();
   }
 
   stop(): void {
@@ -231,14 +200,13 @@ export class EmbeddingQueue {
       clearInterval(this.timer);
       this.timer = null;
     }
-    if (this.writeTimer) {
-      clearTimeout(this.writeTimer);
-      this.writeTimer = null;
-    }
-    if (this.abmeldung) {
-      this.abmeldung();
-      this.abmeldung = null;
-    }
+  }
+
+  /** P184: das Queue-Modell wechseln — der nächste tick re-embeddet alle
+   * Chunks, deren embedding_model nicht mehr passt (chunksNeedingEmbedding
+   * zählt den Mismatch mit). Nicht-blockierend, Queue im Hintergrund. */
+  wechselModell(model: string): void {
+    this.opts.model = model;
   }
 
   /** Verarbeitet eine Runde nicht eingebettete Chunks. Liefert Anzahl. */

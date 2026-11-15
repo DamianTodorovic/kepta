@@ -1,0 +1,12 @@
+name = "kepta-licenzen"
+main = "worker.ts"
+compatibility_date = "2026-09-01"
+
+# KV für die Ausstellungs-Buchführung (nächste Nummer, Schlüssel je Kunde).
+# Angelegt am 20.9.2026: `wrangler kv namespace create LIZENZEN`
+[[kv_namespaces]]
+binding = "LIZENZ"
+id = "b638b115f7f344fb9a98127e4ec95a9d"
+
+# Secrets (nicht hier!): LIZENZ_PRIVATE_KEY, PADDLE_WEBHOOK_SECRET, RESEND_API_KEY
+# `wrangler secret put <NAME>`

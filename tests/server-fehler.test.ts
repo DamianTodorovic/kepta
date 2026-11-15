@@ -1,32 +1,26 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
+// F12 — Q-19 in der Desktop-App. Die App hatte schon eine Fehlermittelware
+// (server/app.ts), aber sie gab err.message ungeprueft nach aussen: bei einer 500
+// stand damit der interne Grund beim Client, und die Schichten, die bootstrap.ts
+// NACH createApp montiert (static und der SPA-Fallback), liegen ueberhaupt nicht
+// unter ihr. Im Kern hat F3 dafuer sichererFehler gebaut — hier dieselbe Anlage,
+// damit beide Baeume gleich antworten.
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
-import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
-import { anlage } from "./helfer/anlage";
 
-// server.ts startet beim Import normalerweise automatisch — hier nur createApp.
+// ../server erst nach dieser Zeile importieren, sonst startet der echte Server.
 process.env.KEPTA_NO_AUTOSTART = "1";
+process.env.KEPTA_ENCRYPTION = "off";
 
-let createApp: (store: KeptaStore) => import("express").Express;
+let createApp: typeof import("../server").createApp;
+let sichererFehler: typeof import("../server/app").sichererFehler;
 let store: KeptaStore;
 let app: import("express").Express;
 let prevHome: string | undefined;
 let dir: string;
-// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage (`tests/helfer/hoerer.ts`).
-let hoerer: DateiHoerer;
-let URLE: string;
-
-beforeAll(async () => {
-  hoerer = await hoererDerDatei("tests/server-fehler.test.ts");
-  URLE = hoerer.url;
-});
-
-afterAll(async () => {
-  await hoerer.schliesse();
-});
 
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-fehler-"));
@@ -35,9 +29,9 @@ beforeEach(async () => {
   process.env.KEPTA_DATA_DIR = dir;
   vi.resetModules();
   ({ createApp } = await import("../server"));
+  ({ sichererFehler } = await import("../server/app"));
   store = new KeptaStore(path.join(dir, "test.db"));
   app = createApp(store);
-  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
@@ -45,7 +39,7 @@ afterEach(() => {
   else process.env.HOME = prevHome;
 });
 
-/** A3-04: der Stapel nannte "/Users/…/kepta-core/node_modules/raw-body/index.js:163:17". */
+/** A3-04 im Kern: der Stapel nannte ".../kepta-core/node_modules/raw-body/index.js:163:17". */
 function zeigeNichtsVomStapel(text: string) {
   expect(text).not.toContain("/Users/");
   expect(text).not.toContain("node_modules");
@@ -54,9 +48,9 @@ function zeigeNichtsVomStapel(text: string) {
   expect(text).not.toContain("<!DOCTYPE html>");
 }
 
-describe("Q-19 — Fehlerantworten leaken Stapelverweise mit absoluten Pfaden", () => {
+describe("Q-19 — Fehlerantworten leaken Stapelverweise, Pfade und interne Gruende", () => {
   it("413 am globalen Limit: JSON, Grund und Groesse, kein Stapel", async () => {
-    const res = await request(URLE)
+    const res = await request(app)
       .post("/api/memories")
       .set("Content-Type", "application/json")
       .send({ title: "X", content: "x".repeat(1_500_000) });
@@ -70,7 +64,7 @@ describe("Q-19 — Fehlerantworten leaken Stapelverweise mit absoluten Pfaden", 
   });
 
   it("413 am Routen-Limit (2mb beim Import): ebenfalls JSON ohne Stapel", async () => {
-    const res = await request(URLE)
+    const res = await request(app)
       .post("/api/memories/import")
       .set("Content-Type", "application/json")
       .send({ memories: [{ title: "Zu groß", content: "x".repeat(2_500_000) }] });
@@ -83,7 +77,7 @@ describe("Q-19 — Fehlerantworten leaken Stapelverweise mit absoluten Pfaden", 
 
   it("kaputtes JSON: 400 als JSON, ohne Stapel und ohne den Body zurueckzugeben", async () => {
     const geheim = "sk-GEHEIMER-WERT-das-darf-nicht-zurueck";
-    const res = await request(URLE)
+    const res = await request(app)
       .post("/api/memories")
       .set("Content-Type", "application/json")
       .send(`{"title":"${geheim}", "content": `);
@@ -94,28 +88,49 @@ describe("Q-19 — Fehlerantworten leaken Stapelverweise mit absoluten Pfaden", 
     expect(res.text).not.toContain(geheim);
   });
 
-  it("eine werfende Route: 500 als JSON, der Grund bleibt im Protokoll", async () => {
+  it("eine werfende Route: 500 als JSON, der wahre Grund bleibt beim Betreiber", async () => {
     store.db.exec("DROP TABLE memories");
     const vorher = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const res = await request(URLE).get("/api/memories");
+    const res = await request(app).get("/api/memories");
     const protokolliert = vorher.mock.calls.map((c) => c.join(" ")).join("\n");
     vorher.mockRestore();
     expect(res.status).toBe(500);
     zeigeNichtsVomStapel(res.text);
     expect(res.headers["content-type"]).toMatch(/application\/json/);
     expect(res.body.error).toBeTruthy();
-    // Nach aussen nichts, dem Betreiber alles: der wahre Grund steht im Protokoll.
+    // Nach aussen ein Satz, dem Betreiber alles: der Grund steht im Protokoll.
     expect(protokolliert).toMatch(/no such table/);
+    expect(String(res.body.error)).not.toMatch(/no such table|SqliteError/);
   });
 
   it("413 schreibt nichts in die Datenbank", async () => {
-    anlage(await request(URLE).post("/api/memories").send({ title: "Vorher", content: "bestand" }), "Vorher-Notiz anlegen");
-    await request(URLE)
+    await request(app).post("/api/memories").send({ title: "Vorher", content: "bestand" });
+    await request(app)
       .post("/api/memories")
       .set("Content-Type", "application/json")
       .send({ title: "Zu groß", content: "x".repeat(1_500_000) });
-    const liste = await request(URLE).get("/api/memories");
-    expect(liste.body).toHaveLength(1);
-    expect(liste.body[0].title).toBe("Vorher");
+    const liste = await request(app).get("/api/memories");
+    // Der Leib nennt seine Zahl selbst (Aufgabe #64(1)) — gezählt wird die Antwort,
+    // nicht ein Array, dessen Laenge der Zufall liefert.
+    expect(liste.body.count).toBe(1);
+    expect(liste.body.total).toBe(1);
+    expect(liste.body.memories[0].title).toBe("Vorher");
+  });
+
+  it("die Mittelware faengt auch eine Schicht unterhalb von createApp (static/SPA in bootstrap.ts)", async () => {
+    // bootstrap.ts montiert express.static und den SPA-Fallback NACH createApp —
+    // Express laeuft die Schicht ab der Fehlerstelle abwaerts, also braucht die
+    // Mittelware dort einen zweiten Anker. Genau den baut bootstrap.ts jetzt.
+    const app2 = createApp(store);
+    app2.use("/spa", (_req, _res, next) => {
+      next(new Error("ENOENT: no such file or directory, open '/home/betreiber/.kepta/dist/index.html'"));
+    });
+    app2.use(sichererFehler);
+    const res = await request(app2).get("/spa/index.html");
+    expect(res.status).toBe(500);
+    zeigeNichtsVomStapel(res.text);
+    expect(res.text).not.toContain("index.html");
+    expect(res.text).not.toMatch(/\/home\/|\/Users\/|node_modules|\.kepta/);
+    expect(res.headers["content-type"]).toMatch(/application\/json/);
   });
 });

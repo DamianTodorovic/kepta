@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<title>K3PTA License Studio</title>
+<style>
+:root {
+  --bg: #070708; --panel: #101012; --inset: rgba(255,255,255,0.045); --inset-2: rgba(255,255,255,0.085);
+  --border: rgba(255,255,255,0.08); --border-2: rgba(255,255,255,0.16);
+  --t1: #eaeae8; --t2: #9b9992; --t3: #66645e;
+  --accent: #c04a39; --accent-soft: rgba(194,75,59,0.13); --accent-text: #f0a79c;
+  --ok: #7fb08a; --ok-soft: rgba(127,176,138,0.13); --warn: #cfa45e; --warn-soft: rgba(207,164,94,0.13);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--t1); font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; }
+body { display: grid; grid-template-columns: 232px 1fr; overflow: hidden; }
+aside { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 48px 14px 14px; -webkit-app-region: drag; user-select: none; }
+aside > * { -webkit-app-region: no-drag; }
+.marke { display: flex; align-items: center; gap: 11px; padding: 0 8px 24px; }
+.marke b { display: block; font-size: 12.5px; letter-spacing: .14em; }
+.marke span { font-size: 11.5px; color: var(--t3); }
+nav button { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 8px; color: var(--t2); font-size: 13px; margin-bottom: 2px; }
+nav button:hover { background: var(--inset); color: var(--t1); }
+nav button[aria-current="page"] { background: var(--accent-soft); color: var(--t1); box-shadow: inset 2px 0 0 var(--accent); }
+nav kbd { font: 10.5px var(--mono); color: var(--t3); }
+nav .zahl { font-size: 11px; color: var(--t2); background: var(--inset-2); padding: 0 7px; border-radius: 99px; margin-left: 8px; }
+.status { margin-top: auto; padding: 11px 12px; border-radius: 10px; background: var(--inset); font-size: 11.5px; color: var(--t2); line-height: 1.5; }
+.status .punkt { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; background: var(--t3); vertical-align: 1px; }
+.status.gut .punkt { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.status.schlecht { color: var(--accent-text); }
+.status.schlecht .punkt { background: var(--accent); }
+.status code { font-family: var(--mono); font-size: 10.5px; color: var(--t1); }
+.kopf { position: fixed; top: 0; left: 232px; right: 0; height: 40px; -webkit-app-region: drag; }
+main { overflow-y: auto; padding: 52px 52px 48px; }
+section { max-width: 840px; }
+h1 { font-size: 23px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.lead { color: var(--t2); margin: 0 0 26px; max-width: 66ch; }
+label { display: block; margin-bottom: 14px; }
+label > span { display: block; font-size: 11.5px; color: var(--t3); margin-bottom: 6px; }
+input, textarea, select { width: 100%; background: var(--inset); border: 1px solid var(--border); border-radius: 9px; color: var(--t1); padding: 10px 12px; font: inherit; font-size: 14px; outline: none; transition: border-color .15s, background .15s; }
+input::placeholder, textarea::placeholder { color: var(--t3); }
+input:focus, textarea:focus, select:focus { border-color: var(--border-2); background: var(--inset-2); }
+select option { background: var(--panel); color: var(--t1); }
+textarea { resize: vertical; }
+.mono { font-family: var(--mono); letter-spacing: .04em; }
+.reihe { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; }
+.knopf { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 500; background: var(--inset-2); color: var(--t1); border: 1px solid var(--border); white-space: nowrap; }
+.knopf:hover { border-color: var(--border-2); }
+.knopf:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.knopf.haupt { background: var(--accent); border-color: transparent; color: #fff; }
+.knopf.haupt:hover { filter: brightness(1.1); }
+.knopf.warn { color: var(--accent-text); }
+.knopf:disabled { opacity: .4; pointer-events: none; }
+.klein-knopf { padding: 5px 10px; font-size: 12px; }
+.hinweise { margin: -4px 0 14px; padding: 0; list-style: none; }
+.hinweise li { font-size: 12px; color: var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 7px 10px; margin-bottom: 6px; }
+.fehler { font-size: 12.5px; color: var(--accent-text); background: var(--accent-soft); border-radius: 8px; padding: 9px 12px; margin-top: 14px; }
+.info { font-size: 12.5px; color: var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 9px 12px; margin-bottom: 14px; }
+.karte { margin-top: 30px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px 22px 20px; }
+.karte-kopf { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 14px; }
+.klein { font-size: 11.5px; color: var(--t3); }
+.name-gross { font-size: 19px; font-weight: 600; margin-top: 2px; }
+.nummer-gross { font-family: var(--mono); font-size: 17px; letter-spacing: .06em; margin-top: 3px; }
+.markiert { color: var(--ok); }
+.schluessel { font-family: var(--mono); font-size: 15px; letter-spacing: .05em; line-height: 1.8; color: var(--t1); background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; word-break: break-all; user-select: all; }
+.aktionen { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.umschalter { display: inline-flex; background: var(--inset); border-radius: 8px; padding: 2px; }
+.umschalter button { all: unset; padding: 4px 12px; border-radius: 6px; font-size: 12px; color: var(--t2); }
+.umschalter button[aria-pressed="true"] { background: var(--inset-2); color: var(--t1); }
+.nachricht { font-family: var(--mono); font-size: 12px; line-height: 1.65; min-height: 300px; }
+.ergebnis { margin-top: 18px; padding: 14px 16px; border-radius: 10px; font-size: 13.5px; }
+.ergebnis.gut { background: var(--ok-soft); color: var(--ok); }
+.ergebnis.schlecht { background: var(--accent-soft); color: var(--accent-text); }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-weight: 500; font-size: 10.5px; color: var(--t3); text-transform: uppercase; letter-spacing: .09em; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+td { padding: 11px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr.gesperrt td { opacity: .5; }
+tr.gesperrt td.aktion { opacity: 1; }
+.marke-gesperrt { font-size: 10.5px; color: var(--accent-text); background: var(--accent-soft); border-radius: 99px; padding: 1px 8px; margin-left: 8px; }
+td.aktion { text-align: right; white-space: nowrap; }
+td.aktion .knopf + .knopf { margin-left: 6px; }
+.leer { color: var(--t3); padding: 40px 0; text-align: center; }
+.fuss { margin-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.toast { position: fixed; bottom: 22px; left: calc(50% + 116px); transform: translateX(-50%) translateY(16px); background: var(--t1); color: var(--bg); padding: 8px 15px; border-radius: 99px; font-size: 12.5px; font-weight: 500; opacity: 0; transition: .2s; pointer-events: none; }
+.toast.an { opacity: 1; transform: translateX(-50%) translateY(0); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<aside>
+  <div class="marke">
+    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" fill="#c04a39"/><path d="M10.2 8.6v12.8M10.2 15l7.1-5.9M10.2 15l7.1 6.4" stroke="#fff" stroke-width="1.8" fill="none"/><circle cx="21" cy="9.6" r="1.6" fill="#fff"/></svg>
+    <div><b>K3PTA</b><span>License Studio</span></div>
+  </div>
+  <nav>
+    <button type="button" data-ansicht="ausstellen" aria-current="page"><span>Ausstellen</span><kbd>⌘1</kbd></button>
+    <button type="button" data-ansicht="pruefen"><span>Prüfen</span><kbd>⌘2</kbd></button>
+    <button type="button" data-ansicht="liste"><span>Ausgestellt<span class="zahl" id="zahl">0</span></span><kbd>⌘3</kbd></button>
+  </nav>
+  <div class="status" id="status"><span class="punkt"></span>Prüfe den Signaturschlüssel …</div>
+</aside>
+<div class="kopf"></div>
+<main>
+  <section id="ausstellen">
+    <h1>Lizenz ausstellen</h1>
+    <p class="lead">Der Schlüssel weist den Vertrag aus — die App selbst braucht keinen und läuft mit jedem Werkzeug unbegrenzt. Jede Lizenz bekommt eine eigene Nummer und läuft auf einen Namen. Taucht ein Schlüssel irgendwo auf, wo er nicht hingehört: sperren.</p>
+    <form id="form-aus" autocomplete="off">
+      <div class="reihe">
+        <label><span>Name des Kunden (wie auf der Rechnung)</span><input id="name" placeholder="z. B. Sarah Mandel" maxlength="200" autofocus></label>
+        <label><span>Notiz (optional — Firma, LinkedIn, Rechnung)</span><input id="notiz" placeholder="z. B. Harbor Advisory · Rechnung 2026-014" maxlength="500"></label>
+      </div>
+      <div class="reihe">
+        <label><span>Stufe</span>
+          <select id="edition">
+            <option value="enterprise" selected>K3PTA Enterprise — Organisation, Umfang nach Absprache</option>
+            <option value="business">K3PTA Enterprise — Team mit Seats (1–9999)</option>
+          </select>
+        </label>
+        <label id="seats-feld" hidden><span>Seats (Plätze, 1–9999)</span><input id="seats" type="number" min="1" max="9999" placeholder="z. B. 5"></label>
+      </div>
+      <ul class="hinweise" id="hinweise"></ul>
+      <button class="knopf haupt" id="erzeugen" type="submit" disabled>Schlüssel erzeugen</button>
+      <div class="fehler" id="fehler-aus" role="alert" hidden></div>
+    </form>
+    <div class="karte" id="ergebnis" hidden>
+      <div class="karte-kopf">
+        <div><div class="klein">Name</div><div class="name-gross" id="erg-name"></div></div>
+        <div style="text-align:right"><div class="klein">Lizenz Nr.</div><div class="nummer-gross" id="erg-nummer"></div></div>
+      </div>
+      <div class="klein" id="erg-stufe" style="margin-bottom:4px"></div>
+      <div class="klein" id="erg-datum" style="margin-bottom:14px"></div>
+      <div class="klein" style="margin-bottom:6px">Lizenzschlüssel</div>
+      <div class="schluessel" id="erg-key"></div>
+      <div class="aktionen"><button class="knopf" id="key-kopieren" type="button">Schlüssel kopieren</button></div>
+      <div class="karte-kopf" style="margin-top:28px">
+        <div><b>Nachricht an den Kunden</b> <span class="klein">— du kannst sie hier noch anpassen</span></div>
+        <div class="umschalter" id="sprache"><button type="button" data-sprache="de" aria-pressed="true">Deutsch</button><button type="button" data-sprache="en" aria-pressed="false">English</button></div>
+      </div>
+      <textarea class="nachricht" id="nachricht" spellcheck="false"></textarea>
+      <div class="aktionen"><button class="knopf haupt" id="nachricht-kopieren" type="button">Nachricht kopieren</button></div>
+    </div>
+  </section>
+
+  <section id="pruefen" hidden>
+    <h1>Schlüssel prüfen</h1>
+    <p class="lead">Für den Support: Ein Kunde meldet, sein Schlüssel funktioniert nicht? Trag ein, was er eingegeben hat. Geprüft wird mit demselben Code, der auch die Sperrliste liest.</p>
+    <form id="form-pruef" autocomplete="off">
+      <label><span>Name, wie der Kunde ihn eingegeben hat</span><input id="p-name" maxlength="200"></label>
+      <label><span>Lizenzschlüssel</span><textarea id="p-key" rows="3" spellcheck="false" style="font-family:var(--mono);font-size:13px"></textarea></label>
+      <button class="knopf haupt" type="submit">Prüfen</button>
+    </form>
+    <div class="ergebnis" id="p-ergebnis" role="status" hidden></div>
+  </section>
+
+  <section id="liste" hidden>
+    <h1>Ausgestellte Lizenzen</h1>
+    <p class="lead">Jede Lizenz, die du hier ausstellst, landet in dieser Liste — auf deinem Mac, nur für deinen Benutzer lesbar. Taucht ein Schlüssel irgendwo auf, wo er nicht hingehört: sperren. Die Nummer steht danach in der Sperrliste des Repos.</p>
+    <div class="info" id="sperr-info" hidden></div>
+    <input id="suche" placeholder="Suchen — Name, Nummer oder Notiz" style="margin-bottom:14px">
+    <table><thead><tr><th>Nr.</th><th>Name</th><th>Stufe</th><th>Notiz</th><th>Ausgestellt</th><th></th></tr></thead><tbody id="zeilen"></tbody></table>
+    <div class="leer" id="leer" hidden></div>
+    <div class="fehler" id="fehler-liste" role="alert" hidden></div>
+    <div class="fuss"><span class="klein" id="listen-pfad"></span><button class="knopf klein-knopf" id="im-finder" type="button">Im Finder zeigen</button></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+const $ = (id) => document.getElementById(id);
+// `studio` legt preload.cjs über contextBridge als feste globale Eigenschaft an.
+// Nicht neu deklarieren: `const studio = …` wäre hier ein SyntaxError, und das
+// ganze Skript liefe nicht (so geschehen in der ersten Fassung).
+let aktuell = null;
+let sprache = "de";
+let bereit = false;
+let alle = [];
+let hinweisRunde = 0;
+
+const datum = (iso) => new Date(iso).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const nr = (n) => String(n).padStart(4, "0");
+const STUFEN = { business: "K3PTA Enterprise", enterprise: "K3PTA Enterprise", alt: "K3PTA Enterprise" };
+const stufeVon = (e) => (e.edition === "business" || e.edition === "enterprise" ? e.edition : "alt");
+const stufeText = (e) => {
+  const st = stufeVon(e);
+  return STUFEN[st] + (st === "business" && e.seats ? ` · ${e.seats} Seats` : st === "enterprise" ? " · nach Absprache" : " · frühere Einzel-Lizenz");
+};
+
+function toast(text) {
+  const t = $("toast");
+  t.textContent = text;
+  t.classList.add("an");
+  clearTimeout(toast.zeit);
+  toast.zeit = setTimeout(() => t.classList.remove("an"), 2200);
+}
+
+function zeige(ansicht) {
+  for (const b of document.querySelectorAll("nav button")) b.setAttribute("aria-current", b.dataset.ansicht === ansicht ? "page" : "false");
+  for (const id of ["ausstellen", "pruefen", "liste"]) $(id).hidden = id !== ansicht;
+  if (ansicht === "liste") void ladeListe();
+  $({ ausstellen: "name", pruefen: "p-name", liste: "suche" }[ansicht]).focus();
+}
+for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => zeige(b.dataset.ansicht));
+window.addEventListener("keydown", (e) => {
+  if (!e.metaKey) return;
+  const ansicht = { "1": "ausstellen", "2": "pruefen", "3": "liste" }[e.key];
+  if (ansicht) { e.preventDefault(); zeige(ansicht); }
+});
+
+async function ladeStatus() {
+  const st = await studio.status();
+  const el = $("status");
+  $("zahl").textContent = String(st.anzahl);
+  bereit = st.schluessel && st.passt;
+  $("erzeugen").disabled = !bereit;
+  if (!st.schluessel) {
+    el.className = "status schlecht";
+    el.innerHTML = '<span class="punkt"></span>Kein Signaturschlüssel im Schlüsselbund. Einmalig im Terminal: <code>node scripts/license-keypair.mjs</code>';
+  } else if (!st.passt) {
+    el.className = "status schlecht";
+    el.innerHTML = '<span class="punkt"></span>Der Signaturschlüssel passt nicht zu K3PTA — Schlüssel würden in der App nicht funktionieren.';
+  } else {
+    el.className = "status gut";
+    el.innerHTML = '<span class="punkt"></span>Signaturschlüssel bereit · passt zu K3PTA';
+  }
+  const info = $("sperr-info");
+  info.hidden = st.gesperrt.length === 0;
+  info.textContent = st.gesperrt.length === 0 ? ""
+    : `Gesperrt: Nr. ${st.gesperrt.map(nr).join(", ")} — gilt ab dem nächsten K3PTA-Update.`
+      + (st.sperrlisteGefunden ? "" : " Die Sperrliste von K3PTA (src/core/sperrliste.ts) wurde nicht gefunden — trag die Nummern dort ein.");
+  $("listen-pfad").textContent = st.listeDatei.replace(/^\/Users\/[^/]+/, "~");
+  $("fehler-liste").hidden = !st.listenFehler;
+  $("fehler-liste").textContent = st.listenFehler || "";
+}
+
+async function zeigeErgebnis(e, modus) {
+  aktuell = e;
+  $("erg-name").textContent = e.name;
+  $("erg-nummer").textContent = nr(e.nummer);
+  $("erg-key").textContent = e.key;
+  $("erg-stufe").textContent = stufeText(e);
+  const d = $("erg-datum");
+  d.className = modus === "neu" ? "klein markiert" : "klein";
+  d.textContent = modus === "neu" ? "✓ ausgestellt und geprüft"
+    : modus === "wieder" ? `schon am ${datum(e.ausgestelltAm)} ausgestellt — dieselbe Lizenz, derselbe Schlüssel`
+    : `ausgestellt am ${datum(e.ausgestelltAm)}${e.gesperrt ? " · gesperrt" : ""}`;
+  $("ergebnis").hidden = false;
+  await fuelleNachricht();
+}
+
+async function fuelleNachricht() {
+  if (!aktuell) return;
+  $("nachricht").value = await studio.nachricht(aktuell.name, aktuell.nummer, aktuell.key, sprache, stufeVon(aktuell), aktuell.seats);
+  for (const b of document.querySelectorAll("#sprache button")) b.setAttribute("aria-pressed", String(b.dataset.sprache === sprache));
+}
+for (const b of document.querySelectorAll("#sprache button")) b.addEventListener("click", () => { sprache = b.dataset.sprache; void fuelleNachricht(); });
+
+$("name").addEventListener("input", async () => {
+  const runde = ++hinweisRunde;
+  const h = await studio.hinweise($("name").value);
+  if (runde !== hinweisRunde) return;
+  $("hinweise").replaceChildren(...h.map((t) => Object.assign(document.createElement("li"), { textContent: t })));
+});
+
+$("edition").addEventListener("change", () => {
+  $("seats-feld").hidden = $("edition").value !== "business";
+});
+
+$("form-aus").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  $("fehler-aus").hidden = true;
+  if (!bereit) return;
+  const edition = $("edition").value;
+  const seats = parseInt($("seats").value, 10);
+  if (edition === "business" && (!Number.isInteger(seats) || seats < 1 || seats > 9999)) {
+    $("fehler-aus").textContent = "Business braucht eine Seat-Zahl von 1 bis 9999.";
+    $("fehler-aus").hidden = false;
+    return;
+  }
+  const r = await studio.ausstellen($("name").value, $("notiz").value, edition, edition === "business" ? seats : undefined);
+  if (!r.ok) { $("fehler-aus").textContent = r.fehler; $("fehler-aus").hidden = false; return; }
+  await zeigeErgebnis(r.eintrag, r.neu ? "neu" : "wieder");
+  $("name").value = "";
+  $("notiz").value = "";
+  hinweisRunde++;
+  $("hinweise").replaceChildren();
+  void ladeStatus();
+  $("ergebnis").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+$("key-kopieren").addEventListener("click", async () => { await studio.kopieren(aktuell.key); toast("Schlüssel kopiert"); });
+$("nachricht-kopieren").addEventListener("click", async () => { await studio.kopieren($("nachricht").value); toast("Nachricht kopiert — jetzt einfach einfügen"); });
+
+$("form-pruef").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const r = await studio.pruefen($("p-name").value, $("p-key").value);
+  const el = $("p-ergebnis");
+  el.hidden = false;
+  if (r.gueltig) {
+    el.className = "ergebnis gut";
+    el.textContent = `✓ Gültig — Lizenz Nr. ${nr(r.nummer)}. So eingegeben, schaltet K3PTA frei.`;
+  } else if (r.gesperrt) {
+    el.className = "ergebnis schlecht";
+    el.textContent = `✗ Gesperrt — Lizenz Nr. ${nr(r.nummer)} steht auf der Sperrliste und gilt ab dem nächsten Update nicht mehr.`;
+  } else if (r.gehoertZu) {
+    el.className = "ergebnis schlecht";
+    el.textContent = `✗ Passt nicht zu diesem Namen. Der Schlüssel gehört zu „${r.gehoertZu.name}“ (Nr. ${nr(r.gehoertZu.nummer)}) — genau diesen Namen muss der Kunde eingeben.`;
+  } else {
+    el.className = "ergebnis schlecht";
+    el.textContent = "✗ Passt nicht. Meist ein Tippfehler im Namen (Umlaut, zweiter Vorname) oder ein unvollständig kopierter Schlüssel.";
+  }
+});
+
+async function ladeListe() {
+  const r = await studio.liste();
+  alle = r.liste;
+  $("fehler-liste").hidden = r.ok;
+  $("fehler-liste").textContent = r.ok ? "" : r.fehler;
+  zeichneListe();
+}
+
+async function schalteSperre(e) {
+  const sperren = !e.gesperrt;
+  const frage = sperren
+    ? `Lizenz Nr. ${nr(e.nummer)} (${e.name}) sperren?\n\nDie Nummer steht ab jetzt in src/core/sperrliste.ts und gilt bei jeder weiteren Prüfung als gesperrt.`
+    : `Sperre für Lizenz Nr. ${nr(e.nummer)} (${e.name}) aufheben?`;
+  if (!window.confirm(frage)) return;
+  const r = await studio.sperren(e.nummer, sperren);
+  if (!r.ok) { $("fehler-liste").hidden = false; $("fehler-liste").textContent = r.fehler; return; }
+  toast(sperren
+    ? `Nr. ${nr(e.nummer)} gesperrt — gilt ab dem nächsten K3PTA-Update${r.geschrieben ? "" : " (Sperrliste von Hand eintragen)"}`
+    : `Sperre für Nr. ${nr(e.nummer)} aufgehoben`);
+  await ladeStatus();
+  await ladeListe();
+}
+
+function zeichneListe() {
+  const q = $("suche").value.trim().toLowerCase();
+  const treffer = alle.filter((e) => !q || e.name.toLowerCase().includes(q) || nr(e.nummer).includes(q) || e.notiz.toLowerCase().includes(q));
+  const zelle = (t, cls) => { const td = document.createElement("td"); td.textContent = t; if (cls) td.className = cls; return td; };
+  const knopf = (t, tun, cls = "") => { const b = Object.assign(document.createElement("button"), { className: `knopf klein-knopf ${cls}`.trim(), type: "button", textContent: t }); b.addEventListener("click", tun); return b; };
+  $("zeilen").replaceChildren(...treffer.map((e) => {
+    const tr = document.createElement("tr");
+    if (e.gesperrt) tr.className = "gesperrt";
+    const name = zelle(e.name);
+    if (e.gesperrt) name.append(Object.assign(document.createElement("span"), { className: "marke-gesperrt", textContent: "gesperrt" }));
+    const aktion = document.createElement("td");
+    aktion.className = "aktion";
+    aktion.append(
+      knopf("Schlüssel kopieren", async () => { await studio.kopieren(e.key); toast("Schlüssel kopiert"); }),
+      knopf("Nachricht", async () => { zeige("ausstellen"); await zeigeErgebnis(e, "offen"); }),
+      knopf(e.gesperrt ? "Entsperren" : "Sperren", () => void schalteSperre(e), e.gesperrt ? "" : "warn"),
+    );
+    tr.append(zelle(nr(e.nummer), "mono klein"), name, zelle(stufeText(e), "klein"), zelle(e.notiz || "—", "klein"), zelle(datum(e.ausgestelltAm), "klein"), aktion);
+    return tr;
+  }));
+  $("leer").hidden = treffer.length > 0;
+  $("leer").textContent = alle.length ? "Kein Treffer." : "Noch keine Lizenz ausgestellt.";
+}
+$("suche").addEventListener("input", zeichneListe);
+$("im-finder").addEventListener("click", () => void studio.zeigeListe());
+
+void ladeStatus();
+</script>
+</body>
+</html>

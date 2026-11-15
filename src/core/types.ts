@@ -1,7 +1,7 @@
 // K3PTA Core — Typen für Storage & Retrieval (React-frei, Node-only)
 
 export type MemoryType = "semantic" | "episodic" | "procedural" | "reference";
-export type MemoryScope = string; // "local" | "user:<id>" | "agent:<id>" | "session:<id>" | "private" (bleibt dem Besitzer vorbehalten, siehe Privatheits-Floor in mcp.ts)
+export type MemoryScope = string; // "local" | "user:<id>" | "agent:<id>" | "session:<id>"
 
 export interface MemoryRecord {
   id: string;
@@ -17,12 +17,6 @@ export interface MemoryRecord {
   validTo: number | null;
   /** ID der Memory, die diese ersetzt hat (temporale Invalidierung) */
   supersededBy: string | null;
-  /**
-   * Epoch-ms, ab dem die Ersetzung gilt — die Zeitreise (asOf) braucht ihn, sonst
-   * kann sie Ersetztes nicht ausblenden. null = nie ersetzt bzw. der Zeitpunkt wurde
-   * vor dieser Spalte gesetzt und ist nicht nachrechenbar.
-   */
-  supersededAt: number | null;
   createdAt: number;
   updatedAt: number;
   /** Papierkorb: Zeitpunkt des Löschens, null = aktiv */
@@ -100,6 +94,8 @@ export interface RelationRecord {
 export interface SearchParams {
   query: string;
   limit?: number;
+  /** Ueberspringt die ersten N Treffer der Rangliste (Seiten). Ohne Angabe 0. */
+  offset?: number;
   tags?: string[];
   type?: MemoryType;
   scope?: MemoryScope;
@@ -139,4 +135,7 @@ export interface SearchResult {
   total: number;
   query: string;
   usedVectors: boolean;
+  /** Arbeit DIESER Suche in ms (Zelle #98): Wortlese, Einbettung eines frischen Wortes,
+   *  Vektor-Suche und gesamt der Engine. Die Route fuehrt sie in Kopf und Leib. */
+  teilzeiten?: { wortlese: number; einbettung: number; vektor: number; gesamt: number };
 }

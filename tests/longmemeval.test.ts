@@ -1,180 +1,369 @@
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
-import os from "node:os";
+import { tmpdir } from "node:os";
 import path from "node:path";
+import fs from "node:fs";
+import { KeptaStore } from "../src/core/store";
+import { searchMemories } from "../src/core/engine";
 import {
-  analysiere,
-  frageScheibe,
   ladeDatensatz,
+  analysiere,
+  ingest,
   parseSitzungsDatum,
   parseUrteil,
-  punkte,
-  zerlegeZeitfrage,
+  richte,
+  richteTreffer,
   verbatimTreffer,
+  beantworte,
+  erweitereFrage,
+  HYDE_PROMPT,
+  ladeFortsetzen,
+  punkte,
+  betteAlleEin,
+  zerlegeZeitfrage,
   timelineBlock,
-  JUDGE_PROMPT,
-  JUDGE_PROMPT_VERSION,
   type LongMemEvalFrage,
 } from "../tools/longmemeval/harness";
 
-// tools/longmemeval/README.md behauptete monatelang „9 Tests in
-// tests/longmemeval.test.ts" — die Datei existierte nie. Sie ist jetzt die
-// Rechenschaft für die Zahl, die öffentlich beworben wird: 61,5 % stehen nur
-// dann glaubwürdig im README, wenn das Raster, das sie zählt, selbst getestet
-// ist. Alles hier läuft ohne Ollama und ohne Datensatz-Download.
+function freshStore(): KeptaStore {
+  const dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-lmq-"));
+  return new KeptaStore(path.join(dir, "test.db"));
+}
 
-const probe = (teiler: Partial<LongMemEvalFrage>): LongMemEvalFrage => ({
-  question_id: "q1",
-  question_type: "single-session-user",
-  question: "Wann?",
-  answer: "Am 3.",
-  ...teiler,
-});
+const FIXTURE: LongMemEvalFrage[] = [
+  {
+    question_id: "q1",
+    question_type: "information_extraction",
+    question: "What is Kanta's phone number?",
+    answer: "555-0142",
+    haystack_sessions: [
+      {
+        session_id: "s1",
+        session_date: "2023/05/14 (Sun)",
+        turns: [
+          { role: "user", content: "Hi, I am Kanta. My phone number is 555-0142." },
+          { role: "assistant", content: "Noted, Kanta — 555-0142 saved." },
+        ],
+      },
+      {
+        session_id: "s2",
+        session_date: "2023-06-01",
+        turns: [{ role: "user", content: "I moved to Berlin last week." }],
+      },
+    ],
+  },
+  {
+    question_id: "q2",
+    question_type: "abstention",
+    question: "What is Kanta's sister's name?",
+    answer: "Not mentioned in the conversations.",
+    haystack_sessions: [{ session_id: "s2", session_date: "2023-06-01", turns: [{ role: "user", content: "I moved to Berlin last week." }] }],
+    answer_session_ids: ["s2"],
+  },
+];
 
-describe("Wertung — das Raster hinter der veröffentlichten Zahl", () => {
-  it("teilweise zählt als halber Punkt — die Genauigkeit ist kein Ja/Nein-Anteil", () => {
+describe("LongMemEval-Harness", () => {
+  it("Datensatz-Format: kaputte Fragen werden mit klarer Meldung abgewiesen", () => {
+    const dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-lmq-"));
+    const pfad = path.join(dir, "kaputt.json");
+    fs.writeFileSync(pfad, JSON.stringify([{ question: "ohne id und antwort" }]));
+    expect(() => ladeDatensatz(pfad)).toThrow(/ohne question_id/);
+  });
+
+  it("Session-Datum: LongMemEval-Formate parsen, Müll liefern null", () => {
+    expect(parseSitzungsDatum("2023/05/14 (Sun)")).toBe(new Date(2023, 4, 14).getTime());
+    expect(parseSitzungsDatum("2023-06-01 08:30:00")).toBe(new Date(2023, 5, 1, 8, 30).getTime());
+    expect(parseSitzungsDatum("irgendwann")).toBeNull();
+    expect(parseSitzungsDatum(undefined)).toBeNull();
+  });
+
+  it("Ingest: deterministische IDs, Zeitstempel aus der Session, Typ aus der Klassifikation", () => {
+    const store = freshStore();
+    const ergebnis = ingest(FIXTURE, store);
+    expect(ergebnis.notizen).toBe(3);
+    expect(ergebnis.sessions).toBe(2);
+    const notiz = store.listMemories({ limit: 100 }).find((m) => m.content.includes("555-0142"));
+    expect(notiz).toBeDefined();
+    expect(notiz?.createdAt).toBe(new Date(2023, 4, 14).getTime());
+    expect(notiz?.validFrom).toBe(new Date(2023, 4, 14).getTime());
+    expect(notiz?.tags).toContain("longmemeval");
+    expect(notiz?.id).toMatch(/^lmq-[0-9a-f]{16}$/);
+  });
+
+  it("Ingest: zweiter Lauf ändert nichts (Dedup, Determinismus)", () => {
+    const store = freshStore();
+    const erster = ingest(FIXTURE, store);
+    const zweiter = ingest(FIXTURE, store);
+    expect(zweiter.notizen).toBe(0);
+    expect(zweiter.uebersprungen).toBe(erster.notizen);
+    expect(store.listMemories({ limit: 100 }).length).toBe(erster.notizen);
+  });
+
+  it("Release-Format (Turn-Arrays + Parallel-Metadaten) wird normalisiert und gemappt", () => {
+    const dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-lmq-"));
+    const pfad = path.join(dir, "release.json");
+    fs.writeFileSync(pfad, JSON.stringify([
+      {
+        question_id: "r1",
+        question_type: "single-session-user",
+        question: "What degree did I graduate with?",
+        answer: "Business Administration",
+        question_date: "2023/05/30 (Tue) 23:40",
+        haystack_dates: ["2023/05/20 (Sat) 02:21"],
+        haystack_session_ids: ["sharegpt_yywfIrx_0"],
+        haystack_sessions: [[
+          { role: "user", content: "I graduated with a Business Administration degree." },
+          { role: "assistant", content: "Congratulations!" },
+        ]],
+        answer_session_ids: ["answer_x"],
+      },
+    ]));
+    const fragen = ladeDatensatz(pfad);
+    expect(fragen[0].haystack_sessions?.[0].session_id).toBe("sharegpt_yywfIrx_0");
+    expect(fragen[0].haystack_sessions?.[0].turns).toHaveLength(2);
+    const v = analysiere(fragen);
+    expect(v.proFaehigkeit.information_extraction).toBe(1);
+    expect(v.oracleFelderVorhanden).toBe(1);
+    const store = freshStore();
+    ingest(fragen, store);
+    const notiz = store.listMemories({ limit: 10 }).find((m) => m.content.includes("Business Administration"));
+    expect(notiz?.createdAt).toBe(new Date(2023, 4, 20, 2, 21).getTime());
+  });
+
+  it("Suchpfad: die Frage findet die Session mit der Antwort — derselbe Pfad wie im Produkt", async () => {
+    const store = freshStore();
+    ingest(FIXTURE, store);
+    const a = await beantworte(store, FIXTURE[0], 5);
+    expect(a.treffer).toBeGreaterThan(0);
+    expect(a.antwort).toContain("555-0142");
+    expect(a.antwort).toContain("[source session: s1]");
+  });
+
+  it("Orakel-Wächter: analysiere zählt answer_session_ids, der Runner liest sie nie", () => {
+    const v = analysiere(FIXTURE);
+    expect(v.oracleFelderVorhanden).toBe(1);
+    expect(v.proFaehigkeit.abstention).toBe(1);
+  });
+
+  it("Judge-Parser: ja/teilweise/nein, alles andere unlesbar", () => {
+    expect(parseUrteil("YES")).toBe("ja");
+    expect(parseUrteil("The verdict: PARTIAL.")).toBe("teilweise");
+    expect(parseUrteil("no")).toBe("nein");
+    expect(parseUrteil("Ja, natürlich")).toBe("unlesbar");
+    expect(parseUrteil("maybe")).toBe("unlesbar");
+  });
+
+  it("Judge: injizierter Aufruf, keine Ollama-Abhängigkeit im Test", async () => {
+    const r = await richte("test", "frage", "kontext", "referenz", async () => "YES");
+    expect(r.urteil).toBe("ja");
+    const r2 = await richte("test", "frage", "", "referenz", async () => "NO — the context is empty.");
+    expect(r2.urteil).toBe("nein");
+  });
+
+  it("Pro-Treffer-Richten: erstes Ja beendet den Lauf (Früh-Ausstieg), Teil-Treffer wird gemerkt", async () => {
+    const aufrufe: string[] = [];
+    const r = await richteTreffer("test", "frage", ["treffer 1", "treffer 2", "treffer 3"], "referenz", async (p) => {
+      aufrufe.push(p);
+      return aufrufe.length === 2 ? "YES" : "NO";
+    });
+    expect(r.urteil).toBe("ja");
+    expect(r.trefferIndex).toBe(1);
+    expect(r.aufrufe).toBe(2);
+    const r2 = await richteTreffer("test", "frage", ["a", "b"], "referenz", async (p) => {
+      aufrufe.push(p);
+      return aufrufe.length > 2 ? "PARTIAL" : "NO";
+    });
+    expect(r2.urteil).toBe("teilweise");
+    expect(r2.trefferIndex).toBeNull();
+  });
+
+  it("Verbatim-Schnellpfad: wörtliche Referenz zählt, generische Abstention-Antworten nicht", () => {
+    expect(verbatimTreffer("Business Administration", ["irgendwas\nBusiness Administration und mehr"])).toBe(true);
+    expect(verbatimTreffer("Business Administration", ["nur anderes Zeug"])).toBe(false);
+    expect(verbatimTreffer("Not mentioned in the conversations.", ["Not mentioned in the conversations."])).toBe(false);
+    expect(verbatimTreffer("ab", ["ab hier"])).toBe(false);
+  });
+
+  it("Bestands-Cache: Suche sieht neue Notizen sofort (Invalidierung über memoriesVersion)", async () => {
+    const store = freshStore();
+    store.createMemory({ title: "Erste Notiz", content: "Kanta's phone number is 555-0142." });
+    const vorher = await searchMemories(store, { query: "phone number", limit: 5 });
+    expect(vorher.hits.length).toBeGreaterThan(0);
+    store.createMemory({ title: "Zweite Notiz", content: "The secret code is ZEBRA-77." });
+    const nachher = await searchMemories(store, { query: "secret code", limit: 5 });
+    expect(nachher.hits.length).toBeGreaterThan(0);
+    expect(nachher.hits[0].memory.content).toContain("ZEBRA-77");
+    // Trash ändert den aktiven Bestand ebenso.
+    const id = nachher.hits[0].memory.id;
+    store.trashMemory(id);
+    const danach = await searchMemories(store, { query: "secret code", limit: 5 });
+    expect(danach.hits.length).toBe(0);
+  });
+
+  it("Punkte: ja=1, teilweise=0,5, Rest 0 — Abstention umgekehrt", () => {
     expect(punkte("ja")).toBe(1);
     expect(punkte("teilweise")).toBe(0.5);
     expect(punkte("nein")).toBe(0);
     expect(punkte("unlesbar")).toBe(0);
-    // 202 ja + 211 teilweise von 500 ergibt genau die 61,5 %, die in den READMEs
-    // steht. Ohne die halben Punkte wären es 40,4 % — die Zahl wäre eine andere.
-    const urteile = [...Array(202).fill("ja" as const), ...Array(211).fill("teilweise" as const), ...Array(87).fill("nein" as const)];
-    const genauigkeit = urteile.reduce((a, u) => a + punkte(u), 0) / urteile.length;
-    expect(genauigkeit).toBeCloseTo(0.615, 3);
-  });
-
-  it("Abstention wird umgekehrt gewertet: kein Treffer ist der Punkt", () => {
+    // Abstention: kein Treffer = korrektes Verzichten können; „eine Antwort" im
+    // Kontext = Assistenz halluziniert.
     expect(punkte("nein", "abstention")).toBe(1);
     expect(punkte("ja", "abstention")).toBe(0);
     expect(punkte("teilweise", "abstention")).toBe(0.5);
   });
 
-  it("der Richter-Prompt misst Kontext-Suffizienz, nicht eine generierte Antwort", () => {
-    // Der Kern des Judge-Frames: K3PTA meldet 61,5 %, Zep 63,8 % — das ist nur
-    // dann ehrlich, wenn beide Zeilen dasselbe messen. Sie messen es nicht, und
-    // dieser Test pinnt, WAS dieses Projekt misst: enthält der geretriefte
-    // Kontext die Referenzantwort — es antwortet kein Generator-LLM.
-    expect(JUDGE_PROMPT).toMatch(/CONTEXT alone contains the information needed/i);
-    expect(JUDGE_PROMPT).toMatch(/Reply with exactly one word/i);
-    expect(JUDGE_PROMPT).toMatch(/Do not use outside knowledge/i);
-    expect(JUDGE_PROMPT_VERSION).toBe(1);
-  });
-});
-
-describe("Judge-Antworten lesen", () => {
-  it("ja, teilweise und nein — in jeder Schreibweise, die Ollama liefert", () => {
-    expect(parseUrteil("yes")).toBe("ja");
-    expect(parseUrteil(" YES.")).toBe("ja");
-    expect(parseUrteil("Partial")).toBe("teilweise");
-    expect(parseUrteil("no")).toBe("nein");
-    expect(parseUrteil("NO")).toBe("nein");
+  it("Vektorspur: betteAlleEin läuft bis der Store leer ist und meldet die Summe", async () => {
+    // Fake-Store ohne ausstehende Chunks: Tick 1 bettet 2, Tick 2 meldet „fertig".
+    const leer = { chunksNeedingEmbedding: () => [] };
+    let aufrufe = 0;
+    const n = await betteAlleEin(leer, async () => (++aufrufe === 1 ? 2 : 0), undefined, 10);
+    expect(aufrufe).toBe(2);
+    expect(n).toBe(2);
   });
 
-  it("ein Satz mit beiden Worten ist unlesbar, nicht geraten", () => {
-    expect(parseUrteil("YES and NO")).toBe("unlesbar");
-    expect(parseUrteil("Ich weiss es nicht")).toBe("unlesbar");
-    // „NONE" darf nicht als NO durchgehen — sonst wird ein Absage-Text zum Punkt.
-    expect(parseUrteil("NONE of this matches")).toBe("unlesbar");
-  });
-});
-
-describe("Verbatim-Schnellpfad", () => {
-  it("erkennt die Referenz wörtlich, auch mit anderem Weissraum und Gross/Klein", () => {
-    expect(verbatimTreffer("Bluey 2020", ["…released  BLUEY   2020 in May"])).toBe(true);
-    expect(verbatimTreffer("bluey 2020", ["nichts Verwandtes hier"])).toBe(false);
+  it("Vektorspur: eine steckengebliebene Queue wird erkannt, nicht still übergangen", async () => {
+    // Tick liefert 0 (z. B. Ollama-Fehler), der Store meldet weiter ausstehende
+    // Chunks — genau der Fall, der sonst als „fertig" missdeutet endlos leer liefe.
+    const luegenStore = { chunksNeedingEmbedding: () => [{ memoryId: "x", seq: 0, text: "t" }] };
+    await expect(betteAlleEin(luegenStore, async () => 0, undefined, 10)).rejects.toThrow(/stecken/);
   });
 
-  it("blockiert die Pfade, die einen Punkt nur vortäuschen", () => {
-    // Zu kurze Nadeln findet jeder Text; Abstentions-Antworten stecken überall.
-    expect(verbatimTreffer("42", ["die Antwort 42 steht hier"])).toBe(false);
-    expect(verbatimTreffer("not mentioned", ["the document is not mentioned anywhere"])).toBe(false);
-    expect(verbatimTreffer("   ", ["irgendwas"])).toBe(false);
-  });
-});
-
-describe("Fragen-Scheiben (Tuning und Holdout)", () => {
-  const zehn = Array.from({ length: 10 }, (_, i) => i);
-
-  it("limit nimmt den Anfang, offset den Rest — zwei Slices ohne Überlapp", () => {
-    const tuning = frageScheibe(zehn, 0, 6);
-    const holdout = frageScheibe(zehn, 6, Infinity);
-    expect(tuning).toEqual([0, 1, 2, 3, 4, 5]);
-    expect(holdout).toEqual([6, 7, 8, 9]);
-    expect(tuning.filter((f) => holdout.includes(f))).toEqual([]);
+  it("Zeitfragen: echte Muster zerlegen sich in Ereignis-Teilfragen, normale Fragen bleiben ganz", () => {
+    expect(zerlegeZeitfrage("How many days passed between my visit to the Museum of Modern Art (MoMA) and the 'Ancient Civilizations' exhibition?"))
+      .toEqual(["visit to the Museum of Modern Art (MoMA)", "'Ancient Civilizations' exhibition"]);
+    expect(zerlegeZeitfrage("Which event happened first, my cousin's wedding or Michael's engagement party?"))
+      .toContain("cousin's wedding");
+    expect(zerlegeZeitfrage("Which event happened first, my cousin's wedding or Michael's engagement party?"))
+      .toContain("Michael's engagement party");
+    expect(zerlegeZeitfrage("What is Kanta's phone number?")).toEqual([]);
+    expect(zerlegeZeitfrage("How many weeks ago did I meet up with my aunt and receive the crystal chandelier?").length).toBeGreaterThan(0);
   });
 
-  it("offset ohne limit ist der volle Rest, ein Lauf über alles bleibt unverändert", () => {
-    expect(frageScheibe(zehn, 3, Infinity)).toEqual([3, 4, 5, 6, 7, 8, 9]);
-    expect(frageScheibe(zehn, 0, Infinity)).toEqual(zehn);
-    expect(frageScheibe(zehn, 20, 5)).toEqual([]);
+  it("Zeitsplit: die Teilfrage findet die zweite Ereignis-Seite, die Vollfrage allein verfehlt", async () => {
+    const store = freshStore();
+    const frage: LongMemEvalFrage = {
+      question_id: "t1",
+      question_type: "temporal-reasoning",
+      question: "How many days passed between my visit to the Bluebird Cafe and the pottery workshop?",
+      answer: "21 days",
+      haystack_sessions: [
+        { session_id: "z1", session_date: "2023/03/01", turns: [{ role: "user", content: "I had a lovely morning at the Bluebird Cafe yesterday." }] },
+        { session_id: "z2", session_date: "2023/03/22", turns: [{ role: "user", content: "Today I finally tried the pottery workshop downtown." }] },
+      ],
+    };
+    ingest([frage], store);
+    // topk 1: die Vollfrage rankt vermutlich nur eine Seite — der Split muss beide liefern.
+    const ohne = await beantworte(store, frage, 1);
+    const mit = await beantworte(store, frage, 1, true);
+    expect(mit.treffer).toBeGreaterThanOrEqual(ohne.treffer);
+    const kontext = mit.hitKontexte.join("\n");
+    expect(kontext).toContain("Bluebird Cafe");
+    expect(kontext).toContain("pottery workshop");
   });
-});
 
-describe("Zeit-Hebel der Harness", () => {
-  it("Session-Daten werden zu Zeitstempeln — das Format des Datensatzes", () => {
-    expect(parseSitzungsDatum("2023/02/01 (Wed) 10:20")).toBe(new Date(2023, 1, 1, 10, 20).getTime());
-    expect(parseSitzungsDatum("2023-02-01")).toBe(new Date(2023, 1, 1, 0, 0).getTime());
-    expect(parseSitzungsDatum("irgendwann im Februar")).toBeNull();
-    expect(parseSitzungsDatum(undefined)).toBeNull();
-    // Ein unmöglicher Monat darf nicht still auf Januar fallen.
-    expect(parseSitzungsDatum("2023-13-01")).toBeNull();
+  it("erweitereFrage: Aussagesätze aus der Modellausgabe, Müll gefiltert, max 2, Fehler blockiert nie", async () => {
+    const roh = [
+      "- The user visited the Bluebird Cafe on March 1st.",
+      "2. The pottery workshop took place on March 22nd.",
+      "",
+      "kurz",
+      "The user visited the Bluebird Cafe on March 1st.", // Duplikat
+    ].join("\n");
+    const erweitert = await erweitereFrage("When did I visit the cafe?", async () => roh);
+    expect(erweitert).toHaveLength(2);
+    expect(erweitert[0]).toContain("Bluebird Cafe");
+    // Ein gescheitertes Modell darf die Frage nie blockieren:
+    const leer = await erweitereFrage("Any question?", async () => {
+      throw new Error("Ollama weg");
+    });
+    expect(leer).toEqual([]);
+    expect(HYDE_PROMPT).toContain("declarative sentences");
   });
 
-  it("Zeitfragen zerlegen in Ereignis-Teilfragen, Nicht-Zeitfragen bleiben unberührt", () => {
-    const teile = zerlegeZeitfrage("How many days passed between my cousin's wedding and the job interview?");
-    expect(teile).toEqual(["cousin's wedding", "job interview"]);
-    expect(zerlegeZeitfrage("What is my cat's name?")).toEqual([]);
+  it("HyDE-Erweiterungen: Treffer sind additiv — nichts wird verdrängt, Duplikate nicht doppelt", async () => {
+    const store = freshStore();
+    const frage: LongMemEvalFrage = {
+      question_id: "h1",
+      question_type: "multi-session",
+      question: "What did the user plan for the housewarming party?",
+      answer: "a vegan lasagna",
+      haystack_sessions: [
+        { session_id: "h1", session_date: "2023/04/01", turns: [{ role: "user", content: "For the housewarming party I want to serve a vegan lasagna." }] },
+        { session_id: "h2", session_date: "2023/04/02", turns: [{ role: "user", content: "The housewarming is planned for early May, friends from Berlin are coming." }] },
+      ],
+    };
+    ingest([frage], store);
+    const ohne = await beantworte(store, frage, 3);
+    // Erweiterung, die Worte des zweiten Sessions-Belegs trägt — die Vollfrage
+    // rankt ihn vermutlich schon; entscheidend: nichts verschwindet, nichts doppelt.
+    const mit = await beantworte(store, frage, 3, false, false, ["Friends from Berlin are coming in early May."]);
+    expect(mit.treffer).toBeGreaterThanOrEqual(ohne.treffer);
+    const titel = mit.hitTitel;
+    expect(new Set(titel).size).toBe(titel.length);
+    const kontext = mit.hitKontexte.join("\n");
+    expect(kontext).toContain("vegan lasagna");
   });
 
-  it("der Timeline-Block trägt Datum, Abstand und Spanne aus den Memory-Daten", () => {
-    expect(timelineBlock([], 0)).toBeNull();
-    const aelter = new Date(2023, 0, 10).getTime();
-    const juenger = new Date(2023, 0, 20).getTime();
+  it("ladeFortsetzen: fertige Fragen übernehmen, ungerichtete verfallen — Reboot-Checkpoint-Logik", () => {
+    const datei = path.join(fs.mkdtempSync(path.join(tmpdir(), "kepta-resume-")), "part.json");
+    fs.writeFileSync(datei, JSON.stringify({
+      fragen: [
+        { question_id: "a", typ: "multi-session", faehigkeit: "multi_session_reasoning", urteil: "ja", treffer: 3, trefferIndex: 1, verbatim: false, judge_aufrufe: 2 },
+        { question_id: "b", typ: "single-session-user", faehigkeit: "information_extraction", urteil: null, treffer: 0, trefferIndex: null, verbatim: false, judge_aufrufe: 0 }, // mitten im Lauf gestorben
+        { question_id: "c", typ: "multi-session", faehigkeit: "multi_session_reasoning", urteil: null, treffer: 0, trefferIndex: null, verbatim: false, judge_aufrufe: 0, fehler: "Abbruch" },
+      ],
+    }));
+    const { zeilen, fertig } = ladeFortsetzen(datei);
+    expect(zeilen).toHaveLength(2);
+    expect(zeilen[0].question_id).toBe("a");
+    expect(zeilen[1].question_id).toBe("c"); // Zeilen mit Fehler gelten als erledigt — der Fehler steht im Record
+    expect(fertig.has("a")).toBe(true);
+    expect(fertig.has("b")).toBe(false);
+    expect(fertig.has("c")).toBe(true);
+  });
+
+  it("Timeline-Block: Daten, Abstände und Spanne aus Memory-Metadaten — nichts erfunden", () => {
     const block = timelineBlock(
-      [{ titel: "Job interview", datum: juenger }, { titel: "Cousin wedding", datum: aelter }],
-      new Date(2023, 0, 25).getTime()
+      [
+        { titel: "pottery workshop", datum: new Date(2023, 2, 22).getTime() },
+        { titel: "Bluebird Cafe", datum: new Date(2023, 2, 1).getTime() },
+      ],
+      new Date(2023, 3, 1).getTime() // Frage am 1. April
     );
-    expect(block).not.toBeNull();
-    // Ältester Treffer zuerst — die Timeline ist eine Reihenfolge, keine Liste.
-    expect(block!.indexOf("Cousin wedding")).toBeLessThan(block!.indexOf("Job interview"));
-    expect(block).toContain("2023-01-10");
-    expect(block).toContain("15 days before the question date");
-    expect(block).toContain("Span from the earliest to the latest memory: 10 days");
-  });
-});
-
-describe("Datensatz laden", () => {
-  const schreibe = (objekt: unknown): string => {
-    const pfad = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "kepta-lme-")), "datensatz.json");
-    fs.writeFileSync(pfad, JSON.stringify(objekt));
-    return pfad;
-  };
-
-  it("normalisiert Freitext-Daten und zählt Fähigkeiten wie Orakel-Felder", () => {
-    const pfad = schreibe([
-      {
-        question_id: "a", question_type: "temporal-reasoning", question: "Wie lang?", answer: "3 Tage",
-        question_date: "2023-02-01 (Wed) 10:20",
-        haystack_sessions: [[{ role: "user", content: "erster Tag" }]],
-        haystack_session_ids: ["s1"],
-      },
-      { question_id: "b", question_type: "single-session-user", question: "Wer?", answer: "Anna", answer_session_ids: ["s1"] },
-    ]);
-    const fragen = ladeDatensatz(pfad);
-    expect(fragen).toHaveLength(2);
-    expect(fragen[0].haystack_sessions?.[0].session_id).toBe("s1");
-    expect(fragen[0].question_date).toBe(new Date(2023, 1, 1, 10, 20).getTime());
-    const verteilung = analysiere(fragen);
-    expect(verteilung.fragen).toBe(2);
-    expect(verteilung.proFaehigkeit.temporal_reasoning).toBe(1);
-    expect(verteilung.sessionsGesamt).toBe(1);
-    expect(verteilung.oracleFelderVorhanden).toBe(1);
+    expect(block).toContain("The question was asked on: 2023-04-01");
+    // Älteste zuerst — die Reihenfolge-Antwort ist damit ablesbar:
+    const reihenfolge = block!.indexOf("Bluebird Cafe");
+    expect(reihenfolge).toBeGreaterThan(0);
+    expect(block!.indexOf("pottery workshop")).toBeGreaterThan(reihenfolge);
+    expect(block).toContain("2023-03-01 (31 days before the question date) — Bluebird Cafe");
+    expect(block).toContain("Span from the earliest to the latest memory: 21 days (22 days including the last day)");
   });
 
-  it("weist kaputte Datensätze ab, statt mit leeren Fragen zu laufen", () => {
-    expect(() => ladeDatensatz(schreibe({ not: "ein array" }))).toThrow(/kein Array/);
-    expect(() => ladeDatensatz(schreibe([]))).toThrow(/leer/);
-    expect(() => ladeDatensatz(schreibe([{ question: "ohne id und antwort" }]))).toThrow(/ohne question_id/);
+  it("Timeline-Block: leere Eingabe null, eine Memory ohne Spannenzeile", () => {
+    expect(timelineBlock([], Date.now())).toBeNull();
+    const eins = timelineBlock([{ titel: "Ein Ereignis", datum: new Date(2023, 5, 1).getTime() }], new Date(2023, 5, 8).getTime());
+    expect(eins).toContain("7 days before the question date");
+    expect(eins).not.toContain("Span from");
+  });
+
+  it("Temporal-Modus: der Timeline-Block steht als ERSTER Kontext — der Früh-Ausstieg richtet ihn zuerst", async () => {
+    const store = freshStore();
+    const frage: LongMemEvalFrage = {
+      question_id: "t2",
+      question_type: "temporal-reasoning",
+      question: "How many days passed between my visit to the Bluebird Cafe and the pottery workshop?",
+      answer: "21 days",
+      question_date: new Date(2023, 3, 1, 9, 0).getTime(), // normalisiereFrage parst den Datensatz-String
+      haystack_sessions: [
+        { session_id: "z3", session_date: "2023/03/01", turns: [{ role: "user", content: "I had a lovely morning at the Bluebird Cafe yesterday." }] },
+        { session_id: "z4", session_date: "2023/03/22", turns: [{ role: "user", content: "Today I finally tried the pottery workshop downtown." }] },
+      ],
+    };
+    ingest([frage], store);
+    const ohne = await beantworte(store, frage, 5);
+    const mit = await beantworte(store, frage, 5, false, true);
+    expect(ohne.hitKontexte[0]).not.toContain("[Timeline");
+    expect(mit.hitKontexte[0]).toContain("[Timeline of the retrieved memories");
+    expect(mit.hitKontexte[0]).toContain("Span from the earliest to the latest memory: 21 days");
+    expect(mit.antwort).toContain("[1] [Timeline");
   });
 });

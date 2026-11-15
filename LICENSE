@@ -3,8 +3,8 @@ Business Source License 1.1
 Parameters
 
 Licensor:             Damian Todorovic
-Licensed Work:        K3PTA (the memory engine, the MCP server and the
-                      HTTP API, including the npm package "kepta-mcp")
+Licensed Work:        K3PTA (the desktop application, the memory engine, the
+                      MCP server, and the HTTP API, including "kepta-mcp")
 Additional Use Grant: You may make use of the Licensed Work for any purpose
                       except offering it — or a modified version of it — to
                       third parties as a hosted, managed or paid service.

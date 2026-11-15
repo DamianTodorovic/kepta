@@ -1,0 +1,116 @@
+=== BELEG 3.2.143 AM AUSGELIEFERTEN OBJEKT, Beginn: 2026-11-04 06:27:48 CET ===
+--- 1) FENSTERPRUEFUNG 390x844 (bytegleichung gegen installiertes asar + Ueberlauf) ---
+  Bilder-Ziel: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0411/fenster-143
+  ok    Artefakte bytegleich mit dem installierten Objekt: 5 (erwartet 5)
+  Bundel: 5 Stuecke geprueft, Version laut Baum 3.2.143
+  Diener: Version 3.2.143, Bestand 0 (eigne Kapsel, Verschluesselung aus)
+  Assistent: Weg ueber "Later"; Schirm danach zu
+  ok    die Saat geht durch die echte Import-Tuer: true (erwartet true)
+  ok    der Bestand zaehlt die Saat: true (erwartet true)
+  Bestand nach der Saat: 150
+  Assistent-Klick: kein Knopf innerhalb 12 s
+  ok    der Assistent ist beiseite, die Flaeche hat ihre Breite: true (erwartet true)
+  Sprung nach: Graph
+  ok    **die Graph-Flaeche ist offen**: "Graph" (erwartet "Graph")
+  Farbflecke: 201 nach 8 s — ruhig geworden
+  Das Bild steht: nach 2 s
+  ok    der Export gibt eine PNG-Kette her: true (erwartet true)
+  ok    die Kette traegt eine echte PNG-Signatur: true (erwartet true)
+  ok    **das Bild hat die Groesse der Leinwand (716 x 1248 gegen 716 x 1248)**: true (erwartet true)
+  Schirmaufnahme: /tmp/kepta-fenster/bilder/graph-150-notizen-390px-aufnahme.png
+  Ansicht beim Eintreffen: Kasten 0,2 bis 693,1245 in 716x1248 (Grund #38383a, Tinte 158451 von 893568) — frei: oben 0.2 %, unten 0.2 %, links 0.0 %, rechts 3.1 %; Kanten beruehrt: links
+    links: 12 von 1248 Pixels der Kante tragen Tinte (1.0 % ihrer Laenge), Spanne 315 bis 326
+  Kanten: Tinte ["links"], gemeldet ["links"], Marke ["links"]
+  ok    **jede Kante, die Tinte traegt, ist als Beschnitt gemeldet**: [] (erwartet [])
+  ok    **und jede gemeldete Kante traegt wirklich Tinte**: [] (erwartet [])
+  ok    **jede gemeldete Kante malt die Marke**: [] (erwartet [])
+  ok    **keine ungemeldete Kante malt eine Marke**: [] (erwartet [])
+  ok    **der Export traegt einen undurchsichtigen Grund**: 255 (erwartet 255)
+  Feld erstarrt nach 2 s — Vergleich folgt auf stehender Welt
+  ok    **der Kameravergleich laeuft auf erstarrtem Feld**: true (erwartet true)
+  Kontrolle ohne Griff: 149 -> 149 (Drift 0)
+  Notizen im Bild: vorher 149 — nach der Kontrolle 149 — nach dem Fit 149 von 150; Verlust gegen die Ankunft 0, Drift ohne Griff 0
+  ok    **der Fit-Knopf zeigt nicht weniger Notizen als die Ankunft, ueber der Drift gemessen**: true (erwartet true)
+  dieselbe Ansicht nach Fit gedrueckt (Bild steht: 2 s; Titel nun: Fit — held at the readability floor, so some notes stay outside; the line at the edge counts them, and zooming out shows them all): Kasten 0,2 bis 693,1245 in 716x1248 (Grund #38383a, Tinte 158451 von 893568) — frei: oben 0.2 %, unten 0.2 %, links 0.0 %, rechts 3.1 %; Kanten beruehrt: links
+    links: 12 von 1248 Pixels der Kante tragen Tinte (1.0 % ihrer Laenge), Spanne 315 bis 326
+  Bildbeweis nach Fit: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0411/fenster-143/graph-150-notizen-390px-nach-fit.png (439287 B, 716 x 1248)
+  nach dem Fit: Kanten beruehrt links, weiteste freie Seite 3.1 % (vorher 3.1 %)
+  Tinte auf vier Kanten: vorher 12, nach dem Fit 12
+  ok    **der Fit-Knopf schneidet nicht mehr ab als die Ankunft**: true (erwartet true)
+  Legende offen: Zustand zu, deckt 24.1 % der Leinwand (358 x 624 px) — Bilanzzeile: {"da":true,"text":"149 of 150 unfolded notes are in this picture","sichtbar":true}
+  Der Fit-Knopf sagt ueber sich: Fit — held at the readability floor, so some notes stay outside; the line at the edge counts them, and zooming out shows them all
+  Klappe (kein Knopf mit diesem Wort): Zustand zu, deckt 24.1 % — Bilanzzeile: {"da":true,"text":"149 of 150 unfolded notes are in this picture","sichtbar":true}
+  ok    **die Bilanz des Ausschnitts bleibt auch hinter der Klappe lesbar**: true (erwartet true)
+  ok    die zugemachte Legende deckt hoechstens 25 % des Bildes: true (erwartet true)
+  Klappe zurueck (Show legend): Zustand auf
+  Bildbeweis: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0411/fenster-143/graph-150-notizen-390px.png (439287 B, 716 x 1248, Name "k3pta-graph-2026-11-04.png")
+  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen
+  Bilder: 1 nach /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0411/fenster-143
+  Kapsel noch da? nein
+  eigne Kinder: Server 70056, Browser 70057
+FENSTER_EXIT=0
+
+--- 2) LEGENDENHOEHE 390x844 markdown, 30 Notizen, Klappe zu ---
+  Diener: Version 3.2.143 | Saat 30 in Form markdown
+
+  === Zustand zu: Anteil 21.1 % der Leinwand, Kasten 334 x 141 px
+     50 px  2 Zeile(n)  flex items-start justify-between gap-2  "30 notes · 6 concepts of 36 in all · 65 links "
+     45 px  3 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "Statements What happened How it's done Papers"
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "claimed link mention"
+
+  === Zustand auf: Anteil 50.4 % der Leinwand, Kasten 334 x 337 px
+     50 px  2 Zeile(n)  flex items-start justify-between gap-2  "30 notes · 6 concepts of 36 in all · 65 links "
+     45 px  3 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "Statements What happened How it's done Papers"
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "claimed link mention"
+     50 px  3 Zeile(n)  graph-handwort-rat  "A line without one says only that two things b"
+     33 px  2 Zeile(n)  graph-benannt  "9 of 30 notes in this picture carry a title · "
+    102 px  5 Zeile(n)  flex items-center gap-2 flex-wrap  "colour by groupwhat you work on · 0 of 30 note"
+  Bild: /tmp/kepta-legende-legende/legende-390.png
+LEGENDEN_EXIT=0
+
+--- 3) LEGENDENHOEHE 820x1180 ---
+  Diener: Version 3.2.143 | Saat 30 in Form markdown
+
+  === Zustand zu: Anteil 14.9 % der Leinwand, Kasten 496 x 157 px
+     36 px  2 Zeile(n)  flex items-start justify-between gap-2  "30 notes · 6 concepts of 36 in all · 65 links "
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "Statements What happened How it's done Papers"
+     33 px  2 Zeile(n)  hud-label legende-prosa  "A letter in a node is its type · A number in a"
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "claimed link mention"
+     17 px  1 Zeile(n)  hud-label tnum legende-prosa  "120 claims not drawn — its term is only a note"
+
+  === Zustand auf: Anteil 33.6 % der Leinwand, Kasten 496 x 353 px
+     36 px  2 Zeile(n)  flex items-start justify-between gap-2  "30 notes · 6 concepts of 36 in all · 65 links "
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "Statements What happened How it's done Papers"
+     33 px  2 Zeile(n)  hud-label legende-prosa  "A letter in a node is its type · A number in a"
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "claimed link mention"
+     17 px  1 Zeile(n)  hud-label tnum legende-prosa  "120 claims not drawn — its term is only a note"
+     33 px  2 Zeile(n)  graph-handwort-rat  "A line without one says only that two things b"
+     33 px  2 Zeile(n)  graph-benannt  "12 of 30 notes in this picture carry a title ·"
+     85 px  4 Zeile(n)  flex items-center gap-2 flex-wrap  "colour by groupwhat you work on · 0 of 30 note"
+     33 px  2 Zeile(n)  hud-label legende-prosa legende-griffe  "Drag: a node stays where you drop it · Double-"
+  Bild: /tmp/kepta-legende-legende/legende-820.png
+LEGENDEN820_EXIT=0
+
+--- 4) LEGENDENHOEHE 1440x900 ---
+  Diener: Version 3.2.143 | Saat 30 in Form markdown
+
+  === Zustand zu: Anteil 10.8 % der Leinwand, Kasten 638 x 140 px
+     36 px  2 Zeile(n)  flex items-start justify-between gap-2  "30 notes · 6 concepts of 36 in all · 65 links "
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "Statements What happened How it's done Papers"
+     17 px  1 Zeile(n)  hud-label legende-prosa  "A letter in a node is its type · A number in a"
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "claimed link mention"
+     17 px  1 Zeile(n)  hud-label tnum legende-prosa  "120 claims not drawn — its term is only a note"
+
+  === Zustand auf: Anteil 25.8 % der Leinwand, Kasten 869 x 246 px
+     36 px  2 Zeile(n)  flex items-start justify-between gap-2  "30 notes · 6 concepts of 36 in all · 65 links "
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "Statements What happened How it's done Papers"
+     17 px  1 Zeile(n)  hud-label legende-prosa  "A letter in a node is its type · A number in a"
+     17 px  1 Zeile(n)  flex flex-wrap items-center gap-3 hud-label  "claimed link mention"
+     17 px  1 Zeile(n)  hud-label tnum legende-prosa  "120 claims not drawn — its term is only a note"
+     17 px  1 Zeile(n)  graph-handwort-rat  "A line without one says only that two things b"
+     17 px  1 Zeile(n)  graph-benannt  "19 of 30 notes in this picture carry a title ·"
+     44 px  2 Zeile(n)  flex items-center gap-2 flex-wrap  "colour by groupwhat you work on · 0 of 30 note"
+     17 px  1 Zeile(n)  hud-label legende-prosa legende-griffe  "Drag: a node stays where you drop it · Double-"
+  Bild: /tmp/kepta-legende-legende/legende-1440.png
+LEGENDEN1440_EXIT=0
+=== Ende: 2026-11-04 06:28:49 CET ===

@@ -1,0 +1,90 @@
+{
+  "docs/screenshots": {
+    "version": "3.1.2",
+    "stand": "3b7f33f",
+    "commitZeit": "2026-10-07T00:49:08+02:00",
+    "gebaut": "2026-10-06T23:04:51.455Z",
+    "anmerkung": "nachgetragen aus Git-Zeiger der Datei-Erzeugungszeit — beim Schuss war niemand dabei",
+    "dateien": {
+      "docs/screenshots/01-index.png": {
+        "bytes": 314129,
+        "sha256": "e493bf32f94feaf4",
+        "mtime": "2026-10-06T23:04:51.455Z"
+      },
+      "docs/screenshots/03-graph.png": {
+        "bytes": 385132,
+        "sha256": "a175a918d4539295",
+        "mtime": "2026-10-06T23:05:05.353Z"
+      },
+      "docs/screenshots/04-dendrogram.png": {
+        "bytes": 415989,
+        "sha256": "9e8c00e18a2d0423",
+        "mtime": "2026-10-06T23:05:12.443Z"
+      },
+      "docs/screenshots/04-editor.png": {
+        "bytes": 301082,
+        "sha256": "543efbd543d16785",
+        "mtime": "2026-10-06T23:05:17.567Z"
+      },
+      "docs/screenshots/05-setup.png": {
+        "bytes": 263437,
+        "sha256": "565defd874a380e2",
+        "mtime": "2026-10-06T23:05:20.957Z"
+      },
+      "docs/screenshots/06-search.png": {
+        "bytes": 357177,
+        "sha256": "6d96debcbbe59041",
+        "mtime": "2026-10-06T23:04:54.604Z"
+      },
+      "docs/screenshots/07-today.png": {
+        "bytes": 257090,
+        "sha256": "8a9a3471ce997c31",
+        "mtime": "2026-10-06T23:05:28.872Z"
+      },
+      "docs/screenshots/08-dossier.png": {
+        "bytes": 339959,
+        "sha256": "e7e236fdd2c31ed1",
+        "mtime": "2026-10-06T23:05:32.954Z"
+      },
+      "docs/screenshots/09-activity.png": {
+        "bytes": 234348,
+        "sha256": "e332c839055a85a0",
+        "mtime": "2026-10-06T23:05:35.513Z"
+      },
+      "docs/screenshots/10-audit.png": {
+        "bytes": 339709,
+        "sha256": "9bfffb75d7ad31ce",
+        "mtime": "2026-10-06T23:05:38.593Z"
+      },
+      "docs/screenshots/11-privacy.png": {
+        "bytes": 353127,
+        "sha256": "b7d39a68f026e63f",
+        "mtime": "2026-10-06T23:05:22.540Z"
+      },
+      "docs/screenshots/12-connect.png": {
+        "bytes": 206694,
+        "sha256": "7347598a00801abf",
+        "mtime": "2026-10-06T23:05:25.813Z"
+      }
+    }
+  },
+  "docs/film-2026-09-18": {
+    "version": "nicht belegbar",
+    "stand": "nicht belegbar — vor dem ersten Commit dieses Repos (281f5a1, 01.10.2026), die Historie beginnt danach",
+    "commitZeit": null,
+    "gebaut": "2026-09-18T18:53:53.000Z",
+    "anmerkung": "nachgetragen; kein Git-Stand vor dem 18.09.2026 im Baum (git log --before=2026-09-19 zählt 0 Commits)",
+    "dateien": {
+      "docs/demo.gif": {
+        "bytes": 490941,
+        "sha256": "—",
+        "mtime": "2026-09-18T18:53:53.000Z"
+      },
+      "docs/demo.mp4": {
+        "bytes": 311031,
+        "sha256": "—",
+        "mtime": "2026-09-18T18:53:53.000Z"
+      }
+    }
+  }
+}

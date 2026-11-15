@@ -1,0 +1,199 @@
+P118 6.11.2026, MEZ. Baum 3.2.191 (4e1e378), Node v26.8.1 (Suite) und python 3.14.7 (Kapsel),
+Ollama ausschliesslich auf 127.0.0.1:11434. Kein Tausch, keine neue Fassung: dieser Lauf
+aendert nichts am ausgelieferten Objekt, er misst eine dritte Mitbewerber-Stufe.
+
+Zwei Fragen, ein Werkzeugwechsel: (a) gilt die Zahl des reinen Cosinus-KNN auch fuer chroma,
+(b) wenn ja -- ist sie dieselbe Zahl? P110/P111 hatten sqlite-vec gefahren (19 von 45 mit
+nomic, 30 von 45 mit bge-m3), P112 unsre eigne Rangfolge an beiden Stufen (34 und 35 von 45).
+
+KAPSEL
+    python3 -m venv /tmp/konk-chroma-0611/venv                     13 MB
+    venv/bin/pip install --no-cache-dir chromadb                   454 MB, Exit 0, 18:37 MEZ
+    installiert: chromadb 1.5.9 (numpy 2.5.4, onnxruntime 1.31.1, pydantic 2.14.3, kubernetes
+    37.0.2, uvicorn 0.54.0 u.a.; das posthog-Paket ist NICHT dabei)
+    rueckgaengig: rm -rf /tmp/konk-chroma-0611
+
+VORLAUF, 18:39:28 MEZ (sonde.py) -- erst die Sonde, dann das Korpus:
+    chroma Version: 1.5.9
+    Raum cosine:  distanzen [0.0, 0.292893, 1.0]  (1 - cos(a,c) von Hand: 0.292893)  -> gesetzt
+    Raum l2:      distanzen [0.0, 0.585781, 1.0]                                   -> andrer Wert
+    Raum ip:      distanzen [0.0, 0.2929,    1.0]  (a,c sind normiert, daher gleich)
+    configuration: hnsw {space cosine, ef_search 100, ef_construction 100, max_neighbors 16,
+                 sync_threshold 1000}, embedding_function DefaultEmbeddingFunction
+    eigenes Einbett: 8 Dimensionen bleiben 8 (der eingebaute ONNX-Einbettner zieht nicht)
+    Warum das noetig war: chroma nimmt einen unbekannten Metadaten-Schluessel lautlos hin.
+    Die Raum-Angabe allein haelt nicht -- die Distanz muss 1 - cos sein, und sie ist es.
+
+FERNMELDUNG: anonymized_telemetry steht in dieser Fassung auf True, aber der Produkt-
+    Telemetrie-Koerper (chromadb/telemetry/product/posthog.py:10) ist ein `pass`, und das
+    posthog-Paket ist nicht installiert. Jeder Lauf trotzdem mit ANONYMIZED_TELEMETRY=FALSE.
+
+KORPUS, 18:40:18 MEZ: aus scripts/eval-corpus.ts exportiert (korpus-export.ts), gegen
+    P110s Artefakt nachgeprueft -- korpus gleich: True, anfragen gleich: True, 58 und 45.
+
+LAUEUFE, alle mit k=5, nur Vektoren, zwei Laeufe je Stufe:
+    18:41:17 bis 18:41:31  die ersten vier Ausdruecke waren Blindlaeufe, und ihr Grund ist
+                           mein Befehl, nicht das Werkzeug: die Shell zerlegte das
+                           quote-Argument nicht, MODELL fiel auf den Default (nomic) zurueck,
+                           und drei Dateien mit Leerzeichen im Namen behaupteten bge-m3, obwohl
+                           nomic drin stand. Die Dimensions-Pruefung sah den Irrtum nicht,
+                           weil Pruefung und Name gemeinsam auf nomic standen (768 D).
+                           Verworfen: die drei Spuren mit Leerzeichen und das
+                           Default-Ergebnis sind geloescht (18:42:04 MEZ).
+    18:42:32               Schutz eingebaut: die Spur muss ihr Einbett im Namen tragen.
+                           Gegenprobe mit demselben fehlerhaften Ausdruck:
+                           "Name und Einbett gehoeren nicht zusammen", Exit 1, 18:42:32 MEZ.
+    18:42:37               erste Anlaeufe gegen diesen Schutz: die Kuerzel heisst
+                           "nomic-embed-text" und der Name "nomic" -- der Schutz war zu eng,
+                           drei Ausdruecke Exit 1, keine Zahl entstand. Kuerzel-Tabelle
+                           fuer beide Stufen gesetzt (18:43:00 MEZ).
+    18:42:38  chroma bge-m3 eins  Hit@1 31 = 68,9 %  R@5 in den 5 40 = 88,9 %  1,2 s  0,12 GiB
+    18:42:43  chroma bge-m3 zwei  Hit@1 31 = 68,9 %  R@5 in den 5 40 = 88,9 %  1,2 s  0,12 GiB
+    18:43:04  chroma nomic eins   Hit@1 19 = 42,2 %  R@5 in den 5 26 = 57,8 %  0,8 s  0,12 GiB
+    18:43:06  chroma nomic zwei   Hit@1 19 = 42,2 %  R@5 in den 5 26 = 57,8 %  0,7 s  0,12 GiB
+    Index-Abweichung gegen die exakte Brute-Force-Ordnung aus denselben Vektoren, je Lauf:
+    bge-m3 eins 0, bge-m3 zwei 1, nomic eins 1, nomic zwei 1 von 45 -- und keine davon
+    aendert den ersten Treffer. Bei 58 Vektoren unter
+    sync_threshold 1000 ist chroms Antwort die exakte Ordnung -- die Abweichungen sind
+    Gleichstaende in der Reihenfolge, kein Naeherungs-Effekt des Index.
+
+AUSWERTUNG, 18:49:24 MEZ (auswertung-chroma.py):
+    chroma gegen sqlite-vec, nomic-Stufe: 19/45 in beiden, Erst-Treffer verschieden 0,
+        5 Listen verschieden -- stets nur m16 gegen m17 an derselben Stelle.
+    chroma gegen sqlite-vec, bge-Stufe: 31/45 gegen 30/45, eine Anfrage gekippt, und sie
+        heisst "Hetzner" (graph, erwartet m01 m16 m36 m37): chroma top m16, sqlite-vec top m17.
+    Gleichstand nachgerechnet (gleichstand-hetzner.py, 18:59:07 MEZ, beide Stufen, beide
+        Rechenwege): cos(Frage, m16) und cos(Frage, m17) sind in float64 UND in float32
+        gleich -- bge-m3/Hetzner 0,5002722382648656 gegen 0,5002722382648656 (float32-Pfad
+        0,500272274017334 gegen denselben Wert), nomic/Deployment und Domain
+        0,6135395898723778 gegen denselben. Es ist kein Rundungs-Effekt und kein
+        Float32-Artefakt: die Aehnlichkeit ist gleich, nur die Speicherordnung entscheidet.
+        Beide Werkzeuge melden Abstand 0,499727; chroma top m16 (gilt), sqlite-vec top m17
+        (gilt nicht).
+    Und die eigne exakte Ordnung? An der nomic-Anfrage "Deployment und Domain" nennen chroma
+        UND sqlite-vec dieselbe Liste [m01, m09, m11, m40, m17] -- die eine Abweichung, die
+        der Lauf gegen meine Brute-Force-Rechnung meldet, ist meine eigne stable-sort-
+        Entscheidung an derselben Gleichstands-Stelle, nicht ein Fehler des Werkzeugs.
+    Stufenwechsel chroma nomic -> bge-m3: 19 -> 31 (netto +12 Anfragen), Richtigkeit
+        wechselt 14 von 45 = 31,1 %, andrer Erst-Treffer 25 von 45 = 55,6 %, ganze Liste
+        unveraendert 0 von 45. sqlite-vec (P112): +11, 15/45 = 33,3 %, 25/45 = 55,6 %, 0/45.
+    Abstand unsre Fusion gegen reines KNN: nomic-Stufe 34 - 19 = 15 Anfragen = 33,4 Pp IN
+        BEIDEN Produkten; bge-Stufe 35 - 30 = 5 = 11,1 Pp gegen sqlite-vec, 35 - 31 = 4 =
+        8,9 Pp gegen chroma.
+
+NEBENBEFUND, unsre eigne Spur aus P112 (18:47:46 bis 18:48:01 MEZ, vier Laeufe, 15 s):
+    Das Feld `erwartet` trug dort nur q.relevant[0] (spur-leser.ts:36). Gegen das Korpus
+    gerechnet bleibt die Zahl 34 (nomic) und 35 (bge-m3) -- unveraendert zu P112, und die
+    erste Stelle ist in allen 45 Anfragen dieselbe wie um 17:09 MEZ. Gegen das Feld allein
+    gerechnet kaemen 30 und 31 heraus: vier Anfragen zu niedrig, und das Korpus hat sechs
+    Anfragen mit mehr als einem gueltigen Ausweis. Die neue Spur
+    spur-uns-{nomic,bge-m3}-0611e.jsonl traegt die ganze Liste; Recall@5 (gekappt) 91,1 %
+    bzw. 90,0 % wie in P112.
+
+LATTE, 19:04:20 MEZ: tests/konkurrenz-chroma-latte.test.ts, 17 Faelle gruen.
+    Biss 1, 18:51:46 MEZ: P112s alter Feldstand ueber die berichtigte Spur gelegt ->
+        "die berichtigte eigne Spur traegt erwartet als Liste..." rot, die Rangfolgen-Faelle
+        bleiben gruen (die erste Stelle war nie betroffen). Artefakt zurueckgelegt, sha256
+        3a6d77d7b056413f... vor und nach dem Eingriff gleich.
+    Biss 2, 18:53:28 MEZ: die bge-Erwartung gegen chroma probehalber von 4 auf 5 Anfragen
+        gehoben -> "unsre Fusion fuehrt an beiden Stufen..." rot mit
+        `AssertionError: expected 4 to be 5`, danach zurueck auf 4, 15 Faelle gruen
+        (18:53:32 MEZ).
+    Biss 3, 19:04:14 MEZ: die beiden Zensus-Erwartungen probehalber auf "2 von 45" und auf
+        m16 gehoben -> zwei Faelle rot, 15 gruen, beide Meldungen beginnen mit
+        `expected '--- Stufe nomic-embed-text (768 D)...' to contain`; 19:04:20 MEZ
+        zurueckgesetzt, 17 Faelle gruen.
+
+GLEICHSTANDS-ZENSUS, 19:01:36 bis 19:01:41 MEZ (gleichstands-zensus.py). Der erste Ausdruck
+19:01:03 MEZ fiel auf einen egnen Tippfehler -- `kandidaten & erwartet` mit Liste statt
+Menge, Exit 1, keine Zahl blieb stehen:
+    nomic-Stufe:  0 von 45 Anfragen mit Gleichstand auf Platz 1. Tiefer in den ersten
+        fuenf liegen 5 Anfragen mit Gleichstand (stets m16 gegen m17, Plaetze 2 bis 5),
+        und keine davon aendert einen ersten Treffer.
+    bge-Stufe:    1 von 45 mit Gleichstand auf Platz 1 -- "Hetzner", Gruppe [m16, m17],
+        gueltig darunter nur m16; dieser eine entscheidet ueber Treffer oder Fehlgriff.
+        Tiefer in den ersten fuenf: 2 Anfragen.
+    Unsre eigne erste Stelle auf der einen Platz-1-Anfrage: m36, nicht in der Gruppe
+    (cos 0,4992953 gegen 0,5002722) und ein gueltiger Ausweis -> Treffer.
+    Lesart, die der Ledger jetzt traegt: das Wuerfeln ist die Mitbewerber-Seite, unsre
+    Fuehrung haengt an diesem Platz an keinem Gleichstand.
+
+SUITE, VIER LAEUFE, 341 Dateien:
+    Messung 18:55:42 bis 18:58:08 MEZ, EXIT 1, 3681 Faelle, 2 rot: README nannte noch 3666
+        (doku-zahlen), und die Auslieferungsgleichung verwarf 1 Flaeche-Satz.
+    README auf 3681 gehoben (drei Traeger: Badge Zeile 7, Prosa 429, Befehl 433), dann
+    Pruefung 18:59:58 bis 19:02:27 MEZ, EXIT 1, 3681 Faelle, **ein** rot: "Punkt 107, die
+    Auslieferungsgleichung ... der Census nennt, wie viele Baum-Saetze der Gleichung
+    entgehen" mit `expected 1 to be less than or equal to 0`. Der Grund ist nicht dieser
+    Lauf: 3.2.191 ist committet, aber nicht getauscht, darum steht sein neuer Graph-Satz im
+    Baum und nicht im Bundel. Die Gleichung meldet genau dafuer 1, und sie hat recht.
+    Dann die zwei Zensus-Faelle dazu: Messung und Pruefung ab 19:05 MEZ, erwartet 3683
+    Faelle, das einzige Rot bleibt die Gleichung, bis 3.2.191 getauscht ist.
+
+
+P119-NACHTRAG, die Beine-Fahrnis auf den Gleichstands-Anfragen (beine-auf-gleichstand.ts):
+    Fahrnis 1, Stufe nomic-embed-text, 19:16:27 MEZ, Exit 0, sechs Anfragen je acht
+        Bein-Kombinationen.
+    Fahrnis 2, Stufe bge-m3 (KEPTA_EMBED_MODEL=bge-m3), 19:16:38 MEZ, Exit 0.
+    Erste Stelle auf "Hetzner" (bge-Stufe, die trennende Anfrage):
+        alle drei Beine   m36 (traegt)        nur BM25            m16 (traegt, in der Gruppe)
+        nur Vektor        LEERE LISTE         nur Entitaeten      m36 (traegt)
+        BM25 + Vektor     m16 (Gruppe)        BM25 + Entitaeten   m36 (traegt)
+        Vektor + Entitaeten  m36 (traegt)     kein Bein           leer
+    nomic-Stufe zur Kontrolle: nur Vektor m36, nur Entitaeten m36, nur BM25 m16, alle drei m36.
+    Zwei Befunde daraus:
+      (1) Der Urheber der ersten Stelle ist die Entitaeten-Lage. Der Zeitstrahl war im
+          Ledger-Satz mitgezaehlt, ist aber als Bein gar nicht schaltbar
+          (src/core/engine.ts:485 kennt bm25, vector, entity) -- Satz gestrichen und die
+          Streichung im Ledger benannt.
+      (2) An der bge-Stufe antwortet das Vektor-Bein allein auf "Hetzner" mit einer leeren
+          Liste. Diagnose-Fahrnis, nicht die ausgelieferte, aber eine Luecke mit Namen.
+    Ablenkung "Welcher Server ist gemeint?" (erwartet m01): jede Kombination nennt m16 --
+        auch die Auslieferung. Diese Anfrage verlieren wir am Nahe-Duplett, der
+        Mitbewerber verliert sie an beiden Stufen ebenfalls.
+
+LATTE nach dem Nachtrag: 20 Faelle gruen (19:17:52 MEZ).
+    Biss 4, 19:18:01 MEZ: Entitaeten-Erwartung probehalber auf m16 gehoben UND der
+        gestrichne Zeitstrahl-Satz probehalber in den Ledger zurueckgesetzt -- beide Faelle
+        rot (`expected '  nur Entitaeten     erste Stelle m36...' to match
+        /nur Entitaeten.*m16.*traegt=JA/` und `expected '# Konkurrenz gemessen...' not to
+        contain 'BM25, Entitaeten und Zeitstrahl heben...'`), 18 gruen; beide Dateien
+        danach bytegleich wiederhergestellt, 20 Faelle gruen.
+
+P120, die stumme Vektor-Stimme (vektor-bein-stumm.ts):
+    Fahrnis 1, 19:21:28 MEZ, Stufe nomic-embed-text, Exit 0:  1 von 45 Anfragen leer.
+    Fahrnis 2, 19:21:30 MEZ, Stufe bge-m3, Exit 0:           13 von 45 Anfragen leer
+        (6 umschreibung, 3 graph, 3 lexikalisch, 1 ablenkung).
+    Grund: engine.ts:551 untergrenze = max(VECTOR_FLOOR 0,58, bestSim * 0,86); die absolute
+        Grenze ist an einer Stufe geeicht, der Bandteil nicht.
+    Kreuzrechnung gegen die eigne Spur (spur-uns-*-0611e.jsonl): von den 13 stummen
+        Anfragen trifft unsre Fusion 8; die ganze Fusion bleibt an der bge-Stufe auf
+        2 Anfragen leer -- "Was mag meine Grossmutter?" (m18) und "Wie lege ich Geld an?"
+        (m49). An der nomic-Stufe: 0 leere Fusions-Antworten, 1 stummes Bein.
+    Fahrnis 2 lief, waehrend die Suite-Messung des P119-Nachtrags schon fuhr (19:21:30 MEZ);
+        die Pruefung 19:21:30-19:23:58 MEZ meldet 3686 Faelle, 3685 gruen, ein rot (die
+        Auslieferungsgleichung). Die Maschi war um 19:21:30 nicht leer -- mein eigner P120-Ausdruck
+        lief in dieselbe Sekunde. Das ist eine Aussage ueber Last, nicht ueber die
+        Zahl: das eine Rot erklaert sich aus dem nicht getauschten 3.2.191, nicht aus
+        der Last, und die Fallzahl haengt an der Last nicht.
+    Der Flicken (min(bestSim, max(FLOOR, bestSim*0,86))) ist in docs/konkurrenz.md und im
+        Mappen-Papier P120 vorgeschlagen, NICHT angewandt -- Objekt-Schnitt, Bau-Kante zu.
+    Eigne Berichtigung, 19:26 MEZ: der erste Ledger-Satz behauptete, die Flaeche zeige dann
+        "eine Antwort ohne Vorschlag -- ein leerer Zustand, den nichts erklaert". Nachgesehen
+        im Quelltext der Flaeche: Dashboard.tsx:2265 sagt bei ohne-Treffer
+        "Nothing found for ... Try different terms, raise the result count, or switch to
+        keyword search." Die Flaeche ist also nicht stumm; sie nennt drei Schritte, aber
+        nicht die Ursache. Satz im Ledger berichtigt, und ein Fall pinnt jetzt den Hinweis.
+
+BUENDEL-BEWEIS fuer den Hinweis (19:34:36 MEZ): node scripts/pruefe-asar-inhalt.cjs
+    /Applications/K3PTA.app/Contents/Resources/app.asar 3.2.190 -- 420 Pruetzungen ok,
+    zwei fehlgeschlagen, und beide melden denselben Stand wie die Gleichung:
+        ok      1  "Try different terms, raise the result count, or switch to keyword search"
+        FEHLT   0  "claims reach this picture; "   (erwartet >= 1)
+        ZU VIEL 1  "claims reach this picture - "  (verboten, alte Form)
+    asar 49 197 020 B, mtime 17:16:38 MEZ, bestellte Version 3.2.190, 2 Pruefungen
+    fehlgeschlagen, Exit 1. Der neue Marker ist also am installierten Objekt geprueft,
+    bevor er in die Liste kam; die beiden Rot sind die ungetauschte 3.2.191.
+
+Platte vor dem Lauf 9 Gi frei, nach dem Lauf 9 Gi frei; Kapsel 454 MB und wird nach der
+Landung mit rm -rf /tmp/konk-chroma-0611 zurueckgegeben (die Artefakte liegen committet hier).

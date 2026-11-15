@@ -1,0 +1,30 @@
+{
+ "lauf": "mem0-bgem3-0911",
+ "zeit": "20:06:32",
+ "werkzeug": "mem0 2.2.1",
+ "konfiguration": {
+  "ganzes_stueck": true,
+  "infer": false,
+  "einbett": "bge-m3 (1024 D)",
+  "llm": "llama3.2:3b (nicht gerufen, infer=False)",
+  "vektor_speicher": "qdrant lokal",
+  "top_k": 5
+ },
+ "korpus": {
+  "notizen": 58,
+  "anfragen": 45
+ },
+ "hit1": 31,
+ "hit1_prozent": 68.9,
+ "recall5_in_den_5": 40,
+ "recall5_prozent": 88.9,
+ "nach_kategorie": {
+  "lexikalisch": "20/25",
+  "umschreibung": "6/10",
+  "graph": "3/3",
+  "ablenkung": "1/4",
+  "temporal": "1/3"
+ },
+ "dauer_sek": 3.4,
+ "rss_gib": 0.1
+}

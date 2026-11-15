@@ -32,65 +32,62 @@ describe("memory core boundary (src/core)", () => {
   it("contains exactly the known core files (no silent additions)", () => {
     const names = coreFiles.map((f) => path.basename(f)).sort();
     expect(names).toEqual([
-      // Die Leseregel der Begriffe: Ueberschriften und Wiki-Links einer Notiz, aus ihrem
-      // eigenen Text geholt. Reine Zeichenrechnung — kein Store, kein DOM, kein Netz, kein
-      // Import ueberhaupt. Zwilling von kepta-app/src/core/begiffe.ts, damit npm und DMG
-      // denselben Graphen bauen und nicht zwei.
+      // Begriffe aus dem Notiztext (Ueberschriften, Wiki-Links) sind reine
+      // Stringlogik ohne jeden Import — der Kern braucht sie, weil jede
+      // Schreiberei sie braucht (#56: der Rechner-Scan legte nie einen Begriff,
+      // und ein Bestand von 14.702 Notizen hielt 30 Begriffe).
       "begiffe.ts",
-      // ChatGPT-Export-Importer (Kompatibilitaetsfalle): gleiche Grenze wie der
-      // Rest des Kerns — nur Node-Bordmittel, Store/Engine, kein Netz, keine UI.
+      // Punkt 127: der Vertrag des Behauptungsfeldes. Er lebt im Kern, weil zwei Tueren ihn
+      // lesen muessen — die REST-Route und die Agentenpforte (`mcp.ts`). Ein Feld, das beide
+      // Tueren haben, darf nicht zweimal beschrieben werden; eine zweite Absage-Formel pro
+      // Tuer streitet beim ersten Entwurf, den ein Agent schickt.
+      "behauptungen.ts",
+      // Kern 3.1.x: ChatGPT-Export-Import (App-Stand) und Synonym-Erweiterung
+      // der Suche sind Kern-Dateien.
       "chatgpt-import.ts",
       "embeddings.ts",
       "engine.ts",
       "extensions.ts",
-      // Das Weltbild des Graph-Dienstes: Viertelchen-Baum, Abkuehlung und
-      // keim(id) — reine Geometrie auf Zahlen, ohne DOM, ohne Store, ohne Netz.
-      "graf-kraft.ts",
-      // Begriffsrechnung fuer den Index: Zerlegung, df, g(t)=ln(1+N/df),
-      // Jaccard. Nutzt nur src/core/stopwords.ts, nicht die Anfrage-Kappe.
-      "graf-terms.ts",
-      // Der Datenvertrag von GET /api/graph/bild: Typen und Konstanten, keine
-      // Rechnung, kein Import — das Kuvert, gegen das Client und Kern prüfen.
-      "graf-vertrag.ts",
-      // Claude-Export-Importer: dieselbe Klasse wie chatgpt-import.ts (die
-      // Kompatibilitaetsfalle), dieselbe Grenze — nur Node-Bordmittel, Store,
-      // Engine, obsidian.ts; kein Netz, keine UI, kein Pfad ausser Home/Temp.
-      "import-claude.ts",
-      // Ordner-Importer: ein ganzer Markdown-/Textbestand des Nutzers. Die Zeit-
-      // regel (Quellendatum -> gilt ab, Plattendatum -> nur angelegt) und die
-      // Duplett-pruefung sind Kernlogik, nicht Transport — ein Rausziehen aus dem
-      // Kern waere eine Schwecbung: src/ wird von dieser Wache nicht geprueft.
-      "import-ordner.ts",
-      // Tabellen-Importer (CSV/JSONL mit Spaltensprache): dieselbe Begruendung
-      // wie import-ordner.ts, plus der Kopfschutz (unerkannte Inhaltsspalte =
-      // Abweisung, kein geratenes Textfeld).
-      "import-tabelle.ts",
       // Die Zuordnung von Wissensarten gehoert in den Kern: sie entscheidet in
       // createMemory und muss deshalb ohne Umweg ueber die Oberflaeche
       // erreichbar sein — auch fuer den MCP-Server.
       "klassifikation.ts",
+      "lizenz.ts",
       "mcp.ts",
       "migrate.ts",
+      // Verschlüsselte Nebendateien (profile.json, scan-config.json, Journale):
+      // derselbe Schlüssel wie die Wissensbasis, Klartext-Legacy wird beim
+      // Schreiben überführt — die Versprechen aus SECURITY.md vollständig machen.
+      "nebendateien.ts",
       "obsidian.ts",
       "praxissync.ts",
       // Die Reparatur-Planung (alte Binärmuell-Chunks durch frische Extraktion
       // ersetzen) ist reine Kernlogik — das Schreiben macht der Server.
       "reparatur.ts",
-      // Der eine Sanitizer für alle Wege (2.13.2-Parität mit der App): dieselbe
-      // Text-/Tag-Filter-Logik für Store und Server — reine Stringlogik.
+      // Der eine Sanitizer für alle Wege (2.12.x): derselbe Text-/Tag-Filter für
+      // Server und Store — reine Stringlogik, ohne Imports außerhalb des Kerns.
       "sanitize.ts",
       // Der Datenbankschluessel und der Schluesselbund des Systems gehoeren in
       // den Kern: der Store braucht ihn, bevor er die Datei auch nur liest.
       "schluessel.ts",
+      // Die gesperrten Lizenznummern (2.12.0) — reine Daten, die lizenz.ts liest;
+      // K3PTA License Studio schreibt sie.
+      "sperrliste.ts",
       "stopwords.ts",
       "store.ts",
       "synonyme.ts",
       "types.ts",
-      // Die zwei Namensformen der Aufgaben-Kennungen (#64): beide lesen, eine gewinnen
-      // und die Siegerin melden. Reines Lesen der Umgebung, ohne eigene Abhaengigkeit —
-      // Store, Schluesselanbieter, Migration und Server lesen durch sie.
+      // Die zwei Namensformen der Aufgaben-Kennungen (#64): beide lesen, eine
+      // gewinnen und sie gemeldet werden lassen. Reine Umgebungswithnung, keine
+      // Imports — der Store, der Schluesselanbieter und der Server lesen durch sie.
       "umwelt.ts",
       "version.ts",
+      // Punkt 126: der Wortschatz der Behauptung — welche Woerter das System selbst setzt,
+      // wie viel eine Notiz tragen darf, und die Form einer Eingabe. Ein Blatt ohne Imports,
+      // weil auch die Bueschel-Flaeche (`src/lib/graphLayout.ts`) dieselbe Liste lesen muss:
+      // die zwei Heim-Staette dieser Menge haben am 15.10. schon einmal ein rohes Etikett
+      // auf eine Linie gemalt.
+      "wortschatz.ts",
     ]);
   });
 

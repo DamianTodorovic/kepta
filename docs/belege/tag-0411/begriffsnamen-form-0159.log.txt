@@ -1,0 +1,9 @@
+Laenge der Namen: {"n":40008,"kleinste":5,"groesste":28,"mittel":22.5,"max":28}
+Namen mit Leerzeichen (mehrwortig): {"n":40000}
+Namen mit Bindestrich: {"n":5}
+Verteilung nach Laenge: [{"l":5,"n":1},{"l":7,"n":5},{"l":9,"n":1},{"l":11,"n":1},{"l":15,"n":3},{"l":16,"n":36},{"l":17,"n":360},{"l":18,"n":3600}]
+Probe: [{"name":"zahlungsplan notiz 23207"},{"name":"vorlage notiz 280"},{"name":"kassentermin notiz 13893"},{"name":"zahlungsplan notiz 8092"},{"name":"vorlage notiz 17955"},{"name":"fristenkontrolle notiz 16861"},{"name":"zahlungsplan notiz 13942"},{"name":"vertrag notiz 7204"}]
+  Eine Lesung mit 4 eigenen Namen im IN: 0.54 ms
+  Eine Lesung mit 400 Stuecken im IN: 0.20 ms
+  Eine Lesung mit 4000 Stuecken im IN: 2.22 ms
+  SELECT name FROM entities (ganze Liste): 7.11 ms

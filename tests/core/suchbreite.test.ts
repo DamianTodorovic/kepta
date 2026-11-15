@@ -123,15 +123,25 @@ describe("Vektor-Bein: ein KNN mit k, kein Rundumschlag", () => {
     expect(res.total).toBe(8);
   });
 
-  it("liefert nichts, wenn es zum Thema nichts gibt", async () => {
+  it("haelt den besten Kandidaten fest, wenn der beste Cosinus unter dem Boden liegt (P176)", async () => {
     stubEmbedder();
     // Der BESTE Cosinus liegt bei 0,45 — so sah "carbonara" in einer Datenbank
-    // ohne ein einziges Rezept aus. Ein rein relatives Band haette hier das
-    // gesamte Rauschen als Treffer gemeldet.
+    // ohne ein einziges Rezept aus. Bis P176 fiel hier die GANZE Kandidatenliste
+    // durch die Masche (Befund 6.9.: 267 Treffer zu carbonara ohne Rezept — der
+    // Rundumschlag blieb verhindert, aber das Bein schweigte STILL). P120 (6.11.)
+    // maß den Preis der Stille: an bge-m3 fielen 13 von 45 Anfragen leer, 2 davon
+    // komplett ohne Treffer, weil der absolute Boden 0,58 an nomic geeicht war.
+    // Seit P176 haelt die Masche den besten Kandidaten (und alles exakt Gleichweit)
+    // — der Rundumschlag bleibt verhindert, weil das Band 0,86·bestSim ueber dem
+    // Boden unveraendert enge haelt ("zaehlt nur, was wirklich nah am besten
+    // Treffer liegt"). Alle 200 Rausch-Notizen tragen hier denselben Cosinus,
+    // also ist die Gruppe der Besten die ganze Datenbank — im echten Bestand
+    // ist sie klein.
     const store = bandStore(0, 200, 0, 0.45);
     const res = await searchMemories(store, { query: "voellig fremdes wort", limit: 1000 });
-    expect(res.total).toBe(0);
-    expect(res.hits).toEqual([]);
+    expect(res.usedVectors).toBe(true);
+    expect(res.total).toBe(200);
+    expect(res.hits).toHaveLength(200);
   });
 
   it("laesst Wort-Treffer unberuehrt, auch wenn ihr Vektor schwach ist", async () => {

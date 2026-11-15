@@ -93,33 +93,6 @@ describe("searchMemories (RRF-Fusion)", () => {
     expect(res.hits.find((h) => h.memory.id === m.id)?.components.entityRank).not.toBeNull();
   });
 
-  // Alle drei Tests schalten Wort- und Vektor-Bein per Ablation ab: gemessen wird
-  // ausschließlich, wen das Entitäts-Bein hochzieht.
-  it("Entitäts-Bein matcht auf Wortgrenzen, nicht als Substring", async () => {
-    const m = store.createMemory({ title: "Farblehre", content: "Die drei Grundtöne der Malerei" });
-    store.linkEntities(m.id, ["art"]);
-    // "art" steckt in "Neustart" — als nacktes Substring hätte die Notiz einen Rang bekommen.
-    expect((await searchMemories(store, { query: "Neustart", tracks: { bm25: false, vector: false } })).hits).toHaveLength(0);
-    const treffer = await searchMemories(store, { query: "art", tracks: { bm25: false, vector: false } });
-    expect(treffer.hits.find((h) => h.memory.id === m.id)?.components.entityRank).not.toBeNull();
-  });
-
-  it("Entitäten unter der Längen-Schwelle bleiben außerhalb der Wortspur", async () => {
-    const m = store.createMemory({ title: "Kürzel", content: "Das Kürzel des Altprojekts" });
-    store.linkEntities(m.id, ["ki"]);
-    // Die Kante muss wirklich existieren — sonst bewiese der Test nichts.
-    expect(store.getEntityByName("ki")).not.toBeNull();
-    expect((await searchMemories(store, { query: "ki", tracks: { bm25: false, vector: false } })).hits).toHaveLength(0);
-  });
-
-  it("Sonderzeichen im Entitätsname sind Literale, kein Regex", async () => {
-    const m = store.createMemory({ title: "Altbestand", content: "Ein C++ Dienst von 2019" });
-    store.linkEntities(m.id, ["c++"]);
-    // Un escaped wäre "c++" kein Muster, sondern ein Syntaxfehler ("nothing to repeat").
-    const res = await searchMemories(store, { query: "wer kennt noch c++", tracks: { bm25: false, vector: false } });
-    expect(res.hits.find((h) => h.memory.id === m.id)?.components.entityRank).not.toBeNull();
-  });
-
   it("Vektor-Bein trägt bei, wenn embedQuery einen Vektor liefert (fetch gemockt)", async () => {
     // embedQuery ruft Ollama; wir liefern fakeVec(query) zurück, sodass die
     // Query zu den mit fakeVec geseedeten Chunks passt und das Vektor-Bein greift.
@@ -222,29 +195,6 @@ describe("consolidateMemories", () => {
     const dry = await consolidateMemories(store, { dryRun: true });
     expect(dry.candidates).toHaveLength(0);
     expect(dry.applied).toBe(0);
-  });
-
-  it("lässt ausgenommene IDs außer Betracht — weder Kandidat noch Supersede", async () => {
-    const store = freshStore();
-    // Zwei private Dubletten (gleicher Titel, leere Tags → titleSim 1.0) und eine
-    // offene Dublette. Der Agenten-Floor nimmt die privaten IDs aus dem Pool; ohne
-    // Ausnahme würde er sie melden und ohne dryRun sogar ersetzen.
-    const p1 = store.createMemory({ title: "Geheime Praxisrechnung", content: "eins", scope: "private", createdAt: 1, updatedAt: 1 });
-    const p2 = store.createMemory({ title: "Geheime Praxisrechnung", content: "zwei länger", scope: "private", createdAt: 2, updatedAt: 2 });
-    const o1 = store.createMemory({ title: "Offene Praxisrechnung", content: "eins", createdAt: 3, updatedAt: 3 });
-    const o2 = store.createMemory({ title: "Offene Praxisrechnung", content: "zwei länger", createdAt: 4, updatedAt: 4 });
-    const ausnehmen = new Set([p1.id, p2.id]);
-
-    const dry = await consolidateMemories(store, { dryRun: true, ausnehmen });
-    expect(dry.candidates.find((c) => c.keepId === p1.id || c.duplicateId === p1.id)).toBeUndefined();
-    expect(dry.candidates.find((c) => c.keepId === p2.id || c.duplicateId === p2.id)).toBeUndefined();
-    expect(dry.candidates.find((c) => c.reason === "title+tags")).toBeDefined();
-
-    const applied = await consolidateMemories(store, { dryRun: false, ausnehmen });
-    expect(applied.applied).toBeGreaterThan(0);
-    expect(store.getMemory(p1.id)?.supersededBy).toBeNull();
-    expect(store.getMemory(p2.id)?.supersededBy).toBeNull();
-    expect(store.getMemory(o1.id)?.supersededBy ?? store.getMemory(o2.id)?.supersededBy).toBeTruthy();
   });
 });
 

@@ -1,0 +1,12 @@
+P176 leerer Fall im echten Fenster (scripts/leerer-fall-im-fenster.mjs), gefahren 09.11.2026 19:23:53 CET, kepta@3.2.193:
+  Diener: Version 3.2.193, Bestand 0
+  Phase leer 1440x900: Hinweis DA, frei anfassbar: JA, Ueberlauf quer: 0px
+    Nothing found for “quantum entanglement equations”. Try different terms, raise the result count, or switch to keyword search.
+  Phase leer 390x844: Hinweis DA, frei anfassbar: JA, Ueberlauf quer: 0px
+    Nothing found for “quantum entanglement equations”. Try different terms, raise the result count, or switch to keyword search.
+  Store gefuellt und embedded: 6 von 6 Vektoren fertig (nomic-embed-text)
+  API-Spur: 1 Treffer, beste Punktzahl 0.0189 (Boden 0,58), tracks des besten Treffers: {"bm25":null,"vektor":1,"graph":null,"similarity":0.34364223843425024}
+  Phase gefuellt 1440x900: Treffer-Kennung 1 of 3, kein Hinweis, Ueberlauf quer: 0px
+  Phase gefuellt 390x844: Treffer-Kennung 1 of 3, kein Hinweis, Ueberlauf quer: 0px
+  Protokoll-Ereignisse: 16
+EXIT=0

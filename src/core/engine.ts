@@ -3,7 +3,7 @@
 // (Recency, Konfidenz, Temporal-Abwertung) → Top-k. Ohne Vektoren rein lexikalisch stark.
 import type { KeptaStore } from "./store";
 import type { MemoryRecord, MemoryType, SearchHit, SearchResult, SearchParams } from "./types";
-import { chunkText, embedQuery, cosineSimilarity, ollamaBaseUrl, DEFAULT_EMBED_MODEL } from "./embeddings";
+import { chunkText, embedQuery, cosineSimilarity, ollamaBaseUrl, aktivesSuchModell, DEFAULT_EMBED_MODEL } from "./embeddings";
 import { erweitereQuery } from "./synonyme";
 
 const RRF_K = 60;
@@ -17,16 +17,6 @@ const RRF_K = 60;
  * davon unabhaengig selbst auf 100, damit Agenten-Kontexte nicht volllaufen.
  */
 export const MAX_SEARCH_LIMIT = 10_000;
-/**
- * Obergrenze fuer die Dubletten-Vorschläge EINER Konsolidierung.
- *
- * Ein Aufruf antwortet an einen Agenten (memory_consolidate) oder an die Konsole;
- * eine Liste von mehreren tausend Paaren ist dort kein Gewinn, sondern ein
- * Volltreffer in den Kontext. Die Kappe kapt die Vorschlagsliste und damit
- * auch, was dryRun:false anwenden kann — gesagt wird sie ueber das Feld
- * `begrenzt`, damit ein Abschneiden nie still geschieht.
- */
-export const MAX_CANDIDATES_PRO_AUFRUF = 500;
 const EXPIRED_FACTOR = 0.5;
 const SUPERSEDED_FACTOR = 0.4;
 const RECENCY_WINDOW_MS = 365 * 24 * 3600 * 1000;
@@ -67,17 +57,6 @@ const RERANK_MAX_BOOST = 0.25;
 // alte aber relevante Treffer nicht sterben (Relevanz kommt aus BM25/Vektor).
 const RETENTION_T_DAYS = 90;
 const RETENTION_FLOOR = 0.2;
-
-/**
- * Ab welcher Länge ein Entitätsname als Erwähnung in einer Query zählt.
- *
- * Namen unter drei Zeichen sind Buchstabenfolgen, die fast immer zufällig in
- * einem Wort stecken: "art" matched in "start", "ki" in "Dackl". linkEntities
- * lässt ab zwei Zeichen zu (store.ts) — Speichern und Lesen sind hier bewusst
- * verschieden: ein Kurzname darf an einer Notiz hängen, aber nicht das Ranking
- * ganzer Themen bestimmen.
- */
-const ENTITAET_MIN_LAENGE = 3;
 
 // ---------- F3: lokales Reranking (deterministisch, ohne Netz) ----------
 
@@ -170,6 +149,10 @@ function loadActive(store: KeptaStore): ActiveMemory[] {
 // jede Schreiboperation (auch direkte DB-Zugriffe wie Importe) invalidiert
 // selbst. Verbraucher dürfen die gelieferten Objekte nur lesen, nicht ändern.
 export const suchCacheStatistik = { vollaufbauten: 0, deltapatches: 0 };
+// P6-Aufgabe #10: zaehlt die Volltext-Pruefungen je Anfrage. Vorher lief die Pruefung ueber
+// JEDEN Kandidaten (bis ftsTiefe, also 10 000 bei grossem topK), gebraucht wird sie nur fuer die
+// ausgegebenen Treffer.
+export const suchPfadZaehler = { volltextScans: 0 };
 
 const aktiverCache = new WeakMap<KeptaStore, { generation: number; aktiv: ActiveMemory[]; byId: Map<string, ActiveMemory> }>();
 const deltaRegistriert = new WeakSet<KeptaStore>();
@@ -228,6 +211,22 @@ export function aktiviereSuchCacheDelta(store: KeptaStore): void {
   registriereDelta(store);
 }
 
+/**
+ * Baut den Such-Index einmal auf, bevor die erste Anfrage ihn braucht, und liefert die Zahl
+ * der aufgenommenen aktiven Notizen.
+ *
+ * Warum es das braucht: `registriereDelta` laesst eine vorgefuellte Datenbank ausdruecklich
+ * unberuehrt („Bei vorgefüllter DB: ignorieren, der Volllauf beim ersten Suchlauf ist korrekt"),
+ * und bezahlt wird das vom ersten Suchlauf des Nutzers. Gemessen 22.10.2026 an eignen
+ * Kapsel-Tueren: 20 000 Notizen — erste Anfrage 801,60 ms gegen 382,61 ms warm (22:39:01 MESZ);
+ * 120 000 Notizen — 12 778,12 ms gegen 2 844,09 ms (17:46:41 MESZ, Fassung 3.2.35).
+ * Korrektheit bleibt unveraendert: der Generation-Trigger bleibt das Sicherheitsnetz, hier steht
+ * nur der Vorlauf.
+ */
+export function waermeSuchCache(store: KeptaStore): number {
+  return aktiveErinnerungen(store).aktiv.length;
+}
+
 function aktiveErinnerungen(store: KeptaStore): { aktiv: ActiveMemory[]; byId: Map<string, ActiveMemory> } {
   registriereDelta(store);
   const generation = store.memGeneration();
@@ -251,44 +250,6 @@ function embeddbareChunks(store: KeptaStore): ReturnType<KeptaStore["allEmbeddab
   return chunks;
 }
 
-interface EntitaetsName {
-  name: string;
-  /** Auf Wortgrenzen kompiliert: "art" matcht nicht mehr in "start". */
-  muster: RegExp;
-}
-
-/** Der Name kommt aus Nutzer- und Modelltext — vor dem Regex-Bau escapen. */
-function regexFlucht(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function wortGrenzenMuster(name: string): RegExp {
-  return new RegExp(`(^|[^\\p{L}\\p{N}])${regexFlucht(name)}($|[^\\p{L}\\p{N}])`, "u");
-}
-
-/**
- * Die Wortspur-Entitäten, einmal pro Generation gebaut — Namen samt
- * vorkompiliertem Wortgrenzen-Muster. Kompilierung gehört in den Cache, weil
- * sonst pro Query über alle Entitätsnamen ein Regex-Bau entsteht; bei einer
- * Datenbank mit tausenden Entitäten wäre das genau der Kostenblock, den der
- * Cache abschalten soll.
- */
-const graphCache = new WeakMap<KeptaStore, { generation: number; namen: EntitaetsName[] }>();
-function graphNamen(store: KeptaStore): EntitaetsName[] {
-  const generation = store.datenGeneration();
-  const eintrag = graphCache.get(store);
-  if (eintrag && eintrag.generation === generation) return eintrag.namen;
-  // Der Namensvorrat ist nicht das Sichtfenster: seit #83 waehlt die Graphflaeche
-  // eine Nachbarschaft, und eine Nachbarschaft von 500 Begriffen ist ein schlechter
-  // Vorrat fuer das, was eine Anfrage zufaellig nennt.
-  const namen = store
-    .entityNamen()
-    .filter((name) => name.length >= ENTITAET_MIN_LAENGE)
-    .map((name) => ({ name, muster: wortGrenzenMuster(name) }));
-  graphCache.set(store, { generation, namen });
-  return namen;
-}
-
 // Vektor-Spur vorgerechnet: Chunk-Normen werden pro Generation EINMAL gebildet,
 // die Suche rechnet dann nur noch dot(a, b) / (normA · normB) — das spart die
 // doppelte Norm-Arbeit pro Chunk bei jeder Abfrage (bei 20k×768-dim-Chunks der
@@ -297,12 +258,40 @@ interface SuchVektoren {
   liste: ReturnType<KeptaStore["allEmbeddableChunks"]>;
   normen: Float32Array;
 }
-const vektorCache = new WeakMap<KeptaStore, { generation: number; spur: SuchVektoren }>();
-function suchVektoren(store: KeptaStore): SuchVektoren {
-  const generation = store.datenGeneration();
-  const eintrag = vektorCache.get(store);
-  if (eintrag && eintrag.generation === generation) return eintrag.spur;
-  const liste = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
+
+/**
+ * Wer die Spur baut, wird gezaehlt (P6-105): `suchbauten` ist der Aufbau, den ein Mensch vor
+ * seinem Bildschirm bezahlt, `vorwaermungen` derselbe Aufbau in der Stille der Tuer. Die Zahl
+ * sitzt an einem Ort, und dieselbe Ort ist der Leib von `/api/health` (`vektorSpur`) — ein
+ * Zeuge im Test und ein Zeuge an der Tuer duerfen nicht zwei Verschiedenes meinen.
+ */
+export const vektorSpurStatistik = { vorwaermungen: 0, suchbauten: 0, deltapatches: 0, zeilen: 0 };
+type SpurBaumeister = "vorwaermung" | "suche";
+
+type SpurZeile = SuchVektoren["liste"][number];
+
+/**
+ * Der Vorrat, und was er als einziges an sich heranlaesst.
+ *
+ * Zwei Zaehler, nicht einer: `memGeneration` steigt bei jedem Schreibfall an einer Notiz,
+ * `embedGeneration` nur bei einem Schreibfall, der ein Embedding setzt, aendert oder loescht
+ * (src/core/store.ts:1035-1047). Ein neuer Abschnitt ohne Embedding — der normale Fall beim
+ * Schreiben — ruehrt den zweiten nicht. Bleibt er gleich, kann sich ausserhalb der gemeldeten
+ * Notizen kein Vektor geaendert haben, und dann traegt die Spur nach, statt neu zu bauen.
+ */
+interface SpurEintrag {
+  memGen: number;
+  embedGen: number;
+  modell: string;
+  nach: Map<string, SpurZeile[]>;
+  spur: SuchVektoren;
+  dreckig: Set<string>;
+}
+
+const vektorCache = new WeakMap<KeptaStore, SpurEintrag>();
+const vektorDeltaRegistriert = new WeakSet<KeptaStore>();
+
+function normenVon(liste: SpurZeile[]): Float32Array {
   const normen = new Float32Array(liste.length);
   for (let j = 0; j < liste.length; j++) {
     const b = liste[j]!.embedding;
@@ -310,30 +299,164 @@ function suchVektoren(store: KeptaStore): SuchVektoren {
     for (let i = 0; i < b.length; i++) nb += b[i]! * b[i]!;
     normen[j] = Math.sqrt(nb);
   }
-  const spur = { liste, normen };
-  vektorCache.set(store, { generation, spur });
+  return normen;
+}
+
+function flacheSpur(nach: Map<string, SpurZeile[]>): SuchVektoren {
+  const liste: SpurZeile[] = [];
+  for (const gruppe of nach.values()) for (const z of gruppe) liste.push(z);
+  return { liste, normen: normenVon(liste) };
+}
+
+function zeilenNachNotiz(zeilen: SpurZeile[]): Map<string, SpurZeile[]> {
+  const nach = new Map<string, SpurZeile[]>();
+  for (const z of zeilen) {
+    const gruppe = nach.get(z.memoryId);
+    if (gruppe) gruppe.push(z);
+    else nach.set(z.memoryId, [z]);
+  }
+  return nach;
+}
+
+/**
+ * Meldet den Vorrat an beiden Anhoerern an (dasselbe Muster wie der Kandidaten-Vorrat in
+ * `registriereDelta`): der Notiz-Anhoerer meldet, wenn ein Text geschrieben wird, der
+ * Vektor-Anhoerer meldet, wenn die Hintergrund-Queue einen Abschnitt einbettet. Der Anhoerer
+ * kostet nichts, wenn kein Vorrat steht: dann liest der naechste Griff ohnehin die ganze Welt.
+ */
+function registriereVektorDelta(store: KeptaStore): void {
+  if (vektorDeltaRegistriert.has(store)) return;
+  vektorDeltaRegistriert.add(store);
+  const markiere = (id: string) => {
+    const eintrag = vektorCache.get(store);
+    if (eintrag) eintrag.dreckig.add(id);
+  };
+  store.onMemorieAenderung(markiere);
+  store.onVektorAenderung(markiere);
+}
+
+/** Wie viele Zeilen ein Vorrat haelt — ueber die Gruppen gezaehlt, ohne ein Blob anzufassen. */
+function zeilenImVorrat(nach: Map<string, SpurZeile[]>): number {
+  let n = 0;
+  for (const gruppe of nach.values()) n += gruppe.length;
+  return n;
+}
+
+function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
+  registriereVektorDelta(store);
+  const memGen = store.memGeneration();
+  const embedGen = store.embedGeneration();
+  const modell = aktivesSuchModell(store);
+  const eintrag = vektorCache.get(store);
+  if (eintrag && eintrag.memGen === memGen && eintrag.embedGen === embedGen && eintrag.modell === modell) return eintrag.spur;
+
+  // Nachtragen statt neu bauen: ein gemeldeter Schreibfall traegt NUR seine eigne Notiz nach.
+  // An der echten Tuer war der Volllauf 188,00 ms gegen 8,85 ms am stehenden Vorrat
+  // (P51, 3.11.2026, 40 000 Notizen) — und er wiederholte sich bei JEDEM Schreibfall.
+  //
+  // Seit 4.11. gilt der Nachzug auch fuer den Einbettungs-Nachschub, und zwar nur mit einer
+  // Pruefung, die nichts kostet: der Vorrat muss hinterher genauso viele Zeilen mit dem
+  // Abfragemodell halten, wie die Datenbank zaehlt (`store.vektorZeilen` — ein Index-Griff auf
+  // `idx_chunks_hat_model`, ohne ein einziges Blob). Geht die Zahl auf, hat dieser Prozess
+  // alles gesehen, was sich bewegt hat. Geht sie nicht auf, hat ein andrer geschrieben oder
+  // geloescht, und der Zweig faellt durch zum Volllauf unten. Ohne die Gleichung waere der
+  // Nachzug schneller und falscher — gemessen 4.11. an der Tuer: 60.34 ms Volllauf fuer 32
+  // neue Zeilen, und am gefuellten Index 1 321.99 ms fuer 64 164 Abschnitte.
+  if (eintrag && eintrag.dreckig.size > 0 && eintrag.modell === modell) {
+    const ids = [...eintrag.dreckig];
+    eintrag.dreckig.clear();
+    const neu = zeilenNachNotiz(store.chunksFuerMemories(ids).filter((z) => z.model === modell));
+    for (const [id, gruppe] of neu) eintrag.nach.set(id, gruppe);
+    for (const id of ids) if (!neu.has(id)) eintrag.nach.delete(id);
+    if (zeilenImVorrat(eintrag.nach) === store.vektorZeilen(modell)) {
+      eintrag.spur = flacheSpur(eintrag.nach);
+      eintrag.memGen = memGen;
+      eintrag.embedGen = embedGen;
+      vektorSpurStatistik.deltapatches += 1;
+      vektorSpurStatistik.zeilen = eintrag.spur.liste.length;
+      return eintrag.spur;
+    }
+  }
+
+  // Volllauf — entweder steht kein Vorrat, oder die Vektoren haben sich ausserhalb dieses
+  // Prozesses bewegt. Der alte Vorrat geht vor dem Neubau von der Hand: waehrend
+  // des Lesens und Wandels (1 321,99 ms an 64 164 Abschnitten, gemessen 25.10. 12:52) waeren
+  // sonst alt und neu zugleich im Leib — in der eignen Kapsel stieg die Resident Size ueber
+  // zwei Baue auf 1 038 688 KiB, wo ein Bau 697 088 bis 730 896 KiB braucht.
+  vektorCache.delete(store);
+  const liste = store.allEmbeddableChunks().filter((c) => c.model === modell);
+  const spur: SuchVektoren = { liste, normen: normenVon(liste) };
+  vektorCache.set(store, { memGen, embedGen, modell, nach: zeilenNachNotiz(liste), spur, dreckig: new Set() });
+  if (wer === "vorwaermung") vektorSpurStatistik.vorwaermungen += 1;
+  else vektorSpurStatistik.suchbauten += 1;
+  vektorSpurStatistik.zeilen = liste.length;
   return spur;
 }
 
-function entityMentionsInQuery(store: KeptaStore, queryLower: string): string[] {
-  const mentions: string[] = [];
-  for (const { name, muster } of graphNamen(store)) {
-    // includes ist Vorfilter, nicht Entscheidung: ein Wortgrenzen-Treffer setzt
-    // voraus, dass der Name zusammenhängend in der Query steht. Das erhält den
-    // schnellen Pfad der alten Fassung und verwirft nur die Zufallstreffer.
-    if (queryLower.includes(name) && muster.test(queryLower)) mentions.push(name);
-  }
-  return mentions;
+/**
+ * Steht die Spur, oder hat die Datenwelt sie schon wieder weggenommen?
+ *
+ * Der Blick gilt den beiden Zaehlern des Stores, nicht dem Kalender (siehe `SpurEintrag`):
+ * Memory-Faelle heben beide, Chunk-Faelle — etwa der Einbettungs-Nachschub, dessen `UPDATE ON
+ * chunks` einen Trigger ohne WHEN-Klausel hat (src/core/store.ts:1034-1055) — heben nur den
+ * einen. Seit dem Nachtragen heisst "veraltet" nicht mehr "ein Volllauf steht bevor", sondern
+ * "ein Schreibfall ist noch nicht nachgetragen".
+ */
+export function vektorSpurSteht(store: KeptaStore): { generation: number; veraltet: boolean } {
+  const generation = store.datenGeneration();
+  const eintrag = vektorCache.get(store);
+  if (!eintrag) return { generation, veraltet: true };
+  // Ein gemeldeter Notiz-Schreibfall wird nachgetragen, nicht neu gebaut: fuer ihn hat die
+  // Stille nichts zu tun. Veraltet heisst hier also "ein Volllauf steht bevor" — nur ein
+  // Schreibfall an den Vektoren selbst (Nachzug, geloeschter eingebetteter Abschnitt) kann
+  // das sein.
+  return { generation, veraltet: eintrag.embedGen !== store.embedGeneration() };
+}
+
+/**
+ * Baut die Vektor-Spur, bevor die erste semantische Suche sie braucht, und liefert die Zahl der
+ * Abschnitte in der Spur.
+ *
+ * Warum es das braucht: der Bau liest, entbuergert und wandelt jeden Abschnitt des Bestands.
+ * Gemessen 25.10.2026 an der eignen Kapsel (3.2.57, 20 066 Notizen, 64 164 Abschnitte zu 768
+ * Dimensionen, verschluesselte DB 280 649 728 B): erster Griff 1 462,26 ms und 1 493,81 ms an
+ * zwei echten Kaltstarts, davon 1 321,99 ms (97,1 Prozent) Lesen und Wandeln, 39,59 ms Normen;
+ * Dauer-RSS +475,0 MiB und +477,8 MiB; warmer Vektorpfad 58,19 bis 74,65 ms. An der Boot-Achse
+ * darf dieser Lauf nicht haengen (die Tuer lauscht in 0,568 s und 0,654 s), also steht er hier
+ * als Vorlauf fuer die Stille der Tuer.
+ */
+export function waermeVektorSpur(store: KeptaStore): number {
+  return suchVektoren(store, "vorwaermung").liste.length;
+}
+
+
+/**
+ * Benennt die Anfrage einen Begriff? Die Antwort holt `store.begriffeImWortlaut` — die Stuecke
+ * der Anfrage gegen den Namensindex. Der alte Weg ging umgekehrt: er hielt die Rangfolge aller
+ * Begriffe als Vorrat und suchte sie in der Anfrage; jeder Schreibfall hob den Vorrat, und die
+ * erste Anfrage danach zahlte die Zusammenrechnung ueber den ganzen Bestand — 134.74 ms von
+ * 157 ms an der Tuer, gemessen 4.11. an 40 000 Notizen
+ * (`docs/belege/tag-0411/tuer-48-vor-3-2-139-0123.log.txt`).
+ */
+function entityMentionsInQuery(store: KeptaStore, queryLower: string): number[] {
+  return store.begriffeImWortlaut(queryLower).map((e) => e.id);
 }
 
 /** Berechnet alle Beinheiten und fusioniert via Reciprocal Rank Fusion. */
 export async function searchMemories(store: KeptaStore, params: SearchParams): Promise<SearchResult> {
+  // Teilzeiten (Zelle #98): die gelandete Route nennt vorarbeit/engine/formen/gesamt; WOHIN die
+  // Engine-Zeit geht, sagte sie nicht (an 3.2.56: engine=1763,27 ms bei vorarbeit=0.07). Hier wird
+  // die Engine-Arbeit selbst gemessen: Wortlese, Einbettung des frischen Wortes, Vektor-Suche.
+  const messStart = process.hrtime.bigint();
+  const msSeit = (von: bigint): number => Math.round(Number(process.hrtime.bigint() - von) / 1e3) / 1000;
   // Query-Erweiterung (deutsch <-> englisch): „Wie oft wird gesichert?" muss
   // auch die Notiz „Backup schedule" finden. Die Erweiterung haengt Synonyme
   // AN die Query — alle Beine (BM25, Vektor, Reranking) profitieren; das
   // Original bleibt vorne, damit Snippets und Anzeige dem Nutzer folgen.
   const query = erweitereQuery((params.query || "").trim());
   const limit = Math.min(Math.max(params.limit ?? 10, 1), MAX_SEARCH_LIMIT);
+  // Seiten (Zelle #95): offset schneidet die Rangliste, total bleibt der ganze Bestand.
+  const offset = Math.max(0, Math.floor(params.offset ?? 0));
   const queryLower = query.toLowerCase();
   // Zeitreise (asOf): „now“ ist dann der gefragte Zeitpunkt — Zeitregler für ALLE Zugänge
   const now = params.asOf ?? Date.now();
@@ -349,19 +472,12 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
       if (!tags.every((t) => r.tags.includes(t))) return false;
     }
     if (params.validSince && r.validFrom !== null && r.validFrom < params.validSince) return false;
-    // Geltungsbeginn immer — asOf verschiebt nur den betrachteten Instant, nicht die
-    // Regel. Eine Notiz, die erst in der Zukunft gilt, war am gefragten Zeitpunkt noch
-    // nicht da und ist es heute nicht; sie ohne asOf als Gegenwart auszuliefern, war
-    // die zweite Antwort auf dieselbe Frage.
-    const start = r.validFrom ?? r.createdAt;
-    if (start !== null && start > now) return false;
-    // Verfall: in der Zeitreise ausgeblendet, in der Gegenwart als Fund mit
-    // expired-Merkur sichtbar (Temporal-Faktor unten) — die Grenze ist dieselbe.
-    if (timeTravel && r.validTo !== null && r.validTo <= now) return false;
-    // Ersetzung: ab dem Ersetzungszeitpunkt war das nicht mehr mein Stand. Altdaten
-    // ohne Wert bleiben sichtbar — aus einem Zeiger einen Zeitpunkt zu raten waere
-    // eine erfundene Antwort.
-    if (timeTravel && r.supersededBy !== null && r.supersededAt !== null && r.supersededAt <= now) return false;
+    // Zeitreise: Notizen, die zum Zeitpunkt noch nicht existierten oder schon abgelaufen waren, ausblenden
+    if (timeTravel) {
+      const start = r.validFrom ?? r.createdAt;
+      if (start !== null && start > now) return false;
+      if (r.validTo !== null && r.validTo <= now) return false;
+    }
     return true;
   };
 
@@ -381,27 +497,38 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   // total davon ab, wie viele Treffer gerade ANGEZEIGT werden. Genau das fiel im
   // Test auf — "5 von 117" bei einem Limit von 5, "5 von 150" nach dem Umlegen
   // des Reglers. Die Zahl neben dem Ergebnis muss stehen, egal was man einstellt.
-  const ftsTiefe = Math.min(MAX_SEARCH_LIMIT, Math.max(500, limit * 2));
+  // Die Tiefe muss offset+limit decken - sonst waere eine Seite hinter 500 still leer,
+  // obwohl der Bestand Treffer hat (gemessen im Fall "jenseits der ersten 500").
+  const ftsTiefe = Math.min(MAX_SEARCH_LIMIT, Math.max(500, (offset + limit) * 2));
+  const tWort = process.hrtime.bigint();
   const bm25Ranked: string[] = query && beine.bm25
     ? store
         .ftsSearch(query, ftsTiefe)
         .map((h) => h.id)
         .filter((id) => byId.has(id))
     : [];
+  const wortlese = msSeit(tWort);
 
   // --- Bein 2: Vektor-KNN (nur wenn Embeddings des aktuellen Modells existieren) ---
   let vectorRanked: string[] = [];
+  let vektorBestSim = 0;
   let queryVector: Float32Array | null = null;
   let usedVectors = false;
   const vectorSim = new Map<string, number>();
+  let einbettung = 0;
+  const tVektor = process.hrtime.bigint();
   if (query && beine.vector) {
-    queryVector = await embedQuery(query);
+    const tEin = process.hrtime.bigint();
+    // P184: der Anfrage-Vektor gehört in den Raum des AKTIVEN Modells — sonst
+    // sucht die Query im fremden Raum (engine filtert Chunks nach Modell).
+    queryVector = await embedQuery(query, aktivesSuchModell(store));
+    einbettung = msSeit(tEin);
     if (queryVector) {
       // Vorgerechnete Spur (Chunk-Liste gefiltert auf das Abfragemodell + Normen
       // je Chunk, einmal pro Generation). Nur Chunks desselben Embedding-Modells
       // sind vergleichbar — der Query-Vektor entsteht mit DEFAULT_EMBED_MODEL;
       // fremde Modelle würden unsinnige Cosine-Werte liefern.
-      const spur = suchVektoren(store);
+      const spur = suchVektoren(store, "suche");
       const liste = spur.liste;
       const normen = spur.normen;
       // Query-Norm einmal je Abfrage
@@ -426,7 +553,8 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
         for (const [id, sim] of bestPerMemory) vectorSim.set(id, sim);
         let bestSim = 0;
         for (const sim of bestPerMemory.values()) if (sim > bestSim) bestSim = sim;
-        const untergrenze = Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND);
+        vektorBestSim = bestSim;
+        const untergrenze = bestSim > 0 ? Math.min(bestSim, Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND)) : VECTOR_FLOOR;
         vectorRanked = [...bestPerMemory.entries()]
           .filter(([, sim]) => sim >= untergrenze)
           .sort((a, b) => b[1] - a[1])
@@ -438,28 +566,32 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   // --- Bein 3: Entity-Match ---
   let entityRanked: string[] = [];
   if (query && beine.entity) {
-    const mentions = entityMentionsInQuery(store, queryLower);
-    if (mentions.length > 0) {
-      const entityIds = mentions
-        .map((name) => store.getEntityByName(name)?.id)
-        .filter((id): id is number => id !== undefined);
+    const entityIds = entityMentionsInQuery(store, queryLower);
+    if (entityIds.length > 0) {
       const memIds = store.memoryIdsForEntities(entityIds);
       entityRanked = [...memIds].filter((id) => byId.has(id));
     }
   }
 
   // --- RRF-Fusion ---
+  // P182: Das Vektor-Bein schweigt nie (es bleibt in der Liste, usedVectors und
+  // die Spuren tragen es); als STIMME in der Fusion zaehlt es aber nur mit seiner
+  // Abruf-Sicherheit: ueber dem Boden voll, unter ihm nur dann, wenn keine andere
+  // Stimme spricht — sonst verdraengt ein schwacher semantischer Kandidat die
+  // Wort-Stimme (der Nudeln-Fall aus der Nachmessung konkurrenz-0911d).
+  const andereStimmen = bm25Ranked.length > 0 || entityRanked.length > 0;
+  const vektorStimme = !andereStimmen || vektorBestSim >= VECTOR_FLOOR ? 1 : 0;
   const scores = new Map<string, { rrf: number; bm25Rank: number | null; vectorRank: number | null; entityRank: number | null }>();
-  const bump = (rankedList: string[], leg: "bm25Rank" | "vectorRank" | "entityRank") => {
+  const bump = (rankedList: string[], leg: "bm25Rank" | "vectorRank" | "entityRank", gewicht = 1) => {
     rankedList.forEach((id, idx) => {
       const entry = scores.get(id) ?? { rrf: 0, bm25Rank: null, vectorRank: null, entityRank: null };
-      entry.rrf += 1 / (RRF_K + idx + 1);
+      entry.rrf += gewicht / (RRF_K + idx + 1);
       if (entry[leg] === null) entry[leg] = idx + 1;
       scores.set(id, entry);
     });
   };
   bump(bm25Ranked, "bm25Rank");
-  bump(vectorRanked, "vectorRank");
+  bump(vectorRanked, "vectorRank", vektorStimme);
   bump(entityRanked, "entityRank");
 
   // Nur Treffer, die mindestens eine Bein getroffen haben; bei leerer Query Recency-Liste
@@ -495,10 +627,8 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     score *= 0.5 + 0.5 * r.confidence;
     // Retention (Oblivion): oft/aktuell Genutztes steigt, Vergessenes sinkt
     score *= retentionFactor(r, now);
-    // Temporal — dieselbe Grenze wie der Zeitreise-Zweig in filters(): validTo ist
-    // der Moment, ab dem die Notiz nicht mehr gilt. Ein strenges `<` liess die im
-    // selben Millisekunden-Tick vergessene Notiz gültig erscheinen.
-    const expired = !timeTravel && r.validTo !== null && r.validTo <= now;
+    // Temporal
+    const expired = !timeTravel && r.validTo !== null && r.validTo < now;
     const superseded = r.supersededBy !== null;
     if (expired) score *= EXPIRED_FACTOR;
     if (superseded) score *= SUPERSEDED_FACTOR;
@@ -506,7 +636,7 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
     const rerank = localRerankScore(query, r);
     if (rerank !== null) score *= 1 + rerank * RERANK_MAX_BOOST;
 
-    const matchedTerms = queryTerms.filter((t) => m.titleLower.includes(t) || m.contentLower.includes(t));
+    const matchedTerms: string[] = [];
     hits.push({
       memory: r,
       score,
@@ -532,7 +662,16 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
   }
 
   hits.sort((a, b) => b.score - a.score || b.memory.updatedAt - a.memory.updatedAt);
-  const top = hits.slice(0, limit);
+  const top = hits.slice(offset, offset + limit);
+  // P6-Aufgabe #10: die Matched-Terms gehoeren zum Leib der Antwort, nicht zur Rechnung. Sie
+  // werden deshalb erst fuer die ausgegebenen Treffer bestimmt — vorher lief die Volltext-Pruefung
+  // fuer jeden Kandidaten, bei topK 20 000 also bis zu 10 000 mal je Anfrage.
+  for (const h of top) {
+    const m = byId.get(h.memory.id);
+    if (!m) continue;
+    h.matchedTerms = queryTerms.filter((t) => m.titleLower.includes(t) || m.contentLower.includes(t));
+    suchPfadZaehler.volltextScans += 1;
+  }
   // Zugriffs-Statistik für die Retention aktualisieren (fire-and-forget-semantisch, aber sync)
   // Retention nur für Gegenwarts-Suchen zählen — Zeitreise verfälscht die Statistik nicht
   if (query && !timeTravel && top.length > 0) {
@@ -555,20 +694,41 @@ export async function searchMemories(store: KeptaStore, params: SearchParams): P
       }
     }
   }
-  return { hits: top, total: hits.length, query, usedVectors };
+  return {
+    hits: top,
+    total: hits.length,
+    query,
+    usedVectors,
+    teilzeiten: {
+      wortlese,
+      einbettung,
+      vektor: Math.max(0, msSeit(tVektor) - einbettung),
+      gesamt: msSeit(messStart),
+    },
+  };
 }
 
 // ---------- Lifecycle: Chunking + optional Embedding on write ----------
 
 /** Nach create/update aufrufen: zerlegt Content in Chunks; Embedding lauft asynchron via Queue. */
-export function indexMemory(store: KeptaStore, memoryId: string): void {
+export function indexMemory(store: KeptaStore, memoryId: string, zeit?: (marke: string) => void): void {
   const record = store.getMemory(memoryId);
   if (!record) return;
   const texts = [`${record.title}\n${record.tags.join(", ")}`, ...chunkText(record.content)];
   store.replaceChunks(memoryId, texts);
-  // Zerlegen und Verknuepfen sind ein Vorgang, nicht zwei: jeder Schreibweg, der hier
-  // entlangkommt, bekommt damit dieselbe Welt wie die Desktop-App.
+  // Punkt 6: die Phase "index" war die letzte, die mit dem Bestand mitwuchs, und sie sind
+  // zwei Arbeiten — die Brocken der Notiz neu setzen und ihre Begrifskanten. Getrennt
+  // gemessen 31.10. 23:2x, weil ein Urteil ueber eine zusammengefasste Zahl ein geratenes
+  // Urteil ist.
+  zeit?.("chunksetzen");
+  // Verknuepfen gehoert zum Indexieren, nicht zu einem einzelnen Schreibweg. Der
+  // Scanner, die Inbox und die Importe haben bisher nur indiziert — ihre Notizen
+  // standen darum im Graphen als Blatt ohne Kante (13.10.: 14.702 Notizen, 30
+  // Begriffe). `verknuepfeNotiz` ist pro Notiz setzend, kein Haufen: wer
+  // dieselbe Notiz zweimal indiziert, bekommt dieselben Kanten ein zweites Mal
+  // nicht dazu.
   store.verknuepfeNotiz(memoryId, record.title, []);
+  zeit?.("begriffekanten");
 }
 
 // ---------- Konsolidierung ----------
@@ -584,38 +744,26 @@ export interface ConsolidationResult {
   candidates: ConsolidationCandidate[];
   applied: number;
   dryRun: boolean;
-  /** true, wenn die Vorschlagsliste bei MAX_CANDIDATES_PRO_AUFRUF gekappt wurde */
-  begrenzt: boolean;
 }
 
-function jaccard(a: string[], b: string[]): number {
-  const sa = new Set(a);
-  const sb = new Set(b);
+function jaccardSets(sa: ReadonlySet<string>, sb: ReadonlySet<string>): number {
   if (sa.size === 0 || sb.size === 0) return 0;
   let inter = 0;
-  for (const x of sa) if (sb.has(x)) inter++;
+  const kleiner = sa.size <= sb.size ? sa : sb;
+  const groesser = sa.size <= sb.size ? sb : sa;
+  for (const x of kleiner) if (groesser.has(x)) inter++;
   return inter / (sa.size + sb.size - inter);
 }
 
 /**
  * Findet Dubletten: (a) Embedding-Similarity > threshold, (b) Fallback Titel+Tags-Überlappung.
  * Ohne dryRun werden ältere Memories als ersetzt markiert (supersede), nicht gelöscht.
- * `threshold` ist eine Cosinus-Schwelle und muss in (0, 1] liegen: 0 oder weniger
- * erklaert jedes Paar zur Dublette, ein Wert ueber 1 ist unerreichbar — beides wird
- * abgelehnt statt still uminterpretiert. Die Vorschlagsliste ist pro Aufruf gekappt
- * (`begrenzt` sagt es).
- * `ausnehmen` blendet IDs vollständig aus — sie erscheinen weder als Kandidat, noch
- * werden sie ersetzt. Der Agenten-Floor nutzt das für private Notizen: melden und
- * anwenden sind derselbe Pool, sonst wäre ein dryRun sicher und der Klick danach nicht.
  */
 export async function consolidateMemories(
   store: KeptaStore,
   opts: { dryRun?: boolean; threshold?: number; ausnehmen?: Set<string> } = {}
 ): Promise<ConsolidationResult> {
   const threshold = opts.threshold ?? 0.92;
-  if (!Number.isFinite(threshold) || threshold <= 0 || threshold > 1) {
-    throw new Error(`consolidate: threshold must be in (0, 1], received ${opts.threshold}`);
-  }
   const dryRun = opts.dryRun ?? true;
   // Nur lebende Memories aufraeumen. Bereits ersetzte liegen als Verlauf da; sie
   // erneut zu vergleichen ist nicht nur ueberfluessig, sondern gefaehrlich:
@@ -623,23 +771,30 @@ export async function consolidateMemories(
   // Eine tote Memory gewann dadurch als "behalten" — und eine lebende Dublette zeigte
   // anschliessend auf sie. Ergebnis: die lebende Notiz auf 40 % heruntergewichtet,
   // mit einem Nachfolger, der selbst ausgemustert ist.
+  // `ausnehmen` blendet ids vollständig aus — sie erscheinen weder als Kandidat
+  // noch als Nachfolger. Der Agentenkanal nutzt das für private Notizen: zwei
+  // private Dupletten zu melden hieße, dem Agenten zwei private ids und ihre
+  // Ähnlichkeit zu nennen.
   const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy && !opts.ausnehmen?.has(m.record.id));
+  const activeById = new Map<string, MemoryRecord>();
+  for (const m of active) activeById.set(m.record.id, m.record);
   const candidates: ConsolidationCandidate[] = [];
-  let begrenzt = false;
-  const vorschlagen = (kandidat: ConsolidationCandidate): void => {
-    if (candidates.length >= MAX_CANDIDATES_PRO_AUFRUF) {
-      begrenzt = true;
-      return;
-    }
-    candidates.push(kandidat);
+  const seenPairs = new Set<string>();
+  const addCandidate = (a: string, b: string, similarity: number, reason: ConsolidationCandidate["reason"]): boolean => {
+    const key = a < b ? `${a}\0${b}` : `${b}\0${a}`;
+    if (seenPairs.has(key)) return false;
+    seenPairs.add(key);
+    const [keep, dup] = pickKeep(activeById, a, b);
+    candidates.push({ keepId: keep, duplicateId: dup, similarity, reason });
+    return true;
   };
 
-  // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — Cosine nur zwischen
-  // identischen Modellen (Cross-Modell-Vektoren erzeugen Schein-Dubletten).
+  // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — vorab L2-normiert und
+  // entlang einer Einheits-Diagonale sortiert (exakte Dreiecksungleichungs-Schranke ohne Verlust).
   const chunks = embeddbareChunks(store);
   const centroids = new Map<string, { model: string; vec: Float32Array; count: number }>();
   for (const c of chunks) {
-    if (!active.some((m) => m.record.id === c.memoryId)) continue;
+    if (!activeById.has(c.memoryId)) continue;
     const prev = centroids.get(c.memoryId);
     if (!prev) {
       centroids.set(c.memoryId, { model: c.model, vec: Float32Array.from(c.embedding), count: 1 });
@@ -650,40 +805,123 @@ export async function consolidateMemories(
     }
     // Chunk mit anderem Modell als der bisherige Centroid: ignorieren (Queue re-embeddet)
   }
-  const centroidList = [...centroids.entries()];
-  for (let i = 0; i < centroidList.length; i++) {
-    for (let j = i + 1; j < centroidList.length; j++) {
-      if (centroidList[i]![1].model !== centroidList[j]![1].model) continue;
-      const sim = cosineSimilarity(centroidList[i]![1].vec, centroidList[j]![1].vec);
-      if (sim >= threshold) {
-        const a = centroidList[i]![0];
-        const b = centroidList[j]![0];
-        const [keep, dup] = pickKeep(store, a, b);
-        vorschlagen({ keepId: keep, duplicateId: dup, similarity: sim, reason: "embedding" });
+
+  interface UnitCentroid {
+    id: string;
+    vec: Float32Array;
+    diag: number;
+    altDiag: number;
+  }
+  const byModel = new Map<string, UnitCentroid[]>();
+  for (const [id, entry] of centroids) {
+    const v = entry.vec;
+    let sq = 0;
+    let sum = 0;
+    let altSum = 0;
+    for (let k = 0; k < v.length; k++) {
+      const val = v[k]!;
+      sq += val * val;
+      sum += val;
+      altSum += (k & 1) === 0 ? val : -val;
+    }
+    if (sq <= 0) continue;
+    const invNorm = 1 / Math.sqrt(sq);
+    for (let k = 0; k < v.length; k++) v[k] = v[k]! * invNorm;
+    const invSqrtD = 1 / Math.sqrt(v.length);
+    let grp = byModel.get(entry.model);
+    if (!grp) {
+      grp = [];
+      byModel.set(entry.model, grp);
+    }
+    grp.push({ id, vec: v, diag: sum * invSqrtD, altDiag: altSum * invSqrtD });
+  }
+
+  const maxDist = Math.sqrt(2 * Math.max(0, 1 - threshold)) + 1e-4;
+  for (const grp of byModel.values()) {
+    grp.sort((a, b) => a.diag - b.diag);
+    for (let i = 0; i < grp.length; i++) {
+      const ci = grp[i]!;
+      const vi = ci.vec;
+      const dim = vi.length;
+      for (let j = i + 1; j < grp.length; j++) {
+        const cj = grp[j]!;
+        if (cj.diag - ci.diag > maxDist) break;
+        if (Math.abs(cj.altDiag - ci.altDiag) > maxDist) continue;
+        const vj = cj.vec;
+        if (vj.length !== dim) continue;
+        let s0 = 0;
+        let s1 = 0;
+        let s2 = 0;
+        let s3 = 0;
+        let k = 0;
+        for (; k + 3 < dim; k += 4) {
+          s0 += vi[k]! * vj[k]!;
+          s1 += vi[k + 1]! * vj[k + 1]!;
+          s2 += vi[k + 2]! * vj[k + 2]!;
+          s3 += vi[k + 3]! * vj[k + 3]!;
+        }
+        let sim = s0 + s1 + s2 + s3;
+        for (; k < dim; k++) sim += vi[k]! * vj[k]!;
+        if (sim >= threshold) addCandidate(ci.id, cj.id, sim, "embedding");
       }
+      if ((i & 511) === 511) await new Promise<void>((r) => setImmediate(r));
     }
   }
 
-  // Lexikalischer Fallback: Titel-Jaccard + Tag-Überlappung
-  for (let i = 0; i < active.length; i++) {
-    for (let j = i + 1; j < active.length; j++) {
-      const a = active[i]!.record;
-      const b = active[j]!.record;
-      const ta = new Set(a.title.toLowerCase().split(/\W+/).filter((w) => w.length > 2));
-      const tb = new Set(b.title.toLowerCase().split(/\W+/).filter((w) => w.length > 2));
-      if (ta.size === 0 || tb.size === 0) continue;
-      let inter = 0;
-      for (const w of ta) if (tb.has(w)) inter++;
-      const titleSim = inter / Math.min(ta.size, tb.size);
-      const tagSim = jaccard(a.tags, b.tags);
-      if (titleSim >= 0.85 && (tagSim >= 0.5 || a.tags.length === 0 || b.tags.length === 0)) {
-        const pairExists = candidates.some(
-          (c) => (c.keepId === a.id && c.duplicateId === b.id) || (c.keepId === b.id && c.duplicateId === a.id)
-        );
-        if (!pairExists) {
-          const [keep, dup] = pickKeep(store, a.id, b.id);
-          vorschlagen({ keepId: keep, duplicateId: dup, similarity: titleSim, reason: "title+tags" });
+  // Lexikalischer Fallback: Titel-Wörter + Tag-Überlappung vorab einmal je Notiz aufbereiten
+  // und über invertierten Wort-Index vergleichen — vermeidet O(N²) Regex/Set-Allokationen.
+  const nActive = active.length;
+  const titleSets: Set<string>[] = new Array(nActive);
+  const tagSets: Set<string>[] = new Array(nActive);
+  const wordIndex = new Map<string, number[]>();
+  for (let i = 0; i < nActive; i++) {
+    const rec = active[i]!.record;
+    const words = new Set(rec.title.toLowerCase().split(/\W+/).filter((w) => w.length > 2));
+    titleSets[i] = words;
+    tagSets[i] = new Set(rec.tags);
+    for (const w of words) {
+      let list = wordIndex.get(w);
+      if (!list) {
+        list = [];
+        wordIndex.set(w, list);
+      }
+      list.push(i);
+    }
+  }
+
+  const stamp = new Int32Array(nActive);
+  const sharedWords = new Int32Array(nActive);
+  const touched: number[] = [];
+  for (let i = 0; i < nActive; i++) {
+    const ta = titleSets[i]!;
+    if (ta.size === 0) continue;
+    const marker = i + 1;
+    touched.length = 0;
+    for (const w of ta) {
+      const postings = wordIndex.get(w)!;
+      for (let p = 0; p < postings.length; p++) {
+        const j = postings[p]!;
+        if (j <= i) continue;
+        if (stamp[j] !== marker) {
+          stamp[j] = marker;
+          sharedWords[j] = 1;
+          touched.push(j);
+        } else {
+          sharedWords[j] = sharedWords[j]! + 1;
         }
+      }
+    }
+    const a = active[i]!.record;
+    const tagA = tagSets[i]!;
+    for (let t = 0; t < touched.length; t++) {
+      const j = touched[t]!;
+      const tb = titleSets[j]!;
+      const titleSim = sharedWords[j]! / Math.min(ta.size, tb.size);
+      if (titleSim < 0.85) continue;
+      const b = active[j]!.record;
+      const tagSim = jaccardSets(tagA, tagSets[j]!);
+      if (tagSim >= 0.5 || a.tags.length === 0 || b.tags.length === 0) {
+        addCandidate(a.id, b.id, titleSim, "title+tags");
       }
     }
   }
@@ -701,12 +939,12 @@ export async function consolidateMemories(
       }
     }
   }
-  return { candidates, applied, dryRun, begrenzt };
+  return { candidates, applied, dryRun };
 }
 
-function pickKeep(store: KeptaStore, a: string, b: string): [string, string] {
-  const ra = store.getMemory(a);
-  const rb = store.getMemory(b);
+function pickKeep(byId: ReadonlyMap<string, MemoryRecord>, a: string, b: string): [string, string] {
+  const ra = byId.get(a) ?? null;
+  const rb = byId.get(b) ?? null;
   // Behalte die neuere, längere Memory
   const scoreOf = (r: MemoryRecord | null): number => (r ? r.updatedAt + r.content.length * 1000 : 0);
   return scoreOf(ra) >= scoreOf(rb) ? [a, b] : [b, a];
@@ -719,20 +957,17 @@ export interface DuplicateWarning {
   similarity: number;
 }
 
-/**
- * Schnelle Prüfung beim Speichern: ähnelt der neue Inhalt einer bestehenden Memory?
- * Agentenweg — die beiden Aufrufer (Dupletten-Warnung und Write-Gate) antworten
- * direkt an den Agenten, deshalb sind private Notizen hier herausgerechnet.
- */
+/** Schnelle Prüfung beim Speichern: ähnelt der neue Inhalt einer bestehenden Memory? */
 export async function findDuplicateForNew(
   store: KeptaStore,
   title: string,
   content: string
 ): Promise<DuplicateWarning | null> {
-  const vec = await embedQuery(`${title}\n${content}`);
+  const modell = aktivesSuchModell(store);
+  const vec = await embedQuery(`${title}\n${content}`, modell);
   if (!vec) return null;
   // Nur Chunks des aktuellen Modells — Query-Vektor und Chunk-Vektor müssen gleiche Räume teilen
-  const chunks = embeddbareChunks(store).filter((c) => c.model === DEFAULT_EMBED_MODEL);
+  const chunks = embeddbareChunks(store).filter((c) => c.model === modell);
   const best = new Map<string, number>();
   for (const c of chunks) {
     const sim = cosineSimilarity(vec, c.embedding);
@@ -747,14 +982,7 @@ export async function findDuplicateForNew(
       bestId = id;
     }
   }
-  if (!bestId || bestSim < 0.92) return null;
-  // Privatheits-Floor, und zwar hier statt bei den Aufrufern: beide Wege, die auf
-  // diese Prüfung folgen, enden bei einem Agenten — die Dupletten-Warnung nennt die
-  // id, und das Write-Gate schreibt sie in seinen Prompt-Grundtext. Beides würde
-  // privaten Inhalt (oder zumindest seine Existenz) in den Agentenkanal tragen, und
-  // ein UPDATE des Gates überschriebe obendrein die private Notiz des Besitzers.
-  if (store.istPrivat(bestId)) return null;
-  return { existingId: bestId, similarity: bestSim };
+  return bestId && bestSim >= 0.92 ? { existingId: bestId, similarity: bestSim } : null;
 }
 
 export type { MemoryType, SearchHit, SearchResult, SearchParams };

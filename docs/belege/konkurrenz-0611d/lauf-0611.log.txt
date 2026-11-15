@@ -1,0 +1,45 @@
+P113 6.11.2026, MEZ. Baum 3.2.189 (0e55bb6), Node v26.8.1, Ollama nur auf 127.0.0.1:11434.
+Zwei Dinge auf diesem Blatt: (1) die Berichtigung, dass unsre Rangfolge mit dem zweiten
+Einbett NICHT erst heute gemessen wurde, und (2) die Sprach-Messung unter beiden Stufen,
+wiederholt auf dem heutigen Baum.
+
+(1) BERRICHTIGUNG. P111 schrieb um 16:52 MEZ, unsre eigne Rangfolge mit bge-m3 sei "nicht
+    gemessen", und P112 nannte das als eigne Neuerung. Das war falsch. Im Repo stand seit
+    dem 3.11.: docs/belege/tag-0311/eval-bge-m3-1404.log.txt, npm run eval mit
+    KEPTA_EMBED_MODEL=bge-m3 auf kepta@3.2.125, 2026-11-03 13:04:56 UTC (= 14:04 MEZ),
+    v3-Bein: Recall@5 90,0 %, Hit@1 77,8 %, MRR 0,825, Kategorien ablenkung 25 %, graph
+    100 %, lexikalisch 96 %, temporal 67 %, umschreibung 50 %. Das Sprach-Artefakt
+    desselben Ordners (sprachuebergriff-bge-m3-1406.log.txt) zitiert diese Zahl sogar.
+    Heute, 17:09:27 MEZ, derselbe Lauf auf 3.2.189: alle sieben Zahlen punktgenau wieder
+    (konkurrenz-0611c/spur-uns-bge-m3-0611.jsonl, Gegenprobe gegen denselben Ordner).
+    Also: nicht "neu gemessen", sondern "ueber 64 Fassungen reproduziert".
+
+(2) SPRACHE UNTER BEIDEN STUFEN, heute gefahren (npx tsx scripts/eval-sprachuebergriff.ts,
+    derselbe Koerper wie npm run eval:sprache), je Stufe zwei Laeufe, EXIT 0, je Stufe
+    bytegleicher Ausdruck:
+      sprache-nomic-0611.txt         17:26:39-17:26:43  2001 bytes  sha256 816a0347bf2c6a46
+      sprache-nomic-0611-zwei.txt    17:26:43-17:26:46  2001 bytes  sha256 816a0347bf2c6a46
+      sprache-bge-m3-0611.txt        17:26:46-17:26:53  1815 bytes  sha256 3e66f2603be81156
+      sprache-bge-m3-0611-zwei.txt   17:26:53-17:26:59  1815 bytes  sha256 3e66f2603be81156
+    Korpus: 58 Notizen, 15 Anfrage-Paare (lexikalisch 6, umschreibung 6, temporal 3),
+    Ziele aus scripts/eval-corpus.ts geerbt, Richtung englische Frage gegen deutsche
+    Notizen. Die Gegenrichtung ist nicht gemessen und wird nirgends behauptet.
+
+    v3 Engine mit Vektoren (ausgeliefertes Retrieval), BEIDE Stufen gleich:
+      deutsch  Hit@1 60,0 %   R@5 gekappt 80,0 %
+      englisch Hit@1 26,7 %   R@5 gekappt 33,3 %     Sprachpreis -33,3 Pp
+    nur das Vektor-Bein (ohne BM25, ohne Graph):
+      nomic    deutsch 73,3 % / englisch 26,7 %      Sprachpreis -46,7 Pp
+      bge-m3   deutsch 46,7 % / englisch 20,0 %      Sprachpreis -26,7 Pp
+
+    Die Lesung, und die Falle dazu: das mehrsprachige Einbett ist KEIN Hebel fuer die
+    Sprachgrenze. Am ausgelieferten Bein aendert es nichts (26,7 % in beiden Stufen, 4 von
+    15). Am Diagnose-Bein wird der Abstand kleiner (-46,7 -> -26,7 Pp), aber beide Seiten
+    fallen: deutsch 73,3 -> 46,7, englisch 26,7 -> 20,0. Ein kleinerer Abstand bei
+    niedrigerer englischer Absolute ist kein Sprachgewinn, sondern ein schrumpfender Nenner
+    -- dieselbe Klasse wie P104 ("ein Nenner, der still schrumpft, ist kein Messzeug").
+    Geproft wird deshalb jede Seite einzeln (tests/konkurrenz-sprachstufen.test.ts).
+
+Wiederholung gegen den 3.11-Stand: alle vier Blocke (v1, v2, v3, nur Vektor) stimmen in
+jeder Zahl mit den Artefakten sprachuebergriff-nomic-1406.log.txt und
+sprachuebergriff-bge-m3-1406.log.txt -- Fall 7 der neuen Guard-Datei rechnet das nach.

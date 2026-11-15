@@ -1,0 +1,34 @@
+P181 Sprachübergang am ausgelieferten 3.2.193, Lauf zwei, gefahren 09.11.2026 20:53:56 CET:
+
+Sprachuebergriff — 58 Notizen, 15 Anfrage-Paare, Zeitanker 2026-09-01T12:00:00.000Z
+Kategorien: lexikalisch 6, umschreibung 6, temporal 3
+Ziele geerbt aus scripts/eval-corpus.ts — nur die Sprache der Frage ist verschoben.
+Richtung: englische Anfrage gegen deutsche Notizen. Die Gegenrichtung ist nicht gemessen.
+
+  v1 naive Substring-Suche
+     deutsch  Hit@1  33.3 %   R@5 gekappt  53.3 %
+     englisch Hit@1   0.0 %   R@5 gekappt   6.7 %
+     Sprachpreis Hit@1: -33.3 Pp auf 15 Paaren
+     englisch verliert: Which database do we use? | VAT return deadline | Cancel the car insurance | Deposit and the landlord | Vaccination booster
+
+  v2 Engine ohne Vektoren (BM25 + Entitaeten + temporal)
+     deutsch  Hit@1  60.0 %   R@5 gekappt  66.7 %
+     englisch Hit@1  13.3 %   R@5 gekappt  20.0 %
+     Sprachpreis Hit@1: -46.7 Pp auf 15 Paaren
+     englisch verliert: Cancel the car insurance | Deposit and the landlord | Vaccination booster | What can I cook with pasta? | What should I do for my back? | How can I be reached? | Which running shoes do I have?
+
+  v3 Engine mit Vektoren — ausgeliefertes Retrieval
+     deutsch  Hit@1  60.0 %   R@5 gekappt  80.0 %
+     englisch Hit@1  26.7 %   R@5 gekappt  33.3 %
+     Sprachpreis Hit@1: -33.3 Pp auf 15 Paaren
+     englisch verliert: Cancel the car insurance | Deposit and the landlord | Vaccination booster | What should I do for my back? | How can I be reached? | Which running shoes do I have?
+     englisch findet mehr: By when must the VAT return be filed?
+
+  nur das Vektor-Bein (ohne BM25, ohne Graph)
+     deutsch  Hit@1  73.3 %   R@5 gekappt  73.3 %
+     englisch Hit@1  26.7 %   R@5 gekappt  33.3 %
+     Sprachpreis Hit@1: -46.7 Pp auf 15 Paaren
+     englisch verliert: Which database do we use? | Cancel the car insurance | Deposit and the landlord | Vaccination booster | Who can help in a medical emergency? | How can I be reached? | Which running shoes do I have?
+
+  Embedder dieses Laufs: nomic-embed-text · http://127.0.0.1:11434
+EXIT=0

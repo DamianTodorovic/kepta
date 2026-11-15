@@ -1,136 +1,132 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import http from "node:http";
+// @vitest-environment node
+// Schritt 3 — die Maske in die App-Route.
+//
+// Der Kern maskiert GET /api/settings seit F3 (A3-09). Die App-Route gab den
+// rohen Bestand heraus — auch `ai_settings` und die gespiegelte Reihe
+// `ki_gehirn_ai_settings`, in beiden steht der KI-Schluessel im Klartext, wenn
+// eine aeltere Version sie geschrieben hat. Diese Datei haelt beide Seiten: die
+// Klappe ist zu, und der Rueckweg der App (`ai_connection`) bleibt offen.
+//
+// Eigener Horcher auf 127.0.0.1:8813, verschluesselte Datenbank, kein
+// KEPTA_ENCRYPTION=off.
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import crypto from "node:crypto";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { KeptaStore } from "../src/core/store";
-import { schluesselbundKeyProvider } from "../src/core/schluessel";
-import { portErzwingen, portFuerHorer } from "./helfer/port-vergabe";
+import { defaultExtensions } from "../src/core/extensions";
+import { createApp } from "../server/app";
+import { lauscht, niederlegen } from "./helfer/lauscher";
 
-// Der Rueckweg der Desktop-App ist ein lesbarer Name. Seit F13 legt die App ihre
-// KI-Verbindung unter `ai_connection` ab (kepta-app/src/lib/ai.ts) und den
-// Schluessel darin nur als Umschlag — `ai_settings` dagegen steht auf der Liste
-// der Maskierten und ist von dort nicht mehr zu holen. Was dieser Waechter
-// festhaelt, ist beides: der Name bleibt lesbar, und die Maske bleibt zu.
-process.env.KEPTA_NO_AUTOSTART = "1";
-
-// Kein geschriebener Port mehr, sondern die Zuteilung der Suite: dieselbe Datei,
-// dieselbe Zahl, in jedem Lauf — und ohne Kollision mit einer andern horchenden
-// Datei (`tests/helfer/port-vergabe.ts`: HORCHENDE_KENNUNGEN, portFuerHorer).
-const PORT = portFuerHorer("tests/server-einstellungs-maske.test.ts");
+const PORT = 8813;
 let URLE = `http://127.0.0.1:${PORT}`;
 
-// So sieht der Umschlag der App aus: Kennung, IV, Chiffretext, Tag — Base64.
-const UMSCHLAG = "v1." + crypto.randomBytes(48).toString("base64");
-
-let dir = "";
-let vorher: Record<string, string | undefined>;
+let wurzel = "";
+let vorherHeim: string | undefined;
+let vorherDaten: string | undefined;
 let store: KeptaStore;
-let hoerer: http.Server;
+let hoerer: import("node:http").Server;
 
-async function anfrage(pfad: string, init?: RequestInit): Promise<{ status: number; leib: Record<string, unknown>; text: string }> {
-  const r = await fetch(`${URLE}${pfad}`, init);
-  const text = await r.text();
-  return { status: r.status, leib: JSON.parse(text) as Record<string, unknown>, text };
-}
-
-const setze = (aenderungen: Record<string, string | null>) =>
-  anfrage("/api/settings", {
+async function setze(aenderungen: Record<string, string | null>) {
+  const r = await fetch(`${URLE}/api/settings`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(aenderungen),
   });
+  expect(r.ok).toBe(true);
+  return r.json() as Promise<{ ok: boolean; keys: number }>;
+}
 
+/** Die rohe Anfrage — kein Origin, kein Kopf, kein App-Code. */
+async function lese(): Promise<{ status: number; bestand: Record<string, unknown>; text: string }> {
+  const r = await fetch(`${URLE}/api/settings`);
+  const text = await r.text();
+  return { status: r.status, bestand: JSON.parse(text) as Record<string, unknown>, text };
+}
+
+// Ein Horcher pro Datei, nicht einer pro Anfrage: der Node-Agent haelt
+// Verbindungen warm, und ein geschlossener Port mit warmem Socket loest
+// ECONNRESET aus — derselbe Fall, den tests/helfer/hoerer.ts erzaehlt.
 beforeAll(async () => {
-  dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-maske-"));
-  vorher = {
-    HOME: process.env.HOME,
-    KEPTA_DATA_DIR: process.env.KEPTA_DATA_DIR,
-    KEPTA_DB_KEY: process.env.KEPTA_DB_KEY,
-  };
-  process.env.HOME = dir;
-  process.env.KEPTA_DATA_DIR = dir;
-  // Verschluesselung laeuft mit — ein Umschlag, der nur in einer Klartextdatei
-  // liegt, ist nichts wert. Der Schluessel kommt aus der Umgebung, der
-  // Schluesselbund dieses Rechners wird nie beruehrt.
-  process.env.KEPTA_DB_KEY = crypto.randomBytes(32).toString("hex");
-
-  const erweitern = (await import("../src/core/extensions")).defaultExtensions();
-  store = new KeptaStore(path.join(dir, "test.db"), {
-    ...erweitern,
-    keys: schluesselbundKeyProvider(dir),
+  wurzel = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-appmaske-"));
+  // Kapsel: createApp zieht ohne KEPTA_DATA_DIR ~/.kepta des Anmeldekontos an
+  // (server/app.ts:120), und os.homedir() folgt HOME. Haelt tests/testkapsel.test.ts.
+  vorherHeim = process.env.HOME;
+  vorherDaten = process.env.KEPTA_DATA_DIR;
+  process.env.HOME = wurzel;
+  process.env.KEPTA_DATA_DIR = wurzel;
+  const datenSchluessel = new Uint8Array(crypto.randomBytes(32));
+  store = new KeptaStore(path.join(wurzel, "kepta.db"), {
+    ...defaultExtensions(),
+    keys: { ablage: "KEPTA_DB_KEY (Messlauf)", keyFor: () => datenSchluessel },
   });
-  expect(store.verschluesselung.aktiv).toBe(true);
-
-  const { createApp } = await import("../server");
-  // Ein Horcher pro Datei: der Node-Agent haelt Verbindungen warm, und ein
-  // geschlossener Port mit warmem Socket loest ECONNRESET aus.
-  hoerer = http.createServer(createApp(store));
-  // Der Zahl-Vertrag dieser Suite: diese Datei horcht auf IHREM Port, nicht auf
-  // dem erstbesten freien. Zwei Laeufe desselben Baums auf derselben Datei
-  // scheitern hoerbar — ein stiller Ausweichport (wie hier frueher `listen(0)`)
-  // macht einen Fehlerbericht zu einer Frage des Zeitpunkts, und eine Zahl, die
-  // von einem Lauf zum naechsten wandert, ist in diesem Haus keine Zahl.
-  try {
-    await portErzwingen(PORT, "tests/server-einstellungs-maske.test.ts");
-  } catch (e) {
-    throw new Error(`${(e as Error).message} — ein zweiter Lauf desselben Baums laeuft; nicht zwei Suiten auf einem Baum.`);
-  }
-  await new Promise<void>((los, fehler) => {
-    hoerer.once("error", fehler);
-    hoerer.listen(PORT, "127.0.0.1", () => los());
-  });
-  URLE = `http://127.0.0.1:${PORT}`;
-});
-
-beforeEach(async () => {
-  await store.setzeEinstellungen({ ai_settings: null, ai_connection: null, anthropicApiKey: null });
+  // bestellter Port zuerst, Ausweichport mit Ansage (tests/helfer/lauscher.ts)
+  const horcher = await lauscht(createApp(store), PORT);
+  hoerer = horcher.server;
+  URLE = horcher.urle;
 });
 
 afterAll(async () => {
-  await new Promise<void>((los) => hoerer?.close(() => los()));
+  if (hoerer) await niederlegen(hoerer);
   store?.close();
-  for (const [name, wert] of Object.entries(vorher)) {
-    if (wert === undefined) delete process.env[name];
-    else process.env[name] = wert;
-  }
-  fs.rmSync(dir, { recursive: true, force: true });
+  if (vorherHeim === undefined) delete process.env.HOME;
+  else process.env.HOME = vorherHeim;
+  if (vorherDaten === undefined) delete process.env.KEPTA_DATA_DIR;
+  else process.env.KEPTA_DATA_DIR = vorherDaten;
+  fs.rmSync(wurzel, { recursive: true, force: true });
 });
 
-describe("Waechter: die Einstellungs-Maske laesst den Rueckweg der App offen", () => {
-  it("ein Umschlag unter ai_connection kommt unversehrt heraus — sonst ist das KI-Feld der App nach jedem Neustart leer", async () => {
-    expect((await setze({ ai_connection: UMSCHLAG })).status).toBe(200);
-    const res = await anfrage("/api/settings");
-    expect(res.leib.ai_connection, "ai_connection ist der Rueckweg, ueber den die Desktop-App ihren KI-Schluessel nach einem Neustart wieder aufmacht; hinter der Maske waere das Feld still leer").toBe(UMSCHLAG);
-    expect(res.text).toContain(UMSCHLAG);
-    expect(store.einstellungen().ai_connection).toBe(UMSCHLAG);
+beforeEach(() => {
+  store.setzeEinstellungen({
+    anthropicApiKey: null,
+    ollamaModel: null,
+    ai_settings: null,
+    ki_gehirn_ai_settings: null,
+    ai_connection: null,
+    ki_gehirn_api_key: null,
+    theme: null,
+  });
+});
+
+describe("Maske in der App-Route", () => {
+  it("secretfoermige Namen kommen nur als Anzeige heraus", async () => {
+    await setze({ anthropicApiKey: "sk-test-1234567890abcd", ollamaModel: "nomic-embed-text" });
+    const { bestand, text } = await lese();
+    expect(text).not.toContain("sk-test-1234567890abcd");
+    expect(bestand.anthropicApiKey).toEqual({ gesetzt: true, ende: "abcd" });
+    expect(bestand.ollamaModel).toBe("nomic-embed-text"); // gewoehnliche Werte bleiben lesbar
+    expect(store.einstellungen().anthropicApiKey).toBe("sk-test-1234567890abcd"); // die DB bleibt der Speicher
   });
 
-  it("der Waechter gilt nicht, wenn die Maske dafuer geoeffnet wird: ai_settings und api_key-Namen bleiben zu", async () => {
+  it("der ai_settings-Blob der App ist dicht, ebenso die gespiegelte Reihe", async () => {
     const blob = JSON.stringify({ providerId: "anthropic", apiKey: "sk-ant-APP-SCHLUESSEL-9f3k2", model: "claude-sonnet-4-5" });
-    await setze({ ai_settings: blob, anthropicApiKey: "sk-test-1234567890abcd" });
-    const res = await anfrage("/api/settings");
-    expect(res.text, "der ai_settings-Blob ist die Klartext-Tuer von A3-09; offen ihm alles andere gleichgueltig").not.toContain("sk-ant-APP-SCHLUESSEL-9f3k2");
-    expect(res.leib.ai_settings, "von einem secretfoermigen Wert darf die Antwort nur das Ende nennen").toEqual({ gesetzt: true, ende: blob.slice(-4) });
-    expect(res.leib.anthropicApiKey).toEqual({ gesetzt: true, ende: "abcd" });
+    await setze({ ai_settings: blob, ki_gehirn_ai_settings: blob });
+    const { bestand, text } = await lese();
+    expect(text, "diese beiden Reihen sind der Klartext, den A3-09 meint").not.toContain("sk-ant-APP-SCHLUESSEL-9f3k2");
+    expect(bestand.ai_settings).toEqual({ gesetzt: true, ende: blob.slice(-4) });
+    expect(bestand.ki_gehirn_ai_settings).toEqual({ gesetzt: true, ende: blob.slice(-4) });
   });
 
-  it("loeschen geht durch die Maske hindurch — die App tilgt ihren alten Klartext-Blob damit", async () => {
-    await setze({ ai_settings: "sk-ant-ALT-9f3k2-abcdef", ai_connection: UMSCHLAG });
-    expect((await setze({ ai_settings: null })).status).toBe(200);
-    const res = await anfrage("/api/settings");
-    expect("ai_settings" in res.leib, "bleibt der geloeschte Name als Anzeige stehen, haelt die App eine Leiche").toBe(false);
-    expect(res.leib.ai_connection).toBe(UMSCHLAG);
-    expect(store.einstellungen().ai_settings).toBeUndefined();
+  it("der Rueckweg der App bleibt lesbar — ai_connection geht als Wert heraus", async () => {
+    const umschlag = "v1." + crypto.randomBytes(48).toString("base64");
+    await setze({ ai_connection: umschlag });
+    const { bestand, text } = await lese();
+    expect(bestand.ai_connection, "ohne diesen Wert findet die App ihre Verbindung nach dem Neustart nicht").toBe(umschlag);
+    expect(text).toContain(umschlag);
   });
 
-  it("zwei Schreibsaetze hintereinander: der letzte steht, der Rueckweg bleibt lesbar", async () => {
-    await setze({ ai_connection: UMSCHLAG });
-    const zweiter = "v1." + crypto.randomBytes(48).toString("base64");
-    await setze({ ai_connection: zweiter });
-    const res = await anfrage("/api/settings");
-    expect(res.leib.ai_connection).toBe(zweiter);
-    expect(res.text).not.toContain(UMSCHLAG);
+  it("loeschen funktioniert weiter", async () => {
+    await setze({ ai_settings: "sk-ant-ALT-9f3k2-abcdef", ai_connection: "v1.test" });
+    await setze({ ai_settings: null });
+    const { bestand } = await lese();
+    expect("ai_settings" in bestand).toBe(false);
+    expect(bestand.ai_connection).toBe("v1.test");
+  });
+
+  it("ein zu kurzer Wert haelt kein Ende, das man zeigen koennte", async () => {
+    await setze({ ki_gehirn_api_key: "kurz" });
+    const { bestand } = await lese();
+    expect(bestand.ki_gehirn_api_key).toEqual({ gesetzt: true, ende: null });
   });
 });

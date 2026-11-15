@@ -1,44 +1,38 @@
 // K3PTA Eval — Recall@5 (gekappt) + Hit@1 + MRR der Retrieval-Engine gegen das Fixkorpus.
-// Gekappt deshalb, weil der Nenner min(5, relevante Notizen) ist (Zeile 52): gemessen
-// wird, wie viel der gesuchten Notizen in den ersten fuenfen angekommen ist — das ist ein
-// Recall, keine Precision. Darum heisst die Ausgabe auch nicht "Precision@5":
-// scripts/ablation.ts teilt durch 5 und meldet auf demselben Korpus P@5 21 %, wo dieser
-// Lauf 81 % meldet. Zwei Metriken, zwei Namen, kein Vergleich zwischen ihnen.
-// Vergleich: v1-naive Suche (Substring-Scoring) vs. v2-Engine (BM25+RRF+Temporal).
-// Läuft deterministisch offline (keine Vektoren), via `npm run eval`.
-import { tmpdir } from "node:os";
+//
+// Gekappt deshalb, weil der Nenner min(5, relevante Notizen) ist: gemessen wird, wie viel
+// der gesuchten Notizen in den ersten fuenfen angekommen ist — das ist ein Recall, keine
+// Precision. Der Name war hier Precision@5, und die Zahl desselben Korpus in
+// scripts/ablation.ts heisst P@5 und teilt durch 5: auf demselben Bestand meldet dieser
+// Lauf 81 %, jene 23 %. Zwei Metriken, zwei Namen — seit 13.10. sagt die Ausgabe auch, was
+// sie meint (Leitung, nach Blick in die Rechenstelle).
+//
+// Vergleich in drei Beinen: v1-naive Suche (Substring-Scoring) vs. v2-Engine ohne Vektoren
+// vs. v3-Engine mit Vektoren. Das dritte Bein ist das ausgelieferte: die Engine setzt
+// vector=true per Default (src/core/engine.ts:395) und ignoriert fehlende Embeddings
+// lautlos. Ein Korpus ohne Embeddings mass also nie das System, das der Nutzer faehrt —
+// genau deshalb steht v3 hier, und wenn Ollama nicht antwortet, sagt die Ausgabe welchen
+// Grund sie hat, statt still zwei Beine zu zeigen.
+//
+// Der Korpusbau ist gemeinsam mit der Ablation in scripts/eval-store.ts: zwei Werkzeuge,
+// ein Aufbau. Vorher baute jedes seinen eigenen — eval ohne Entitaeten, ablation mit — und
+// ihre Zahlen waren, obwohl sie dasselbe Wort benutzen, nicht vergleichbar.
+//
+// Laeuft via `npm run eval`; v1 und v2 brauchen kein Ollama, v3 schon.
 import path from "node:path";
 import fs from "node:fs";
-import { KeptaStore } from "../src/core/store";
-import { searchMemories as engineSearch, indexMemory } from "../src/core/engine";
-import { CORPUS, QUERIES, EVAL_NOW, type EvalMemory } from "./eval-corpus";
+import type { KeptaStore } from "../src/core/store";
+import { searchMemories as engineSearch } from "../src/core/engine";
+import { embedQuery, ollamaBaseUrl, DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
+import { korpusAufbauen, v1Suche } from "./eval-store";
+import { CORPUS, QUERIES, EVAL_NOW, type EvalQuery } from "./eval-corpus";
 
 interface Row {
   query: string;
+  kategorie: EvalQuery["kategorie"];
   hit1: boolean;
   p5: number;
   mrr: number;
-}
-
-/** v1-Suche: naives Substring-Scoring (Titel +10, Haystack +5, Teilwörter +1, Tag +3) */
-function naiveSearch(store: KeptaStore, query: string, limit = 5): string[] {
-  const q = query.trim().toLowerCase();
-  const all = store.listMemories({ limit: 1000 });
-  if (!q) return all.slice(0, limit).map((m) => m.id);
-  return all
-    .map((m) => {
-      const hay = `${m.title} ${m.content} ${m.tags.join(" ")}`.toLowerCase();
-      let score = 0;
-      if (m.title.toLowerCase().includes(q)) score += 10;
-      if (hay.includes(q)) score += 5;
-      for (const w of q.split(/\s+/).filter(Boolean)) if (hay.includes(w)) score += 1;
-      for (const t of m.tags) if (t.toLowerCase().includes(q)) score += 3;
-      return { id: m.id, score };
-    })
-    .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map((x) => x.id);
 }
 
 async function evaluate(searchFn: (store: KeptaStore, query: string) => Promise<string[]> | string[], store: KeptaStore): Promise<Row[]> {
@@ -57,7 +51,7 @@ async function evaluate(searchFn: (store: KeptaStore, query: string) => Promise<
         break;
       }
     }
-    rows.push({ query: q.query, hit1, p5, mrr });
+    rows.push({ query: q.query, kategorie: q.kategorie, hit1, p5, mrr });
   }
   return rows;
 }
@@ -68,55 +62,82 @@ function summarize(rows: Row[], label: string): { p5: number; hit1: number; mrr:
   const mrr = rows.reduce((s, r) => s + r.mrr, 0) / rows.length;
   console.log(`\n${label}`);
   console.log(`  Recall@5 (capped): ${(p5 * 100).toFixed(1)} %`);
-  console.log(`  Hit@1:             ${(hit1 * 100).toFixed(1)} %`);
-  console.log(`  MRR:               ${mrr.toFixed(3)}`);
+  console.log(`  Hit@1:       ${(hit1 * 100).toFixed(1)} %`);
+  console.log(`  MRR:         ${mrr.toFixed(3)}`);
+  kategorieSpalte(rows);
   return { p5, hit1, mrr };
 }
 
-async function main() {
-  const dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-eval-"));
-  const store = new KeptaStore(path.join(dir, "eval.db"));
-
-  const now = EVAL_NOW;
-  for (const m of CORPUS) {
-    store.createMemory({
-      id: m.id,
-      title: m.title,
-      content: m.content,
-      tags: m.tags,
-      validTo: m.validTo ?? null,
-      createdAt: m.updatedAt ?? now - 60 * 24 * 3600 * 1000,
-      updatedAt: m.updatedAt ?? now - 60 * 24 * 3600 * 1000,
-    });
+/**
+ * Mittelwerte verstecken genau das Interessante: eine Engine, die lexikalische Anfragen
+ * zu 100 % und Umschreibungen zu 40 % trifft, meldet einen achtbaren Gesamt-Hit@1.
+ * Also pro Kategorie hinter die Zahl — die Kategorien sind in scripts/eval-corpus.ts
+ * dieselben, die scripts/ablation.ts bereits je Konfiguration ausweist.
+ */
+function kategorieSpalte(rows: Row[]): void {
+  const kategorien = [...new Set(rows.map((r) => r.kategorie))].sort();
+  console.log("     nach Anfrageart          n   Hit@1   R@5    MRR");
+  for (const k of kategorien) {
+    const teil = rows.filter((r) => r.kategorie === k);
+    const h1 = teil.filter((r) => r.hit1).length / teil.length;
+    const r5 = teil.reduce((s, r) => s + r.p5, 0) / teil.length;
+    const mr = teil.reduce((s, r) => s + r.mrr, 0) / teil.length;
+    console.log(
+      `  ${k.padEnd(24)} ${String(teil.length).padStart(2)}   ${(h1 * 100).toFixed(0).padStart(3)} %  ${(r5 * 100).toFixed(0).padStart(3)} %  ${mr.toFixed(2).padStart(5)}`
+    );
   }
-  // Temporale Kette: m03 (Hamburg) wird durch m04 (Leipzig) ersetzt
-  store.supersedeMemory("m03", "m04");
-  // Duplikat-Paar m16/m17 bleibt — Engine-Konsolidierung würde es finden
+}
 
-  // --- v1-Baseline ---
-  const naiveRows = await evaluate((s, q) => naiveSearch(s, q), store);
+function raeumen(store: KeptaStore): void {
+  store.close();
+  fs.rmSync(path.dirname(store.dbPath), { recursive: true, force: true });
+}
+
+async function main() {
+  console.log(`\nKorpus: ${CORPUS.length} Notizen, ${QUERIES.length} Anfragen, Zeitanker ${new Date(EVAL_NOW).toISOString()}`);
+  console.log("Aufbau: scripts/eval-store.ts — derselbe wie scripts/ablation.ts.");
+
+  // --- Bein 1 und 2: ohne Vektoren, damit der Lauf ohne Ollama durchgeht ---
+  const ohne = await korpusAufbauen({ vektoren: false });
+  const naiveRows = await evaluate(v1Suche, ohne);
   const naive = summarize(naiveRows, "── v1-Baseline (naive Substring-Suche) ──");
-
-  // --- v2-Engine (rein lexikalisch, kein Ollama nötig) ---
   const engineRows = await evaluate(async (s, q) => {
     const res = await engineSearch(s, { query: q, limit: 10 });
     return res.hits.map((h) => h.memory.id);
-  }, store);
-  const engine = summarize(engineRows, "── v2-Engine (BM25 + RRF + Temporal, ohne Vektoren) ──");
+  }, ohne);
+  const engine = summarize(engineRows, "── v2-Engine (BM25 + RRF + Temporal + Entitaeten, ohne Vektoren) ──");
+  raeumen(ohne);
 
-  console.log("\n── Verbesserung ──");
+  console.log("\n── Verbesserung v1 -> v2 ──");
   console.log(`  Recall@5 (capped): +${(((engine.p5 - naive.p5) / Math.max(naive.p5, 1e-9)) * 100).toFixed(0)} % relativ`);
-  console.log(`  Hit@1:             +${(((engine.hit1 - naive.hit1) / Math.max(naive.hit1, 1e-9)) * 100).toFixed(0)} % relativ`);
+  console.log(`  Hit@1:       +${(((engine.hit1 - naive.hit1) / Math.max(naive.hit1, 1e-9)) * 100).toFixed(0)} % relativ`);
 
-  // Detail-Tabelle der Engine
-  console.log("\nDetails (Engine):");
-  for (const r of engineRows) {
-    const mark = r.hit1 ? "✓" : r.p5 > 0 ? "~" : "✗";
-    console.log(`  ${mark} ${r.query.padEnd(40)} R@5 ${(r.p5 * 100).toFixed(0).padStart(3)} %  MRR ${r.mrr.toFixed(2)}`);
+  // --- Bein 3: das ausgelieferte System, nur wenn der Embedder wirklich antwortet ---
+  const sonde = await embedQuery("sonde");
+  if (!sonde) {
+    console.log("\n── v3-Engine (mit Vektoren) ── UEBERSPRUNGEN");
+    console.log(`  Der Embedder antwortet nicht: ${ollamaBaseUrl()} · Modell ${DEFAULT_EMBED_MODEL}.`);
+    console.log("  Ollama starten und das Modell laden, dann neu laufen lassen. Die zwei Beine oben");
+    console.log("  sind ohne Vektoren gemessen — sie sind NICHT das ausgelieferte Retrieval.");
+  } else {
+    const mit = await korpusAufbauen({ vektoren: true });
+    const v3Rows = await evaluate(async (s, q) => {
+      const res = await engineSearch(s, { query: q, limit: 10 });
+      return res.hits.map((h) => h.memory.id);
+    }, mit);
+    const mitVektoren = summarize(v3Rows, "── v3-Engine (BM25 + Vektor + Entitaeten — ausgeliefertes Retrieval) ──");
+    raeumen(mit);
+    console.log("\n── Beitrag der Vektoren (v2 -> v3) ──");
+    console.log(`  Recall@5 (capped): ${mitVektoren.p5 >= engine.p5 ? "+" : ""}${(((mitVektoren.p5 - engine.p5) / Math.max(engine.p5, 1e-9)) * 100).toFixed(0)} % relativ`);
+    console.log(`  Hit@1:       ${mitVektoren.hit1 >= engine.hit1 ? "+" : ""}${(((mitVektoren.hit1 - engine.hit1) / Math.max(engine.hit1, 1e-9)) * 100).toFixed(0)} % relativ`);
   }
 
-  store.close();
-  fs.rmSync(dir, { recursive: true, force: true });
+  // Detail-Tabelle der Engine
+  console.log("\nDetails (v2-Engine):");
+  for (const r of engineRows) {
+    const mark = r.hit1 ? "✓" : r.p5 > 0 ? "~" : "✗";
+    console.log(`  ${mark} ${r.query.padEnd(40)} ${r.kategorie.padEnd(14)} R@5 gekappt ${(r.p5 * 100).toFixed(0).padStart(3)} %  MRR ${r.mrr.toFixed(2)}`);
+  }
 }
 
 void main();

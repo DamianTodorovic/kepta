@@ -1,0 +1,17 @@
+platten-wache: frei — stufe leicht, Schwelle 2 Gi, geprüft: /Users/damiantodorovic/kepta-app 13.38 Gi, /var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T 13.38 Gi
+Maschine: Median 6.29 ms, max/median 1.15, 4 node-Prozesse, load1/cpu 0.31 auf 10 Kernen
+bestand: 3000 Notizen (Rohtext-Erwaehnungen 18950)
+die Flaeche meldet beim ersten Griff: 3,000 notes · 0 concepts · 0 links
+die Flaeche meldet gleichbleibend: 3,000 notes · 0 concepts · 0 links
+  Fit-Knopf gefunden und gedrueckt: true
+  Feld steht: ja, nach 1.8 s (Scheiben in der letzten Lesung: 693)
+einschwingen   rame   332 (malende   321)   Arbeit/Bild  median 3.7 ms  p95 11 ms  max 15.8 ms   ueber 16,67 ms: 0/321   Rame-Abstand median 16.7 ms
+ruheNachFit    rame    71 (malende     9)   Arbeit/Bild  median 0.1 ms  p95 0.1 ms  max 20.1 ms   ueber 16,67 ms: 1/9   Rame-Abstand median 16.7 ms
+knotenZiehen   rame    98 (malende    98)   Arbeit/Bild  median 8.3 ms  p95 9.4 ms  max 18.3 ms   ueber 16,67 ms: 1/98   Rame-Abstand median 31.3 ms
+ueberlappung   693 Scheiben, geschnitten: 1 Paare, beruehrend: 1, tiefster Schnitt 5 Welt-Einheiten
+    Paar bei (2046,150) und (2086,126) — Abstand 47, Radien 26 + 26, Schnitt 5
+bestand        3000 notes · 0 concepts · 0 links   (die Flaeche sagt das selbst)
+maschine         vorher: Maschine: Median 6.29 ms, max/median 1.15, 4 node-Prozesse, load1/cpu 0.31 auf 10 Kernen
+                 nachher: Maschine: Median 6.92 ms, max/median 2.97, 4 node-Prozesse, load1/cpu 0.27 auf 10 Kernen  — NICHT RUHIG, Zahl nicht veröffentlichen
+befehl         node scripts/fps-laeufer.mjs --knoten 3000 --sekunden 6
+aufgeraeumt: /tmp/kepta-fps/profil, /tmp/kepta-fps/d (Bundle bleibt; --behalten laesst alles liegen)

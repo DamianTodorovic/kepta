@@ -1,0 +1,61 @@
+=== chroma, vier Laeufe, Hit@1 und Recall@5 aus der Spur gerechnet ===
+spur-chroma-nomic-eins.jsonl: Hit@1 19/45 = 42.2 %, in den ersten 5 26/45 = 57.8 % | chroma 1.5.9, Raum cosine, dim 768, k=5, 58 Vektoren im Feld, sync_threshold 1000
+spur-chroma-nomic-zwei.jsonl: Hit@1 19/45 = 42.2 %, in den ersten 5 26/45 = 57.8 % | chroma 1.5.9, Raum cosine, dim 768, k=5, 58 Vektoren im Feld, sync_threshold 1000
+spur-chroma-bge-m3-eins.jsonl: Hit@1 31/45 = 68.9 %, in den ersten 5 40/45 = 88.9 % | chroma 1.5.9, Raum cosine, dim 1024, k=5, 58 Vektoren im Feld, sync_threshold 1000
+spur-chroma-bge-m3-zwei.jsonl: Hit@1 31/45 = 68.9 %, in den ersten 5 40/45 = 88.9 % | chroma 1.5.9, Raum cosine, dim 1024, k=5, 58 Vektoren im Feld, sync_threshold 1000
+
+=== die zwei sqlite-vec-Lauefe je Stufe (P110/P111), dieselbe Rechenstelle ===
+sqlite-vec nomic: spur-sqlitevec-0611.jsonl -> Hit@1 19/45 = 42.2 %
+sqlite-vec nomic: spur-sqlitevec-0611-zwei.jsonl -> Hit@1 19/45 = 42.2 %
+sqlite-vec bge-m3: spur-sqlitevec-bge-m3.jsonl -> Hit@1 30/45 = 66.7 %
+sqlite-vec bge-m3: spur-sqlitevec-bge-m3-zwei.jsonl -> Hit@1 30/45 = 66.7 %
+
+=== unsre ausgelieferte Rangfolge an beiden Stufen, neu geschrieben mit vollem erwartet-Feld (0611e), und gegen P112s erste Stelle verglichen ===
+K3PTA Fusion nomic: Hit@1 34/45 = 75.6 %, Recall@5 (gekappt) 91.1 % -- R@5 aus dem r5-Feld, nicht aus der Liste (unsre Liste fuehrt nur die Treffer)
+   erste Stelle gegen P112 (17:09 MEZ, zwei Stunden frueher): 45 von 45 gleich
+K3PTA Fusion bge-m3: Hit@1 35/45 = 77.8 %, Recall@5 (gekappt) 90.0 % -- R@5 aus dem r5-Feld, nicht aus der Liste (unsre Liste fuehrt nur die Treffer)
+   erste Stelle gegen P112 (17:09 MEZ, zwei Stunden frueher): 45 von 45 gleich
+
+=== das Feld, das in P112 zu wenig sagt: erwartet war dort der erste Ausweis allein ===
+nomic: gegen das Korpus 34/45 (Ledger 75.6 %), gegen das Feld allein 30/45 -- Differenz 4 Anfragen, und das Korpus hat 6 Anfragen mit mehr als einem gueltigen Ausweis
+bge-m3: gegen das Korpus 35/45 (Ledger 77.8 %), gegen das Feld allein 31/45 -- Differenz 4 Anfragen, und das Korpus hat 6 Anfragen mit mehr als einem gueltigen Ausweis
+
+=== Reproduzierbarkeit: zwei Laeufe je Stufe, Liste gegen Liste ===
+chroma nomic: Listen verschieden 0/45, Erst-Treffer verschieden 0/45, Treffer gekippt 0/45 -> Hit@1 gleich: True
+chroma bge-m3: Listen verschieden 1/45, Erst-Treffer verschieden 0/45, Treffer gekippt 0/45 -> Hit@1 gleich: True
+
+=== chroma gegen sqlite-vec, Stufe fuer Stufe: gleiches Verfahren, andres Werkzeug ===
+nomic: chroma Hit@1 19/45 = 42.2 %, sqlite-vec 19/45 = 42.2 % | Listen verschieden 5, Erst-Treffer verschieden 0, Treffer gekippt 0
+   nur Reihenfolge: 'Serverzugang und Passwort' | chroma ['m57', 'm16', 'm17', 'm58', 'm40'] | sqlite-vec ['m57', 'm17', 'm16', 'm58', 'm40']
+   nur Reihenfolge: 'Warum Rust statt Go?' | chroma ['m21', 'm29', 'm05', 'm16', 'm17'] | sqlite-vec ['m21', 'm29', 'm05', 'm17', 'm16']
+   nur Reihenfolge: 'Passwörter sicher verwalten' | chroma ['m57', 'm58', 'm16', 'm17', 'm09'] | sqlite-vec ['m57', 'm58', 'm17', 'm16', 'm09']
+   nur Reihenfolge: 'Hetzner' | chroma ['m36', 'm37', 'm16', 'm17', 'm22'] | sqlite-vec ['m36', 'm37', 'm17', 'm16', 'm22']
+   nur Reihenfolge: 'Welcher Server ist gemeint?' | chroma ['m40', 'm16', 'm17', 'm11', 'm57'] | sqlite-vec ['m40', 'm17', 'm16', 'm11', 'm57']
+bge-m3: chroma Hit@1 31/45 = 68.9 %, sqlite-vec 30/45 = 66.7 % | Listen verschieden 4, Erst-Treffer verschieden 1, Treffer gekippt 1
+   gekippt: 'Hetzner' (graph) | chroma top m16, sqlite-vec top m17 | erwartet ['m01', 'm16', 'm36', 'm37']
+   nur Reihenfolge: 'Serverzugang und Passwort' | chroma ['m58', 'm57', 'm09', 'm16', 'm17'] | sqlite-vec ['m58', 'm57', 'm09', 'm17', 'm16']
+   nur Reihenfolge: 'Passwörter sicher verwalten' | chroma ['m58', 'm57', 'm09', 'm02', 'm16'] | sqlite-vec ['m58', 'm57', 'm09', 'm02', 'm17']
+   nur Reihenfolge: 'Welches Passwort gilt in der Produktion?' | chroma ['m58', 'm16', 'm17', 'm57', 'm09'] | sqlite-vec ['m58', 'm17', 'm16', 'm57', 'm09']
+
+=== Stufenwechsel innerhalb chroma (nomic -> bge-m3), dieselbe Einheit wie P112 ===
+Hit@1 19 -> 31 (42.2 % -> 68.9 %)
+Erst-Treffer wechselt die Richtigkeit: 14 von 45 = 31.1 %
+anderer erster Treffer ueberhaupt: 25 von 45 = 55.6 %
+ganze Liste unveraendert: 0 von 45 = 0.0 %
+zum Vergleich, sqlite-vec (P112): Richtigkeit wechselte 15 von 45 = 33,3 %, anderer Erst-Treffer 25 von 45 = 55,6 %, ganze Liste unveraendert 0 von 45
+
+=== Abstand unsre Fusion gegen chroma, an beiden Stufen (von 45) ===
+nomic: Fusion 34/45 = 75.6 % | chroma 19/45 = 42.2 % -> Abstand 15 Anfragen = 33.4 Pp | sqlite-vec 19/45 -> Abstand 15 = 33.4 Pp
+bge-m3: Fusion 35/45 = 77.8 % | chroma 31/45 = 68.9 % -> Abstand 4 Anfragen = 8.9 Pp | sqlite-vec 30/45 -> Abstand 5 = 11.1 Pp
+
+=== Kategorien, chroma beide Stufen ===
+nomic    ablenkung      1 von 4
+nomic    graph          3 von 3
+nomic    lexikalisch    15 von 25
+nomic    temporal       0 von 3
+nomic    umschreibung   0 von 10
+bge-m3   ablenkung      1 von 4
+bge-m3   graph          3 von 3
+bge-m3   lexikalisch    20 von 25
+bge-m3   temporal       1 von 3
+bge-m3   umschreibung   6 von 10

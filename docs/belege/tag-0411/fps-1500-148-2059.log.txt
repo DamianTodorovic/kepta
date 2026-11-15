@@ -1,0 +1,47 @@
+platten-wache: frei — stufe leicht, Schwelle 2 Gi, geprüft: /Users/damiantodorovic/kepta-app 12.59 Gi, /var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T 12.59 Gi
+Maschine: Median 6.27 ms, max/median 1.35, 4 node-Prozesse, load1/cpu 0.22 auf 10 Kernen
+baue eigenen Bundle nach /tmp/kepta-fps/bundle — dist/ bleibt unberuehrt (Baum-Fassung 3.2.148)
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:11:27). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Both esbuild and oxc options were set. oxc options will be used and esbuild options will be ignored. The following esbuild options were set: `{ target: 'es2020' }`
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 971 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../tmp/kepta-fps/bundle/index.html                               1.36 kB │ gzip:   0.59 kB
+../../../tmp/kepta-fps/bundle/assets/pdf.worker.min-Dswkl-cV.mjs   1,265.41 kB
+../../../tmp/kepta-fps/bundle/assets/index-C-lJcWPU.css               89.41 kB │ gzip:  19.35 kB
+../../../tmp/kepta-fps/bundle/assets/rolldown-runtime-CXHxssQy.js      0.71 kB │ gzip:   0.42 kB
+../../../tmp/kepta-fps/bundle/assets/graph-Dxnk-Brs.js               226.92 kB │ gzip:  79.37 kB
+../../../tmp/kepta-fps/bundle/assets/vendor-B1us4QJR.js              432.81 kB │ gzip: 138.39 kB
+../../../tmp/kepta-fps/bundle/assets/index-C9LtC_mU.js               835.70 kB │ gzip: 243.98 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 800 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 276ms
+
+  ../../../tmp/kepta-fps/bundle/server.cjs  427.3kb
+
+⚡ Done in 7ms
+  Bundle gebaut in 0.7 s
+fassung: 3.2.148 (der Baum, aus dem gebaut wurde: 3.2.148)
+bestand: 1500 Notizen (Rohtext-Erwaehnungen 9590)
+die Flaeche meldet beim ersten Griff: 1,500 notes · 12 concepts of 1,527 in all · 2,410 links
+die Flaeche meldet gleichbleibend: 1,500 notes · 12 concepts of 1,527 in all · 2,410 links
+der Kopf der Flaeche in voller Laenge: 1,500 notes · 12 concepts of 1,527 in all · 2,410 links — none of these 2,410 lines carries a word you wrote - this is a window, not all of your notes
+  Fit-Knopf gefunden und gedrueckt: true
+  Feld steht: ja, nach 1.8 s (Scheiben in der letzten Lesung: 528)
+einschwingen   rame   315 (malende   314)   Arbeit/Bild  median 5.5 ms  p95 9.8 ms  max 11 ms   ueber 16,67 ms: 0/314   Rame-Abstand median 16.7 ms
+ruheNachFit    rame    42 (malende    42)   Arbeit/Bild  median 6.7 ms  p95 6.9 ms  max 7.6 ms   ueber 16,67 ms: 0/42   Rame-Abstand median 29.1 ms
+knotenZiehen   rame   100 (malende   100)   Arbeit/Bild  median 7.6 ms  p95 8.8 ms  max 18.8 ms   ueber 16,67 ms: 1/100   Rame-Abstand median 32.8 ms
+ueberlappung   528 Scheiben, geschnitten: 0 Paare, beruehrend: 0, tiefster Schnitt 0 Welt-Einheiten
+bestand        1500 notes · 12 concepts · 2410 links   (die Flaeche sagt das selbst)
+maschine         vorher: Maschine: Median 6.27 ms, max/median 1.35, 4 node-Prozesse, load1/cpu 0.22 auf 10 Kernen
+                 nachher: Maschine: Median 7.23 ms, max/median 3.27, 4 node-Prozesse, load1/cpu 0.27 auf 10 Kernen  — NICHT RUHIG, Zahl nicht veröffentlichen
+befehl         node scripts/fps-laeufer.mjs --knoten 1500 --sekunden 6
+aufgeraeumt: /tmp/kepta-fps/profil, /tmp/kepta-fps/d (Bundle bleibt; --behalten laesst alles liegen)

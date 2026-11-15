@@ -1,0 +1,171 @@
+// ---------- Bootstrap (Store, Queue, SPA-Serving, listen) ----------
+// Nur dieser eine Auftrag startet von selbst (server.ts), beim Import in
+// Tests bleibt er still (KEPTA_NO_AUTOSTART).
+import path from "path";
+import fs from "fs";
+import os from "os";
+import express from "express";
+import { KeptaStore } from "../src/core/store";
+import { defaultExtensions } from "../src/core/extensions";
+import { leseUmwelt, gewonneneUmweltNamen } from "../src/core/umwelt";
+import { teamPolicy } from "../src/lib/team";
+import { schluesselbundKeyProvider } from "../src/core/schluessel";
+import { migrateFromLegacyJson } from "../src/core/migrate";
+import { EmbeddingQueue } from "../src/core/embeddings";
+import { aktiviereSuchCacheDelta, waermeSuchCache, vektorSpurSteht, waermeVektorSpur } from "../src/core/engine";
+import { beimLeerstand, ruheAuftrag } from "./helfer/leerstand";
+import { TOOLS as MCP_TOOLS } from "../src/core/mcp";
+import { createApp, sichererFehler } from "./app";
+import { resolveDistDir } from "./helfer/pfad";
+
+export { createApp } from "./app";
+
+export async function startServer() {
+  const PORT = parseInt(process.env.PORT || "3000", 10);
+  // Default nur Loopback — die API hat keine Auth (Memories lesen/löschen, Chat-Proxy
+  // mit API-Keys). Bindung an alle Interfaces nur bewusst via KEPTA_HOST.
+  const HOST = process.env.KEPTA_HOST || "127.0.0.1";
+
+  // Der Schluessel liegt im Schluesselbund des Systems (schluessel.ts).
+  // Beide Namensformen (Aufgabe #64) — derselbe Ordner wie vorher, wenn nur die
+  // alte Form gesetzt ist.
+  const datenOrdner = leseUmwelt("datenordner").wert || path.join(os.homedir(), ".kepta");
+
+  // P191: der letzte Atem — stirbt der Server, hinterlässt er seine Ursache als
+  // Text im Datenordner. Damian fotografiert/schickt die Datei, statt einen
+  // schwarzen Bildschirm zu starren; die Wache hält den Prozess oben, damit die
+  // Fläche weiter antwortet (der Nutzer sieht den Fehler statt nichts).
+  const letzteAtemDatei = path.join(datenOrdner, "letzte-worte.log");
+  process.on("uncaughtException", (fehler) => {
+    try { fs.appendFileSync(letzteAtemDatei, `${new Date().toISOString()} UNBEHANDELT\n${fehler.stack ?? String(fehler)}\n\n`); } catch { /* nichts zu holen */ }
+    console.error("K3PTA-Server: unbehandelter Fehler — weiter geht's, der Grund steht in letzte-worte.log:", fehler);
+  });
+  process.on("unhandledrejection", (grund) => {
+    try { fs.appendFileSync(letzteAtemDatei, `${new Date().toISOString()} ZUSAGE\n${String(grund instanceof Error ? grund.stack : grund)}\n\n`); } catch { /* nichts zu holen */ }
+    console.error("K3PTA-Server: unerledigte Zusage — weiter geht's, der Grund steht in letzte-worte.log:", grund);
+  });
+  // Enterprise (Milestone E1): team:*-Scopes nach Rollen aus der verwalteten
+  // Konfiguration durchsetzen. team:* ist allein durch die Rollen-Datei
+  // geschaltet (eine Lizenz-Edition gibt es in dieser App nicht mehr);
+  // nicht-team-Scopes bleiben exakt wie immer.
+  const store = new KeptaStore(undefined, {
+    ...defaultExtensions(),
+    keys: schluesselbundKeyProvider(datenOrdner),
+    ...teamPolicy(),
+  });
+  const migration = migrateFromLegacyJson(store);
+  if (!migration.skipped) {
+    console.log(`Migration: ${migration.migrated} notes taken over from memories.json (backup: ${migration.backupPath ?? "none"})`);
+  }
+  const embeddingQueue = new EmbeddingQueue(store);
+  embeddingQueue.start();
+  // Kern 3.1.x: der Such-Cache wächst mit jedem Write delta-basiert weiter —
+  // derselbe Aufruf wie im Kern-Server (server.ts: aktiviereSuchCacheDelta).
+  aktiviereSuchCacheDelta(store);
+
+  const app = createApp(store, { embeddingQueue });
+
+  // Vite-Dev-Middleware: der tsx-Dev-Server (`npm run dev`) nutzt sie immer —
+  // das gebündelte dist/server.cjs (`npm start`, Electron) dagegen nur, wenn KEIN
+  // Build vorliegt und nicht in Produktion. Sonst liefert `npm start` ohne gesetztes
+  // NODE_ENV fälschlich den Vite-Dev-Server statt des statischen dist.
+  const runningFromSource = /\.[cm]?tsx?$/.test(process.argv[1] ?? "");
+  const devAllowed = process.env.NODE_ENV !== "production" && !process.env.ELECTRON_RUN_AS_NODE;
+  const distDir = resolveDistDir();
+  const hasBuiltApp = fs.existsSync(path.join(distDir, "index.html"));
+  let spaServed = false;
+  if (devAllowed && (runningFromSource || !hasBuiltApp)) {
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      spaServed = true;
+    } catch {
+      // Vite in dieser Umgebung nicht verfügbar (z.B. gepackte App) → statischer Fallback
+    }
+  }
+  if (!spaServed) {
+    app.use(express.static(distDir));
+    // Express 5: benannte Wildcards — "/{*splat}" matcht auch die Wurzel "/".
+    app.get('/{*splat}', (req, res) => {
+      // API-Routen nicht überschreiben
+      if (req.path.startsWith("/api/") || req.path === "/mcp") return res.status(404).json({ error: "Not found" });
+      res.sendFile(path.join(distDir, 'index.html'));
+    });
+  }
+
+  // Express laeuft die Fehler-Schicht ab der Fehlerstelle abwaerts: static, Vite
+  // und der SPA-Fallback liegen NACH createApp, also braucht die Mittelware hier
+  // ihren zweiten Anker — res.sendFile wirft sehr wohl, und sein ENOENT nannte
+  // bisher den absoluten Pfad zu index.html im Antworttext.
+  app.use(sichererFehler);
+
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`Server running on http://${HOST}:${PORT}${HOST === "127.0.0.1" ? "" : "  (all interfaces — KEPTA_HOST is set explicitly)"}`);
+    const v = store.verschluesselung;
+    console.log(`Encryption: ${v.aktiv ? `on (${v.ablage ?? "key provider"}${v.umgewandelt ? ", converted from plaintext just now" : ""})` : `OFF${v.hinweis ? ` — ${v.hinweis}` : ""}`}`);
+    // Aufgabe #64: die Kennungen sind zweisprachig, und die Startausgabe sagt, welche
+    // Form laeuft. `ablage` oben nennt schon den Sieger des Schluessels; hier steht
+    // zusaetzlich der Streitfall — beide Formen gesetzt, eine gilt, und das wird nicht
+    // verschwiegen. Ohne Streit bleibt die Zeile weg (kein Rauschen im Protokoll).
+    for (const f of gewonneneUmweltNamen().filter((x) => x.meldung)) console.log(`Kennungen: ${f.meldung}`);
+    const ordnerFund = leseUmwelt("datenordner");
+    console.log(`Datenordner: ${datenOrdner}${ordnerFund.gewonnen ? ` (aus ${ordnerFund.gewonnen})` : " (Default ~/.kepta, keine Form gesetzt)"}`);
+    console.log(`Speicher: ${store.dbPath} (SQLite) | Embeddings: ${JSON.stringify(store.embeddingStats())}`);
+    console.log(`API: http://localhost:${PORT}/api/health | /api/search | MCP: POST /mcp (2026-07-28, ${MCP_TOOLS.length} Tools)`);
+    // Adresse hinterlegen, damit fremde Clients die App finden: die gepackte App
+    // läuft auf einem zufälligen Port, ohne diese Datei wäre sie unauffindbar.
+    try {
+      fs.writeFileSync(
+        path.join(datenOrdner, "endpoint.json"),
+        JSON.stringify({ url: `http://127.0.0.1:${PORT}`, port: PORT, pid: process.pid, startedAt: new Date().toISOString() }, null, 2),
+      );
+    } catch { /* nicht schreibbar — Clients nutzen dann KEPTA_URL oder den Standardport */ }
+    if (process.send) process.send('server-ready');
+    // P6-79: der erste Suchlauf darf keinen Volllauf zahlen. Gewaermt wird erst NACH dem
+    // Ready-Melden und nach dem Schreiben von endpoint.json — die Bootzeit der Tuer bleibt
+    // damit, was sie gemessen ist (1 s bis endpoint.json bei 20 000 Notizen, 22:38:48 MESZ),
+    // und die erste Anfrage des Nutzers zahlt nicht mehr 801,60 ms fuer etwas, das im Leerlauf
+    // 382,61 ms kostet. Der Verzug von 250 ms ist Absicht: er haelt die Waermung hinter dem
+    // ersten Anmeldebildschirm, das setTimeout haelt sie hinter dem Antwortpfad.
+    setTimeout(() => {
+      try {
+        waermeSuchCache(store);
+      } catch (e) {
+        // Horubar, aber nicht still: die Waermung ist eine Verbesserung, ihr Fehlen darf
+        // nie wie eine wirken — die erste Anfrage zahlt dann wieder den Volllauf.
+        console.warn(`Such-Vorwaermung ausgeblieben (erste Anfrage zahlt den Volllauf): ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }, 250);
+    // P6-105: die Vektor-Spur beim ersten Leerlauf, nicht an der Boot-Achse und nicht an der
+    // ersten Suche des Menschen. Gemessen an der eignen Kapsel (3.2.57, 20 066 Notizen, 64 164
+    // Abschnitte zu 768 Dimensionen): der Aufbau kostet 1 462,26 ms und 1 493,81 ms bei zwei
+    // echten Kaltstarts und 475 bis 478 MiB Dauer-RSS, waehrend die Tuer selbst in 0,568 s und
+    // 0,654 s lauscht. Vor die Tuer gezogen haette das den Boot auf rund 2,1 s gestellt — also
+    // holt die Tuer ihn sich in ihrer eignen Stille, ueber den Helfer in
+    // server/helfer/leerstand.ts. Der Auftrag gilt immer wieder neu: jeder Schreibfall wirft
+    // die Spur weg, auch der Einbettungs-Nachschub der Queue, und `ruheAuftrag` wartet jeweils,
+    // bis die Generation stillsteht, statt mitten im Schreibstorm neu zu lesen.
+    // Ein fehlgeschlagener Vorlauf beendet den Laeufer und bleibt hoerbar — die erste Suche
+    // zahlt dann, was sie heute zahlt, und die Maschine holt nicht jede Sekunde neu aus.
+    beimLeerstand({
+      bedarf: ruheAuftrag({ stehe: () => vektorSpurSteht(store) }),
+      tun: () => {
+        const zeilen = waermeVektorSpur(store);
+        console.log(`Vektor-Vorwaermung: ${zeilen} Abschnitte in der Stille gebaut — die erste semantische Suche zahlt den Aufbau nicht`);
+      },
+      fehler: (grund) => {
+        console.warn(`Vektor-Vorwaermung ausgeblieben (erste Suche zahlt den Aufbau): ${grund instanceof Error ? grund.message : String(grund)}`);
+      },
+    });
+  });
+  // Listen-Fehler sauber behandeln — z. B. EADDRINUSE durch getFreePort-TOCTOU in der
+  // Electron-Shell: klare Logausgabe statt unbehandeltem Crash-Dialog.
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    console.error(`Server listen error (${err.code ?? "unknown"}): ${err.message}`);
+    process.exit(1);
+  });
+}

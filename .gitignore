@@ -5,13 +5,16 @@ node_modules/
 
 # build
 dist/
+dist-*/
 out/
 release/
+tools/license-studio/app/
 build/*
 !build/icon.icns
 !build/icon.png
 !build/icon.iconset
 !build/icon.iconset/**
+!build/icon.svg
 *.tsbuildinfo
 
 # os
@@ -74,6 +77,9 @@ npm/*.tgz
 
 # Foerderantraege — persoenliche Unterlagen, gehoeren nicht ins oeffentliche Repo
 antraege/
+tools/longmemeval/datensatz/
 
-# Lokales KI-Plugin-Verzeichnis (Mimosa) — nie ins Repo
-.mimosa/
+# Testkapsel: tests/testkapsel.test.ts:189 setzt HOME in den Baum ("heim"), und ein
+# Lauf hinterlaesst dort eine echte, verschluesselte kepta.db. Ein `git add -A`
+# haette sie ins Repo geholt. Die Wache heisst scripts/heim-wache.mjs.
+heim/

@@ -1,0 +1,4 @@
+platten-wache: frei — stufe leicht, Schwelle 2 Gi, geprüft: /Users/damiantodorovic/kepta-app 13.39 Gi, /var/folders/ct/jl4tc0wd7672rpl4_gbvg7c80000gn/T 13.39 Gi
+MASCHINE NICHT RUHIG — kein Urteil über Zeitfälle.
+  Ausreisser: max/median 2.36 ueber 1.8 (max 18.19 ms bei Median 7.71 ms)
+  Laeufer später noch einmal, wenn die Suite durch ist (siehe ruhe-sonde.mjs).

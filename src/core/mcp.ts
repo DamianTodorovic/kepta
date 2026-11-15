@@ -1,12 +1,11 @@
 // K3PTA MCP — Protokoll-Handling (stdio + Streamable HTTP teilen sich diese Logik).
 // Unterstützt: 2026-07-28 (stateless core, server/discover) sowie Legacy-Clients
-// (2025-06-18, 2024-11-05). Erfolgsantworten liefern structuredContent zur outputSchema,
-// Fehlerantworten nur Text + isError — ein Strukturteil im Fehlerfall bricht konforme Clients.
+// (2025-06-18, 2024-11-05). Alle Tools liefern structuredContent mit outputSchema.
 import type { KeptaStore } from "./store";
-import { LES_FENSTER, GRAPH_ENTITATEN_FENSTER, GRAPH_RELATIONEN_FENSTER } from "./store";
 import type { MemoryType, SearchParams } from "./types";
-import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, gateDecision, writeGateEnabled, MAX_CANDIDATES_PRO_AUFRUF } from "./engine";
+import { searchMemories, indexMemory, consolidateMemories, findDuplicateForNew, gateDecision, writeGateEnabled } from "./engine";
 import { chunkText } from "./embeddings";
+import { behauptungenAus } from "./behauptungen";
 import { APP_VERSION } from "./version";
 
 export const PROTOCOL_VERSIONS = ["2026-07-28", "2025-06-18", "2024-11-05"] as const;
@@ -38,63 +37,6 @@ export type JsonRpcResponse = JsonRpcResult | JsonRpcError;
 const stringSchema = (description: string) => ({ type: "string", description });
 const opt = (s: unknown) => s as { type: string; description?: string };
 
-/**
- * R7: die Kappen der Zahl-Argumente stehen an einer Stelle, weil dieselbe Zahl an
- * drei Orten erscheinen muss — in der inputSchema, die der Agent liest, im Klammer-
- * Parse, der sie anwendet, und in der Antwort, die eine Überschreitung meldet.
- * Vorher war die Obergrenze ein Literal im Parse (mcp.ts:498, :616, :640) und die
- * Antwort schwieg: limit 500 lieferte 100 Treffer und nannte 100 als die Zahl der
- * Treffer, depth 9 wanderte vier hops weit und sagte nichts von vier.
- */
-export const SUCHE_LIMIT_MIN = 1;
-export const SUCHE_LIMIT_STD = 10;
-export const SUCHE_LIMIT_MAX = 100;
-export const LISTE_LIMIT_MIN = 1;
-export const LISTE_LIMIT_STD = 20;
-export const LISTE_LIMIT_MAX = 200;
-export const TIEFE_MIN = 1;
-export const TIEFE_STD = 2;
-export const TIEFE_MAX = 4;
-
-/**
- * D2-31: das Terminal rät bei Tippfällen längst („rember" → „remember"). Die
- * Agentenfläche antwortete auf denselben Irrtum mit einem nackten Satz. Dieselbe
- * Maschine, dieselbe Höflichkeit: was scheiterte, und welche Tür als nächstes
- * trifft. Die drei Sätze bleiben so stehen, dass die bestehenden Wachen
- * (mcp-fehlerform, mcp-forget-supersede) dieselben Muster finden.
- */
-function abstand(a: string, b: string): number {
-  let vorher = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    const jetzt = [i];
-    for (let j = 1; j <= b.length; j++) {
-      jetzt[j] = Math.min(jetzt[j - 1]! + 1, vorher[j]! + 1, vorher[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1));
-    }
-    vorher = jetzt;
-  }
-  return vorher[b.length]!;
-}
-
-function naechsterWerkzeug(wort: string): string | null {
-  const namen = TOOLS.map((w) => w.name);
-  const Kandidat = [...namen].sort((a, b) => abstand(wort.toLowerCase(), a) - abstand(wort.toLowerCase(), b))[0];
-  return Kandidat && abstand(wort.toLowerCase(), Kandidat) <= Math.max(3, Math.floor(Kandidat.length / 3)) ? Kandidat : null;
-}
-
-function fehlertext(name: string, meldung: string): string {
-  if (/^Unknown tool: /i.test(meldung)) {
-    const erfunden = meldung.replace(/^Unknown tool: /i, "").trim();
-    const naechster = naechsterWerkzeug(erfunden);
-    return `Unknown tool: ${erfunden}${naechster ? `. Closest: ${naechster}` : ""}. Tools: ${TOOLS.map((w) => w.name).join(", ")}`;
-  }
-  const weg = /not found|already deleted/i.test(meldung)
-    ? "memory_list (add trash:true for deleted ones) shows the ids that exist"
-    : /is required|must be/i.test(meldung)
-      ? `the inputSchema of ${name} names every field this call needs`
-      : `retry ${name} with the fields its inputSchema requires`;
-  return `${meldung} — next: ${weg}`;
-}
-
 const memoryOutSchema = {
   type: "object",
   properties: {
@@ -120,8 +62,6 @@ const searchOutSchema = {
     query: { type: "string" },
     count: { type: "integer" },
     usedVectors: { type: "boolean" },
-    begrenzt: { type: "boolean" },
-    hinweis: { type: "string" },
     hits: {
       type: "array",
       items: {
@@ -141,57 +81,58 @@ const searchOutSchema = {
 } as const;
 
 // ---------- 8 Tools (deterministische Reihenfolge) ----------
-//
-// D2-27 bis D2-35: die acht Beschreibungen sind ein Interface, kein Log. Sie
-// folgen einem Skelett — was es tut, was zurückkommt, Nebenwirkung und ihr Ausweg,
-// wo ein Gegenstück existsiert, weist es darauf hin. Feldnamen in Prosa sind
-// Verträge: nur in der Schreibweise des Schemas (D2-26 fand „valid_to" dort, wo
-// das Schema „validTo" heisst — ein Agent folgte der Prosa). Ein Feld ohne Text
-// ist ein Fehler im Build, geholt von tests/mcp-werkzeugtext.test.ts.
-// Zahlenfelder nennen ein Beispiel, das man abschreiben kann; „default" steht
-// nur im Schema.
-
-const VIER_TYPEN = "semantic = fact, episodic = event, procedural = how-to, reference = imported document";
-const EPOCH_BEISPIEL = "epoch milliseconds — 1762387000000 = 6 Oct 2026, 12:16 UTC";
 
 export const TOOLS = [
   {
     name: "memory_search",
     title: "Search memory",
     description:
-      "Searches by words, vectors and links. Returns hits with score and dates; private notes never appear. Count 0 can mean a just-saved note is still indexing - run it again. Read-only.",
+      "Searches your notes three ways at once: words (BM25), meaning (vectors), links (the graph), so one question finds the exact phrase and the same idea in other words. Expired or superseded notes are flagged as such; notes the owner marked private never appear.",
     inputSchema: {
       type: "object",
       properties: {
-        query: opt(stringSchema("Natural-language question or the words the note should contain")),
-        limit: opt({ type: "integer", description: `Hits to return, ${SUCHE_LIMIT_MIN}-${SUCHE_LIMIT_MAX}`, default: SUCHE_LIMIT_STD }),
-        tags: opt({ type: "array", items: { type: "string" }, description: "Only notes carrying all of these tags" }),
-        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: `Only notes of this kind: ${VIER_TYPEN}` }),
-        scope: opt(stringSchema("Only notes in this scope, e.g. agent:coder or session:abc")),
-        asOf: opt({ type: "integer", description: `Time travel: search as of a moment instead of now (${EPOCH_BEISPIEL})` }),
+        query: opt(stringSchema("Search query, in natural language")),
+        limit: opt({ type: "integer", description: "Max hits (1-100, default 10)", default: 10 }),
+        tags: opt({ type: "array", items: { type: "string" }, description: "Tag filter (AND)" }),
+        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"] }),
+        scope: opt(stringSchema("Scope filter, e.g. agent:coder or session:abc")),
+        asOf: opt({ type: "integer", description: "Time travel: search as of these epoch milliseconds, e.g. 1700000000000" }),
       },
       required: ["query"],
     },
     outputSchema: searchOutSchema,
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
   },
   {
     name: "memory_save",
     title: "Save memory",
     description:
-      "Saves a note and returns its id; [[Wiki links]] become entities. With id it replaces the whole note - memory_update patches, memory_delete trashes. duplicateWarning names a twin.",
+      "Saves a knowledge note, or updates one when id is given. [[Wiki links]] in the text become links you can follow, so a name you write joins the graph on its own. Words on a link are yours to state: beziehungen sets claims {quelle, ziel, wort}, the same contract the surface uses.",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("Existing id: the whole note is replaced by this call")),
-        title: opt(stringSchema("Short name the note is retrieved by")),
-        content: opt(stringSchema("The full text; [[Wiki links]] in it become entities")),
-        tags: opt({ type: "array", items: { type: "string" }, description: "Labels for retrieval, e.g. weber, billing" }),
-        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: VIER_TYPEN }),
-        scope: opt(stringSchema('Scope of the note. "private" keeps it out of every agent channel — search, list, graph, consolidate and id lookups — while the owner still reads it in the app.')),
-        confidence: opt({ type: "number", description: "0 = a guess, 1 = confirmed" }),
-        validFrom: opt({ type: "integer", description: `Moment the note starts to hold: ${EPOCH_BEISPIEL}` }),
-        validTo: opt({ type: "integer", description: `Moment it stops holding, null = open: ${EPOCH_BEISPIEL}` }),
+        id: opt(stringSchema("Existing id, to update instead of create")),
+        title: opt(stringSchema("Title")),
+        content: opt(stringSchema("Content")),
+        tags: opt({ type: "array", items: { type: "string" } }),
+        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: "semantic=fact, episodic=event, procedural=how-to, reference=imported document" }),
+        scope: opt(stringSchema("user/agent/session scope, default local")),
+        confidence: opt({ type: "number", description: "0..1" }),
+        validFrom: opt({ type: "integer", description: "epoch milliseconds" }),
+        validTo: opt({ type: "integer", description: "epoch milliseconds" }),
+        beziehungen: opt({
+          type: "array",
+          description:
+            "Claims this note states, each one {quelle, ziel, wort} in your own words. Omit the field to keep the claims already on the note; send [] to remove them all; send a list to set exactly that list (max 20).",
+          items: {
+            type: "object",
+            properties: {
+              quelle: { type: "string", description: "the term that makes the claim" },
+              ziel: { type: "string", description: "the term it is about" },
+              wort: { type: "string", description: "the word that says what is claimed, e.g. manages or blocks" },
+            },
+            required: ["quelle", "ziel", "wort"],
+          },
+        }),
       },
       required: ["title", "content"],
     },
@@ -202,6 +143,7 @@ export const TOOLS = [
         memory: { ...memoryOutSchema, type: ["object", "null"] }, // rejected → null
         duplicateWarning: { type: ["object", "null"], properties: { existingId: { type: "string" }, similarity: { type: "number" } } },
         gateOutcome: { enum: ["created", "updated", "rejected", null] },
+        behauptungen: { type: "number", description: "claims standing on this note after the write — what arrived, not what was sent" },
         writeGate: {
           type: ["object", "null"],
           properties: {
@@ -213,93 +155,77 @@ export const TOOLS = [
       },
       required: ["created", "memory"],
     },
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
   },
   {
     name: "memory_update",
     title: "Update memory",
-    description:
-      "Patches one note and returns it; only the fields you send change - memory_save with an id replaces the whole note. supersededBy:null undoes a wrong memory_consolidate.",
+    description: "Updates fields of an existing memory (patch).",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("Id of the note to change")),
-        title: opt(stringSchema("New short name")),
-        content: opt(stringSchema("New full text; [[Wiki links]] become entities")),
-        tags: opt({ type: "array", items: { type: "string" }, description: "Replaces the label list" }),
-        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: VIER_TYPEN }),
-        confidence: opt({ type: "number", description: "0 = a guess, 1 = confirmed" }),
-        validFrom: opt({ type: ["integer", "null"], description: `Moment it starts to hold: ${EPOCH_BEISPIEL}` }),
-        validTo: opt({ type: ["integer", "null"], description: `Moment it stops holding; null keeps it open: ${EPOCH_BEISPIEL}` }),
-        supersededBy: opt({ type: ["string", "null"], description: "Id of the successor note, or null to undo a superseding" }),
+        id: opt(stringSchema("Id of the memory")),
+        title: opt({ type: "string" }),
+        content: opt({ type: "string" }),
+        tags: opt({ type: "array", items: { type: "string" } }),
+        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"] }),
+        confidence: opt({ type: "number" }),
+        validFrom: opt({ type: ["integer", "null"] }),
+        validTo: opt({ type: ["integer", "null"] }),
+        supersededBy: opt({ type: ["string", "null"] }),
       },
       required: ["id"],
     },
     outputSchema: { type: "object", properties: { updated: { type: "boolean" }, memory: memoryOutSchema }, required: ["updated"] },
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
   },
   {
     name: "memory_delete",
     title: "Delete memory",
-    description:
-      "Moves a note to the trash and returns trashed:true; permanent:true deletes the row. Way back: memory_list with trash:true shows the id, then POST /api/memories/:id/restore.",
+    description: "Moves a memory to the trash (default), or deletes it for good (permanent).",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("Id of the note to remove")),
-        permanent: opt({ type: "boolean", description: "true deletes the row instead of trashing it", default: false }),
+        id: opt(stringSchema("Id of the memory")),
+        permanent: opt({ type: "boolean", description: "true = delete permanently", default: false }),
       },
       required: ["id"],
     },
     outputSchema: { type: "object", properties: { trashed: { type: "boolean" }, purged: { type: "boolean" } }, required: [] },
-    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
   },
   {
     name: "memory_list",
     title: "List memories",
-    description:
-      "Lists notes with count, total and pages, newest first. Private notes are never listed, even when scope asks for them. Read-only; use memory_search to find something by meaning.",
+    description: "Lists memories, paginated and filterable. Private ones are never listed, not even when scope is asked for explicitly.",
     inputSchema: {
       type: "object",
       properties: {
-        limit: opt({ type: "integer", default: LISTE_LIMIT_STD, description: `Notes to return, ${LISTE_LIMIT_MIN}-${LISTE_LIMIT_MAX}` }),
-        offset: opt({ type: "integer", default: 0, description: "Notes to skip, for paging through total" }),
-        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"], description: VIER_TYPEN }),
-        tag: opt({ type: "string", description: "Only notes carrying this label" }),
-        scope: opt({ type: "string", description: "Only notes in this scope, e.g. agent:coder" }),
-        trash: opt({ type: "boolean", description: "List the trash instead of active notes - the way to find a deleted id", default: false }),
+        limit: opt({ type: "integer", default: 20, description: "1-200" }),
+        offset: opt({ type: "integer", default: 0 }),
+        type: opt({ type: "string", enum: ["semantic", "episodic", "procedural", "reference"] }),
+        tag: opt({ type: "string" }),
+        scope: opt({ type: "string" }),
+        trash: opt({ type: "boolean", description: "Trash instead of active memories", default: false }),
       },
     },
     outputSchema: {
       type: "object",
-      properties: {
-        count: { type: "integer" },
-        total: { type: "integer" },
-        begrenzt: { type: "boolean" },
-        hinweis: { type: "string" },
-        memories: { type: "array", items: memoryOutSchema },
-      },
+      properties: { count: { type: "integer" }, total: { type: "integer" }, memories: { type: "array", items: memoryOutSchema } },
       required: ["count", "memories"],
     },
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
   },
   {
     name: "memory_graph",
-    title: "Read graph",
-    description:
-      "Reads entities and the [[links]] between them, around one entity or the capped whole graph, and returns entities and relations. Read-only; memory_search finds the notes themselves.",
+    title: "Knowledge graph",
+    description: "Entities and relations around one entity, or the whole graph, capped so answers stay small.",
     inputSchema: {
       type: "object",
       properties: {
-        entity: opt(stringSchema(`Entity to start from; without it the whole graph, read up to ${GRAPH_ENTITATEN_FENSTER} entities and ${GRAPH_RELATIONEN_FENSTER} relations`)),
-        depth: opt({ type: "integer", description: `Hops to follow, ${TIEFE_MIN}-${TIEFE_MAX}`, default: TIEFE_STD }),
+        entity: opt(stringSchema("Entity name (optional)")),
+        depth: opt({ type: "integer", description: "Graph depth 1-4, default 2, and use 1 for a quick lookup" }),
       },
     },
     outputSchema: {
       type: "object",
       properties: {
-        begrenzt: { type: "boolean" },
-        hinweis: { type: "string" },
         entities: { type: "array", items: { type: "object", properties: { name: { type: "string" } }, required: ["name"] } },
         relations: {
           type: "array",
@@ -312,19 +238,17 @@ export const TOOLS = [
       },
       required: ["entities", "relations"],
     },
-    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
   },
   {
     name: "memory_consolidate",
-    title: "Consolidate memories",
-    description:
-      'Finds duplicates and contradictions, returns candidate pairs. Nothing changes until dryRun:false with confirm:"supersede". Undo via memory_update supersededBy:null.',
+    title: "Consolidate memory",
+    description: 'Finds duplicates and contradictions by embedding similarity; with dryRun:false it marks the older copy as superseded, and that step needs confirm:"supersede". A superseded memory is weighted down in search — memory_update with supersededBy:null undoes one.',
     inputSchema: {
       type: "object",
       properties: {
-        dryRun: opt({ type: "boolean", description: "true suggests only, false applies the supersede", default: true }),
-        threshold: opt({ type: "number", description: "Similarity from which two notes count as one pair, 0..1", default: 0.92 }),
-        confirm: opt({ type: "string", description: 'With dryRun:false must be exactly "supersede"; without it nothing is applied' }),
+        dryRun: opt({ type: "boolean", description: "true = suggestions only (default)", default: true }),
+        threshold: opt({ type: "number", description: "Similarity threshold 0..1, default 0.92" }),
+        confirm: opt({ type: "string", description: 'required with dryRun:false — must be exactly "supersede"; without it nothing is applied' }),
       },
     },
     outputSchema: {
@@ -332,8 +256,6 @@ export const TOOLS = [
       properties: {
         dryRun: { type: "boolean" },
         applied: { type: "integer" },
-        begrenzt: { type: "boolean" },
-        hinweis: { type: "string" },
         candidates: {
           type: "array",
           items: {
@@ -350,25 +272,23 @@ export const TOOLS = [
       },
       required: ["dryRun", "candidates"],
     },
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
   },
   {
     name: "memory_forget",
-    title: "Invalidate memory",
+    title: "Forget",
     description:
-      "Invalidates one note and returns it: expire closes validTo at the current time, supersede re-points to supersedeBy, delete trashes it. Undo by clearing validTo or supersededBy.",
+      "Temporal invalidation: expire sets valid_to to now, supersede marks the memory as replaced by supersedeBy, delete moves it to the trash.",
     inputSchema: {
       type: "object",
       properties: {
-        id: opt(stringSchema("Id of the note to invalidate")),
-        mode: opt({ type: "string", enum: ["expire", "supersede", "delete"], description: "expire closes validTo, supersede re-points to a successor, delete trashes", default: "expire" }),
-        validTo: opt({ type: "integer", description: `expire mode: the moment validity ends (${EPOCH_BEISPIEL}); without it, now` }),
-        supersedeBy: opt(stringSchema("supersede mode: id of the successor memory — required for that mode, supersede without it is rejected")),
+        id: opt(stringSchema("Id of the memory")),
+        mode: opt({ type: "string", enum: ["expire", "supersede", "delete"], description: "default: expire" }),
+        validTo: opt({ type: "integer", description: "mode=expire only, defaults to now" }),
+        supersedeBy: opt(stringSchema("mode=supersede only: id of the successor memory")),
       },
       required: ["id"],
     },
     outputSchema: { type: "object", properties: { forgotten: { type: "boolean" }, mode: { type: "string" } }, required: ["forgotten"] },
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
   },
 ] as const;
 
@@ -395,35 +315,6 @@ function toInt(v: unknown, def: number, min: number, max: number): number {
 }
 
 /**
- * R7: „wer kappt, sagt es“ — auch auf der Agentenfläche. Jede Antwort, deren Satz
- * eine Obergrenze hat, führt `begrenzt` mit; `hinweis` sagt in einem Satz, welche
- * Zahl gilt und was der Agent als nächstes tun kann. Die Feldnamen bleiben die,
- * die memory_consolidate schon deklariert (D2-29: eine Umbenennung ist ein
- * Versionswechsel, kein stiller Text).
- */
-function kappe(...gruende: (string | null)[]): { begrenzt: boolean; hinweis?: string } {
-  const gemeldet = gruende.filter((g): g is string => typeof g === "string" && g !== "");
-  if (gemeldet.length === 0) return { begrenzt: false };
-  return { begrenzt: true, hinweis: gemeldet.join(" ") };
-}
-
-/**
- * Warum ein Zahlen-Argument nicht so durchlief, wie es bestellt wurde — oder null,
- * wenn die bestellte Zahl die gelieferte ist. Was der Agent nicht sieht, darf er
- * nicht voraussetzen: ein limit, das still auf 100 gesetzt wurde, liest sich sonst
- * als „100 Notizen passen nicht in meine Anfrage“.
- */
-function klemmGrund(label: string, bestellt: unknown, benutzt: number, min: number, max: number): string | null {
-  if (bestellt === undefined) return null;
-  const n = typeof bestellt === "number" ? bestellt : Number(bestellt);
-  if (!Number.isFinite(n)) return `${label} ${JSON.stringify(String(bestellt))} is not a number, so this call used its default ${benutzt}.`;
-  if (n === benutzt) return null;
-  if (n > max) return `${label} ${n} is above the highest ${label} (${max}), so this call used ${benutzt}.`;
-  if (n < min) return `${label} ${n} is below the lowest ${label} (${min}), so this call used ${benutzt}.`;
-  return `${label} ${n} is not a whole number, so this call used ${benutzt}.`;
-}
-
-/**
  * asOf ist epoch Millisekunden. Ein Wert, der keine ganze Zahl ist, wird abgewiesen:
  * Number("2020-01-01") ist NaN, NaN liest die Engine wie "heute" — der Agent hielt eine
  * Zeitreise für wirksam, die nie stattfand.
@@ -436,14 +327,6 @@ function lieseAsOf(wert: unknown): number | undefined {
     throw new Error("memory_search: asOf must be epoch milliseconds (an integer), e.g. 1700000000000");
   }
   return Math.trunc(zahl);
-}
-
-/** Tags sind Zeichenketten. Ein Nicht-String endet sonst als "t.toLowerCase is not a function". */
-function zeichenKetten(liste: unknown[], feld: string): string[] {
-  liste.forEach((t, i) => {
-    if (typeof t !== "string") throw new Error(`${feld}[${i}] must be a string`);
-  });
-  return liste as string[];
 }
 
 function memoryToOut(store: KeptaStore, r: ReturnType<KeptaStore["getMemory"]>): Record<string, unknown> {
@@ -466,76 +349,82 @@ function memoryToOut(store: KeptaStore, r: ReturnType<KeptaStore["getMemory"]>):
 }
 
 /** Legt eine Memory an/aktualisiert sie und indiziert Chunks + Wiki-Link-Entitäten. */
-export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>): { created: boolean; record: NonNullable<ReturnType<KeptaStore["getMemory"]>> } {
+export function saveWithIndex(store: KeptaStore, args: Record<string, unknown>): {
+  created: boolean;
+  record: NonNullable<ReturnType<KeptaStore["getMemory"]>>;
+  behauptungen: number;
+} {
   const title = String(args.title ?? "");
   const content = String(args.content ?? "");
   if (!title.trim() || !content.trim()) throw new Error("title and content are required");
+  // Punkt 127: der Agentenschreibweg kennt dieselben drei Zustaende wie die Hand, und er
+  // prueft sie **vor** dem ersten Schreibgriff. Eine Notiz, die wegen eines Systemwortes
+  // halb angelegt wird, ist ein Verlust mit Umweg — die Agentin halt den Entwurf und
+  // hoeren den Grund, statt ein Blatt ohne Kante im Bestand zu haben.
+  const beh = behauptungenAus(args);
+  if (beh.ablehnung) throw new Error(beh.ablehnung);
   const input = {
     id: args.id ? String(args.id) : undefined,
     title,
     content,
-    tags: Array.isArray(args.tags) ? zeichenKetten(args.tags, "tags") : [],
+    tags: Array.isArray(args.tags) ? (args.tags as string[]) : [],
     type: args.type as MemoryType | undefined,
     scope: args.scope ? String(args.scope) : undefined,
     confidence: typeof args.confidence === "number" ? args.confidence : undefined,
     validFrom: typeof args.validFrom === "number" ? args.validFrom : undefined,
     validTo: typeof args.validTo === "number" ? args.validTo : undefined,
+    // App-Erweiterung gegenüber dem offenen Kern 3.1.x (dort entfernt):
+    // Explizite Zeitstempel (Benchmark-/Importpfade, LongMemEval-Ingest):
+    // gelten nur bei Neu-Anlage; der Update-Zweig von upsertMemory nimmt
+    // sie aus dem Patch nicht an. Bewacht durch tests/longmemeval.test.ts.
+    createdAt: typeof args.createdAt === "number" ? args.createdAt : undefined,
+    updatedAt: typeof args.updatedAt === "number" ? args.updatedAt : undefined,
   };
   const { record, created } = store.upsertMemory(input);
   indexMemory(store, record.id);
-  // Titel + Wiki-Links als Entitäten. Der Produzent sitzt im Speicher
-  // (`store.verknuepfeNotiz`), weil hier zwei Naturen zusammenkommen: die Notiz nennt
-  // einen Begriff (`mentions`), und zwei Begriffe derselben Aussage stehen miteinander
-  // (`co-mentions`). Der bisherige Handschleifen-Weg setzte nur das erste Wort und
-  // legte jeden Stich bei jedem Speichern neu an — `addRelation` ist ein nacktes INSERT.
-  const links = extractWikiLinks(`${record.title} ${record.content}`);
-  store.verknuepfeNotiz(record.id, record.title, links);
-  return { created, record: store.getMemory(record.id)! };
+  // Titel + Wiki-Links als Entitäten; die Titel-Entität erhält mentions-Relationen.
+  // Ein Aufruf, Ersetzungssemantik — dasselbe Verfahren wie der REST-Schreibweg,
+  // damit beide Türen genau eine Straße in den Graphen haben. Seit 127 auch mit dem
+  // vierten Feld: die Aussagen des Agenten, nicht nur die seiner Wiki-Links.
+  store.verknuepfeNotiz(record.id, record.title, extractWikiLinks(`${record.title} ${record.content}`), beh.gesendet ? beh.liste : undefined);
+  return { created, record: store.getMemory(record.id)!, behauptungen: store.behauptungenVonNotiz(record.id).length };
 }
 
 /**
- * Privatheits-Floor: eine Notiz mit scope "private" verlässt K3PTA nie über den
- * **Agentenkanal** — also über die acht MCP-Werkzeuge (stdio), über `POST /mcp`
- * und über die vier HTTP-Spiegel `/api/mcp/search|save|consolidate|forget`, die laut
- * Changelog genau „MCP tool parity over HTTP" sind. Bis 3.1.2 galt der Floor nur
- * für memory_search und memory_list; Graph, Consolidate und die id-Wege lieferten
- * private Titel, IDs und Dupletten aus — das Versprechen war transportabhängig.
- *
- * Die **Besitzerkanäle** (`GET /api/memories`, `GET /api/memories/search`,
- * `POST /api/search`, `GET /api/graph`, Export und Geräte-Sync) filtern bewusst
- * nicht: dieselben Routen füttern die Desktop-App, in der der Besitzer seine
- * eigenen privaten Notizen sieht und durchsucht. Ein Filter in Store- oder
- * Engine-Schicht würde die App blind machen. „private" ist deshalb eine
- * Agenten-/Besitzer-Trennung, **kein** Zugriffsschutz gegen lokale Prozesse —
- * jeder Prozess auf diesem Rechner kann die Datenbank mit dem Systemschlüssel
- * öffnen. SECURITY.md hält das fest.
+ * Privatheits-Floor: eine Notiz mit scope "private" verlässt K3PTA nie über
+ * MCP — egal welcher Client fragt und egal, ob sie per scope-Argument
+ * angefragt wird. Die App trägt darüber hinaus die volle MCP-Wache (Privacy-
+ * Schild, Audit-Protokoll, Aktivitäts-Meldung); dieser Floor ist das
+ * Grundversprechen, das auch der freie Kern hält, wenn App und kepta-mcp
+ * dieselbe Datenbank teilen.
  */
 export const PRIVATER_SCOPE = "private";
 
 /** Trägt die scope-Regel auf eine beliebige Liste an (Treffer, Notizen, Kandidaten). */
-export function ohnePrivate<T>(liste: T[], scopeVon: (m: T) => string | undefined): T[] {
+function ohnePrivate<T>(liste: T[], scopeVon: (m: T) => string | undefined): T[] {
   return liste.filter((m) => scopeVon(m) !== PRIVATER_SCOPE);
 }
 
 /**
  * Fehler für id-Wege auf eine private Notiz — oder null, wenn der Agent darf.
- * meldung ist wortgleich zu der, die das jeweilige Werkzeug für eine unbekannte id
- * selbst wirft: eine eigene "privat"-Meldung oder ein eigener Statuscode verriete
- * einem Agenten, der eine id anderweitig kennt, dass die Notiz existiert.
- * Die Listenwege (search/list/graph/consolidate) brauchen das nicht — sie nennen
- * private ids erst gar nicht.
+ * `meldung` ist wortgleich zu der, die das jeweilige Werkzeug für eine
+ * unbekannte id selbst wirft: eine eigene „privat"-Meldung oder ein eigener
+ * Statuscode verriete einem Agenten, der eine id anderweitig kennt, dass die
+ * Notiz existiert. Die Listenwege (search/list/graph/consolidate) brauchen das
+ * nicht — die nennen private ids erst gar nicht.
  */
-export function aussenVor(store: KeptaStore, id: string, meldung: string): Error | null {
+function aussenVor(store: KeptaStore, id: string, meldung: string): Error | null {
   return store.istPrivat(id) ? new Error(meldung) : null;
 }
 
 /**
- * Der eine Zeiger, den eine offene Notiz auf eine private richten kann: supersededBy.
- * Die App consololidiert über den ganzen Bestand und darf eine offene Notiz auf eine
- * private Nachfolgerin zeigen lassen — für Agentenwege heißt der Nachfolger dann
- * nichtexistent. (`superseded: true` steht am Treffer, daran ändert sich nichts.)
+ * Der eine Zeiger, den eine offene Notiz auf eine private richten kann:
+ * supersededBy. Die App consolidiert über den ganzen Bestand und darf eine
+ * offene Notiz auf eine private Nachfolgerin zeigen lassen — für Agentenwege
+ * heißt der Nachfolger dann nichtexistent. (`superseded: true` steht am
+ * Treffer, daran ändert sich nichts.)
  */
-export function zeigerFürAgenten(store: KeptaStore, supersededBy: string | null): string | null {
+function zeigerFürAgenten(store: KeptaStore, supersededBy: string | null): string | null {
   return supersededBy && store.istPrivat(supersededBy) ? null : supersededBy;
 }
 
@@ -550,14 +439,11 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
     switch (name) {
       case "memory_search": {
         if (!args.query || !String(args.query).trim()) throw new Error("a query is required");
-        // Nicht-numerisches limit → sauberer Default statt NaN (NaN filtert alles weg).
-        // Die Klammer selbst meldet die Antwort: bestellt ein Agent 500 und liest 100,
-        // muss die Zahl 100 in der Antwort stehen, nicht nur im Code.
-        const seite = toInt(args.limit, SUCHE_LIMIT_STD, SUCHE_LIMIT_MIN, SUCHE_LIMIT_MAX);
         const params: SearchParams = {
           query: String(args.query ?? ""),
-          limit: seite,
-          tags: Array.isArray(args.tags) ? zeichenKetten(args.tags, "tags") : undefined,
+          // Nicht-numerisches limit → sauberer Default 10 statt NaN (NaN filtert alles weg)
+          limit: toInt(args.limit, 10, 1, 100),
+          tags: Array.isArray(args.tags) ? (args.tags as string[]) : undefined,
           type: (args.type as MemoryType | undefined) ?? undefined,
           scope: args.scope ? String(args.scope) : undefined,
           asOf: lieseAsOf(args.asOf),
@@ -568,17 +454,6 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           query: res.query,
           count: hits.length,
           usedVectors: res.usedVectors,
-          ...kappe(
-            klemmGrund("limit", args.limit, seite, SUCHE_LIMIT_MIN, SUCHE_LIMIT_MAX),
-            // res.total zählt mit, was der Privatheits-Floor verwirft — die Zahl darf
-            // nicht nach außen, sonst wäre sie ein Existenznachweis für private Notizen.
-            // Gemessen wird hier nur die eigene Seite: sie ist voll, also endete der
-            // Lesepass an der bestellten Zahl. Ob dahinter etwas liegt, sagt dieser Satz
-            // nicht — er sagt, dass die Frage nach mehr offen bleibt.
-            hits.length === seite
-              ? `These ${seite} hits fill the limit, so the read stopped at ${seite} — raise limit (max ${SUCHE_LIMIT_MAX}) or narrow with tags, type or scope.`
-              : null
-          ),
           hits: hits.map((h) => ({
             ...memoryToOut(store, h.memory),
             score: h.score,
@@ -587,23 +462,22 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
             matchedTerms: h.matchedTerms,
           })),
         };
-        return { content: [{ type: "text", text: JSON.stringify(structured) }], structuredContent: structured };
+        return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
       case "memory_save": {
+        // Punkt 127, Reihenfolge: erst das Behauptungsfeld pruefen, dann das Gate fragen.
+        // Die REST-Tuer weist einen Entwurf mit falschem Wort zurueck, bevor irgendetwas
+        // anderes entscheidet — hier entschied sonst das Write-Gate (NOOP) und die Agentin
+        // hoeren nie, dass ihr ownes Wort das Systemwort eines Verweises ist.
+        const feld = behauptungenAus(args);
+        if (feld.ablehnung) throw new Error(feld.ablehnung);
         // F2: Write-Gate (Opt-in KEPTA_WRITE_GATE=on) — nur für NEUE Knoten;
-        // ein explizites Update via id ist die Entscheidung des Agenten selbst —
-        // außer über private Notizen: die sind für Agenten weder lesbar noch
-        // überschreibbar, und ein Update würde den PRIVATEN Datensatz zurückgeben.
+        // ein explizites Update via id ist die Entscheidung des Agenten selbst.
+        // Ein save mit expliziter id ist ein Update — derselbe Weg, dieselbe Grenze.
         if (args.id !== undefined) {
-          // Bei save kann der Wortlaut nicht aufgehen: eine unbekannte id legt K3PTA
-          // einfach an, eine private muss abgelehnt werden. Das ist das eine bleibende
-          // Existenz-Oracle — inhaltlich bleibt die Notiz unangetastet.
           const verweigert = aussenVor(store, String(args.id), `Memory not found: ${String(args.id)}`);
           if (verweigert) throw verweigert;
         }
-        // Das Gate läuft über findDuplicateForNew, und das ist private-blind: es kann
-        // weder auf eine private Notiz zeigen noch deren Inhalt in seinen Begründungs-
-        // text übernehmen. Deshalb hier keine Nachprüfung.
         const gate = args.id === undefined
           ? await gateDecision(store, String(args.title ?? ""), String(args.content ?? ""))
           : null;
@@ -615,23 +489,26 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
             created: viaGate.created,
             gateOutcome: "updated",
             memory: memoryToOut(store, viaGate.record),
+            behauptungen: viaGate.behauptungen,
             writeGate: gate,
           };
-          return { content: [{ type: "text", text: JSON.stringify(structured) }], structuredContent: structured };
+          return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
         }
         if (gate && (gate.decision === "NOOP" || gate.decision === "DELETE")) {
-          const structured = { created: false, gateOutcome: "rejected", memory: null, writeGate: gate };
-          return { content: [{ type: "text", text: JSON.stringify(structured) }], structuredContent: structured };
+          const structured = { created: false, gateOutcome: "rejected", memory: null, behauptungen: 0, writeGate: gate };
+          return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
         }
-        const { created, record } = saveWithIndex(store, args);
+        const { created, record, behauptungen } = saveWithIndex(store, args);
+        const duplicate = await findDuplicateForNew(store, String(args.title ?? ""), String(args.content ?? ""));
         const structured = {
           created,
           memory: memoryToOut(store, record),
-          duplicateWarning: await findDuplicateForNew(store, String(args.title ?? ""), String(args.content ?? "")),
+          behauptungen,
+          duplicateWarning: duplicate,
           ...(writeGateEnabled() ? { gateOutcome: "created", writeGate: gate } : {}),
         };
         return {
-          content: [{ type: "text", text: JSON.stringify(structured) }],
+          content: [{ type: "text", text: JSON.stringify(structured, null, 2) }],
           structuredContent: structured,
         };
       }
@@ -640,39 +517,27 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         const verweigert = aussenVor(store, id, `Memory not found: ${id}`);
         if (verweigert) throw verweigert;
         const patch: Record<string, unknown> = {};
-        for (const k of ["title", "content", "tags", "type", "confidence", "validFrom", "validTo"] as const) {
-          if (args[k] !== undefined) patch[k] = k === "tags" && Array.isArray(args[k]) ? zeichenKetten(args[k] as unknown[], "tags") : args[k];
-        }
-        // Der Rueckweg: supersededBy ist ein deklariertes Feld, damit eine falsch
-        // angewandte Konsolidierung zurueckgenommen werden kann (null = offen).
-        if (args.supersededBy !== undefined) {
-          if (args.supersededBy === null) {
-            patch.supersededBy = null;
-          } else {
-            const by = typeof args.supersededBy === "string" ? args.supersededBy.trim() : "";
-            if (!by) throw new Error("memory_update: supersededBy must be the id of a successor memory, or null to undo a superseding");
-            const meldung = `Memory not found: ${by}`;
-            const verborgen = aussenVor(store, by, meldung);
-            if (verborgen || !store.getMemory(by)) throw verborgen ?? new Error(meldung);
-            patch.supersededBy = by;
-          }
+        for (const k of ["title", "content", "tags", "type", "confidence", "validFrom", "validTo", "supersededBy"] as const) {
+          if (args[k] !== undefined) patch[k] = args[k];
         }
         const updated = store.updateMemory(id, patch);
         if (!updated) throw new Error(`Memory not found: ${id}`);
-        if (patch.content !== undefined) indexMemory(store, id);
+        if (patch.content !== undefined || patch.title !== undefined) {
+          indexMemory(store, id);
+          const aktualisiert = store.getMemory(id);
+          if (aktualisiert) {
+            store.verknuepfeNotiz(id, aktualisiert.title, extractWikiLinks(`${aktualisiert.title} ${aktualisiert.content}`));
+          }
+        }
         const structured = { updated: true, memory: memoryToOut(store, store.getMemory(id)) };
-        return { content: [{ type: "text", text: JSON.stringify(structured) }], structuredContent: structured };
+        return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
       case "memory_delete": {
         const id = String(args.id ?? "");
         const permanent = args.permanent === true;
         // Wortlaut des Zweigs, den der Agent gerade ruft — derselbe wie bei einer
         // unbekannten id, sonst wäre die Antwort ein Existenznachweis.
-        const verweigert = aussenVor(
-          store,
-          id,
-          permanent ? `Memory not found: ${id}` : `Memory not found, or already deleted: ${id}`
-        );
+        const verweigert = aussenVor(store, id, permanent ? `Memory not found: ${id}` : `Memory not found, or already deleted: ${id}`);
         if (verweigert) throw verweigert;
         if (permanent) {
           const purged = store.purgeMemory(id);
@@ -684,9 +549,8 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         return { content: [{ type: "text", text: `Moved to the trash: ${id}` }], structuredContent: { trashed: true, purged: false } };
       }
       case "memory_list": {
-        const seite = toInt(args.limit, LISTE_LIMIT_STD, LISTE_LIMIT_MIN, LISTE_LIMIT_MAX);
         const opts = {
-          limit: seite,
+          limit: toInt(args.limit, 20, 1, 200),
           offset: toInt(args.offset, 0, 0, Number.MAX_SAFE_INTEGER),
           type: (args.type as MemoryType | undefined) ?? undefined,
           // lower-case + LIKE-Escaping passiert im Store (tags LIKE mit ESCAPE-Klausel)
@@ -695,87 +559,50 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
           trash: args.trash === true,
         };
         // Privatheits-Floor: auch ein explizites scope:"private" liefert nichts zurück.
-        // Ein Durchlauf durch den gefilterten Satz, dann die Seite daraus abgeschnitten:
-        // total ist die Zahl, nach der der Agent paginiert — nicht die des Gesamtbestands,
-        // und ohne private Notizen, deren Menge sonst als Aggregat nach aussen geht.
-        // Grenze LES_FENSTER = die Seiten-Obergrenze des Speichers (store.listMemories).
-        // Ist sie erreicht, ist total eine untere Schranke und keine Zahl der Welt — das
-        // muss die Antwort sagen, sonst paginiert der Agent bis an die Grenze und glaubt,
-        // das Gehirn sei durchlesen.
-        const gelesen = store.listMemories({ ...opts, limit: LES_FENSTER, offset: 0 });
-        const vollen = ohnePrivate(gelesen, (m) => m.scope);
-        const memories = vollen.slice(opts.offset, opts.offset + opts.limit);
+        //
+        // NICHT auf Kernstand gehoben (F12, 10.10.): der Kern schaetzt `total` neu —
+        // er laeuft durch den gefilterten, privatenfreien Satz und nennt dessen Laenge.
+        // Diese App hat zusaetzlich die Wache (`src/lib/mcpwache.ts:104`), die beim
+        // Agentenkanal bereits `schutz.privat.size` von `total` abzieht, weil hier der
+        // Gesamtbestand geliefert wird. Kern-Fassung plus Wache-Korrektur = dieselbe
+        // Menge **zweimal** gekuerzt: mit einer privaten Notiz im Bestand antwortete die
+        // App `total: 0` statt 1. Also bleibt hier die alte Zahl, und die Heilung ist
+        // an die Wache gekoppelt — sie braucht deren Owner, nicht einen Einzelbau.
+        const memories = ohnePrivate(store.listMemories(opts), (m) => m.scope);
+        const total = store.countMemories();
         const structured = {
           count: memories.length,
-          total: vollen.length,
-          ...kappe(
-            klemmGrund("limit", args.limit, seite, LISTE_LIMIT_MIN, LISTE_LIMIT_MAX),
-            gelesen.length >= LES_FENSTER
-              ? `total ${LES_FENSTER} is one read window, not the size of the store: notes behind the window are neither counted nor reached by offset — narrow with type, tag or scope.`
-              : null
-          ),
+          total: opts.trash ? total.trashed : total.active,
           memories: memories.map((m) => memoryToOut(store, m)),
         };
-        return { content: [{ type: "text", text: JSON.stringify(structured) }], structuredContent: structured };
+        return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
       case "memory_graph": {
         const entity = args.entity ? String(args.entity) : undefined;
-        const tiefe = toInt(args.depth, TIEFE_STD, TIEFE_MIN, TIEFE_MAX);
-        const g = store.getGraph(entity, tiefe);
-        const nameById = new Map(g.entities.map((e) => [e.id, e.name]));
-        // Privatheits-Floor: Entitäten sind abgeleitete Daten — ein Knoten fällt, wenn
-        // keine seiner Träger-Notizen offen ist. Nennt ihn zusätzlich eine offene Notiz,
-        // gehört der Name der offenen Welt. Relationen gehen mit ihrer privaten
-        // Träger-Notiz und mit jedem Knoten, den der Floor entfernt hat.
+        const depth = toInt(args.depth, 2, 1, 4);
+        const g = store.getGraph(entity, depth);
+        // Privatheits-Floor: Entitäten sind abgeleitete Daten — ein Knoten fällt
+        // erst, wenn ALLE seine Träger-Notizen privat sind. Nennt ihn zusätzlich
+        // eine offene Notiz, gehört der Name der offenen Welt. Relationen gehen
+        // mit ihrer privaten Träger-Notiz und mit jedem Knoten, den der Floor
+        // entfernt hat.
         const privaten = store.privateMemoryIds();
         const traeger = store.memoryIdsByEntity(g.entities.map((e) => e.id));
-        // Trägerlose Knoten sind nicht per Definition offen, und relations.memory_id ist
-        // ohne Fremdschlüssel: Löscht die Besitzerin eine Notiz endgültig, fallen ihre
-        // Träger-Zeilen (ON DELETE CASCADE) — ihre Kanten und damit ihr Titel bleiben als
-        // Geist zurück. Offen ist ein Knoten nur durch eine offene, lebende Träger-Notiz
-        // oder eine Kante, die ebenfalls eine offene, lebende Notiz (oder gar keine) trägt.
-        const lebendeOffene = new Set<string>();
-        for (const ids of traeger.values()) {
-          for (const id of ids) if (!privaten.has(id)) lebendeOffene.add(id);
-        }
-        const traegtOffen = (mid: string | null): boolean => {
-          if (!mid) return true; // Kante ohne Notiz = Setzung der Besitzerin
-          if (privaten.has(mid)) return false;
-          return lebendeOffene.has(mid) || store.getMemory(mid) !== null;
-        };
-        const offeneRelations = g.relations.filter((r) => traegtOffen(r.memoryId));
-        const offenBenannt = new Set<number>();
-        for (const r of offeneRelations) {
-          offenBenannt.add(r.sourceId);
-          offenBenannt.add(r.targetId);
-        }
         const gehalten = new Set<number>();
         for (const e of g.entities) {
           const ids = traeger.get(e.id) ?? [];
-          if (ids.some((id) => !privaten.has(id)) || offenBenannt.has(e.id)) gehalten.add(e.id);
+          if (ids.length === 0 || ids.some((id) => !privaten.has(id))) gehalten.add(e.id);
         }
-        const fensterGrund = entity
-          ? []
-          : [
-              // Ohne Startbegriff liest der Speicher ein Fenster, nicht den ganzen
-              // Bestand (store.getGraph: LIMIT je Tabelle). Die Antwort muss das
-              // nennen — ihre Beschreibung tat es bisher allein, und ein Client,
-              // der nur structuredContent liest, sah 500 Begriffe als die Grafik.
-              g.entities.length >= GRAPH_ENTITATEN_FENSTER
-                ? `this whole-graph read covers at most ${GRAPH_ENTITATEN_FENSTER} entities, ranked by how many notes carry each — name an entity to walk from it.`
-                : null,
-              g.relations.length >= GRAPH_RELATIONEN_FENSTER
-                ? `this whole-graph read covers at most ${GRAPH_RELATIONEN_FENSTER} relations — name an entity to walk from it.`
-                : null,
-            ].filter((s): s is string => s !== null);
+        const relationErlaubt = (r: { sourceId: number; targetId: number; memoryId?: string | null }) =>
+          gehalten.has(r.sourceId) && gehalten.has(r.targetId) && !(r.memoryId && privaten.has(r.memoryId));
+        const nameById = new Map(g.entities.filter((e) => gehalten.has(e.id)).map((e) => [e.id, e.name]));
         const structured = {
-          ...kappe(klemmGrund("depth", args.depth, tiefe, TIEFE_MIN, TIEFE_MAX), fensterGrund.length ? fensterGrund.join(" ") : null),
           entities: g.entities.filter((e) => gehalten.has(e.id)).map((e) => ({ name: e.name })),
-          relations: offeneRelations
-            .filter((r) => gehalten.has(r.sourceId) && gehalten.has(r.targetId))
+          relations: g.relations
+            .filter((r) => relationErlaubt(r) && nameById.has(r.sourceId) && nameById.has(r.targetId))
             .map((r) => ({ source: nameById.get(r.sourceId)!, target: nameById.get(r.targetId)!, relation: r.relation })),
         };
-        return { content: [{ type: "text", text: JSON.stringify(structured) }], structuredContent: structured };
+        return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
       case "memory_consolidate": {
         // Anwenden ist fuer den Agenten unumkehrbar, der die Ersetzung selbst nicht
@@ -791,26 +618,18 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         const res = await consolidateMemories(store, {
           dryRun,
           threshold: typeof args.threshold === "number" ? args.threshold : undefined,
-          // Private Dupletten zu melden hieße, dem Agenten zwei private ids und ihre
-          // Ähnlichkeit zu nennen; anzuwenden würde zudem eine private Notiz als
-          // ersetzt markieren und sie damit aus der Suche des Besitzers nehmen.
+          // Private Dupletten zu melden hieße, dem Agenten zwei private ids und
+          // ihre Ähnlichkeit zu nennen; anzuwenden würde zudem eine private
+          // Notiz als ersetzt markieren und sie damit aus der Suche des
+          // Besitzers nehmen.
           ausnehmen: store.privateMemoryIds(),
         });
-        const structured: Record<string, unknown> = {
+        const structured = {
           dryRun: res.dryRun,
           applied: res.applied,
-          // Die Engine kappt ihre Vorschlaege pro Aufruf. Sagt sie es und der Agentenkanal
-          // verschluckt das Feld, liest der Agent 500 Kandidaten und hält sie für alle.
-          // Dieselbe Meldung wie auf den drei anderen gekappten Wegen — ein Mechanismus,
-          // nicht vier (kappe() setzt begrenzt und hinweis zusammen).
-          ...kappe(
-            res.begrenzt === true
-              ? `Candidate list is capped at ${MAX_CANDIDATES_PRO_AUFRUF} pairs per call: more duplicates exist than are shown. Raise threshold to narrow the set, or keep dryRun:true to read the overview before applying.`
-              : null
-          ),
           candidates: res.candidates.map((c) => ({ keepId: c.keepId, duplicateId: c.duplicateId, similarity: c.similarity, reason: c.reason })),
         };
-        return { content: [{ type: "text", text: JSON.stringify(structured) }], structuredContent: structured };
+        return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }
       case "memory_forget": {
         const id = String(args.id ?? "");
@@ -855,7 +674,7 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
     // Pflichtfeldern, und ein konformer Client validiert den Strukturteil dagegen, sobald er
     // da ist — er würde dann die Fehlermeldung werfen statt sie zu zeigen.
     return {
-      content: [{ type: "text", text: `Error: ${fehlertext(name, msg)}` }],
+      content: [{ type: "text", text: `Error: ${msg}` }],
       isError: true,
     };
   }

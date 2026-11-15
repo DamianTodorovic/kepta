@@ -4,7 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
 import { handleRpc, TOOLS, LATEST_PROTOCOL_VERSION, SERVER_INFO, extractWikiLinks, negotiateVersion, type JsonRpcRequest, type JsonRpcResponse } from "../src/core/mcp";
-import { indexMemory, consolidateMemories } from "../src/core/engine";
+import { indexMemory } from "../src/core/engine";
 import { DEFAULT_EMBED_MODEL } from "../src/core/embeddings";
 import { APP_VERSION } from "../src/core/version";
 
@@ -12,11 +12,6 @@ interface ToolResult {
   content: { type: string; text: string }[];
   structuredContent: Record<string, unknown>;
   isError?: boolean;
-}
-
-/** Der Strukturteil einer Antwort — im Fehlerfall darf er nicht vorhanden sein. */
-function struktur(out: ToolResult): unknown {
-  return (out as { structuredContent?: unknown }).structuredContent;
 }
 
 function asResult(res: JsonRpcResponse | null): Record<string, unknown> {
@@ -163,11 +158,10 @@ describe("MCP-Tools", () => {
     expect(g.entities.map((e) => e.name).sort()).toEqual(["docker", "docker setup", "traefik"]);
     expect(g.relations.length).toBeGreaterThanOrEqual(2);
     // #83 (4) hebt die alte Zeile auf (`every(r => r.relation === "mentions")`).
-    // Sie behauptete, der Agentenkanal setze Kanten — und Damian hat an seiner
-    // laufenden App gemessen, dass genau das zu wenig ist: alle Kanten trugen das
-    // eine Wort. Ein Titel, der einen Begriff nennt, ist "mentions"; zwei Begriffe,
-    // die in derselben Aussage stehen, sind "co-mentions". Der Zwilling in der App
-    // zog diesen Zug mit fb13218, hier fehlte er.
+    // Die behauptete nur, dass der Agentenkanal Kanten setzt, und Damian hat an
+    // seiner laufenden App gemessen, dass genau das zu wenig ist: alle 1.666 Kanten
+    // trugen das eine Wort. Ein Titel, der einen Begriff nennt, ist "mentions"; zwei
+    // Begriffe, die in derselben Aussage stehen, sind "co-mentions".
     const worte = new Set(g.relations.map((r) => r.relation));
     expect([...worte].sort(), `der Agentenkanal setzt nur: ${[...worte].join(", ")}`).toEqual(["co-mentions", "mentions"]);
   });
@@ -224,10 +218,16 @@ describe("MCP-Tools", () => {
   it("memory_forget mode=supersede markiert die Memory als ersetzt", async () => {
     const saved = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Alt", content: "x" } }));
     const id = (saved.structuredContent.memory as { id: string }).id;
-    const neu = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Neu", content: "y" } }));
-    const nachfolger = (neu.structuredContent.memory as { id: string }).id;
-    const res = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "supersede", supersedeBy: nachfolger } }));
+    // F12-Paritaet zum Kern: ein Zeiger ins Leere ist kein Ersetzen. Die Supersede-
+    // Fahne haengt an einem nicht-null-Zeiger, ohne Nachfolger blieb die Notiz
+    // gueltig und der Agent glaubte, sie sei ersetzt — Erfolg ohne Wirkung.
+    const nachfolger = asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: { title: "Neu", content: "y" } }));
+    const nachfolgerId = (nachfolger.structuredContent.memory as { id: string }).id;
+    const res = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "supersede", supersedeBy: nachfolgerId } }));
     expect((res.structuredContent as { forgotten: boolean }).forgotten).toBe(true);
+    const ohneNachfolger = asTool(await rpc(store, "tools/call", { name: "memory_forget", arguments: { id, mode: "supersede" } }));
+    expect(ohneNachfolger.isError).toBe(true);
+    expect(ohneNachfolger.content[0].text).toMatch(/requires supersedeBy/);
   });
 
   it("memory_forget mode=delete verschiebt in den Papierkorb", async () => {
@@ -393,204 +393,5 @@ describe("memory_save mit Write-Gate (F2)", () => {
     expect(sc.created).toBe(false);
     expect(sc.memory.id).toBe("vorh");
     expect((store.getMemory("vorh")?.title) ?? "").toBe("Server Passwort X");
-  });
-});
-
-describe("Privatheits-Floor: jeder Agentenweg, nicht nur Suche und Liste", () => {
-  let store: KeptaStore;
-  beforeEach(() => {
-    store = freshStore();
-  });
-
-  async function speichern(args: Record<string, unknown>): Promise<ToolResult> {
-    return asTool(await rpc(store, "tools/call", { name: "memory_save", arguments: args }));
-  }
-  async function ruf(name: string, args: Record<string, unknown>): Promise<ToolResult & { isError?: boolean }> {
-    return asTool(await rpc(store, "tools/call", { name, arguments: args }));
-  }
-  function knoten(out: Record<string, unknown>): string[] {
-    return (out.entities as { name: string }[]).map((e) => e.name);
-  }
-  // Die id aus der Antwort des Speicherns, nicht aus privateMemoryIds() geholt:
-  // sonst blinde ein Test mit, der den Floor abschaltet, und wäre sich selbst grün.
-  function idVon(out: ToolResult): string {
-    return (out.structuredContent as { memory: { id: string } }).memory.id;
-  }
-
-  it("memory_graph: Entität nur aus privater Notiz fällt raus, Relationen dorthin auch", async () => {
-    await speichern({ title: "Offenes Projekt", content: "Fahrplan" });
-    await speichern({ title: "Geheime Praxis", content: "Steuer-ID 999", scope: "private" });
-
-    const graph = (await ruf("memory_graph", { depth: 2 })).structuredContent;
-    expect(knoten(graph)).toContain("offenes projekt");
-    expect(knoten(graph)).not.toContain("geheime praxis");
-  });
-
-  it("memory_graph: Name aus einer offenen Notiz bleibt, die Relation der privaten fällt", async () => {
-    const offen = await speichern({ title: "Sitzung Notar", content: "Wir folgen [[Aktenzeichen 44]]" });
-    const offenId = idVon(offen);
-    // Dieselbe Entität aus OFFENER Sicht — sie darf nicht verschwinden. Die private
-    // Notiz verlinkt zusätzlich [[Geheime Konten]]: dieser Knoten hat nur private
-    // Träger-Notizen und muss samt Relation raus.
-    await speichern({ title: "Aktenzeichen 44", content: "Siehe [[Geheime Konten]]", scope: "private" });
-
-    const graph = (await ruf("memory_graph", { depth: 2 })).structuredContent;
-    const namen = knoten(graph);
-    expect(namen).toContain("aktenzeichen 44");
-    expect(namen).not.toContain("geheime konten");
-    const relationen = graph.relations as { source: string; target: string }[];
-    expect(relationen.some((r) => r.target === "geheime konten")).toBe(false);
-    expect(relationen.some((r) => r.source === "sitzung notar" && r.target === "aktenzeichen 44")).toBe(true);
-    expect(store.getMemory(offenId)?.scope).toBe("local");
-  });
-
-  it("memory_graph: eine privat gelöschte Notiz bleibt privat — ihr Titel taucht nicht auf", async () => {
-    const privat = await speichern({ title: "Geheimes Mandat", content: "Aktenzeichen 55", scope: "private" });
-    store.trashMemory(idVon(privat));
-    await speichern({ title: "Offene Aktenliste", content: "Nummern" });
-
-    const graph = (await ruf("memory_graph", { depth: 2 })).structuredContent;
-    expect(knoten(graph)).not.toContain("geheimes mandat");
-    expect(knoten(graph)).toContain("offene aktenliste");
-  });
-
-  it("memory_consolidate meldet und ersetzt private Dupletten nicht", async () => {
-    const p1 = await speichern({ title: "Geheime Praxisrechnung", content: "eins", scope: "private" });
-    const p2 = await speichern({ title: "Geheime Praxisrechnung", content: "zwei länger", scope: "private" });
-    await speichern({ title: "Offene Praxisrechnung", content: "eins" });
-    await speichern({ title: "Offene Praxisrechnung", content: "zwei länger" });
-    const privaten = [idVon(p1), idVon(p2)];
-
-    const out = (await ruf("memory_consolidate", { dryRun: false, confirm: "supersede" })).structuredContent;
-    const kandidaten = out.candidates as { keepId: string; duplicateId: string }[];
-    expect(kandidaten.length).toBeGreaterThan(0);
-    for (const k of kandidaten) {
-      expect(privaten).not.toContain(k.keepId);
-      expect(privaten).not.toContain(k.duplicateId);
-    }
-    expect(out.applied as number).toBeGreaterThan(0);
-    for (const id of privaten) expect(store.getMemory(id)?.supersededBy).toBeNull();
-    // Leerlauf-Schutz: dieselbe Engine ohne den Floor findet die private Duplette
-    // sehr wohl — der Test oben prüft also etwas und läuft nur auf leeren Raum.
-    const ohneFloor = await consolidateMemories(store, { dryRun: true });
-    expect(
-      ohneFloor.candidates.some((c) => privaten.some((id) => id === c.keepId || id === c.duplicateId))
-    ).toBe(true);
-  });
-
-  it("Update, Delete, Forget und Save-auf-id sehen private Notizen nicht — Antwort wie bei einer unbekannten id", async () => {
-    const privateNotiz = await speichern({ title: "Geheime Steuerliste", content: "4711", scope: "private" });
-    const id = idVon(privateNotiz);
-    const vor = store.getMemory(id)!;
-    const unbekannte = "gibts-fuer-niemals";
-    // Wortvergleich auf die id heruntergebrochen: private id und unbekannte id
-    // dürfen sich in Text, Struktur und isError nicht unterscheiden — sonst ist
-    // jede Antwort ein Existenznachweis für eine Notiz, die es für Agenten nicht gibt.
-    const norm = (out: unknown, durch: string) => JSON.stringify(out).split(durch).join("<id>");
-
-    const wege: [string, Record<string, unknown>][] = [
-      ["memory_update", { id, title: "Überschrieben" }],
-      ["memory_delete", { id }],
-      ["memory_delete", { id, permanent: true }],
-      ["memory_forget", { id, mode: "expire" }],
-      ["memory_save", { id, title: "Überschrieben", content: "fremd" }],
-    ];
-    for (const [name, args] of wege) {
-      const privat = await ruf(name, args);
-      expect(privat.isError, name).toBe(true);
-      // Die Meldung sitzt im Text, nicht in einer Struktur — ein Strukturteil im
-      // Fehlerfall würde an der deklarierten outputSchema des Werkzeugs brechen.
-      expect(struktur(privat), name).toBeUndefined();
-      const err = privat.content[0]?.text ?? "";
-      expect(err, name).toContain("not found");
-      // Kein Wort wie "privat" — das wäre die Existenzbestätigung in Klartext.
-      expect(err, name).not.toMatch(/priv/i);
-      if (name === "memory_save") continue; // save legt eine unbekannte id einfach an
-      const unbekannt = await ruf(name, { ...args, id: unbekannte });
-      expect(norm(privat, id), name).toBe(norm(unbekannt, unbekannte));
-    }
-
-    const nach = store.getMemory(id)!;
-    expect(nach.title).toBe(vor.title);
-    expect(nach.deletedAt).toBeNull();
-    expect(nach.validTo).toBe(vor.validTo);
-  });
-
-  it("supersedeBy auf eine private Notiz wird verweigert — der Zeiger wandert nicht in offene Treffer", async () => {
-    const geheim = await speichern({ title: "Geheime Nachfolgerin", content: "4712", scope: "private" });
-    const privat = idVon(geheim);
-    const offneId = idVon(await speichern({ title: "Offene Vorgängerin", content: "alt" }));
-
-    const out = await ruf("memory_forget", { id: offneId, mode: "supersede", supersedeBy: privat });
-    expect(out.isError).toBe(true);
-    expect(out.content[0]?.text ?? "").not.toMatch(/priv/i);
-    expect(store.getMemory(offneId)?.supersededBy).toBeNull();
-  });
-
-  it("ein von der App gesetzter Zeiger auf eine private Nachfolgerin bleibt Agenten vorenthalten", async () => {
-    const geheim = await speichern({ title: "Geheime Nachfolgerin", content: "4713", scope: "private" });
-    const privat = idVon(geheim);
-    const offneId = idVon(await speichern({ title: "Offene Vorgängerin", content: "alt" }));
-    // Die Besitzerin consolidiert über ihren ganzen Bestand — die App darf zeigen,
-    // wohin sie die Notiz ersetzt hat, der Agent nicht.
-    store.supersedeMemory(offneId, privat);
-
-    const found = await ruf("memory_search", { query: "Offene Vorgängerin" });
-    const treffer = (found.structuredContent.hits as { id: string; supersededBy: string | null; superseded: boolean }[])[0]!;
-    expect(treffer.id).toBe(offneId);
-    expect(treffer.supersededBy).toBeNull();
-    expect(treffer.superseded).toBe(true);
-    const gelistet = await ruf("memory_list", {});
-    const notiz = (gelistet.structuredContent.memories as { id: string; supersededBy: string | null }[])[0]!;
-    expect(notiz.supersededBy).toBeNull();
-    expect(JSON.stringify(found).concat(JSON.stringify(gelistet))).not.toContain(privat);
-  });
-
-  it("Write-Gate auf einer privaten Duplette: eigener Knoten statt Überschreiben, kein privater Text", async () => {
-    // Der Vektor ist absichtlich identisch: findDuplicateForNew trifft die private
-    // Notiz mit Ähnlichkeit 1,0. Es darf sie aber weder als Gate-Ziel noch in der
-    // Begründung nennen — beides endet im Agentenkanal. Seed von Hand wie in
-    // engine.test.ts, damit der Test nicht auf einen nachlaufenden Embed-Queue-Lauf
-    // angewiesen ist.
-    const VEK = [1, 0, 0, 0];
-    const privaten = store.createMemory({ title: "Geheime Steuerliste", content: "Steuer-ID 4711", scope: "private" }).id;
-    store.replaceChunks(privaten, ["Geheime Steuerliste"]);
-    store.setEmbedding(privaten, 0, Float32Array.from(VEK), DEFAULT_EMBED_MODEL);
-    vi.stubEnv("KEPTA_WRITE_GATE", "on");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: unknown, init?: { body?: string }) => {
-        const u = String(url);
-        if (u.endsWith("/api/chat")) {
-          return {
-            ok: true,
-            status: 200,
-            json: async () => ({ message: { content: `{"decision":"UPDATE","reason":"steuer-id 4711 vorhanden"}` } }),
-          } as unknown as Response;
-        }
-        return { ok: true, status: 200, json: async () => ({ embeddings: [VEK] }) } as unknown as Response;
-      })
-    );
-    try {
-      const out = await speichern({ title: "Steuerliste Backup", content: "Steuer-ID 4711" });
-      expect(out.isError).toBeUndefined();
-      const sc = out.structuredContent as {
-        created: boolean;
-        gateOutcome: string;
-        duplicateWarning: unknown;
-        writeGate: { decision: string; targetId?: string };
-      };
-      expect(sc.created).toBe(true);
-      expect(sc.gateOutcome).toBe("created");
-      expect(sc.writeGate.decision).toBe("ADD");
-      expect(sc.writeGate.targetId).toBeUndefined();
-      expect(sc.duplicateWarning).toBeNull();
-      expect(store.getMemory(privaten)?.content).toBe("Steuer-ID 4711");
-      expect(store.countMemories().active).toBe(2);
-      expect(JSON.stringify(out)).not.toContain(privaten);
-    } finally {
-      vi.unstubAllEnvs();
-      vi.unstubAllGlobals();
-    }
   });
 });

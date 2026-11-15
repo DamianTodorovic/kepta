@@ -140,7 +140,135 @@ export function pruefe(release, { starten = true, protokoll = console.log } = {}
   return apps.length;
 }
 
+/**
+ * Der Griff, der wirklich zählt: nicht nur `require`, sondern eine verschlüsselte
+ * Probedatenbank anlegen, beschreiben und wieder lesen.
+ *
+ * Das Modul bindet sein natives Binary **faul** — `require` lädt nur `lib/index.js`,
+ * der eigentliche Griff passiert erst im Konstruktor (`lib/database.js` → `bindings`).
+ * Ein nacktes `require` sieht einen ABI-Streit therefore nie: die Wache meldete
+ * EXIT 0, während die Suite 59 von 178 Dateien verlor (gemessen 16.10., Ursache:
+ * ein `build:mac` stellte das Modul auf Electron um). Dieselbe Datei weiss es für
+ * Electron besser — `probelauf()` öffnet eine Probedatenbank. Diese Zeile ist der
+ * Node-Seite ihres Namens schuldig gewesen.
+ */
+export function probeCode(modul, db) {
+  return [
+    `const D = require(${JSON.stringify(modul)});`,
+    `const d = new D(${JSON.stringify(db)});`,
+    `d.pragma("cipher = 'sqlcipher'"); d.pragma("legacy = 4");`,
+    `d.pragma('key = "' + "x'" + "ab".repeat(32) + "'" + '"');`,
+    `d.exec("CREATE VIRTUAL TABLE t USING fts5(x); INSERT INTO t VALUES ('probetext')");`,
+    `const n = d.prepare("SELECT count(*) AS n FROM t WHERE t MATCH 'probetext'").get().n;`,
+    `d.close();`,
+    `if (n !== 1) throw new Error("Probedatenbank: " + n + " Treffer statt 1");`,
+    `process.stdout.write("ok " + process.versions.modules);`,
+  ].join("\n");
+}
+
+/**
+ * Das native Binary **im Paket** gegen die Electron-Laufzeit, die es tragen muss —
+ * vor dem Start der App, damit ein falscher Fall einen Namen hat statt nach 36 s
+ * „antwortet nicht" zu bleiben.
+ *
+ * Geprueft wird das `.node` selbst, nicht das Paket: `electron-builder` packt nur
+ * das native Modul aus (`asarUnpack`), seine JS-Nachbarn (`bindings`) bleiben im
+ * asar. Von außen ist das Paket also nicht ladbar — gemessen 16.10. 12:18:50 an der
+ * installierten App, wo derselbe Griff ueber das Paket mit „Cannot find module"
+ * endete, obwohl das Binding passte. Das Laden des Binaries unterscheidet die
+ * Laufzeit trotzdem: ein Node-Binding in Electron wirft den echten ABI-Streit.
+ *
+ * Der Laeufer ist ein Argument, weil der Gegenbeweis an einem echten Paar gefaehrt
+ * werden muss, nicht an einem erfundenen Text.
+ */
+export function ladeCode(bin) {
+  return `require(${JSON.stringify(bin)}); process.stdout.write("ok " + process.versions.modules);`;
+}
+
+export function electronBindung({ programm, bin, laufen }) {
+  const code = ladeCode(bin);
+  let text;
+  try {
+    if (laufen) {
+      text = String(laufen(programm, code) ?? "");
+    } else {
+      try {
+        const aus = execFileSync(programm, ["-e", code], {
+          env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+          stdio: ["ignore", "pipe", "pipe"],
+          timeout: 60_000,
+        });
+        text = String(aus ?? "").trim();
+      } catch (e) {
+        text = String(e.stderr ?? e.message ?? e);
+      }
+    }
+  } catch (e) {
+    text = String(e?.message ?? e);
+  }
+  if (/^ok(\s|$)/.test(text)) return { ok: true, abi: text.replace(/^ok\s*/, "").trim() || null, text };
+  const grund = text.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 3).join(" / ");
+  return { ok: false, grund, abiStreit: abiKonflikt(text), text };
+}
+
+/**
+ * Laedt das native Modul unter dem laufenden Node **und** verschluesselt damit eine
+ * Probedatenbank. null wenn beides geht, sonst der FehlerText. Der Griff passiert in
+ * einem eigenen Prozess, damit ein Fehlversuch diesen Prüfprozess nicht mit einem
+ * halb geladenen Modul zurücklässt.
+ */
+export function fehlerBeimLaden(modul = MODUL) {
+  const ordner = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-native-node-"));
+  const db = path.join(ordner, "probe.db");
+  try {
+    execFileSync(process.execPath, ["-e", probeCode(modul, db)], {
+      stdio: ["ignore", "ignore", "pipe"],
+      timeout: 60_000,
+    });
+    return null;
+  } catch (e) {
+    return String(e.stderr ?? e.message ?? e);
+  } finally {
+    fs.rmSync(ordner, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Der Streit, den ein Paketbau hinterlaesst: `electron-builder` stellt das Modul
+ * in node_modules auf Electron um, der naechste Testlauf unter Node faellt dann
+ * mit Hunderten Fehlern, deren sichtbare Meldung eine Nachlaufzeile aus dem
+ * afterEach ist. Erkannt wird die Ursache an ihrem eigenen Satz.
+ */
+export function abiKonflikt(fehlerText) {
+  return /compiled against a different Node\.js version/i.test(fehlerText ?? "");
+}
+
+/** Die Meldung, die ein Mensch lesen kann, bevor die Suite laeuft. */
+export const HEILUNG = `npm rebuild ${MODUL}`;
+
+/**
+ * Wache vor dem Testlauf: true, wenn das Modul unter diesem Node laedt. Bei einem
+ * ABI-Streit nennt sie die eine Heilung, bei allem anderen den Fehler selbst —
+ * die Wache darf nichts erfinden, was nicht der Grund ist. Sie baut nicht selbst.
+ */
+export function pruefeNode({ fehler = fehlerBeimLaden, protokoll = console.error } = {}) {
+  const text = fehler();
+  if (!text) return true;
+  if (abiKonflikt(text)) {
+    protokoll(
+      `Kein Fehler im Code: das native SQLite-Modul ist für eine andere Laufzeit gebaut ` +
+        `(der letzte Paketbau stellt es auf Electron um). Heilung: ${HEILUNG} — ` +
+        `aber erst, wenn kein Paketbau mehr läuft: dasselbe Modul gehört der build, ` +
+        `und ein umbautes Node-ABI mitten im Bau wandert in das ausgelieferte Paket.`
+    );
+  } else {
+    protokoll(text.trim().split("\n").slice(0, 4).join("\n"));
+  }
+  return false;
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  if (process.argv.includes("--node")) process.exit(pruefeNode() ? 0 : 1);
   try {
     const n = pruefe(process.argv[2] ?? "release", { starten: !process.argv.includes("--ohne-start") });
     console.log(`${n} App(s) geprueft — die native SQLite-Verschluesselung passt.`);

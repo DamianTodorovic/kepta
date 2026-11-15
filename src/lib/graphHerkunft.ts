@@ -1,0 +1,125 @@
+// Die Herkunft als zweiter Farbkanal des Graphen (P-11).
+//
+// Die Fläche malt eine Notiz bisher in der Farbe ihrer ART. Das ist die
+// wichtigste Frage — Fakt, Ereignis, Anleitung, Dokument. Die zweite Frage
+// beantwortet kein Kanal: WOHER weiss ich das? Der Posteingang stempelt seine
+// Dateien, der Rechner-Scan stempelt seine Funde, und was keinen Stempel trägt,
+// hat jemand hier geschrieben.
+//
+// Die Regel, die diese Datei trägt: Herkunft ist eine Auskunft, kein
+// Lückenbüsser. Ein Bestand, in dem alles aus derselben Hand kommt, hat nichts
+// zu unterscheiden — dann ist der Kanal abgeschaltet und sagt warum, statt die
+// ganze Wissensbasis in ein graues „Unbekannt" zu tauchen.
+
+export const HERKUNFT = {
+  geschrieben: "geschrieben",
+  datei: "datei",
+  rechner: "rechner",
+} as const;
+
+export type HerkunftsArt = (typeof HERKUNFT)[keyof typeof HERKUNFT];
+
+export interface HerkunftsNotiz {
+  id: string;
+  tags: readonly string[];
+}
+
+export interface HerkunftsBild {
+  /** Notiz-id → Herkunft. Jede Notiz hat eine — es gibt kein „weiss nicht". */
+  träger: Map<string, HerkunftsArt>;
+  /** Alle drei Arten, auch die mit null — `arten` filtert das auf die, die vorkommen. */
+  zahlen: Record<HerkunftsArt, number>;
+  /** Die Arten, die im Bestand vorkommen, absteigend nach Zahl, dann nach Name. */
+  arten: HerkunftsArt[];
+  /** Ob der Kanal etwas zu sagen hat. */
+  verfügbar: boolean;
+  /** Warum nicht — in der Sprache der Fläche, leer, wenn der Kanal an ist. */
+  grund: string;
+}
+
+/** Die Stempel, die die Schreibwege wirklich setzen — exakt, nicht enthalten. */
+const STEMPEL: readonly [string, HerkunftsArt][] = [
+  ["inbox", HERKUNFT.datei],
+  ["auto-import", HERKUNFT.datei],
+  ["machine-scan", HERKUNFT.rechner],
+];
+
+export const HERKUNFT_LABELS: Record<HerkunftsArt, string> = {
+  [HERKUNFT.geschrieben]: "Written in K3PTA",
+  [HERKUNFT.datei]: "From a file",
+  [HERKUNFT.rechner]: "From this computer",
+};
+
+/**
+ * Die Frage dieser Achse — und ab heute ihr einziges Wort.
+ *
+ * Bis 29.10. stand dieses Wort auch ueber den Traeger-Zahlen der Liste
+ * ("where it came from" ueber Notes / Files / Code, `Dashboard.tsx:1829`), obwohl
+ * die Traeger fragen, in welcher FORM ein Stueck hier liegt, nicht woher es kam.
+ * Die Herkunft ist die einzige Achse, die "came from" sagen darf; die Wache
+ * `tests/components/dashboard-achsenwort.test.tsx` haelt beide Seiten fest.
+ */
+export const HERKUNFT_FRAGE = "Where it came from";
+
+/**
+ * Die gleiche Auskunft für den eingebetteten Satz („Everything here was …").
+ * Geschrieben, nicht gerechnet: der Satz braucht Kleinschrift am Anfang, die
+ * Marke aber ihre Schreibweise. Ein `.toLowerCase()` über LABELS ergab
+ * „written in k3pta" — ein Eigenname, den eine Kasus-Biegung klein macht
+ * (Hausregel 14.10.). Wer ein Label ändert, ändert hier mit; der Fall in
+ * tests/lib/graphHerkunft.test.ts hält beide Formen zusammen.
+ */
+export const HERKUNFT_SATZ: Record<HerkunftsArt, string> = {
+  [HERKUNFT.geschrieben]: "written in K3PTA",
+  [HERKUNFT.datei]: "from a file",
+  [HERKUNFT.rechner]: "from this computer",
+};
+
+/**
+ * Die Herkunfts-Farben stehen in `src/index.css` (--type-herkunft-*: Schiefer,
+ * Lohe, Petrol — absichtlich ausserhalb der Art-Familie, damit ein Kanalwechsel
+ * nicht wie ein Artenwechsel aussieht). Hier steht nur der Name; gemalt wird
+ * aus `<token>-hex`, den die design-wache neben das oklch-Original setzt.
+ *
+ * „Written in K3PTA" ist stahlgrau, nicht weil die Herkunft unbekannt wäre,
+ * sondern weil sie die unaufgeforderte ist: alles, was hier niemand
+ * hereingetragen hat, wurde hier aufgeschrieben.
+ */
+export const HERKUNFT_TOKEN: Record<HerkunftsArt, string> = {
+  [HERKUNFT.geschrieben]: "--type-herkunft-geschrieben",
+  [HERKUNFT.datei]: "--type-herkunft-datei",
+  [HERKUNFT.rechner]: "--type-herkunft-rechner",
+};
+
+export function herkunftAusNotiz(notiz: HerkunftsNotiz): HerkunftsArt {
+  for (const [stempel, art] of STEMPEL) {
+    if (notiz.tags.includes(stempel)) return art;
+  }
+  return HERKUNFT.geschrieben;
+}
+
+export function herkunftsBild(notizen: readonly HerkunftsNotiz[]): HerkunftsBild {
+  const träger = new Map<string, HerkunftsArt>();
+  const zahlen: Record<HerkunftsArt, number> = {
+    [HERKUNFT.geschrieben]: 0,
+    [HERKUNFT.datei]: 0,
+    [HERKUNFT.rechner]: 0,
+  };
+  for (const n of notizen) {
+    const art = herkunftAusNotiz(n);
+    träger.set(n.id, art);
+    zahlen[art] += 1;
+  }
+  const arten = (Object.keys(zahlen) as HerkunftsArt[])
+    .filter((a) => zahlen[a] > 0)
+    .sort((a, b) => zahlen[b] - zahlen[a] || (a < b ? -1 : a > b ? 1 : 0));
+
+  const verfügbar = arten.length > 1;
+  const grund = notizen.length === 0
+    ? "No notes yet — there is nothing to have come from anywhere."
+    : verfügbar
+      ? ""
+      : `Everything here was ${HERKUNFT_SATZ[arten[0] ?? HERKUNFT.geschrieben]} — there is nothing to tell apart.`;
+
+  return { träger, zahlen, arten, verfügbar, grund };
+}

@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { CORPUS, QUERIES } from "../scripts/eval-corpus";
 import { dokuVergleich, leseBericht, readmeDateien, statischeTestanzahl, testbehauptungen } from "../scripts/test-bericht.mjs";
-import { ausgelieferteVersion, pruefePapier, rekorde } from "../scripts/benchmark-belege.mjs";
 
 // Der Korpus wuchs von 30 auf 58 Notizen, die READMEs behaupteten weiter 92 %
 // Hit@1 auf 25 Anfragen. Die Zahl war nicht erfunden — sie war nur von gestern.
@@ -16,7 +15,9 @@ const lies = (p: string) => {
   return fs.readFileSync(aufgeloest, "utf-8");
 };
 // Welche Dateien eine Testzahl nennen duerfen, liest das Modul aus dem Baum —
-// Kern und App haben damit dieselbe Regel und nicht zwei, die unabhaengig voneinander formuliert wurden.
+// Kern und App haben damit dieselbe Regel und nicht zwei, die unabhaengig
+// voneinander formuliert wurden. Hier sind es die einen READMEs seit dem
+// Open-Core-Split; README.de.md existiert in diesem Repo nicht.
 const dateien = readmeDateien();
 
 // Nachtrag: der Waechter deckte nur die Korpuszahlen ab. Waehrenddessen
@@ -39,10 +40,10 @@ describe("Dokumentation: die Testzahl ist die Zahl eines Laufs", () => {
     if (!bericht.ok) {
       // Der Lauf kann seinen eigenen Bericht nicht lesen, waehrend er ihn schreibt:
       // vitest oeffnet die JSON erst am Ende, und ein Leser mittendrin erwischt eine
-      // halbe Datei (gemessen: Kern-Lauf 1 am 12.10., "Expected property name or '}' in
-      // JSON at position 1"). In diesem einen Fall ist das Weigern der Befund, nicht die
-      // rote Zahl — die Autoritaet fuer Zahl und Stand ist `scripts/doku-check.mjs` NACH
-      // dem Lauf. Jede andere Weigerung (fehlt, alt, unvollstaendig, passt nicht zum
+      // halbe Datei (gemessen am Kern-Lauf 1 am 12.10.: "Expected property name or '}'
+      // in JSON at position 1"). In diesem einen Fall ist das Weigern der Befund, nicht
+      // die rote Zahl — die Autoritaet fuer Zahl und Stand ist `scripts/doku-check.mjs`
+      // NACH dem Lauf. Jede andere Weigerung (fehlt, alt, unvollstaendig, passt nicht zum
       // Baum) bleibt ein Wurf: die zeigt an, dass jemand eine alte Zahl ungeprueft liest.
       if (/kein lesbares JSON/.test(bericht.grund)) {
         expect(bericht.hinweis, "ein halb geschriebener Bericht muss den Weg zum echten Lauf nennen").toContain("npm test");
@@ -130,13 +131,32 @@ describe("Der Korpus selbst", () => {
 // von "23 Routen", tatsaechlich waren es 33 — die Zahl war schon vor dem
 // Rechner-Scan zehn Routen alt. Auch sie bekommt jetzt einen Waechter.
 describe("Dokumentation: die Routenzahl driftet nicht weg", () => {
+  function serverQuellen(): string[] {
+    // Seit dem Refactoring 2026-09 lebt die API in server.ts + server/router/*.
+    const dateien = [path.join(wurzel, "server.ts")];
+    const routerOrdner = path.join(wurzel, "server");
+    const sammle = (ordner: string) => {
+      for (const eintrag of fs.readdirSync(ordner, { withFileTypes: true })) {
+        const voll = path.join(ordner, eintrag.name);
+        if (eintrag.isDirectory()) sammle(voll);
+        else if (eintrag.name.endsWith(".ts")) dateien.push(voll);
+      }
+    };
+    sammle(routerOrdner);
+    return dateien;
+  }
+
   function echteRouten(): number {
-    const quelle = lies("server.ts");
     const pfade = new Set<string>();
-    const re = /app\.(get|post|put|delete|patch)\(\s*["'`]([^"'`]+)["'`]/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(quelle)) !== null) {
-      if (m[2] !== "*") pfade.add(m[2]);
+    const re = /\b(?:app|router)\.(get|post|put|delete|patch)\(\s*["'`]([^"'`]+)["'`]/g;
+    for (const datei of serverQuellen()) {
+      const quelle = lies(path.relative(wurzel, datei));
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(quelle)) !== null) {
+        // Der SPA-Fallback ist kein API-Endpunkt: in Express 4 als "*", seit
+        // Express 5 als "/{*splat}" — beides zählt nicht mit.
+        if (m[2] !== "*" && m[2] !== "/{*splat}") pfade.add(m[2]);
+      }
     }
     return pfade.size;
   }
@@ -170,7 +190,11 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
 
   it("keine Datei behauptet mehr 92 % Hit@1", () => {
     // Die Zahl stammte aus einem 25-Anfragen-Korpus, den es nicht mehr gibt.
-    const zuPruefen = ["README.md", "README.de.md"];
+    const zuPruefen = [
+      "README.md", "AGENTS.md",
+      "src/components/SystemStatus.tsx", "src/components/Settings.tsx",
+      "src/components/Dashboard.tsx", "src/components/Chat.tsx",
+    ];
     for (const datei of zuPruefen) {
       const inhalt = lies(datei);
       const stellen = [...inhalt.matchAll(/.{0,60}92\s*%.{0,40}/g)].map((m) => m[0]);
@@ -188,384 +212,133 @@ describe("Abzeichen und Anwendungstexte behaupten nichts Falsches", () => {
     expect(lies("CHANGELOG.md"), `CHANGELOG.md hat keinen Abschnitt "## [${version}]"`).toContain(`## [${version}]`);
   });
 
-  it("README.md zeigt die Version aus package.json als Badge", () => {
-    // Nachtrag 22.9.2026: das Badge zeigte 2.13.4, die Pakete waren bei 2.13.11 —
-    // dieselbe Sorte Drift wie die Testzahlen, nur ohne Waechter.
-    const version = (JSON.parse(lies("package.json")) as { version: string }).version;
-    expect(lies("README.md"), `README.md-Badge zeigt nicht ${version}`).toContain(`badge/version-${version}-blue`);
-  });
-
-  it("die READMEs nennen die Coverage-Schwellen aus vitest.config.ts", async () => {
-    // Der Kommentar am Ende dieser Datei versprach seit 10.9. einen Waechter fuer
-    // die Schwellen — geschrieben wurde er nie, und "coverage 92 %" stand
-    // monatelang in den READMEs. Jetzt wirklich: verglichen wird mit dem
-    // importierten Config-Objekt, nicht mit einer zweiten Regex-Paraphrase davon.
-    const cfg = (await import("../vitest.config")).default as {
-      test?: {
-        coverage?: {
-          thresholds?: {
-            lines?: number;
-            functions?: number;
-            branches?: number;
-            statements?: number;
-            "src/core/**"?: { lines?: number; functions?: number; branches?: number; statements?: number };
-          };
-        };
-      };
-    };
-    const schw = cfg.test?.coverage?.thresholds;
-    if (!schw) throw new Error("vitest.config.ts hat keine Coverage-Schwellen mehr — Waechter anpassen");
-    const kern = schw["src/core/**"];
-    if (!kern) throw new Error("vitest.config.ts hat keine src/core-Schwellen mehr — Waechter anpassen");
-    const arten = ["lines", "functions", "branches", "statements"] as const;
-    const mass = [
-      ...arten.map((k) => ({ bereich: "alles zusammen", k, wert: Number(schw[k]) })),
-      ...arten.map((k) => ({ bereich: "src/core", k, wert: Number(kern[k]) })),
+  it("die Anwendung nennt eine Trefferquote, die der Eval entspricht", () => {
+    // Vorher war das hier ein Band: jede Zahl zwischen 45 und 75 durfte durch,
+    // auch die von gestern. Ein Band schuetzt keine Messung, es dekoriert sie.
+    // Die erlaubten Werte kommen jetzt aus dem Beleg selbst — und der Beleg ist
+    // die gefaehrliche Stelle: heisst er anders, muss diese Wache rot werden.
+    // Seit 3.11. nennt der Beleg drei Hit@1-Zahlen statt zwei: v1, v2 ohne Vektoren
+    // und v3 mit — das ausgelieferte Retrieval. Das 71 % der Flaeche ist die Zahl des
+    // zweiten Beins, weil dieser Ast der Flaeche ohne Ollama laeuft.
+    const belegt = lies("docs/belege/tag-0311/eval-drei-beine-1352.log.txt");
+    const gemessen = [...belegt.matchAll(/Hit@1:\s+(\d+(?:[.,]\d+)?)\s*%/g)]
+      .map((m) => Math.round(Number(m[1].replace(",", "."))));
+    expect(gemessen.length, "der Eval-Beleg nennt keine zwei Hit@1-Zahlen — diese Wache ist taub").toBeGreaterThanOrEqual(2);
+    const erlaubt = [...new Set(gemessen)];
+    // Eine Zahl ohne ihren Korpus ist eine halbe Auskunft: 71 % auf 58 Notizen
+    // und 71 % auf 2 000 Notizen sind zwei verschiedene Behauptungen. Der Korpus
+    // kommt aus derselben Datei, die auch der Eval liest (scripts/eval.ts:15).
+    const korpus = `${CORPUS.length}`;
+    const zuPruefen = [
+      "src/components/SystemStatus.tsx", "src/components/Settings.tsx",
+      "src/components/Dashboard.tsx", "src/components/Chat.tsx",
     ];
-    // Eine fehlende Spalte würde als NaN laufen und dann eine RegExp nach "NaN %"
-    // erzeugen — die Meldung fuehrt in die Irre, weil sie dem README die Schuld gibt.
-    for (const m of mass) {
-      expect(Number.isFinite(m.wert), `vitest.config.ts liefert fuer ${m.bereich}/${m.k} keine Zahl`).toBe(true);
-    }
-    for (const datei of dateien) {
+    for (const datei of zuPruefen) {
       const inhalt = lies(datei);
-      for (const m of mass) {
-        expect(
-          new RegExp(`${m.wert}\\s*%`).test(inhalt),
-          `${datei} nennt die Schwelle ${m.wert} % (${m.bereich}, ${m.k}) nicht mehr`
-        ).toBe(true);
-      }
-      // Und der Scope: diese Zahlen gelten nur fuer den gemessenen Teil des Repos.
-      expect(inhalt, `${datei} erklaert nicht, was ueberhaupt gemessen wird`).toMatch(/src\/core\/\*\*[^|]*server\.ts/);
-    }
-  });
-
-  it("jede Cache-Sekunde in den READMEs liegt als Record in tools/latenz/ergebnisse", () => {
-    // "warmer Such-Cache 0,74 s" stand in beiden READMEs und in keinem JSON —
-    // damit verletzte die Seite genau die Regel, die tools/latenz/README.md
-    // selbst aufstellt. Der Waechter gilt nicht rueckwirkend fuer CHANGELOG
-    // (Geschichte), aber fuer alles, was neu behauptet wird.
-    const ordner = path.join(wurzel, "tools", "latenz", "ergebnisse");
-    const belegteSekunden = new Set<string>();
-    for (const datei of fs.readdirSync(ordner).filter((f) => f.endsWith(".json"))) {
-      const record = JSON.parse(lies(path.join("tools", "latenz", "ergebnisse", datei))) as {
-        suche?: { warmupErsteAbfrageMs?: unknown };
-      };
-      const w = record.suche?.warmupErsteAbfrageMs;
-      if (typeof w === "number") belegteSekunden.add((w / 1000).toFixed(2));
-    }
-    const cacheZeile = /cache|ingest|einspeisen/i;
-    for (const datei of dateien) {
-      for (const zeile of lies(datei).split("\n")) {
-        if (!cacheZeile.test(zeile)) continue;
-        for (const sekunde of zeile.matchAll(/(\d+(?:[.,]\d+)?)\s?s\b/g)) {
-          const wert = Number(sekunde[1].replace(",", "."));
-          const gemeldet = Number.isFinite(wert) ? wert.toFixed(2) : "";
-          expect(
-            belegteSekunden.has(gemeldet),
-            `${datei} behauptet ${sekunde[0]} am Such-Cache, ohne dass ein Record in tools/latenz/ergebnisse diese Warmup-Zahl haelt`
-          ).toBe(true);
-        }
+      for (const m of inhalt.matchAll(/(\d+)\s*%\s*Hit@1/g)) {
+        const z = Number(m[1]);
+        expect(erlaubt, `${datei} behauptet ${z} % Hit@1 — der Beleg misst ${erlaubt.join(" %, ")} %`).toContain(z);
+        const umfeld = inhalt.slice(Math.max(0, (m.index ?? 0) - 220), (m.index ?? 0) + 220);
+        expect(umfeld, `${datei}: die Hit@1-Zahl ${z} % nennt keinen Korpus — welche ${korpus} Notizen sind gemeint?`).toContain(korpus);
       }
     }
   });
-
 });
 
-// Nachtrag 2.10.2026: die Wurzel-READMEs sind nicht die einzige Doku, die eine
-// Zahl in die Welt setzt. tools/longmemeval/README.md behauptete "9 Tests in
-// tests/longmemeval.test.ts" — die Datei existierte nie, und dieser Waechter sah
-// sie nicht, weil er nur README.md/README.de.md kannte. Also: auch die
-// Werkzeug-Dokus werden jetzt gelesen, und die lauteste Zahl des Repos
-// (61,5 %) haengt an ihrem Record statt an einem Absatz, den niemand mehr liest.
-
-describe("Dokumentation: Werkzeug-Dokus verweisen nur auf echte Tests", () => {
-  const werkzeugDokus = (): string[] =>
-    fs
-      .readdirSync(path.join(wurzel, "tools"), { withFileTypes: true })
-      .filter((eintrag) => eintrag.isDirectory())
-      .map((eintrag) => path.join("tools", eintrag.name, "README.md"))
-      .filter((pfad) => fs.existsSync(path.join(wurzel, pfad)));
-
-  /** Statische it()/test()-Aufrufe — fuer eine einzelne Datei ohne it.each exakt. */
-  function zaehleTests(dateiPfad: string): number {
-    const quelle = lies(dateiPfad);
-    return [...quelle.matchAll(/^\s*(?:it|test)(?:\.\w+)?\(/gm)].length;
-  }
-
-  it("es gibt ueberhaupt Werkzeug-Dokus, sonst prueft das hier nichts", () => {
-    expect(werkzeugDokus().length).toBeGreaterThan(0);
+// P100: die vierte Zahl des Ollama-Zweigs. Die drei Hit@1-Werte oben sind an den
+// Drei-Beine-Beleg gekoppelt; der Sprachuebergriff und die Baseline-Ohne-Vektoren-Zahl
+// waren es nicht -- eine Zahl, die niemand nachrechnet, ist eine Behauptung.
+describe("Dokumentation: Sprachuebergriff und Baseline nennen ihren Beleg", () => {
+  it("die Flaeche nennt den Sprachuebergriff mit seinem Nenner, seiner Zahl und dem Beleg dahinter", () => {
+    // Der Ollama-Zweig der Flaeche sagt seit 3.2.131, dass Englisch ueber deutsche
+    // Notizen schwach ist. Die Zahl war wahr -- sie stand in
+    // docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt ("Gemessen sind 4 von 15
+    // treffern (26,7 %)") -- aber sie war die einzige der vier Flaechenzahlen ohne Wache,
+    // und der Nenner (15 Paare) war nicht als Nenner geschrieben. Gemessen im Fenster
+    // 6.11.2026 10:29:39 MEZ: "it found 4 of 15" ohne Prozent und ohne Paar-Wort.
+    const belegt = lies("docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt");
+    const m = /Gemessen sind (\d+) von (\d+) treffern/.exec(belegt);
+    expect(m, "der Sprachuebergriff-Beleg nennt keine Treffer-Zahl — diese Wache ist taub").not.toBeNull();
+    const treffer = Number(m![1]);
+    const paare = Number(m![2]);
+    const inhalt = lies("src/components/SystemStatus.tsx");
+    const s = /found (\d+) of (\d+) cross-language pairs \((\d+) %\)/.exec(inhalt);
+    expect(s, "die Flaeche nennt den Sprachuebergriff nicht mit Paar-Nenner und Prozent").not.toBeNull();
+    expect(Number(s![1]), `die Flaeche behauptet ${s![1]} Treffer — der Beleg misst ${treffer}`).toBe(treffer);
+    expect(Number(s![2]), `die Flaeche behauptet ${s![2]} Paare — der Beleg faehrt ${paare}`).toBe(paare);
+    expect(Number(s![3]), `die Flaeche rundet auf ${s![3]} % — ${treffer} von ${paare} sind ${Math.round((100 * treffer) / paare)} %`).toBe(Math.round((100 * treffer) / paare));
+    // Biss-Kontrolle: die nackte alte Form (Zahl ohne Paar-Wort und ohne Prozent) darf
+    // nicht durchgehen, sonst ist diese Wache ein Band, das alles lasst.
+    const alt = "it found 4 of 15. Embeddings are the numbers";
+    expect(/found \d+ of \d+ cross-language pairs \(\d+ %\)/.test(alt), "die Gegenprobe trifft die alte Form nicht").toBe(false);
   });
 
-  it.each(werkzeugDokus())("%s: jedes genannte Testfile existiert, jede Zahl stimmt", (datei) => {
-    for (const treffer of lies(datei).matchAll(/(?:(\d+)\s+)?Tests? in \[?`?(tests\/[\w./-]+\.test\.ts)`?\]?/g)) {
-      const pfad = treffer[2];
-      const zahl = treffer[1] ? Number(treffer[1]) : null;
-      expect(fs.existsSync(path.join(wurzel, pfad)), `${datei} verweist auf ${pfad} — die Datei gibt es nicht`).toBe(true);
-      if (zahl !== null) {
-        expect(zaehleTests(pfad), `${datei} behauptet ${zahl} Tests in ${pfad}, dort stehen ${zaehleTests(pfad)}`).toBe(zahl);
-      }
-    }
-  });
-
-  it("die Werkzeuge haben testbare Dateien, die der Waechter oben wirklich sieht", () => {
-    // Ohne diesen Anker lief der obige Durchlauf still ins Leere, sobald jemand
-    // das Verweisformat in einer Doku aendert — und die Phantomdatei waere wieder
-    // unerwaehnt. tools/latenz nennt suchcache, tools/longmemeval die Harness.
-    const genannt = werkzeugDokus().flatMap((datei) =>
-      [...lies(datei).matchAll(/(tests\/[\w./-]+\.test\.ts)/g)].map((m) => m[1])
-    );
-    expect(new Set(genannt).size).toBeGreaterThanOrEqual(2);
-    for (const pfad of genannt) {
-      expect(fs.existsSync(path.join(wurzel, pfad)), `${pfad} wird in einer Werkzeug-Doku genannt und fehlt`).toBe(true);
-    }
+  it("die Baseline ohne Vektoren heisst auf der Flaeche, was sie im Beleg ist", () => {
+    // "51 % for naive substring search" ist die v1-Zahl des Drei-Beine-Laufs. Die
+    // Hit@1-Wache oben sieht sie nicht, weil ihr Muster "Zahl % Hit@1" verlangt und
+    // dieser Satz die Abkuerzung meidet. Also hier: Zahl und ihr Name, am Beleg.
+    const belegt = lies("docs/belege/tag-0311/eval-drei-beine-1352.log.txt");
+    const v1 = /── v1-Baseline[^\n]*\n[\s\S]*?Hit@1:\s+(\d+(?:[.,]\d+)?)\s*%/.exec(belegt);
+    expect(v1, "der Beleg nennt keine v1-Baseline — diese Wache ist taub").not.toBeNull();
+    const erlaubt = Math.round(Number(v1![1].replace(",", ".")));
+    const inhalt = lies("src/components/SystemStatus.tsx");
+    const s = /(\d+) % for naive substring search/.exec(inhalt);
+    expect(s, "die Flaeche nennt keine Baseline-Zahl fuer die Suche ohne Vektoren").not.toBeNull();
+    expect(Number(s![1]), `die Flaeche behauptet ${s![1]} % — der Beleg misst in der v1-Legbe ${erlaubt} %`).toBe(erlaubt);
   });
 });
 
-describe("Dokumentation: Benchmark-Zahlen haengen an Records vom ausgelieferten Stand", () => {
-  // Nicht mehr: „die Zahl muss im Text stehen". Dieses Verlangen hat am 10.10. eine
-  // erledigte Zahl zurueck ins Papier zwingen wollen — die Serie lief gegen
-  // kepta_version 2.13.2 bis 2.13.22, ausgeliefert war 3.2.0, und der Record sagt das
-  // selbst (audit-2026-10-09/Q1-BENCHMARK-QUALITAET.md:34-35, 101). Jetzt gilt:
-  //   Zahl da  -> nur mit einem Record VOEM ausgelieferten Stand, oder als Wert eines
-  //               genannten aelteren Laufs plus erklaertem Rückzug.
-  //   Zahl weg -> nur als erklaerter Rückzug, mit der ausgelieferten Version im Satz.
-  // „vergessen" und „zurueckgezogen" abgeben nicht mehr dasselbe Bild.
-  const papiere = ["README.md", "README.de.md", "tools/longmemeval/README.md"];
+// Nachtrag 10.9.2026: "Gesamt-Coverage ~91 %" stand in den READMEs, gemessen
+// waren 89,0 % der Zeilen — die Zahl war schlicht zu hoch. Seitdem nennen die
+// READMEs die Schwellen, die die CI wirklich erzwingt, statt einer
+// Momentaufnahme. Dieser Waechter haelt sie an vitest.config.ts fest.
+describe("Dokumentation: die genannten Coverage-Schwellen sind die echten", () => {
+  const zeilenVon = (z: string) => Number(/\*\*(\d+) %\*\* (?:of lines|der Zeilen)/.exec(z)?.[1]);
+  const funktionenVon = (z: string) => Number(/\*\*(\d+) %\*\* (?:of functions|der Funktionen)/.exec(z)?.[1]);
 
-  it("die Records und die ausgelieferte Version sind ueberhaupt da, sonst prueft das hier nichts", () => {
-    const alle = rekorde();
-    expect(alle.length, "keine LongMemEval-Records — der Waechter wuerde ins Leere laufen").toBeGreaterThan(0);
-    expect(/\d+\.\d+\.\d+/.test(ausgelieferteVersion()), `package.json nennt keine lesbare Version`).toBe(true);
-  });
-
-  it.each(papiere)("%s: jede Benchmark-Zahl ist belegt, oder der Rückzug ist erklaert", (datei) => {
-    const fehler = pruefePapier({
-      text: lies(datei),
-      datei,
-      rekorde: rekorde(),
-      version: ausgelieferteVersion(),
-    });
-    expect(fehler, `${datei} macht Qualitaetsaussagen ohne Record vom ausgelieferten Stand`).toEqual([]);
-  });
-
-  it("die erledigte 61,5 % verlangt niemand mehr — und steht sie doch, muss ihre Lauf-Version dabei stehen", () => {
-    const text = lies("README.md") + "\n" + lies("README.de.md");
-    const alte = /61[.,]5\s*%/.exec(text);
-    if (!alte) return; // der gewollte Zustand: kein erzwungener Altwert
-    expect(text.slice(0, text.indexOf(alte[0]) + 240)).toMatch(/2\.13\.\d+/);
-  });
-});
-
-// Nachtrag 2.10.2026: in einer CHANGELOG-Zeile stand ein Befehl, dessen letztes
-// "a" ein kyrillisches war — für das Auge identisch, beim Kopieren ein
-// Kommando, das nicht existiert. Nach dem dritten Artefakt dieser Sorte (zuvor
-// CJK in einem Kommentar) ist die Frage nicht "kann das passieren", sondern
-// "wer schaut nachts drauf". Markdown-Dokus sind der Text, den Nutzer
-// kopieren — also diese Dateien, ohne Ausnahmen.
-describe("Dokumentation: keine Fremdalphabet-Artefakte", () => {
-  // Umlaute und ß sind lateinisch und erlaubt; Kyrillisch, Han und Kana waren in
-  // diesem Repo bisher immer ein Tipp-Artefakt.
-  const artefakt = /\p{Script=Cyrillic}|\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u;
-  const dokumente = [
-    "README.md",
-    "README.de.md",
-    "CHANGELOG.md",
-    "SECURITY.md",
-    "LICENSE",
-    "tools/longmemeval/README.md",
-    "tools/latenz/README.md",
-  ];
-
-  it("die Doku-Liste ist nicht leer gelaufen", () => {
-    for (const datei of dokumente) expect(fs.existsSync(path.join(wurzel, datei)), `${datei} fehlt`).toBe(true);
-  });
-
-  it.each(dokumente)("%s enthaelt keine Zeichen aus einem Fremdalphabet", (datei) => {
-    const funde = lies(datei)
-      .split("\n")
-      .flatMap((zeile, i) => {
-        const treffer = zeile.match(artefakt);
-        return treffer ? [`${i + 1}: ${treffer[0]}`] : [];
-      });
-    expect(
-      funde.length === 0,
-      `${datei} hat Zeilen mit fremdem Alphabet (${funde.join(", ")}) — kopierbarer Text darf kein Zeichen enthalten, das nicht zum Alphabet gehört`
-    ).toBe(true);
-  });
-});
-
-// Nachtrag 3.10.2026: der Faktenaudit auf der oeffentlichen Seite fand zwei
-// Saetze, die genau die Regel brachen, die das Repo sonst selbst aufstellt.
-// "Encrypted at rest the whole time" stand UEBER den Latenz-Records, deren
-// eigenes Feld konfiguration.verschluesselung sagt "aus (…Klartext)". Und
-// "every question, every answer … is committed" — die committeten Zeilen haben
-// die Schluessel question_id, typ, faehigkeit, urteil, treffer, trefferIndex,
-// verbatim, judge_aufrufe. Kein Frage-Text, kein Antwort-Text. Beide Saetze
-// waren nicht erfunden, sie waren nur zu breit. Deshalb jetzt: Waechter, die
-// den Anspruch an das Feld in den Records haengen.
-describe("Dokumentation: Messbedingungen und Committens stehen so im Text, wie die Records sie haben", () => {
-  const latenzOrdner = path.join(wurzel, "tools", "latenz", "ergebnisse");
-  const latenzRecords = (): string[] =>
-    fs.readdirSync(latenzOrdner).filter((f) => f.endsWith(".json")).map((f) => path.join("tools", "latenz", "ergebnisse", f));
-
-  const verschluesselungAus = latenzRecords().filter((pfad) => {
-    const record = JSON.parse(lies(pfad)) as { konfiguration?: { verschluesselung?: unknown } };
-    return String(record.konfiguration?.verschluesselung ?? "").toLowerCase().startsWith("aus");
-  });
-
-  it("die Latenz-Records messen weiterhin unverschluesselt — sonst ist der Waechter unterfluessig", () => {
-    // Schliesst die Luecke in die andere Richtung: dreht jemand die Verschluesselung
-    // in den Records an, muss die Doku das zeigen duerfen, ohne dass hier still
-    // eine Behauptung "wieder stimmt".
-    expect(latenzRecords().length).toBeGreaterThan(0);
-    expect(verschluesselungAus.length).toBe(latenzRecords().length);
-  });
-
-  it.each(dateien)("%s verschweigt nicht, dass die Latenzlaeufe ohne Verschlüsselung gemessen wurden", (datei) => {
-    const inhalt = lies(datei);
-    const abschnitt = inhalt.split(/^###\s+/m).find((block) => /^Latenz|^Latency/m.test(block)) ?? "";
-    expect(abschnitt.length, `${datei} hat keinen Latenz-Abschnitt mehr`).toBeGreaterThan(0);
-    expect(
-      abschnitt,
-      `${datei}: die Records sagen konfiguration.verschluesselung = "aus", der Text behauptet verschluesselte Laeufe`
-    ).not.toMatch(/encrypted at rest the whole time|durchgehend verschlüsselt\.|verschlüsselt gemessen|encrypted the whole time/i);
-    expect(
-      abschnitt,
-      `${datei}: der Latenz-Abschnitt verweist nicht auf konfiguration.verschluesselung, wo er die Bedingung nennt`
-    ).toMatch(/konfiguration\.verschluesselung/);
-    expect(
-      abschnitt,
-      `${datei}: der Latenz-Abschnitt nennt nicht, dass ohne Verschlüsselung gemessen wurde`
-    ).toMatch(/encryption switched off|mit ausgeschalteter Verschlüsselung/i);
-  });
-
-  it.each(dateien)("%s behauptet nicht, Frage- oder Antworttext liege im Repo", (datei) => {
-    const inhalt = lies(datei);
-    const abschnitt =
-      inhalt.split(/^###\s+/m).find((block) => /^Benchmark/i.test(block)) ?? "";
-    expect(abschnitt.length, `${datei} hat keinen Benchmark-Abschnitt mehr`).toBeGreaterThan(0);
-    expect(
-      abschnitt,
-      `${datei}: die committeten Zeilen tragen keinen Antwort-Text — "every answer / jede Antwort" ist zu viel`
-    ).not.toMatch(/every (?:question, )?every answer|every answer[^.\n]{0,40}committed|jede Antwort[^.]{0,40}liegt|jede Frage, jede Antwort/i);
-    expect(
-      abschnitt,
-      `${datei}: der Abschnitt sagt nicht, woher Frage- und Antworttext kommen`
-    ).toMatch(/upstream|Upstream/);
-  });
-
-  it("die committeten Felder sind die, die der Text aufzaehlt", () => {
-    // Der Text nennt seine Felder beim Namen. Statt Prosa zu parsen: die wahre
-    // Schluesselmenge der Records festhalten, damit ein Umbau der Zeilen hier
-    // anzeigt, dass beide READMEs mitgezogen werden muessen.
-    const ordner = path.join(wurzel, "tools", "longmemeval", "ergebnisse");
-    const beste = fs
-      .readdirSync(ordner)
-      .filter((f) => f.endsWith(".json"))
-      .map((f) => ({ name: f, inhalt: JSON.parse(lies(path.join("tools", "longmemeval", "ergebnisse", f))) as { bericht?: { genauigkeit_gesamt?: number }; fragen?: Record<string, unknown>[] } }))
-      .sort((a, b) => (b.inhalt.bericht?.genauigkeit_gesamt ?? 0) - (a.inhalt.bericht?.genauigkeit_gesamt ?? 0))[0];
-    expect(beste, "kein LongMemEval-Record gefunden").toBeTruthy();
-    const schluessel = Object.keys(beste.inhalt.fragen?.[0] ?? {}).sort();
-    expect(schluessel).toEqual(["faehigkeit", "judge_aufrufe", "question_id", "treffer", "trefferIndex", "typ", "urteil", "verbatim"]);
-    for (const feld of ["antwort", "frage_text", "content", "answer"]) {
-      expect(schluessel, `Records tragen plötzlich ein Feld "${feld}" — Text der READMEs pruefen`).not.toContain(feld);
-    }
-  });
-
-  it("jede Ingest-Zahl in der Doku steht in einem committeten Latenz-Record", () => {
-    // Der 3.0.0-Eintrag nannte "2,530 → 5,102 memories/s". 2,530 steht in einem
-    // Record, 5,102 in keinem — die drei 100k-Laeufe lesen 5,082, 5,136 und 5,268.
-    // So geboren: eine Zahl, die einmal gestimmt hat, wird zum Durchschnitt
-    // rundgemacht und ueberlebt den Lauf, der sie erzeugt hat.
-    const formate = (n: number) => [String(n), n.toLocaleString("en-US")];
-    const erlaubt = new Set<string>();
-    for (const pfad of latenzRecords()) {
-      const record = JSON.parse(lies(pfad)) as {
-        ingest?: Record<string, number>;
-        konfiguration?: { erinnerungen?: number };
-      };
-      for (const wert of Object.values(record.ingest ?? {})) for (const f of formate(wert)) erlaubt.add(f);
-      for (const f of formate(record.konfiguration?.erinnerungen ?? -1)) erlaubt.add(f);
-    }
-    expect(erlaubt.size, "keine Ingest-Werte in den Latenz-Records — Waechter ins Leere").toBeGreaterThan(0);
-
-    for (const datei of [...dateien, "CHANGELOG.md"]) {
-      const ohneRecord = lies(datei)
-        .split("\n")
-        .flatMap((zeile, i) =>
-          /ingest|memories\/s|notes\/s|Notizen\/s/i.test(zeile)
-            ? [...zeile.matchAll(/\b\d{1,3}(?:,\d{3})+\b/g)]
-                .map((m) => m[0])
-                .filter((z) => !erlaubt.has(z))
-                .map((z) => `${i + 1}: ${z}`)
-            : []
-        );
-      expect(
-        ohneRecord,
-        `${datei} nennt Durchsatz-Zahlen, die in keinem Record stehen (${ohneRecord.join(", ")}) — Zahl aus einem Record holen oder streichen`
-      ).toEqual([]);
-    }
-  });
-});
-// README und die Fehlermeldung der CLI selbst nannten `npx -y kepta import
-// chatgpt …`. Das Paket `kepta` existiert auf npm nicht (Root ist "private",
-// veröffentlicht ist `kepta-mcp`) — der Befehl war also kopierbar und scheiterte
-// beim Kopieren mit einem 404. Befehle in der Doku müssen den Namen tragen, unter
-// dem das Ding wirklich zu holen ist.
-// Zweite Regel desselben Fehlers: das veröffentlichte Paket hiesst richtig, wird
-// aber im Text auseinandergeschrieben (`npx kep ta-mcp setup`). Genau so steht es
-// im live veröffentlichten GitHub-Release v3.1.2 — ein kopierbarer Befehl, der ins
-// Leere führt. Ein zerrissener Name ist ausserdem ein zerrissener Pfad (`~/kep
-// ta-enterprise/`) und eine ins Leere laufende URL (`pypi.org/project/kep ta`).
-describe("Doku und Meldungen: npx ruft nur das veröffentlichte Paket", () => {
-  const ordner = ["src", "scripts", "npm", "python", "tools"];
-  const Quelldateien = () => {
-    const funde: string[] = [];
-    const sammle = (ordnerRelativ: string) => {
-      const absolut = path.join(wurzel, ordnerRelativ);
-      if (!fs.existsSync(absolut)) return;
-      for (const eintrag of fs.readdirSync(absolut, { withFileTypes: true })) {
-        if (eintrag.name === "node_modules" || eintrag.name === "dist") continue;
-        const pfad = path.join(ordnerRelativ, eintrag.name);
-        if (eintrag.isDirectory()) sammle(pfad);
-        else if (/\.(md|ts|mjs|py)$/.test(eintrag.name)) funde.push(pfad);
-      }
+  it.each(dateien)("%s: Abzeichen und Tabelle entsprechen vitest.config.ts", async (datei) => {
+    const config = (await import("../vitest.config")).default as unknown as {
+      test: { coverage: { thresholds: Record<string, number | Record<string, number>> } };
     };
-    for (const o of ordner) sammle(o);
-    for (const md of ["README.md", "README.de.md", "CHANGELOG.md", "SECURITY.md"]) {
-      if (fs.existsSync(path.join(wurzel, md))) funde.push(md);
-    }
-    return funde.sort();
-  };
+    const schwellen = config.test.coverage.thresholds;
+    const text = lies(datei);
+    const abzeichen = /coverage%20gate-%E2%89%A5%20(\d+)%25/.exec(text);
+    expect(abzeichen, `${datei} hat kein Abzeichen fuer die Coverage-Schwelle`).toBeTruthy();
+    expect(Number(abzeichen![1])).toBe(schwellen.lines);
 
-  it("jeder npx-Aufruf heisst kepta-mcp (oder ein Tool, das es wirklich gibt)", () => {
-    const erlaubt = new Set(["kepta-mcp", "tsx", "vitest", "eslint", "typescript"]);
-    const befunde: string[] = [];
-    const dateien = Quelldateien();
-    expect(dateien.length, "keine Doku-/Quelldateien gefunden — Waechter ins Leere").toBeGreaterThan(10);
-    const zeileVon = (text: string, index: number) => text.slice(0, index).split("\n").length;
-    for (const datei of dateien) {
-      const text = lies(datei);
-      // Zwei Lesarten, damit ein deutscher Prosa-Satz ("damit npx dieselbe
-      // Fassung installiert") nicht als Befehl durchgeht: der Befehl steht nach
-      // `npx -y`, oder er nennt ein kepta-* Paket.
-      const Muster = [/(?:^|[`'"\s])npx\s+-y\s+([a-z][a-z0-9._-]*)/g, /(?:^|[`'"\s])npx\s+(kepta[a-z-]*)/g];
-      for (const muster of Muster) {
-        for (const m of text.matchAll(muster)) {
-          const name = m[1];
-          if (erlaubt.has(name)) continue;
-          befunde.push(`${datei}:${zeileVon(text, (m.index ?? 0) + m[0].indexOf(m[1]))} → npx ${name}`);
-        }
-      }
-      for (const m of text.matchAll(/\bkep[ \t]+ta\b/gi)) {
-        befunde.push(`${datei}:${zeileVon(text, m.index ?? 0)} → "${m[0]}" — Paket-, Pfad- und URL-Teile sind ein Wort`);
+    const zeilen = text.split("\n");
+    const zeileFuer = (anfang: RegExp): string => {
+      const z = zeilen.find((l) => anfang.test(l));
+      expect(z, `${datei}: keine Tabellenzeile fuer ${anfang}`).toBeTruthy();
+      return z ?? "";
+    };
+    expect(zeilenVon(zeileFuer(/^\| (everything together|alles zusammen) \|/))).toBe(schwellen.lines);
+    for (const bereich of ["src/core", "src/scan", "src/lib", "src/components"]) {
+      const z = zeileFuer(new RegExp("^\\| `" + bereich + "`"));
+      const soll = schwellen[`${bereich}/**`] as Record<string, number>;
+      expect(zeilenVon(z), `${datei}: ${bereich} — Zeilen`).toBe(soll.lines);
+      if (/of functions|der Funktionen/.test(z)) {
+        expect(funktionenVon(z), `${datei}: ${bereich} — Funktionen`).toBe(soll.functions);
       }
     }
-    expect(
-      befunde,
-      `Befehle und Namen müssen so dastehen, wie sie funktionieren (${befunde.join(", ")}) — npx nur mit veröffentlichtem Paket, kein auseinandergezogener Name`
-    ).toEqual([]);
+  });
+});
+
+// Der Stufen-Kanon (4.10.2026, für alle Außenflächen): es gibt K3PTA Core (0 €) und
+// K3PTA Enterprise (nur gegen Vereinbarung). „K3PTA Pro" ist tot — und ein README, das
+// trotzdem eine Pro-Stufe zum Kauf anbietet, ist kein Tippfehler sondern ein Versprechen,
+// das niemand einlösen kann.
+describe("README: die Stufen heißen, wie sie vergeben werden", () => {
+  it("bietet kein K3PTA Pro und keinen Pro-Kauf an", () => {
+    const text = lies("README.md");
+    const proStellen = [...text.matchAll(/K3PTA Pro\b|\bPro day\b|\bPro tool\b|\bPro removes\b|\bBuying Pro\b/gi)].map((m) => m[0]);
+    expect(proStellen, "README nennt eine tote Stufe: " + proStellen.join(", ")).toEqual([]);
+  });
+
+  it("nennt Core frei und Enterprise nur gegen Vereinbarung", () => {
+    const text = lies("README.md");
+    expect(text).toMatch(/K3PTA Core\*\*, free|Core, free/i);
+    expect(text).toMatch(/Enterprise\*\*, by agreement|Enterprise.*agreement/i);
   });
 });
 

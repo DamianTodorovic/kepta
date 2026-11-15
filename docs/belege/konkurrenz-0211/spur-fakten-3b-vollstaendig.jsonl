@@ -1,0 +1,105 @@
+{"art": "start", "zeit": "23:29:44", "llm": "llama3.2:3b", "heim": "/tmp/konk-mem0-ld/heim"}
+{"art": "setze", "i": 1, "note": "m01", "fakten": 1, "sek": 14.1}
+{"art": "setze", "i": 2, "note": "m02", "fakten": 1, "sek": 28.2}
+{"art": "setze", "i": 3, "note": "m03", "fakten": 1, "sek": 42.8}
+{"art": "setze", "i": 4, "note": "m04", "fakten": 2, "sek": 61.6}
+{"art": "setze", "i": 5, "note": "m05", "fakten": 1, "sek": 84.9}
+{"art": "setze", "i": 6, "note": "m06", "fakten": 2, "sek": 113.6}
+{"art": "setze", "i": 7, "note": "m07", "fakten": 4, "sek": 155.8}
+{"art": "setze", "i": 8, "note": "m08", "fakten": 2, "sek": 192.8}
+{"art": "setze", "i": 9, "note": "m09", "fakten": 2, "sek": 230.7}
+{"art": "setze", "i": 10, "note": "m10", "fakten": 2, "sek": 250.0}
+{"art": "setze", "i": 11, "note": "m11", "fakten": 1, "sek": 291.4}
+{"art": "setze", "i": 12, "note": "m12", "fakten": 0, "sek": 390.0}
+{"art": "setze", "i": 13, "note": "m13", "fakten": 0, "sek": 420.9}
+{"art": "setze", "i": 14, "note": "m14", "fakten": 0, "sek": 467.4}
+{"art": "setze", "i": 15, "note": "m15", "fakten": 0, "sek": 564.0}
+{"art": "setze", "i": 16, "note": "m16", "fakten": 0, "sek": 660.1}
+{"art": "setze", "i": 17, "note": "m17", "fakten": 1, "sek": 681.0}
+{"art": "setze", "i": 18, "note": "m18", "fakten": 0, "sek": 775.6}
+{"art": "setze", "i": 19, "note": "m19", "fakten": 11, "sek": 807.7}
+{"art": "setze", "i": 20, "note": "m20", "fakten": 1, "sek": 840.4}
+{"art": "setze", "i": 21, "note": "m21", "fakten": 2, "sek": 864.8}
+{"art": "setze", "i": 22, "note": "m22", "fakten": 1, "sek": 884.1}
+{"art": "setze", "i": 23, "note": "m23", "fakten": 2, "sek": 905.6}
+{"art": "setze", "i": 24, "note": "m24", "fakten": 2, "sek": 925.3}
+{"art": "setze", "i": 25, "note": "m25", "fakten": 1, "sek": 946.8}
+{"art": "setze", "i": 26, "note": "m26", "fakten": 1, "sek": 969.0}
+{"art": "setze", "i": 27, "note": "m27", "fakten": 1, "sek": 1000.5}
+{"art": "setze", "i": 28, "note": "m28", "fakten": 10, "sek": 1034.1}
+{"art": "setze", "i": 29, "note": "m29", "fakten": 7, "sek": 1062.6}
+{"art": "setze", "i": 30, "note": "m30", "fakten": 1, "sek": 1090.1}
+{"art": "setze", "i": 31, "note": "m31", "fakten": 1, "sek": 1111.8}
+{"art": "setze", "i": 32, "note": "m32", "fakten": 6, "sek": 1146.6}
+{"art": "setze", "i": 33, "note": "m33", "fakten": 2, "sek": 1178.0}
+{"art": "setze", "i": 34, "note": "m34", "fakten": 4, "sek": 1212.0}
+{"art": "setze", "i": 35, "note": "m35", "fakten": 5, "sek": 1236.4}
+{"art": "setze", "i": 36, "note": "m36", "fakten": 3, "sek": 1260.8}
+{"art": "setze", "i": 37, "note": "m37", "fakten": 2, "sek": 1295.4}
+{"art": "setze", "i": 38, "note": "m38", "fakten": 4, "sek": 1325.9}
+{"art": "setze", "i": 39, "note": "m39", "fakten": 6, "sek": 1351.7}
+{"art": "setze", "i": 40, "note": "m40", "fakten": 1, "sek": 1373.0}
+{"art": "setze", "i": 41, "note": "m41", "fakten": 10, "sek": 1402.1}
+{"art": "setze", "i": 42, "note": "m42", "fakten": 1, "sek": 1432.7}
+{"art": "setze", "i": 43, "note": "m43", "fakten": 0, "sek": 1515.9}
+{"art": "setze", "i": 44, "note": "m44", "fakten": 0, "sek": 1606.2}
+{"art": "setze", "i": 45, "note": "m45", "fakten": 5, "sek": 1638.5}
+{"art": "setze", "i": 46, "note": "m46", "fakten": 0, "sek": 1722.9}
+{"art": "setze", "i": 47, "note": "m47", "fakten": 0, "sek": 1812.4}
+{"art": "setze", "i": 48, "note": "m48", "fakten": 0, "sek": 1854.8}
+{"art": "setze", "i": 49, "note": "m49", "fakten": 0, "sek": 1880.6}
+{"art": "setze", "i": 50, "note": "m50", "fakten": 4, "sek": 1905.0}
+{"art": "setze", "i": 51, "note": "m51", "fakten": 11, "sek": 1934.0}
+{"art": "setze", "i": 52, "note": "m52", "fakten": 0, "sek": 2041.5}
+{"art": "setze", "i": 53, "note": "m53", "fakten": 0, "sek": 2119.2}
+{"art": "setze", "i": 54, "note": "m54", "fakten": 1, "sek": 2156.1}
+{"art": "setze", "i": 55, "note": "m55", "fakten": 1, "sek": 2230.4}
+{"art": "setze", "i": 56, "note": "m56", "fakten": 1, "sek": 2258.8}
+{"art": "setze", "i": 57, "note": "m57", "fakten": 10, "sek": 2295.7}
+{"art": "setze", "i": 58, "note": "m58", "fakten": 10, "sek": 2316.3}
+{"art": "suche", "id": "Wo läuft die Produktion?", "kategorie": "lexikalisch", "frage": "Wo läuft die Produktion?", "erwartet": ["m01"], "top": "m50", "treffer": false, "liste": ["m50", "m41", "m40", "m35", "m51", "m34", "m51", "m41", "m41", "m57", "m51", "m34", "m33", "m32", "m57", "m57", "m51", "m51", "m45", "m51"]}
+{"art": "suche", "id": "Welche Datenbank nutzen wir?", "kategorie": "lexikalisch", "frage": "Welche Datenbank nutzen wir?", "erwartet": ["m02"], "top": "m50", "treffer": false, "liste": ["m50", "m41", "m54", "m57", "m51", "m27", "m28", "m38", "m36", "m32", "m57", "m20", "m50", "m41", "m51", "m28", "m24", "m34", "m45", "m58"]}
+{"art": "suche", "id": "Wo wohnt Alex gerade?", "kategorie": "lexikalisch", "frage": "Wo wohnt Alex gerade?", "erwartet": ["m04"], "top": "m06", "treffer": false, "liste": ["m06", "m19", "m07", "m04", "m03", "m07", "m51", "m51", "m40", "m50", "m41", "m58", "m51", "m51", "m57", "m45", "m51", "m57", "m51", "m58"]}
+{"art": "suche", "id": "Umsatzsteuer Frist", "kategorie": "lexikalisch", "frage": "Umsatzsteuer Frist", "erwartet": ["m08"], "top": "m07", "treffer": false, "liste": ["m07", "m23", "m55", "m58", "m51", "m57", "m51", "m58", "m51", "m09", "m24", "m50", "m40", "m58", "m51", "m41", "m08", "m45", "m57", "m51"]}
+{"art": "suche", "id": "Wie ist die hybride Suche implementiert?", "kategorie": "lexikalisch", "frage": "Wie ist die hybride Suche implementiert?", "erwartet": ["m14"], "top": "m36", "treffer": false, "liste": ["m36", "m11", "m21", "m50", "m41", "m40", "m51", "m35", "m51", "m42", "m51", "m28", "m58", "m17", "m41", "m50", "m32", "m58", "m57", "m57"]}
+{"art": "suche", "id": "Welche Embedding-Modelle lokal?", "kategorie": "lexikalisch", "frage": "Welche Embedding-Modelle lokal?", "erwartet": ["m13"], "top": "m19", "treffer": false, "liste": ["m19", "m21", "m36", "m11", "m57", "m58", "m57", "m51", "m23", "m45", "m28", "m32", "m37", "m51", "m51", "m50", "m58", "m41", "m57", "m41"]}
+{"art": "suche", "id": "Wie funktioniert der Wissensgraph?", "kategorie": "lexikalisch", "frage": "Wie funktioniert der Wissensgraph?", "erwartet": ["m15"], "top": "m51", "treffer": false, "liste": ["m51", "m57", "m51", "m51", "m34", "m57", "m51", "m32", "m50", "m57", "m31", "m34", "m58", "m50", "m41", "m34", "m27", "m28", "m41", "m33"]}
+{"art": "suche", "id": "Serverzugang und Passwort", "kategorie": "lexikalisch", "frage": "Serverzugang und Passwort", "erwartet": ["m16", "m17"], "top": "m17", "treffer": true, "liste": ["m17", "m32", "m51", "m51", "m57", "m51", "m57", "m50", "m27", "m28", "m50", "m41", "m40", "m58", "m21", "m36", "m11", "m51", "m51", "m51"]}
+{"art": "suche", "id": "Fitness Trainingsplan", "kategorie": "lexikalisch", "frage": "Fitness Trainingsplan", "erwartet": ["m19"], "top": "m19", "treffer": true, "liste": ["m19", "m45", "m45", "m51", "m58", "m58", "m39", "m58", "m20", "m39", "m36", "m38", "m39", "m58", "m56", "m36", "m58", "m51", "m19", "m07"]}
+{"art": "suche", "id": "Impfungen Auffrischung", "kategorie": "lexikalisch", "frage": "Impfungen Auffrischung", "erwartet": ["m20"], "top": "m45", "treffer": false, "liste": ["m45", "m28", "m36", "m38", "m20", "m50", "m41", "m35", "m51", "m51", "m58", "m50", "m57", "m41", "m51", "m57", "m51", "m40", "m51", "m33"]}
+{"art": "suche", "id": "Warum Rust statt Go?", "kategorie": "lexikalisch", "frage": "Warum Rust statt Go?", "erwartet": ["m21"], "top": "m21", "treffer": true, "liste": ["m21", "m42", "m28", "m06", "m51", "m05", "m50", "m41", "m51", "m57", "m51", "m17", "m41", "m51", "m57", "m32", "m34", "m32", "m58", "m51"]}
+{"art": "suche", "id": "Autoversicherung kündigen", "kategorie": "lexikalisch", "frage": "Autoversicherung kündigen", "erwartet": ["m22"], "top": "m37", "treffer": false, "liste": ["m37", "m29", "m35", "m51", "m28", "m32", "m22", "m58", "m51", "m28", "m25", "m29", "m38", "m50", "m57", "m50", "m51", "m41", "m41", "m41"]}
+{"art": "suche", "id": "Werkstatt Termin Auto", "kategorie": "lexikalisch", "frage": "Werkstatt Termin Auto", "erwartet": ["m23"], "top": "m51", "treffer": false, "liste": ["m51", "m51", "m32", "m34", "m24", "m35", "m29", "m37", "m58", "m28", "m32", "m22", "m58", "m51", "m38", "m57", "m51", "m23", "m57", "m32"]}
+{"art": "suche", "id": "Keller Umbau Kosten", "kategorie": "lexikalisch", "frage": "Keller Umbau Kosten", "erwartet": ["m25"], "top": "m25", "treffer": true, "liste": ["m25", "m28", "m29", "m35", "m33", "m51", "m57", "m28", "m34", "m31", "m41", "m58", "m51", "m51", "m41", "m51", "m57", "m57", "m51", "m58"]}
+{"art": "suche", "id": "Welche LLM Kontextfenster?", "kategorie": "lexikalisch", "frage": "Welche LLM Kontextfenster?", "erwartet": ["m26"], "top": "m26", "treffer": true, "liste": ["m26", "m28", "m50", "m41", "m51", "m51", "m51", "m57", "m51", "m40", "m57", "m51", "m51", "m57", "m50", "m57", "m51", "m41", "m27", "m57"]}
+{"art": "suche", "id": "Obsidian Notizen Format", "kategorie": "lexikalisch", "frage": "Obsidian Notizen Format", "erwartet": ["m28"], "top": "m29", "treffer": false, "liste": ["m29", "m28", "m27", "m28", "m58", "m19", "m58", "m58", "m19", "m19", "m09", "m39", "m39", "m39", "m39", "m39", "m39", "m57", "m51", "m58"]}
+{"art": "suche", "id": "React Build Setup", "kategorie": "lexikalisch", "frage": "React Build Setup", "erwartet": ["m29"], "top": "m29", "treffer": true, "liste": ["m29", "m36", "m11", "m29", "m21", "m19", "m06", "m58", "m01", "m19", "m05", "m20", "m38", "m36", "m35", "m29", "m41", "m24", "m50", "m41"]}
+{"art": "suche", "id": "Kaution Vermieter", "kategorie": "lexikalisch", "frage": "Kaution Vermieter", "erwartet": ["m30"], "top": "m32", "treffer": false, "liste": ["m32", "m30", "m58", "m28", "m25", "m58", "m50", "m33", "m51", "m41", "m29", "m07", "m41", "m35", "m51", "m34", "m31", "m51", "m40", "m28"]}
+{"art": "suche", "id": "Carbonara Zutaten", "kategorie": "lexikalisch", "frage": "Carbonara Zutaten", "erwartet": ["m06"], "top": "m07", "treffer": false, "liste": ["m07", "m58", "m58", "m51", "m51", "m57", "m25", "m28", "m57", "m51", "m41", "m29", "m35", "m51", "m57", "m50", "m28", "m51", "m57", "m51"]}
+{"art": "suche", "id": "KEPTA MCP Architektur", "kategorie": "lexikalisch", "frage": "KEPTA MCP Architektur", "erwartet": ["m11", "m12"], "top": "m21", "treffer": false, "liste": ["m21", "m36", "m11", "m19", "m01", "m19", "m34", "m41", "m41", "m41", "m50", "m58", "m38", "m41", "m57", "m32", "m34", "m33", "m50", "m51"]}
+{"art": "suche", "id": "Passwörter sicher verwalten", "kategorie": "lexikalisch", "frage": "Passwörter sicher verwalten", "erwartet": ["m10"], "top": "m51", "treffer": false, "liste": ["m51", "m17", "m32", "m58", "m51", "m51", "m38", "m29", "m51", "m57", "m50", "m41", "m41", "m22", "m28", "m32", "m50", "m40", "m25", "m28"]}
+{"art": "suche", "id": "Rechnungen Buchhaltung Tool", "kategorie": "lexikalisch", "frage": "Rechnungen Buchhaltung Tool", "erwartet": ["m09"], "top": "m42", "treffer": false, "liste": ["m42", "m28", "m41", "m50", "m51", "m51", "m51", "m28", "m51", "m25", "m35", "m57", "m51", "m34", "m51", "m41", "m27", "m35", "m33", "m29"]}
+{"art": "suche", "id": "Zettelkasten Notizen Methode", "kategorie": "lexikalisch", "frage": "Zettelkasten Notizen Methode", "erwartet": ["m27"], "top": "m27", "treffer": true, "liste": ["m27", "m28", "m28", "m57", "m51", "m51", "m58", "m45", "m37", "m57", "m54", "m58", "m50", "m41", "m57", "m51", "m51", "m50", "m50", "m51"]}
+{"art": "suche", "id": "Geburtstag Familie", "kategorie": "lexikalisch", "frage": "Geburtstag Familie", "erwartet": ["m18"], "top": "m28", "treffer": false, "liste": ["m28", "m51", "m56", "m57", "m38", "m29", "m58", "m35", "m51", "m35", "m41", "m50", "m41", "m50", "m51", "m51", "m57", "m41", "m58", "m40"]}
+{"art": "suche", "id": "Deployment und Domain", "kategorie": "lexikalisch", "frage": "Deployment und Domain", "erwartet": ["m01"], "top": "m01", "treffer": true, "liste": ["m01", "m50", "m41", "m51", "m57", "m27", "m28", "m50", "m41", "m11", "m36", "m21", "m40", "m58", "m17", "m32", "m58", "m33", "m51", "m38"]}
+{"art": "suche", "id": "Was koche ich mit Nudeln?", "kategorie": "umschreibung", "frage": "Was koche ich mit Nudeln?", "erwartet": ["m06"], "top": "m57", "treffer": false, "liste": ["m57", "m51", "m51", "m58", "m51", "m38", "m51", "m57", "m58", "m38", "m50", "m41", "m51", "m58", "m58", "m57", "m51", "m45", "m41", "m50"]}
+{"art": "suche", "id": "Wie bewahre ich meine Zugangsdaten sicher auf?", "kategorie": "umschreibung", "frage": "Wie bewahre ich meine Zugangsdaten sicher auf?", "erwartet": ["m10"], "top": "m58", "treffer": false, "liste": ["m58", "m50", "m51", "m57", "m38", "m57", "m38", "m41", "m51", "m35", "m51", "m57", "m51", "m57", "m50", "m41", "m51", "m45", "m40", "m37"]}
+{"art": "suche", "id": "Wo lasse ich mein Fahrzeug instand setzen?", "kategorie": "umschreibung", "frage": "Wo lasse ich mein Fahrzeug instand setzen?", "erwartet": ["m23"], "top": "m51", "treffer": false, "liste": ["m51", "m51", "m57", "m51", "m50", "m40", "m41", "m28", "m32", "m22", "m50", "m57", "m51", "m17", "m57", "m54", "m51", "m38", "m45", "m38"]}
+{"art": "suche", "id": "Was mag meine Grossmutter?", "kategorie": "umschreibung", "frage": "Was mag meine Grossmutter?", "erwartet": ["m18"], "top": "m51", "treffer": false, "liste": ["m51", "m51", "m50", "m41", "m28", "m58", "m57", "m51", "m40", "m33", "m58", "m51", "m57", "m21", "m11", "m36", "m51", "m57", "m51", "m58"]}
+{"art": "suche", "id": "Was tue ich fuer meinen Ruecken?", "kategorie": "umschreibung", "frage": "Was tue ich fuer meinen Ruecken?", "erwartet": ["m45"], "top": "m45", "treffer": true, "liste": ["m45", "m51", "m45", "m57", "m41", "m34", "m31", "m41", "m34", "m32", "m57", "m51", "m51", "m51", "m51", "m57", "m51", "m51", "m50", "m58"]}
+{"art": "suche", "id": "Wie lege ich Geld an?", "kategorie": "umschreibung", "frage": "Wie lege ich Geld an?", "erwartet": ["m49"], "top": "m51", "treffer": false, "liste": ["m51", "m57", "m56", "m51", "m58", "m50", "m40", "m50", "m41", "m41", "m58", "m51", "m57", "m51", "m57", "m58", "m58", "m51", "m57", "m51"]}
+{"art": "suche", "id": "Wer hilft bei einem medizinischen Notfall?", "kategorie": "umschreibung", "frage": "Wer hilft bei einem medizinischen Notfall?", "erwartet": ["m50"], "top": "m51", "treffer": false, "liste": ["m51", "m51", "m57", "m57", "m51", "m38", "m32", "m28", "m22", "m29", "m34", "m31", "m41", "m57", "m51", "m51", "m45", "m45", "m28", "m51"]}
+{"art": "suche", "id": "Wie fotografiere ich drinnen richtig?", "kategorie": "umschreibung", "frage": "Wie fotografiere ich drinnen richtig?", "erwartet": ["m52"], "top": "m38", "treffer": false, "liste": ["m38", "m38", "m41", "m51", "m57", "m51", "m57", "m58", "m51", "m57", "m45", "m51", "m57", "m37", "m50", "m41", "m51", "m45", "m34", "m28"]}
+{"art": "suche", "id": "Was muss ich beim Auszug renovieren?", "kategorie": "umschreibung", "frage": "Was muss ich beim Auszug renovieren?", "erwartet": ["m47"], "top": "m41", "treffer": false, "liste": ["m41", "m38", "m38", "m35", "m51", "m41", "m50", "m51", "m51", "m41", "m57", "m51", "m34", "m32", "m51", "m25", "m28", "m50", "m41", "m51"]}
+{"art": "suche", "id": "Was gibt es an Heiligabend zu essen?", "kategorie": "umschreibung", "frage": "Was gibt es an Heiligabend zu essen?", "erwartet": ["m48"], "top": "m51", "treffer": false, "liste": ["m51", "m40", "m50", "m41", "m57", "m51", "m51", "m51", "m57", "m35", "m28", "m50", "m57", "m41", "m58", "m51", "m45", "m51", "m57", "m51"]}
+{"art": "suche", "id": "Anton Bauer", "kategorie": "graph", "frage": "Anton Bauer", "erwartet": ["m25", "m31", "m32", "m33"], "top": "m25", "treffer": true, "liste": ["m25", "m28", "m29", "m35", "m03", "m06", "m07", "m19", "m51", "m04", "m07", "m58", "m57", "m57", "m51", "m35", "m36", "m38", "m58", "m20"]}
+{"art": "suche", "id": "Weber", "kategorie": "graph", "frage": "Weber", "erwartet": ["m08", "m34", "m35"], "top": "m35", "treffer": true, "liste": ["m35", "m08", "m25", "m28", "m58", "m58", "m51", "m58", "m35", "m29", "m58", "m28", "m07", "m58", "m51", "m38", "m29", "m57", "m51", "m57"]}
+{"art": "suche", "id": "Hetzner", "kategorie": "graph", "frage": "Hetzner", "erwartet": ["m01", "m16", "m36", "m37"], "top": "m19", "treffer": false, "liste": ["m19", "m17", "m32", "m01", "m38", "m50", "m29", "m41", "m58", "m58", "m58", "m57", "m51", "m58", "m58", "m56", "m35", "m22", "m28", "m32"]}
+{"art": "suche", "id": "Wie oft wird gesichert?", "kategorie": "ablenkung", "frage": "Wie oft wird gesichert?", "erwartet": ["m02", "m37"], "top": "m51", "treffer": false, "liste": ["m51", "m25", "m28", "m40", "m51", "m58", "m50", "m51", "m50", "m41", "m51", "m57", "m41", "m58", "m33", "m56", "m35", "m34", "m57", "m58"]}
+{"art": "suche", "id": "Welches Passwort gilt in der Produktion?", "kategorie": "ablenkung", "frage": "Welches Passwort gilt in der Produktion?", "erwartet": ["m58"], "top": "m17", "treffer": false, "liste": ["m17", "m32", "m51", "m32", "m34", "m51", "m51", "m51", "m57", "m34", "m31", "m57", "m51", "m50", "m41", "m51", "m57", "m42", "m34", "m57"]}
+{"art": "suche", "id": "Welcher Server ist gemeint?", "kategorie": "ablenkung", "frage": "Welcher Server ist gemeint?", "erwartet": ["m01"], "top": "m21", "treffer": false, "liste": ["m21", "m11", "m36", "m50", "m41", "m40", "m17", "m32", "m01", "m58", "m58", "m58", "m51", "m51", "m57", "m51", "m51", "m57", "m51", "m51"]}
+{"art": "suche", "id": "Was steht zur Datenbank an?", "kategorie": "ablenkung", "frage": "Was steht zur Datenbank an?", "erwartet": ["m02"], "top": "m50", "treffer": false, "liste": ["m50", "m41", "m57", "m54", "m51", "m27", "m28", "m32", "m51", "m34", "m24", "m57", "m51", "m58", "m38", "m36", "m45", "m57", "m51", "m25"]}
+{"art": "suche", "id": "Wie bin ich erreichbar?", "kategorie": "temporal", "frage": "Wie bin ich erreichbar?", "erwartet": ["m54"], "top": "m57", "treffer": false, "liste": ["m57", "m54", "m57", "m58", "m40", "m50", "m41", "m50", "m51", "m41", "m51", "m57", "m35", "m51", "m41", "m34", "m32", "m51", "m57", "m51"]}
+{"art": "suche", "id": "Welche Laufschuhe habe ich?", "kategorie": "temporal", "frage": "Welche Laufschuhe habe ich?", "erwartet": ["m56"], "top": "m58", "treffer": false, "liste": ["m58", "m58", "m57", "m57", "m56", "m40", "m51", "m58", "m51", "m57", "m50", "m51", "m41", "m50", "m41", "m45", "m51", "m57", "m51", "m58"]}
+{"art": "suche", "id": "Bis wann muss die Umsatzsteuer abgegeben werden?", "kategorie": "temporal", "frage": "Bis wann muss die Umsatzsteuer abgegeben werden?", "erwartet": ["m08"], "top": "m51", "treffer": false, "liste": ["m51", "m35", "m50", "m41", "m51", "m40", "m50", "m41", "m23", "m07", "m55", "m51", "m58", "m58", "m09", "m24", "m51", "m51", "m57", "m51"]}
+{"art": "fertig", "suchsek": 0.7}

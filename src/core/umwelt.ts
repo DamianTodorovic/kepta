@@ -1,26 +1,25 @@
 /**
- * Aufgaben-Kennungen zweisprachig lesen (#64, Leitung 14.10.: „Kern zweisprachig
- * machen — dieselbe Regel, dieselbe Meldung").
+ * Aufgaben-Kennungen zweisprachig lesen (Aufgabe #64, Leitung 13.10.: „K3PTA wird zu
+ * K3PTA, ueberall" — die sichtbaren Woerter macht NA, **die Kennungen macht F12**).
  *
  * Die Regel ist nicht „umbenennen", sondern **zwei Formen lesen, eine melden**. Der
- * Abnahme-Satz rueckwaerts vom Nutzer: *niemand, der heute installiert ist, darf nach
- * dem Update eine leere Wissensbasis sehen oder ploetzlich ohne Schluessel dastehen.*
+ * Abnahme-Satz rueckwaerts vom Nutzer: niemand, der heute installiert ist, darf nach
+ * dem Update eine leere Wissensbasis sehen oder ploetzlich ohne Schluessel dastehen.
  * Ein Satz, der nur `K3PTA_DB_KEY` kennt, laesst jeden bestehenden Start schluessellos
- * auf einer verschluesselten Datei sitzen — und `pruefeLesbar` wirft mit Recht
- * („ohne Schluessel keine Datei"), ohne dass der Nutzer seinen Schluessel verloren haette.
- * Ein Satz, der beide kennt, gewinnt nichts und verliert niemanden.
+ * auf einer verschluesselten Datei sitzen — genau der Fall, den F7 als „ohne Schluessel
+ * keine Datei" closes. Ein Satz, der beide kennt, gewinnt nichts und verliert niemanden.
  *
- * Reihenfolge: der neue Name zuerst, der alte als Rueckfall. Sind beide gesetzt,
- * **sagt die Antwort es** — ein verschwiegener Streit zwischen zwei Namensformen ist
- * dieselbe Suende wie eine stille Kappe, und die hat `KEPTA_BACKUP_KEEP` gerade erst
- * verlassen (Zeile 131ff in `server.ts`: eine Zahl still zu ignorieren war der Fehler).
+ * Reihenfolge: der neue Name zuerst, der alte als Rueckfall. Wenn beide gesetzt sind,
+ * **sagt die Meldung es** — ein verschwiegener Streit zwischen zwei Namensformen ist
+ * eine still Kappe, und die haben wir an der Liste gerade erst abgeschafft.
  *
- * Dieselbe Datei, gleiche Regel, gleiche Wortmelodie wie in der App
- * (`kepta-app/src/core/umwelt.ts`) — Paritaet ist der Grund, warum das hier im Kern
- * steht und nicht nur dort. Nicht gebaut und absichtlich offen: `app.kepta.database`
- * (der Bund-Dienstname, Zeile 19) und `~/.kepta` als Default-Ordner. Beides ist eine
- * Auslieferungstatsache, kein Texttausch: ein neuer Dienstname heisst fuer jeden
- * Bestandsnutzer „kein Schluessel gefunden".
+ * Was hier nicht drin ist: die Datenordnung selbst. Der Datenordner bleibt
+ * `~/.kepta` (kein Zug, kein Doppelbestand, kein Rueckweg-Programm) — der
+ * Umzugsentwurf gehoert zu einer Auslieferungstatsache und wird vorgeschlagen, nicht
+ * gebaut. Ebenso bleibt `app.kepta.desktop` (electron-builder.json:2) und der
+ * Keychain-Dienstname `app.kepta.database` (`src/core/schluessel.ts:19`) stehen, bis
+ * der Update-Pfad entschieden ist: ein Dienstname, der mit dem Update wechselt,
+ * bedeutet fuer jeden Bestandsnutzer „kein Schluessel gefunden".
  */
 
 export type UmweltRolle = "schluessel" | "datenordner" | "sicherungBehalten" | "verschluesselung";
@@ -39,9 +38,9 @@ export interface UmweltFund {
   wert?: string;
   /** Der Name, dessen Wert gilt. `undefined`, wenn keine der beiden Formen gesetzt ist. */
   gewonnen?: string;
-  /** true, wenn beide Formen gesetzt waren — dann ist `meldung` nicht leer. */
+  /** true, wenn auch die andere Form gesetzt war — dann ist `meldung` nicht leer. */
   auchAlteForm: boolean;
-  /** Satz, der den Sieger nennt. Nur bei Streit nicht leer; geht nach aussen (health, CLI). */
+  /** Satz, der den Sieger nennt. Nur bei Streit nicht leer; geht nach aussen (health). */
   meldung?: string;
 }
 
@@ -52,9 +51,9 @@ function nichtLeer(wert: string | undefined): boolean {
 }
 
 /**
- * Eine Rolle zweisprachig lesen. `env` ist parameterisierbar, weil dasselbe Lesen in
- * Tests, im Buendel und im Startpfad gilt — der Schluesselanbieter und die Nebendateien
- * reichen ihre Umwelt-Instanz durch, `server.ts` und `store.ts` lesen die echte.
+ * Eine Rolle zweisprachig lesen. `env` ist parameterisierbar, weil dieselbe Regel in
+ * Tests, im Buendel und im Startpfad gilt — und weil der Startpfad eine eigene
+ * Umwelt-Objekt-Instanz durchreicht (`schluessel.ts`, `nebendateien.ts`).
  */
 export function leseUmwelt(rolle: UmweltRolle, env: Record<string, string | undefined> = process.env): UmweltFund {
   const [neu, alt] = UMWELT_NAMEN[rolle];
@@ -74,9 +73,9 @@ export function leseUmwelt(rolle: UmweltRolle, env: Record<string, string | unde
 }
 
 /**
- * Was dieser Prozess wirklich las. Geht in `/api/health` (`kennungen`) und in die
- * CLI-Ausgabe, damit ein Betreiber ohne Blick in die Umgebung sieht, welche Form
- * laeuft — und ein Streit zwischen beiden Formen nie unsichtbar bleibt.
+ * Was dieser Prozess wirklich las. Die Liste geht in `/api/health` (`kennungen`),
+ * damit ein Betreiber ohne Blick in die Umgebung sehen kann, welche Form laeuft —
+ * und damit ein Streit zwischen beiden Formen nie unsichtbar bleibt.
  */
 export function gewonneneUmweltNamen(): UmweltFund[] {
   return [...gespurrt.values()];

@@ -1,0 +1,47 @@
+{"art":"kopf","stufe":"nomic-embed-text","dimensionen":768,"anfragen":45,"baum":"3.2.193 + P182-Stimmen-Regel (Boden-Flicken + gewichtetes Vektor-Bein)"}
+{"art":"suche","i":0,"kategorie":"lexikalisch","frage":"Wo läuft die Produktion?","erwartet":"m01","anzahl_erwartet":1,"top":"m01","treffer":true,"r5":1,"mrr":1,"liste":["m01","m58","m27"]}
+{"art":"suche","i":1,"kategorie":"lexikalisch","frage":"Welche Datenbank nutzen wir?","erwartet":"m02","anzahl_erwartet":1,"top":"m39","treffer":false,"r5":1,"mrr":0.5,"liste":["m39","m02","m15"]}
+{"art":"suche","i":2,"kategorie":"lexikalisch","frage":"Wo wohnt Alex gerade?","erwartet":"m04","anzahl_erwartet":1,"top":"m04","treffer":true,"r5":1,"mrr":1,"liste":["m04","m45","m20","m03"]}
+{"art":"suche","i":3,"kategorie":"lexikalisch","frage":"Umsatzsteuer Frist","erwartet":"m08","anzahl_erwartet":1,"top":"m08","treffer":true,"r5":1,"mrr":1,"liste":["m08","m07"]}
+{"art":"suche","i":4,"kategorie":"lexikalisch","frage":"Wie ist die hybride Suche implementiert?","erwartet":"m14","anzahl_erwartet":1,"top":"m14","treffer":true,"r5":1,"mrr":1,"liste":["m14"]}
+{"art":"suche","i":5,"kategorie":"lexikalisch","frage":"Welche Embedding-Modelle lokal?","erwartet":"m13","anzahl_erwartet":1,"top":"m13","treffer":true,"r5":1,"mrr":1,"liste":["m13"]}
+{"art":"suche","i":6,"kategorie":"lexikalisch","frage":"Wie funktioniert der Wissensgraph?","erwartet":"m15","anzahl_erwartet":1,"top":"m15","treffer":true,"r5":1,"mrr":1,"liste":["m15","m57","m27","m09","m42"]}
+{"art":"suche","i":7,"kategorie":"lexikalisch","frage":"Serverzugang und Passwort","erwartet":"m16","anzahl_erwartet":2,"top":"m16","treffer":true,"r5":1,"mrr":1,"liste":["m16","m17","m09","m57","m41"]}
+{"art":"suche","i":8,"kategorie":"lexikalisch","frage":"Fitness Trainingsplan","erwartet":"m19","anzahl_erwartet":1,"top":"m19","treffer":true,"r5":1,"mrr":1,"liste":["m19"]}
+{"art":"suche","i":9,"kategorie":"lexikalisch","frage":"Impfungen Auffrischung","erwartet":"m20","anzahl_erwartet":1,"top":"m20","treffer":true,"r5":1,"mrr":1,"liste":["m20","m58"]}
+{"art":"suche","i":10,"kategorie":"lexikalisch","frage":"Warum Rust statt Go?","erwartet":"m21","anzahl_erwartet":1,"top":"m21","treffer":true,"r5":1,"mrr":1,"liste":["m21","m42","m05"]}
+{"art":"suche","i":11,"kategorie":"lexikalisch","frage":"Autoversicherung kündigen","erwartet":"m22","anzahl_erwartet":1,"top":"m22","treffer":true,"r5":1,"mrr":1,"liste":["m22"]}
+{"art":"suche","i":12,"kategorie":"lexikalisch","frage":"Werkstatt Termin Auto","erwartet":"m23","anzahl_erwartet":1,"top":"m23","treffer":true,"r5":1,"mrr":1,"liste":["m23","m43","m46","m32","m22"]}
+{"art":"suche","i":13,"kategorie":"lexikalisch","frage":"Keller Umbau Kosten","erwartet":"m25","anzahl_erwartet":1,"top":"m25","treffer":true,"r5":1,"mrr":1,"liste":["m25","m31","m26","m49","m30"]}
+{"art":"suche","i":14,"kategorie":"lexikalisch","frage":"Welche LLM Kontextfenster?","erwartet":"m26","anzahl_erwartet":1,"top":"m26","treffer":true,"r5":1,"mrr":1,"liste":["m26"]}
+{"art":"suche","i":15,"kategorie":"lexikalisch","frage":"Obsidian Notizen Format","erwartet":"m28","anzahl_erwartet":1,"top":"m28","treffer":true,"r5":1,"mrr":1,"liste":["m28","m27"]}
+{"art":"suche","i":16,"kategorie":"lexikalisch","frage":"React Build Setup","erwartet":"m29","anzahl_erwartet":1,"top":"m29","treffer":true,"r5":1,"mrr":1,"liste":["m29","m15","m11"]}
+{"art":"suche","i":17,"kategorie":"lexikalisch","frage":"Kaution Vermieter","erwartet":"m30","anzahl_erwartet":1,"top":"m30","treffer":true,"r5":1,"mrr":1,"liste":["m30"]}
+{"art":"suche","i":18,"kategorie":"lexikalisch","frage":"Carbonara Zutaten","erwartet":"m06","anzahl_erwartet":1,"top":"m06","treffer":true,"r5":1,"mrr":1,"liste":["m06"]}
+{"art":"suche","i":19,"kategorie":"lexikalisch","frage":"KEPTA MCP Architektur","erwartet":"m11","anzahl_erwartet":2,"top":"m11","treffer":true,"r5":1,"mrr":1,"liste":["m11","m12","m01","m15","m14"]}
+{"art":"suche","i":20,"kategorie":"lexikalisch","frage":"Passwörter sicher verwalten","erwartet":"m10","anzahl_erwartet":1,"top":"m10","treffer":true,"r5":1,"mrr":1,"liste":["m10","m09","m16","m17","m41"]}
+{"art":"suche","i":21,"kategorie":"lexikalisch","frage":"Rechnungen Buchhaltung Tool","erwartet":"m09","anzahl_erwartet":1,"top":"m09","treffer":true,"r5":1,"mrr":1,"liste":["m09","m29","m12","m21"]}
+{"art":"suche","i":22,"kategorie":"lexikalisch","frage":"Zettelkasten Notizen Methode","erwartet":"m27","anzahl_erwartet":1,"top":"m27","treffer":true,"r5":1,"mrr":1,"liste":["m27","m28"]}
+{"art":"suche","i":23,"kategorie":"lexikalisch","frage":"Geburtstag Familie","erwartet":"m18","anzahl_erwartet":1,"top":"m18","treffer":true,"r5":1,"mrr":1,"liste":["m18","m50"]}
+{"art":"suche","i":24,"kategorie":"lexikalisch","frage":"Deployment und Domain","erwartet":"m01","anzahl_erwartet":1,"top":"m01","treffer":true,"r5":1,"mrr":1,"liste":["m01","m40","m02","m16","m09"]}
+{"art":"suche","i":25,"kategorie":"umschreibung","frage":"Was koche ich mit Nudeln?","erwartet":"m06","anzahl_erwartet":1,"top":"m06","treffer":true,"r5":1,"mrr":1,"liste":["m06","m48","m47"]}
+{"art":"suche","i":26,"kategorie":"umschreibung","frage":"Wie bewahre ich meine Zugangsdaten sicher auf?","erwartet":"m10","anzahl_erwartet":1,"top":"m57","treffer":false,"r5":0,"mrr":0,"liste":["m57","m16","m17","m58","m41"]}
+{"art":"suche","i":27,"kategorie":"umschreibung","frage":"Wo lasse ich mein Fahrzeug instand setzen?","erwartet":"m23","anzahl_erwartet":1,"top":"m23","treffer":true,"r5":1,"mrr":1,"liste":["m23","m43","m22","m46"]}
+{"art":"suche","i":28,"kategorie":"umschreibung","frage":"Was mag meine Grossmutter?","erwartet":"m18","anzahl_erwartet":1,"top":"m47","treffer":false,"r5":1,"mrr":0.2,"liste":["m47","m57","m20","m04","m18"]}
+{"art":"suche","i":29,"kategorie":"umschreibung","frage":"Was tue ich fuer meinen Ruecken?","erwartet":"m45","anzahl_erwartet":1,"top":"m45","treffer":true,"r5":1,"mrr":1,"liste":["m45","m32","m52","m31","m47"]}
+{"art":"suche","i":30,"kategorie":"umschreibung","frage":"Wie lege ich Geld an?","erwartet":"m49","anzahl_erwartet":1,"top":"m42","treffer":false,"r5":0,"mrr":0,"liste":["m42","m56","m40","m27","m41"]}
+{"art":"suche","i":31,"kategorie":"umschreibung","frage":"Wer hilft bei einem medizinischen Notfall?","erwartet":"m50","anzahl_erwartet":1,"top":"m10","treffer":false,"r5":1,"mrr":0.5,"liste":["m10","m50","m20","m57"]}
+{"art":"suche","i":32,"kategorie":"umschreibung","frage":"Wie fotografiere ich drinnen richtig?","erwartet":"m52","anzahl_erwartet":1,"top":"m38","treffer":false,"r5":1,"mrr":0.3333333333333333,"liste":["m38","m47","m52"]}
+{"art":"suche","i":33,"kategorie":"umschreibung","frage":"Was muss ich beim Auszug renovieren?","erwartet":"m47","anzahl_erwartet":1,"top":"m41","treffer":false,"r5":0,"mrr":0,"liste":["m41","m25","m38","m15","m34"]}
+{"art":"suche","i":34,"kategorie":"umschreibung","frage":"Was gibt es an Heiligabend zu essen?","erwartet":"m48","anzahl_erwartet":1,"top":"m45","treffer":false,"r5":0,"mrr":0,"liste":["m45","m40","m42","m18","m34"]}
+{"art":"suche","i":35,"kategorie":"graph","frage":"Anton Bauer","erwartet":"m25","anzahl_erwartet":4,"top":"m32","treffer":true,"r5":1,"mrr":1,"liste":["m32","m33","m31","m25"]}
+{"art":"suche","i":36,"kategorie":"graph","frage":"Weber","erwartet":"m08","anzahl_erwartet":3,"top":"m34","treffer":true,"r5":1,"mrr":1,"liste":["m34","m35","m08"]}
+{"art":"suche","i":37,"kategorie":"graph","frage":"Hetzner","erwartet":"m01","anzahl_erwartet":4,"top":"m36","treffer":true,"r5":1,"mrr":1,"liste":["m36","m37","m16","m17","m01"]}
+{"art":"suche","i":38,"kategorie":"ablenkung","frage":"Wie oft wird gesichert?","erwartet":"m02","anzahl_erwartet":2,"top":"m37","treffer":true,"r5":1,"mrr":1,"liste":["m37","m38","m02","m47","m52"]}
+{"art":"suche","i":39,"kategorie":"ablenkung","frage":"Welches Passwort gilt in der Produktion?","erwartet":"m58","anzahl_erwartet":1,"top":"m16","treffer":false,"r5":1,"mrr":0.3333333333333333,"liste":["m16","m17","m58","m09","m41"]}
+{"art":"suche","i":40,"kategorie":"ablenkung","frage":"Welcher Server ist gemeint?","erwartet":"m01","anzahl_erwartet":1,"top":"m16","treffer":false,"r5":1,"mrr":0.2,"liste":["m16","m40","m11","m17","m01"]}
+{"art":"suche","i":41,"kategorie":"ablenkung","frage":"Was steht zur Datenbank an?","erwartet":"m02","anzahl_erwartet":1,"top":"m02","treffer":true,"r5":1,"mrr":1,"liste":["m02","m39","m33"]}
+{"art":"suche","i":42,"kategorie":"temporal","frage":"Wie bin ich erreichbar?","erwartet":"m54","anzahl_erwartet":1,"top":"m54","treffer":true,"r5":1,"mrr":1,"liste":["m54","m47","m34","m40","m41"]}
+{"art":"suche","i":43,"kategorie":"temporal","frage":"Welche Laufschuhe habe ich?","erwartet":"m56","anzahl_erwartet":1,"top":"m56","treffer":true,"r5":1,"mrr":1,"liste":["m56","m42","m40","m55"]}
+{"art":"suche","i":44,"kategorie":"temporal","frage":"Bis wann muss die Umsatzsteuer abgegeben werden?","erwartet":"m08","anzahl_erwartet":1,"top":"m07","treffer":false,"r5":1,"mrr":0.3333333333333333,"liste":["m07","m34","m08","m44","m41"]}
+{"art":"fazit","stufe":"nomic-embed-text","lauf":"zwei","hit1":34,"hit1_prozent":75.6,"r5_prozent":91.1,"mrr":0.809}

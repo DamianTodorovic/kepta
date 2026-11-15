@@ -1,91 +1,79 @@
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
+// F12 — dieselbe Luecke, die F3 im Kern (`~/kepta-core/server.ts`) laengst zu hat,
+// in der Desktop-App: ihr `POST /api/memories/import` mit mode:"replace" purgierte
+// bisher ungefragt, ungesichert und auch bei leerer Nutzlast. Die Testanlage ist
+// bewusst die Kern-Anlage (tests/server-import-ersatz.test.ts in ~/kepta-core),
+// damit beidea Baeume gegen denselben Wortlauf pruefen und nicht gegen zwei.
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
-import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
-import { anlage } from "./helfer/anlage";
 import { defaultExtensions } from "../src/core/extensions";
 
 // server.ts startet beim Import normalerweise automatisch — mit KEPTA_NO_AUTOSTART=1
 // wird nur createApp exportiert, ohne Port zu binden. Darum hier kein statischer
-// Import von ../server: er liefe vor dieser Zeile ab und startete den echten Server.
+// Import von ../server: er wuerde vor dieser Zeile ablaufen und den echten Server
+// starten. Der Schluesselbund bleibt unberuehrt (22.9.-Regel, tests/server.test.ts).
 process.env.KEPTA_NO_AUTOSTART = "1";
+process.env.KEPTA_ENCRYPTION = "off";
 
-let createApp: (store: KeptaStore) => import("express").Express;
+let createApp: typeof import("../server").createApp;
 let store: KeptaStore;
 let app: import("express").Express;
 let prevHome: string | undefined;
+let prevDaten: string | undefined;
 let dir: string;
-
-// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage
-// (`tests/helfer/hoerer.ts`: der Nachbau vom 13.10., der eine offene
-// `request(URLE)`-Kette an einen fremden v4-Hoerer verlor).
-let hoerer: DateiHoerer;
-let URLE: string;
-// Der zweite Stapel (die verschluesselte Probe weiter unten) braucht einen eigenen
-// Horcher, weil beide Stapel nicht derselbe sind: ein Horcher reicht fuer einen
-// Stapel, und ein zweiter `hoererDerDatei`-Aufruf mit Slot ist dieselbe Zuteilung —
-// kein Horcher je Anfrage, kein zweiter Lauf auf derselben Zahl
-// (`tests/helfer/port-vergabe.ts`: HORCHENDE_KENNUNGEN).
-let hoererZ: DateiHoerer;
-let URLZ: string;
-
-beforeAll(async () => {
-  hoerer = await hoererDerDatei("tests/server-import-ersatz.test.ts");
-  URLE = hoerer.url;
-  hoererZ = await hoererDerDatei("tests/server-import-ersatz.test.ts#zweitstapel");
-  URLZ = hoererZ.url;
-});
-
-afterAll(async () => {
-  await hoerer.schliesse();
-  await hoererZ.schliesse();
-});
 
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-ersatz-"));
   prevHome = process.env.HOME;
+  prevDaten = process.env.KEPTA_DATA_DIR;
   process.env.HOME = dir;
   process.env.KEPTA_DATA_DIR = dir;
   vi.resetModules();
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
   app = createApp(store);
-  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
   if (prevHome === undefined) delete process.env.HOME;
   else process.env.HOME = prevHome;
+  if (prevDaten === undefined) delete process.env.KEPTA_DATA_DIR;
+  else process.env.KEPTA_DATA_DIR = prevDaten;
+  // Der Datenordner wurde bisher nie geraeumt: 17 Ordner je Lauf blieben liegen,
+  // und ein Abend mit vollen Suiten kostete gemessen 1,27 GiB Platte — 3 603 Ordner
+  // unter $TMPDIR am 26.10., und genau die Platte fehlte der Baurunde.
+  store?.close();
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 async function fuelle(n: number, praefix = "Bestand") {
   for (let i = 0; i < n; i++) {
-    anlage(await request(URLE).post("/api/memories").send({ title: `${praefix} ${i}`, content: `Inhalt ${i} mit Substanz.` }), `${praefix} ${i} anlegen`);
+    await request(app).post("/api/memories").send({ title: `${praefix} ${i}`, content: `Inhalt ${i} mit Substanz.` });
   }
 }
 
 /** Zwei Notizen in den Papierkorb — der Purge bei mode:"replace" erwischt sie mit. */
 async function papierkorb(n: number) {
   for (let i = 0; i < n; i++) {
-    const post = anlage(await request(URLE).post("/api/memories").send({ title: `Weg ${i}`, content: `Papierkorb-Inhalt ${i}.` }), `Weg ${i} anlegen`);
-    anlage(await request(URLE).delete(`/api/memories/${encodeURIComponent(post.body.memory.id)}`), `Weg ${i} in den Papierkorb`, [200, 204]);
+    const post = await request(app).post("/api/memories").send({ title: `Weg ${i}`, content: `Papierkorb-Inhalt ${i}.` });
+    await request(app).delete(`/api/memories/${encodeURIComponent(post.body.memory.id)}`);
   }
 }
 
 const zaehlen = async () => {
-  const aktiv = await request(URLE).get("/api/memories");
-  const trash = await request(URLE).get("/api/memories?trash=1");
-  return { aktiv: aktiv.body.length, trash: trash.body.length };
+  const aktiv = await request(app).get("/api/memories");
+  const trash = await request(app).get("/api/memories?trash=1");
+  return { aktiv: aktiv.body.total, trash: trash.body.total };
 };
 
-describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze Wissensbasis endgültig löschen", () => {
-  it("lehnt replace ohne ausdrückliche Bestätigung ab und lässt jeden Knoten in Ruhe", async () => {
+describe("Q-16 — POST /api/memories/import mit mode:\"replace\" loescht die ganze Wissensbasis endgueltig", () => {
+  it("lehnt replace ohne ausdrueckliche Bestaetigung ab und laesst jeden Knoten in Ruhe", async () => {
     await fuelle(3);
-    const res = await request(URLE)
+    const res = await request(app)
       .post("/api/memories/import")
       .send({ mode: "replace", memories: [{ id: "neu-1", title: "Neu", content: "Neuer Inhalt." }] });
     expect(res.status).toBe(400);
@@ -96,7 +84,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
   it("lehnt eine replace-Nutzlast ohne eine einzige nutzbare Notiz ab (leeres Array)", async () => {
     await fuelle(3);
     await papierkorb(2);
-    const res = await request(URLE)
+    const res = await request(app)
       .post("/api/memories/import")
       .send({ mode: "replace", confirm: "replace", memories: [] });
     expect(res.status).toBe(400);
@@ -106,7 +94,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
   it("lehnt das Nur-Titel-Backup ab, dessen Notizen durch den Inhaltfilter laufen", async () => {
     await fuelle(3);
     // A3 Abschnitt B: frueher 200 {imported:0} — und der ganze Bestand weg.
-    const res = await request(URLE).post("/api/memories/import").send({
+    const res = await request(app).post("/api/memories/import").send({
       mode: "replace",
       confirm: "replace",
       memories: [{ id: "a1", title: "Nur-Titel", content: "" }],
@@ -119,7 +107,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
   it("zeigt der Trockenlauf die Zahl der Betroffenen, ohne etwas anzufassen", async () => {
     await fuelle(3);
     await papierkorb(2);
-    const res = await request(URLE)
+    const res = await request(app)
       .post("/api/memories/import")
       .send({ mode: "replace", dryRun: true, memories: [{ id: "n1", title: "Neu", content: "Inhalt" }] });
     expect(res.status).toBe(200);
@@ -134,7 +122,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
   it("legt vor dem Purge die Sicherung auf die Platte und nennt ihren Pfad in der Antwort", async () => {
     await fuelle(3);
     await papierkorb(2);
-    const res = await request(URLE).post("/api/memories/import").send({
+    const res = await request(app).post("/api/memories/import").send({
       mode: "replace",
       confirm: "replace",
       memories: [{ id: "n1", title: "Neu", content: "Nur dieser Knoten bleibt uebrig." }],
@@ -147,7 +135,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
     expect(pfad).toBeTruthy();
     expect(fs.existsSync(pfad)).toBe(true);
     expect(pfad.startsWith(path.join(dir, "backup"))).toBe(true);
-    // Die Sicherung enthaelt den Stand VOR dem Purge — aktive und Paperkorb-Knoten.
+    // Die Sicherung enthaelt den Stand VOR dem Purge — aktive und Papierkorb-Knoten.
     const sicherung = new KeptaStore(pfad);
     try {
       expect(sicherung.listMemories({ limit: 1000 })).toHaveLength(3);
@@ -158,11 +146,18 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
     expect(await zaehlen()).toEqual({ aktiv: 1, trash: 0 });
   });
 
-  it("löscht nichts, wenn die Sicherung nicht geschrieben werden kann", async () => {
+  it("loescht nichts, wenn die Sicherung nicht geschrieben werden kann", async () => {
     await fuelle(3);
     // backup/ als Datei statt Ordner: mkdir und Copy schlagen fehl, der Purge darf trotzdem nicht laufen.
     fs.writeFileSync(path.join(dir, "backup"), "blockiert", "utf-8");
-    const res = await request(URLE).post("/api/memories/import").send({
+    // Die Sperre ist eine Vorbedingung dieses Falls, kein Beweis: liegt an ihrer
+    // Stelle ploetzlich ein Ordner (ein andrer Lauf hat den Datenordner geraeumt
+    // oder vorher schon eine Sicherung dorthin geschrieben), schreibt der Koerper
+    // die Sicherung und antwortet 200. Dann ist das Urteil aber eine Aussage ueber
+    // die Umgebung — also zuerst die Sperre pruefen, bevor sie dem Koerper gilt.
+    expect(fs.statSync(path.join(dir, "backup")).isFile(),
+      "Vorbedingung fehlt: backup/ ist keine Datei mehr — der Fall laeuft gegen eine andre Umgebung, nicht gegen den Koerper").toBe(true);
+    const res = await request(app).post("/api/memories/import").send({
       mode: "replace",
       confirm: "replace",
       memories: [{ id: "n1", title: "Neu", content: "Inhalt" }],
@@ -172,7 +167,7 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
     expect(await zaehlen()).toEqual({ aktiv: 3, trash: 0 });
   });
 
-  it("sichert verschlüsselt weiter: keine Klartext-Kopie neben einer verschlüsselten Datenbank", async () => {
+  it("sichert verschluesselt weiter: keine Klartext-Kopie neben einer verschluesselten Datenbank", async () => {
     const schluessel = crypto.randomBytes(32);
     const MARKER = "geheimer-satz-fuer-die-backup-pruefung";
     const klarOrdner = fs.mkdtempSync(path.join(tmpdir(), "kepta-ersatz-klar-"));
@@ -180,9 +175,8 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
     const keyed = new KeptaStore(path.join(klarOrdner, "kepta.db"), verschluesselt);
     try {
       const keyedApp = createApp(keyed);
-      hoererZ.gebeApp(keyedApp);
-      await anlage(await request(URLZ).post("/api/memories").send({ title: "Privat", content: MARKER }), "verschlüsselte Probe-Notiz anlegen");
-      const res = await request(URLZ).post("/api/memories/import").send({
+      await request(keyedApp).post("/api/memories").send({ title: "Privat", content: MARKER });
+      const res = await request(keyedApp).post("/api/memories/import").send({
         mode: "replace",
         confirm: "replace",
         memories: [{ id: "n1", title: "Neu", content: "Inhalt" }],
@@ -203,12 +197,13 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
       }
     } finally {
       keyed.close();
+      fs.rmSync(klarOrdner, { recursive: true, force: true });
     }
   });
 
-  it("merge braucht keine Bestätigung und schreibt keine Sicherung", async () => {
+  it("merge braucht keine Bestaetigung und schreibt keine Sicherung", async () => {
     await fuelle(2);
-    const res = await request(URLE)
+    const res = await request(app)
       .post("/api/memories/import")
       .send({ mode: "merge", memories: [{ id: "m1", title: "Frisch", content: "Inhalt" }] });
     expect(res.status).toBe(200);
@@ -220,227 +215,184 @@ describe("Q-16 — POST /api/memories/import mit mode:\"replace\" kann die ganze
 
   it("merge ohne nutzbare Notiz wird abgelehnt statt als Erfolg gemeldet", async () => {
     await fuelle(2);
-    const res = await request(URLE).post("/api/memories/import").send({ memories: [] });
+    const res = await request(app).post("/api/memories/import").send({ memories: [] });
     expect(res.status).toBe(400);
     expect(await zaehlen()).toEqual({ aktiv: 2, trash: 0 });
   });
 });
 
 /**
- * Folge des eigenen Befunds: die Sicherung war die Antwort auf "kein Purge ohne
- * Sicherung" — auf einer langen gelebten Installation legt sie aber eine Datei je
- * Volltausch hin. Aufbewahrung ist darum eine Zahl, nicht ein Vorbehalt.
+ * Die Rotation: backup/ darf nicht unbegrenzt wachsen (ein Volltausch je Bestaetigung,
+ * fuer immer). Policy — letzte fuenf eigene Sicherungen, KEPTA_BACKUP_KEEP steuert,
+ * 0 = nichts behalten mit ausdruecklicher Warnung, geloescht wird NACH dem
+ * erfolgreich geschriebenen neuen Backup, und nur eigene Dateien.
  */
-const SICHERUNGEN = () => {
-  try {
-    // beide Formen: mit Zeitstempel allein (die aelteren Installationen) und mit
-    // Zeitstempel + Kurszel (die neuen) — sonst misst der Test an der Realitaet vorbei
-    return fs.readdirSync(path.join(dir, "backup")).filter((n) => /^kepta-pre-replace-\d+(-[0-9a-f]{4})?\.db$/.test(n)).sort();
-  } catch {
-    return [];
-  }
+const pause = () => new Promise((r) => setTimeout(r, 5));
+
+/** Nur die eigenen Dateien des Werkzeugs, dem Ordner nach — beide Namensformen. */
+const eigene = () => {
+  const ordner = path.join(dir, "backup");
+  if (!fs.existsSync(ordner)) return [] as string[];
+  return fs.readdirSync(ordner).filter((n) => /^kepta-pre-replace-\d+(?:-[0-9a-f]{4})?\.db$/.test(n)).sort();
 };
 
-const pause = () => new Promise((r) => setTimeout(r, 4));
+type Antwort = Awaited<ReturnType<typeof volltausch>>;
 
-/** Ein bestaetigter Volltausch mit einem Knoten; gibt die Antwort zurueck. */
-async function volltausch(markierung: string) {
-  await pause();
-  return request(URLE).post("/api/memories/import").send({
+const volltausch = async (n: number) =>
+  request(app).post("/api/memories/import").send({
     mode: "replace",
     confirm: "replace",
-    memories: [{ id: `k-${markierung}`, title: `Stand ${markierung}`, content: `Inhalt ${markierung}` }],
+    memories: [{ id: `dreh-${n}`, title: `Stand ${n}`, content: `Inhalt ${n} mit Substanz.` }],
   });
-}
 
-describe("Q-16 Folge — der Sicherungsordner waechst: Aufbewahrung als Policy mit Zahl", () => {
-  afterEach(() => vi.unstubAllEnvs());
-
-  it("hält standardmaessig die letzten fuenf, die aelteste ist nach dem sechsten Lauf weg", async () => {
+describe("Sicherungsrotation — backup/ haelt die letzten fuenf, Fremdes bleibt liegen", () => {
+  it("sechs bestaetigte Volltausche lassen genau fuenf Sicherungen, die aelteste ist weg", async () => {
     await fuelle(1);
-    const pfade: string[] = [];
-    for (let i = 0; i < 6; i++) {
-      const res = await volltausch(`l${i}`);
-      expect(res.status).toBe(200);
-      pfade.push(String(res.body.backupPath));
-    }
-    const gehalten = SICHERUNGEN();
-    expect(gehalten).toHaveLength(5);
-    expect(gehalten).toContain(path.basename(pfade[5]!));
-    expect(gehalten).not.toContain(path.basename(pfade[0]!));
+    const letzte: Antwort[] = [];
+    for (let i = 1; i <= 6; i++) { letzte.push(await volltausch(i)); await pause(); }
+    // Erst der Status, dann die Zahl: ein ausgefallener Volltausch macht die
+    // Aufbewahrung nicht kaputt, er macht nur den Ordner leer — ohne diese Zeile
+    // warf der Fall ein Rot, das dem Koerper etwas anlastete, was die Tuer nie
+    // antwoordete.
+    expect(letzte.map((a) => a.status)).toEqual([200, 200, 200, 200, 200, 200]);
+    expect(eigene()).toHaveLength(5);
+    const sechste = letzte[5]!;
+    expect(sechste.body.backupsGehalten).toBe(5);
+    expect(sechste.body.backupsEntfernt).toBe(1);
+    // Die fuenf, die bleiben, sind die fuenf letzten — nicht irgendwelche.
+    expect(eigene()).toEqual([letzte[1], letzte[2], letzte[3], letzte[4], letzte[5]].map((r) => path.basename(String(r.body.backupPath))).sort());
+    // Die aelteste Sicherung ist von der Platte, die juengste oeffnet.
+    const probe = new KeptaStore(path.join(dir, "backup", eigene()[0]!));
+    try { expect(probe.listMemories({ limit: 10 })).toHaveLength(1); } finally { probe.close(); }
   });
 
-  it("die Antwort sagt, was gehalten wird und wie viel geraeumt wurde", async () => {
-    await fuelle(1);
-    for (let i = 0; i < 5; i++) {
-      const lauf = await volltausch(`m${i}`);
-      // Solange die Zahl nicht ueberschritten ist, wird nichts entfernt — und die
-      // Antwort haelt die Anzahl trotzdem hin, statt ueber den Ordner zu schweigen.
-      expect(lauf.body.backupsGehalten).toBe(i + 1);
-      expect(lauf.body.backupsEntfernt).toBe(0);
-    }
-    const sechster = await volltausch("m5");
-    expect(sechster.body.backupPath).toBeTruthy();
-    expect(sechster.body.backupsGehalten).toBe(5);
-    expect(sechster.body.backupsEntfernt).toBe(1);
-  });
-
-  it("loescht nie etwas, das nicht selbst geschrieben wurde", async () => {
-    await fuelle(1);
-    fs.mkdirSync(path.join(dir, "backup"), { recursive: true });
-    const fremd = ["wichtig.txt", "kepta.db", "kepta-pre-replace-manuell.db", "alter_ordner.kepta-pre-replace-1.db"];
-    for (const n of fremd) fs.writeFileSync(path.join(dir, "backup", n), "nutzerdaten", "utf-8");
-    for (let i = 0; i < 7; i++) await volltausch(`f${i}`);
-    for (const n of fremd) {
-      expect(fs.existsSync(path.join(dir, "backup", n))).toBe(true);
-    }
-    expect(SICHERUNGEN()).toHaveLength(5);
-  });
-
-  it("KEPTA_BACKUP_KEEP=2 haelt genau zwei", async () => {
+  it("KEPTA_BACKUP_KEEP=2 behaelt zwei, der Rest wird geloescht", async () => {
     vi.stubEnv("KEPTA_BACKUP_KEEP", "2");
-    await fuelle(1);
-    for (let i = 0; i < 5; i++) await volltausch(`z${i}`);
-    expect(SICHERUNGEN()).toHaveLength(2);
-  });
-
-  it("KEEP=1: die gehaltene Datei ist genau die neue — geraeumt wird erst nach dem neuen Schreiblauf", async () => {
-    vi.stubEnv("KEPTA_BACKUP_KEEP", "1");
-    await fuelle(1);
-    fs.mkdirSync(path.join(dir, "backup"), { recursive: true });
-    // drei aeltere Sicherungen, als waeren sie von frueheren Laeufen
-    for (const ms of [Date.now() - 90_000, Date.now() - 60_000, Date.now() - 30_000]) {
-      fs.writeFileSync(path.join(dir, "backup", `kepta-pre-replace-${ms}.db`), "alt", "utf-8");
-    }
-    const res = await volltausch("neu");
-    expect(SICHERUNGEN()).toEqual([path.basename(String(res.body.backupPath))]);
-    expect(res.body.backupsEntfernt).toBe(3);
-    expect(res.body.backupsGehalten).toBe(1);
-  });
-
-  it("KEPTA_BACKUP_KEEP=0 behaelt gar nichts — und sagt das ausdruecklich statt still zu schweigen", async () => {
-    vi.stubEnv("KEPTA_BACKUP_KEEP", "0");
-    await fuelle(3);
-    const res = await volltausch("null");
-    expect(res.status).toBe(200);
-    expect(SICHERUNGEN()).toEqual([]);
-    expect(res.body.backupsGehalten).toBe(0);
-    expect(String(res.body.warning)).toMatch(/KEPTA_BACKUP_KEEP=0/);
-    expect(String(res.body.warning)).toMatch(/nicht wiederherstell|cannot be undone/);
-    // Der Volltausch selbst laeuft: der Schutz bleibt die Bestaetigung, nicht die Datei.
-    expect(await zaehlen()).toEqual({ aktiv: 1, trash: 0 });
-  });
-
-  it("ein unbrauchbarer Wert faellt auf fuenf zurueck und nennt, dass er ignoriert wurde", async () => {
-    vi.stubEnv("KEPTA_BACKUP_KEEP", "fünf");
-    await fuelle(1);
-    for (let i = 0; i < 6; i++) await volltausch(`g${i}`);
-    expect(SICHERUNGEN()).toHaveLength(5);
-    const letzte = await volltausch("g6");
-    expect(String(letzte.body.warning)).toMatch(/KEPTA_BACKUP_KEEP/);
-    expect(letzte.body.backupsGehalten).toBe(5);
-  });
-
-  it("ein negativer Wert ist kein 'behalt nichts', sondern unbrauchbar", async () => {
-    vi.stubEnv("KEPTA_BACKUP_KEEP", "-2");
-    await fuelle(1);
-    for (let i = 0; i < 6; i++) await volltausch(`n${i}`);
-    expect(SICHERUNGEN()).toHaveLength(5);
-  });
-
-  it("die Reihenfolge bleibt: ohne geschriebene Sicherung wird nicht purgiert, auch mit KEEP=0", async () => {
-    vi.stubEnv("KEPTA_BACKUP_KEEP", "0");
-    await fuelle(3);
-    fs.writeFileSync(path.join(dir, "backup"), "blockiert", "utf-8");
-    const res = await request(URLE).post("/api/memories/import").send({
-      mode: "replace",
-      confirm: "replace",
-      memories: [{ id: "x", title: "Neu", content: "Inhalt" }],
-    });
-    expect(res.status).toBe(500);
-    expect(await zaehlen()).toEqual({ aktiv: 3, trash: 0 });
-  });
-
-  /**
-   * Der Name traegt die Millisekunde. Zwei bestaetigte Volltausche in derselben
-   * Millisekunde schrieben damit denselben Pfad: die zweite Sicherung ueberschrieb
-   * die erste, und der Nutzer glaubt, er haette zwei Staende. Der Beweis gefriert
-   * die Uhr — "praktisch nicht erreichbar" ist keine Antwort auf einen Zahlfehler.
-   */
-  it("zwei Volltausche in derselben Millisekunde schreiben zwei Sicherungen, nicht eine ueber die andere", async () => {
-    await fuelle(2);
-    const uhre = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
     try {
-      const erste = await request(URLE).post("/api/memories/import").send({
-        mode: "replace", confirm: "replace",
-        memories: [{ id: "gl1", title: "Glatt 1", content: "Erster Stand derselben Millisekunde." }],
-      });
-      const zweite = await request(URLE).post("/api/memories/import").send({
-        mode: "replace", confirm: "replace",
-        memories: [{ id: "gl2", title: "Glatt 2", content: "Zweiter Stand derselben Millisekunde." }],
-      });
-      expect(erste.body.backupPath).toBeTruthy();
-      // Der gleiche Pfad in beiden Antworten waere der Ueberschreibbeweis.
-      expect(zweite.body.backupPath).not.toBe(erste.body.backupPath);
-      expect(fs.existsSync(String(erste.body.backupPath))).toBe(true);
-      expect(fs.existsSync(String(zweite.body.backupPath))).toBe(true);
-      expect(SICHERUNGEN()).toHaveLength(2);
-      expect(zweite.body.backupsGehalten).toBe(2);
+      await fuelle(1);
+      const antworten: Antwort[] = [];
+      for (let i = 1; i <= 4; i++) { antworten.push(await volltausch(i)); await pause(); }
+      // Der Status wird genannt, bevor gezaehlt wird: fiel ein Volltausch aus
+      // (Drossel, Sicherung, Timeout), war die Leere im Ordner nie ein Beweis fuer
+      // eine kaputte Aufbewahrung — genau so las sich der Lauf von 21:09 Uhr.
+      expect(antworten.map((a) => a.status),
+        antworten.map((a, i) => `${i + 1}: ${a.status} ${String(a.body?.error ?? "")}`).join(" | ")).toEqual([200, 200, 200, 200]);
+      expect(eigene()).toHaveLength(2);
     } finally {
-      uhre.mockRestore();
+      vi.unstubAllEnvs();
     }
   });
 
-  /**
-   * Der Name hat ein Suffix bekommen — die Ordner der Installationen, die heute
-   * schon laufen, halten Dateien OHNE Suffix. Erkennt die Raumscheibe die alte
-   * Form nicht mehr, hoert die Aufbewahrung bei genau den aelteren Staenden auf,
-   * die den Ordner voll machen: ein Ruueckschritt, der wie eine Verbesserung aussieht.
-   */
-  it("alte Sicherung ohne Suffix und neue mit Suffix im selben Ordner: die aeltere weicht", async () => {
-    vi.stubEnv("KEPTA_BACKUP_KEEP", "1");
-    await fuelle(1);
-    fs.mkdirSync(path.join(dir, "backup"), { recursive: true });
-    const alt = `kepta-pre-replace-${Date.now() - 120_000}.db`;
-    fs.writeFileSync(path.join(dir, "backup", alt), "alte form, kein suffix", "utf-8");
-    const res = await volltausch("gemischt");
-    const neue = path.basename(String(res.body.backupPath));
-    expect(neue).toMatch(/^kepta-pre-replace-\d+-[0-9a-f]{4}\.db$/);
-    expect(SICHERUNGEN()).toEqual([neue]);
-    expect(fs.existsSync(path.join(dir, "backup", alt))).toBe(false);
-    expect(res.body.backupsEntfernt).toBe(1);
-    expect(res.body.backupsGehalten).toBe(1);
+  it("KEPTA_BACKUP_KEEP=0 behaelt nichts und warnt ausdruecklich — der Purge laeuft weiter", async () => {
+    vi.stubEnv("KEPTA_BACKUP_KEEP", "0");
+    try {
+      await fuelle(2);
+      const res = await volltausch(1);
+      expect(res.status).toBe(200);
+      expect(res.body.imported).toBe(1);
+      expect(res.body.backupsGehalten).toBe(0);
+      expect(String(res.body.backupPath)).toMatch(/kepta-pre-replace-\d+(-[0-9a-f]{4})?\.db$/);
+      expect(fs.existsSync(String(res.body.backupPath))).toBe(false);
+      expect(String(res.body.warning)).toMatch(/KEPTA_BACKUP_KEEP=0/);
+      expect(String(res.body.warning)).toMatch(/cannot be undone from disk/);
+      expect(eigene()).toEqual([]);
+      expect(await zaehlen()).toEqual({ aktiv: 1, trash: 0 });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
-  it("ein Fremdname, der dem neuen Muster nur aehnlich sieht, bleibt liegen", async () => {
+  it("fremde Dateien im Sicherungsordner werden nicht angefasst", async () => {
     await fuelle(1);
-    fs.mkdirSync(path.join(dir, "backup"), { recursive: true });
-    const fremd = [
-      "kepta-pre-replace-manuell.db",
-      "kepta-pre-replace-1700000000000-ZZZZ.db",
-      "kepta-pre-replace-1700000000000-ab1.db",
-      "kepta-pre-replace-1700000000000-ffff.db.bak",
+    const ordner = path.join(dir, "backup");
+    fs.mkdirSync(ordner, { recursive: true });
+    fs.writeFileSync(path.join(ordner, "wichtige-altdatei.db"), "fremd", "utf-8");
+    fs.writeFileSync(path.join(ordner, "kepta-pre-replace-abz.db"), "kein stempel", "utf-8");
+    fs.mkdirSync(path.join(ordner, "unterordner"), { recursive: true });
+    for (let i = 1; i <= 4; i++) { await volltausch(i); await pause(); }
+    expect(eigene()).toHaveLength(4);
+    expect(fs.existsSync(path.join(ordner, "wichtige-altdatei.db"))).toBe(true);
+    expect(fs.existsSync(path.join(ordner, "kepta-pre-replace-abz.db"))).toBe(true);
+    expect(fs.existsSync(path.join(ordner, "unterordner"))).toBe(true);
+  });
+
+  it("unverstaendliche Werte fallen auf 5 zurueck und sagen es, gebrochene werden abgerundet", async () => {
+    const faelle: { wert: string; gehalten: number; warnt: boolean }[] = [
+      { wert: "abc", gehalten: 4, warnt: true },
+      { wert: "-1", gehalten: 4, warnt: true },
+      { wert: "", gehalten: 4, warnt: false },
+      { wert: "2.5", gehalten: 2, warnt: false },
     ];
-    for (const n of fremd) fs.writeFileSync(path.join(dir, "backup", n), "nutzerdaten", "utf-8");
-    for (let i = 0; i < 6; i++) await volltausch(`h${i}`);
-    for (const n of fremd) expect(fs.existsSync(path.join(dir, "backup", n))).toBe(true);
-    expect(SICHERUNGEN()).toHaveLength(5);
+    for (const fall of faelle) {
+      vi.stubEnv("KEPTA_BACKUP_KEEP", fall.wert);
+      try {
+        fs.rmSync(path.join(dir, "backup"), { recursive: true, force: true });
+        await fuelle(1);
+        const erste = await volltausch(1); await pause();
+        for (const i of [2, 3, 4]) { await volltausch(i); await pause(); }
+        expect(eigene()).toHaveLength(fall.gehalten);
+        // Der Default wird nur genannt, wenn ein Wert wirklich ignoriert wurde.
+        if (fall.warnt) expect(String(erste.body.warning)).toMatch(/KEPTA_BACKUP_KEEP/);
+        else expect(String(erste.body.warning ?? "")).not.toMatch(/KEPTA_BACKUP_KEEP/);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    }
   });
 
-  it("die Zahl der Dateien auf der Platte ist die Zahl in der Antwort — zwoelf Laeufe schnell hintereinander", async () => {
-    await fuelle(1);
-    let letzte: { body: Record<string, unknown> } | undefined;
-    for (let i = 0; i < 12; i++) {
-      letzte = await request(URLE).post("/api/memories/import").send({
-        mode: "replace", confirm: "replace",
-        memories: [{ id: `k${i}`, title: `Schnell ${i}`, content: `Stand ${i} mit Substanz.` }],
-      });
-      // Die Invariante wird je Lauf geprueft, nicht nur am Ende: ein Lauf, der
-      // eine Datei ueberschreibt, macht erst beim naechsten Zaehlen sichtbar.
-      expect(SICHERUNGEN()).toHaveLength(Number(letzte.body.backupsGehalten));
+  it("schlaegt die neue Sicherung fehl, bleiben die alten stehen und es wird nichts purgiert", async () => {
+    await fuelle(2);
+    const erste = await volltausch(1);
+    expect(erste.status).toBe(200);
+    const bestand = await zaehlen();
+    const ordner = path.join(dir, "backup");
+    fs.chmodSync(ordner, 0o500);
+    try {
+      const zweite = await volltausch(2);
+      expect(zweite.status).toBe(500);
+      expect(String(zweite.body.error)).toMatch(/backup|Sicherung/);
+    } finally {
+      fs.chmodSync(ordner, 0o700);
     }
-    expect(SICHERUNGEN().length).toBeLessThanOrEqual(5);
-    // Zwölf bestaetigte Laeufe, aber die Zahl haelt nur, was der Betreiber erlaubte.
-    expect(letzte!.body.backupsGehalten).toBe(5);
+    // Die aeltere Sicherung ist unangetastet, der Bestand auch.
+    expect(fs.existsSync(String(erste.body.backupPath))).toBe(true);
+    expect(await zaehlen()).toEqual(bestand);
+  });
+});
+
+describe("Sicherungsname — derselbe Name, dieselbe Loeschregel wie im Kern", () => {
+  it("zwei Volltausche in derselben Millisekunde schreiben zwei Dateien, nicht eine ueber die andere", async () => {
+    const { datenbanksicherung } = await import("../server/helfer/sicherung");
+    const zweiter = new KeptaStore(path.join(dir, "zweite.db"));
+    try {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-10-10T09:00:00Z"));
+      const a = datenbanksicherung(zweiter);
+      const b = datenbanksicherung(zweiter);
+      vi.useRealTimers();
+      expect(a).toBeTruthy();
+      expect(b).toBeTruthy();
+      expect(a).not.toBe(b);
+      expect(fs.readdirSync(path.join(dir, "backup"))).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+      zweiter.close();
+    }
+  });
+
+  it("raeumt beide Namensformen weg — die alte ohne Kuerzel und die neue mit ihr", async () => {
+    const { halteSicherungen } = await import("../server/helfer/sicherung");
+    const ordner = path.join(dir, "backup");
+    fs.mkdirSync(ordner, { recursive: true });
+    fs.writeFileSync(path.join(ordner, "kepta-pre-replace-1700000000000.db"), "alte form", "utf-8");
+    fs.writeFileSync(path.join(ordner, "kepta-pre-replace-1800000000000-abcd.db"), "neue form", "utf-8");
+    fs.writeFileSync(path.join(ordner, "kepta-pre-replace-abz.db"), "fremd, nie von uns", "utf-8");
+    const ergebnis = halteSicherungen(ordner, 1);
+    // Zwei eigene Staende in zwei Namensformen, einer darf bleiben: die aeltere
+    // Form ohne Kuerzel wird also ebenso geraeumt wie die neue mit ihr.
+    expect(ergebnis).toEqual({ gehalten: 1, entfernt: 1 });
+    expect(fs.existsSync(path.join(ordner, "kepta-pre-replace-1700000000000.db"))).toBe(false);
+    expect(fs.existsSync(path.join(ordner, "kepta-pre-replace-1800000000000-abcd.db"))).toBe(true);
+    expect(fs.existsSync(path.join(ordner, "kepta-pre-replace-abz.db"))).toBe(true);
   });
 });

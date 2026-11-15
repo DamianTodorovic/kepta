@@ -3,8 +3,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { KeptaStore } from "./store";
 import { leseUmwelt } from "./umwelt";
+import { KeptaStore } from "./store";
 import type { MemoryInput } from "./types";
 
 interface LegacyMemory {
@@ -23,8 +23,7 @@ export interface MigrationResult {
 }
 
 /**
- * Wer KEPTA_DATA_DIR (oder seit #64 seinen neuen Namen K3PTA_DATA_DIR) ausdrücklich
- * setzt, meint dieses Verzeichnis — und nur
+ * Wer KEPTA_DATA_DIR ausdrücklich setzt, meint dieses Verzeichnis — und nur
  * dieses. Vorher wurde zusätzlich im Home gesucht, sodass eine frisch
  * angelegte Datenbank stillschweigend die Altnotizen aus ~/.kepta oder
  * ~/.ki-gehirn aufsog. Fuer eine Kanzlei, die Mandanten ueber getrennte
@@ -33,10 +32,7 @@ export interface MigrationResult {
  * KEPTA_DATA_DIR bleiben die Home-Pfade wie bisher.
  */
 export function legacyJsonPaths(): string[] {
-  // Beide Namensformen, sonst ist das hier der gefaehrlichste Fall der Umbenennung:
-  // einer, der nur K3PTA_DATA_DIR setzt, faellt hier durch und saugt die Altnotizen aus
-  // ~/.kepta oder ~/.ki-gehirn in die frisch angelegte Datenbank — genau der Sprung
-  // zwischen Mandaten, den der Absatz oben verbietet.
+  // Beide Namensformen (Aufgabe #64).
   const datenVerzeichnis = leseUmwelt("datenordner").wert;
   if (datenVerzeichnis) return [path.join(datenVerzeichnis, "memories.json")];
 

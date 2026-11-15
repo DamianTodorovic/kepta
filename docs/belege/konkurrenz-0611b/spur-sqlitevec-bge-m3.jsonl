@@ -1,0 +1,104 @@
+{"art": "start", "zeit": "16:52:29", "werkzeug": "sqlite-vec v0.1.9", "sqlite": "3.54.1", "python": "3.14.7", "einbett": "bge-m3", "dim": 1024, "k": 5, "heim": "/private/tmp/konk-sqlitevec-0611/vektor.db", "notizen": 58, "anfragen": 45}
+{"art": "setze", "i": 1, "note": "m01", "text": "Die Produktions-App läuft auf Hetzner CPX31, Deploy via PM2 und GitHub Actions. Domain kepta.app über Cloudflare.", "sek": 0.0}
+{"art": "setze", "i": 2, "note": "m02", "text": "PostgreSQL 17 für die Hauptdatenbank, Redis für Sessions und Caching. Backups täglich 3 Uhr.", "sek": 0.0}
+{"art": "setze", "i": 3, "note": "m03", "text": "Alex wohnt in Hamburg Altona.", "sek": 0.0}
+{"art": "setze", "i": 4, "note": "m04", "text": "Alex ist im August 2026 nach Leipzig umgezogen, Wohnort jetzt Leipzig Suedvorstadt.", "sek": 0.0}
+{"art": "setze", "i": 5, "note": "m05", "text": "Axum Webserver mit Tokio Runtime, Fehlerbehandlung über anyhow und thiserror.", "sek": 0.0}
+{"art": "setze", "i": 6, "note": "m06", "text": "Spaghetti Carbonara: Guanciale, Pecorino Romano, Eigelb, schwarzer Pfeffer. Kein Sahne!", "sek": 0.0}
+{"art": "setze", "i": 7, "note": "m07", "text": "Umsatzsteuererklärung muss bis 31. Juli 2026 abgegeben werden.", "sek": 0.0}
+{"art": "setze", "i": 8, "note": "m08", "text": "Frist der Umsatzsteuererklärung wurde auf 30. September 2026 verlängert, Steuerberater Weber kümmert sich.", "sek": 0.0}
+{"art": "setze", "i": 9, "note": "m09", "text": "Lexoffice wird für Rechnungen genutzt, API-Token im Passwort-Manager.", "sek": 0.0}
+{"art": "setze", "i": 10, "note": "m10", "text": "Bitwarden Vault, Master-Prompt 2FA via Yubikey. Notfall-Kit im Bankschließfach.", "sek": 0.0}
+{"art": "setze", "i": 11, "note": "m11", "text": "KEPTA ist eine lokale Electron-App: React Frontend, Express Server, SQLite Speicher, MCP-Server für Agenten.", "sek": 0.0}
+{"art": "setze", "i": 12, "note": "m12", "text": "Model Context Protocol 2026-07-28: stateless core, server/discover, Streamable HTTP Transport, strukturierte Tool-Outputs.", "sek": 0.0}
+{"art": "setze", "i": 13, "note": "m13", "text": "nomic-embed-text für lokale Embeddings via Ollama, 1024 Dimensionen, 8k Kontext. Alternative: bge-m3 multilingual.", "sek": 0.0}
+{"art": "setze", "i": 14, "note": "m14", "text": "Hybride Suche: BM25 aus FTS5 plus Vektor-KNN, fusioniert mit Reciprocal Rank Fusion k=60, Reranking via Cross-Encoder optional.", "sek": 0.0}
+{"art": "setze", "i": 15, "note": "m15", "text": "Entitäten und Relationen in SQLite, Wiki-Links [[So]] werden beim Speichern zu Knoten, Relationen haben Gültigkeit.", "sek": 0.0}
+{"art": "setze", "i": 16, "note": "m16", "text": "Root-Passwort des Hetzner-Servers: im Bitwarden Eintrag 'Hetzner Prod'. SSH-Key-Login bevorzugt.", "sek": 0.0}
+{"art": "setze", "i": 17, "note": "m17", "text": "Root-Passwort des Hetzner-Servers: im Bitwarden Eintrag 'Hetzner Prod'. SSH-Key-Login bevorzugt.", "sek": 0.0}
+{"art": "setze", "i": 18, "note": "m18", "text": "Oma Hilde hat am 14. März Geburtstag, liebt Narzissen.", "sek": 0.0}
+{"art": "setze", "i": 19, "note": "m19", "text": "Montag Push, Dienstag Pull, Mittwoch Beine, Donnerstag Ruhetag. 5g Kreatin täglich.", "sek": 0.0}
+{"art": "setze", "i": 20, "note": "m20", "text": "Tetanus-Auffrischung war 2019, nächste fällig 2029. Grippeimpfung jährlich im Oktober.", "sek": 0.0}
+{"art": "setze", "i": 21, "note": "m21", "text": "Für das CLI-Tool bleibt Rust, Go wurde verworfen weil Cross-Compilation zwar einfacher, aber Generics fehlen.", "sek": 0.0}
+{"art": "setze", "i": 22, "note": "m22", "text": "Kfz-Versicherung bei HUK24, VW Golf, Kennzahl 4711, jährlich kündbar zum 31.12.", "sek": 0.0}
+{"art": "setze", "i": 23, "note": "m23", "text": "Vertragswerkstatt Nordring in Leipzig-Plagwitz, Terminvereinbarung online, Ersatzwagen auf Anfrage.", "sek": 0.0}
+{"art": "setze", "i": 24, "note": "m24", "text": "Sperrmüll-Termin war am 15. Mai 2026, abgeschlossen.", "sek": 0.0}
+{"art": "setze", "i": 25, "note": "m25", "text": "Keller wird im Oktober 2026 renoviert, Handwerker Anton Bauer, Kostenvoranschlag 8500 Euro.", "sek": 0.0}
+{"art": "setze", "i": 26, "note": "m26", "text": "Kontextfenster: GPT-5 400k Tokens, Claude Sonnet 1M, Gemini 2M. RAG reduziert Kosten um 90 Prozent.", "sek": 0.0}
+{"art": "setze", "i": 27, "note": "m27", "text": "Literaturnotizen und permanente Notizen, jede Notiz hat eine Quelle, Verlinkungen schlagen Kategorien.", "sek": 0.0}
+{"art": "setze", "i": 28, "note": "m28", "text": "Obsidian Vault liegt unter ~/Dokumente/Vault, Notizen als Markdown mit Frontmatter, Tags in YAML.", "sek": 0.0}
+{"art": "setze", "i": 29, "note": "m29", "text": "Server Components, use() Hook, Actions. Vite als Build-Tool, Tailwind 4 für Styling.", "sek": 0.0}
+{"art": "setze", "i": 30, "note": "m30", "text": "Vermieterin Frau Scholz, Instandsetzungsmeldungen schriftlich per E-Mail, Kaution 3 Nettokaltmieten.", "sek": 0.0}
+{"art": "setze", "i": 31, "note": "m31", "text": "Der Voranschlag fuer den Kellerausbau liegt bei 8500 Euro. Geprueft, freigegeben, Anzahlung 30 Prozent. [[Anton Bauer]]", "sek": 0.0}
+{"art": "setze", "i": 32, "note": "m32", "text": "Rueckruf wegen der Trockenbauwaende vereinbart, Dienstag vormittags. [[Anton Bauer]]", "sek": 0.0}
+{"art": "setze", "i": 33, "note": "m33", "text": "Rigips, Daemmwolle, Dampfsperre. Wird vom Betrieb mitgebracht, steht nicht im Angebot. [[Anton Bauer]]", "sek": 0.0}
+{"art": "setze", "i": 34, "note": "m34", "text": "Fehlende Bewirtungsbelege bis Monatsende einreichen, sonst faellt die Abgabe auseinander. [[Weber]]", "sek": 0.0}
+{"art": "setze", "i": 35, "note": "m35", "text": "Quartalsabrechnung liegt vor, 640 Euro, faellig in 14 Tagen. [[Weber]]", "sek": 0.0}
+{"art": "setze", "i": 36, "note": "m36", "text": "Alarm bei CPU ueber 80 Prozent fuenf Minuten lang, Benachrichtigung per Signal. [[Hetzner]]", "sek": 0.0}
+{"art": "setze", "i": 37, "note": "m37", "text": "Taegliche Momentaufnahme um 4 Uhr, sieben Tage Aufbewahrung, monatlich eine Langzeitkopie. [[Hetzner]]", "sek": 0.0}
+{"art": "setze", "i": 38, "note": "m38", "text": "Private Fotos auf zwei externe Platten, eine davon beim Bruder. Keine Cloud.", "sek": 0.0}
+{"art": "setze", "i": 39, "note": "m39", "text": "Onlinekurs zu Datenbanken angefangen, Kapitel ueber Normalformen und Indizes noch offen.", "sek": 0.0}
+{"art": "setze", "i": 40, "note": "m40", "text": "Die Pflanze neben dem Schreibtisch heisst Server, weil sie immer laeuft. Alle zwei Wochen giessen.", "sek": 0.0}
+{"art": "setze", "i": 41, "note": "m41", "text": "Beim Kunden laeuft das Zuruecksetzen ueber die Hotline, nicht ueber Selbstbedienung. Dauert bis zu 48 Stunden.", "sek": 0.0}
+{"art": "setze", "i": 42, "note": "m42", "text": "Kapitel ueber Lebenszeiten zweimal gelesen, immer noch unklar. Uebungsaufgaben im Anhang machen.", "sek": 0.0}
+{"art": "setze", "i": 43, "note": "m43", "text": "Waschanlage an der Tankstelle Suedstrasse, Programm 3 reicht, Felgen von Hand nacharbeiten.", "sek": 0.0}
+{"art": "setze", "i": 44, "note": "m44", "text": "Im Team wird nur bis Ende des Jahres gesammelt, danach neue Regel.", "sek": 0.0}
+{"art": "setze", "i": 45, "note": "m45", "text": "Physiotherapie zweimal woechentlich, Uebungen fuer den unteren Ruecken, kein schweres Heben ueber 15 Kilo.", "sek": 0.0}
+{"art": "setze", "i": 46, "note": "m46", "text": "Winterbereifung ab Oktober, Sommersatz liegt eingelagert bei der Werkstatt, Profiltiefe noch 4,5 Millimeter.", "sek": 0.0}
+{"art": "setze", "i": 47, "note": "m47", "text": "Schoenheitsreparaturen sind Sache der Mietpartei, Fristen: Kueche alle drei Jahre, Wohnraeume alle fuenf.", "sek": 0.0}
+{"art": "setze", "i": 48, "note": "m48", "text": "Ente mit Rotkohl und Kloessen, Ente vier Stunden bei 160 Grad, vorher trocken tupfen.", "sek": 0.0}
+{"art": "setze", "i": 49, "note": "m49", "text": "Monatlich 400 Euro in einen Welt-ETF, Ausfuehrung am zweiten Werktag, Kosten 0,2 Prozent.", "sek": 0.0}
+{"art": "setze", "i": 50, "note": "m50", "text": "Hausarzt, Zahnarzt und der Bereitschaftsdienst stehen auf dem Zettel am Kuehlschrank.", "sek": 0.0}
+{"art": "setze", "i": 51, "note": "m51", "text": "Zweitschluessel liegt bei den Nachbarn im dritten Stock, links.", "sek": 0.0}
+{"art": "setze", "i": 52, "note": "m52", "text": "Fuer Innenaufnahmen Blende 2.8, ISO 800, Weissabgleich manuell auf Kunstlicht.", "sek": 0.0}
+{"art": "setze", "i": 53, "note": "m53", "text": "Erreichbar unter der Festnetznummer im Buero, ab 9 Uhr.", "sek": 0.0}
+{"art": "setze", "i": 54, "note": "m54", "text": "Nur noch mobil erreichbar, Festnetz abgemeldet seit Juni 2026.", "sek": 0.0}
+{"art": "setze", "i": 55, "note": "m55", "text": "Modell aus 2024, Daempfung durchgelaufen, aussortiert.", "sek": 0.0}
+{"art": "setze", "i": 56, "note": "m56", "text": "Seit August 2026 neues Paar, Groesse 44, bisher 60 Kilometer gelaufen.", "sek": 0.0}
+{"art": "setze", "i": 57, "note": "m57", "text": "Testumgebung: Anmeldung ueber den gemeinsamen Zugang, Passwort rotiert monatlich.", "sek": 0.0}
+{"art": "setze", "i": 58, "note": "m58", "text": "Produktivumgebung: persoenlicher Zugang mit zweitem Faktor, kein gemeinsames Passwort.", "sek": 0.0}
+{"art": "suche", "i": 1, "kategorie": "lexikalisch", "frage": "Wo läuft die Produktion?", "erwartet": ["m01"], "top": "m01", "treffer": true, "liste": ["m01", "m44", "m55", "m41", "m03"], "abstand": 0.489152}
+{"art": "suche", "i": 2, "kategorie": "lexikalisch", "frage": "Welche Datenbank nutzen wir?", "erwartet": ["m02"], "top": "m39", "treffer": false, "liste": ["m39", "m02", "m09", "m57", "m15"], "abstand": 0.41409}
+{"art": "suche", "i": 3, "kategorie": "lexikalisch", "frage": "Wo wohnt Alex gerade?", "erwartet": ["m04"], "top": "m03", "treffer": false, "liste": ["m03", "m04", "m51", "m40", "m38"], "abstand": 0.236185}
+{"art": "suche", "i": 4, "kategorie": "lexikalisch", "frage": "Umsatzsteuer Frist", "erwartet": ["m08"], "top": "m08", "treffer": true, "liste": ["m08", "m07", "m34", "m47", "m24"], "abstand": 0.296063}
+{"art": "suche", "i": 5, "kategorie": "lexikalisch", "frage": "Wie ist die hybride Suche implementiert?", "erwartet": ["m14"], "top": "m14", "treffer": true, "liste": ["m14", "m39", "m57", "m21", "m58"], "abstand": 0.418694}
+{"art": "suche", "i": 6, "kategorie": "lexikalisch", "frage": "Welche Embedding-Modelle lokal?", "erwartet": ["m13"], "top": "m13", "treffer": true, "liste": ["m13", "m11", "m38", "m55", "m12"], "abstand": 0.46137}
+{"art": "suche", "i": 7, "kategorie": "lexikalisch", "frage": "Wie funktioniert der Wissensgraph?", "erwartet": ["m15"], "top": "m39", "treffer": false, "liste": ["m39", "m35", "m27", "m14", "m57"], "abstand": 0.615907}
+{"art": "suche", "i": 8, "kategorie": "lexikalisch", "frage": "Serverzugang und Passwort", "erwartet": ["m16", "m17"], "top": "m58", "treffer": false, "liste": ["m58", "m57", "m09", "m17", "m16"], "abstand": 0.417128}
+{"art": "suche", "i": 9, "kategorie": "lexikalisch", "frage": "Fitness Trainingsplan", "erwartet": ["m19"], "top": "m19", "treffer": true, "liste": ["m19", "m45", "m43", "m49", "m44"], "abstand": 0.465961}
+{"art": "suche", "i": 10, "kategorie": "lexikalisch", "frage": "Impfungen Auffrischung", "erwartet": ["m20"], "top": "m20", "treffer": true, "liste": ["m20", "m57", "m43", "m44", "m42"], "abstand": 0.43287}
+{"art": "suche", "i": 11, "kategorie": "lexikalisch", "frage": "Warum Rust statt Go?", "erwartet": ["m21"], "top": "m21", "treffer": true, "liste": ["m21", "m57", "m58", "m02", "m26"], "abstand": 0.296454}
+{"art": "suche", "i": 12, "kategorie": "lexikalisch", "frage": "Autoversicherung kündigen", "erwartet": ["m22"], "top": "m22", "treffer": true, "liste": ["m22", "m54", "m34", "m55", "m23"], "abstand": 0.467469}
+{"art": "suche", "i": 13, "kategorie": "lexikalisch", "frage": "Werkstatt Termin Auto", "erwartet": ["m23"], "top": "m23", "treffer": true, "liste": ["m23", "m46", "m24", "m43", "m53"], "abstand": 0.422146}
+{"art": "suche", "i": 14, "kategorie": "lexikalisch", "frage": "Keller Umbau Kosten", "erwartet": ["m25"], "top": "m25", "treffer": true, "liste": ["m25", "m31", "m35", "m30", "m41"], "abstand": 0.310243}
+{"art": "suche", "i": 15, "kategorie": "lexikalisch", "frage": "Welche LLM Kontextfenster?", "erwartet": ["m26"], "top": "m26", "treffer": true, "liste": ["m26", "m13", "m09", "m12", "m14"], "abstand": 0.465817}
+{"art": "suche", "i": 16, "kategorie": "lexikalisch", "frage": "Obsidian Notizen Format", "erwartet": ["m28"], "top": "m28", "treffer": true, "liste": ["m28", "m13", "m39", "m02", "m27"], "abstand": 0.40504}
+{"art": "suche", "i": 17, "kategorie": "lexikalisch", "frage": "React Build Setup", "erwartet": ["m29"], "top": "m29", "treffer": true, "liste": ["m29", "m21", "m11", "m57", "m02"], "abstand": 0.532163}
+{"art": "suche", "i": 18, "kategorie": "lexikalisch", "frage": "Kaution Vermieter", "erwartet": ["m30"], "top": "m30", "treffer": true, "liste": ["m30", "m47", "m31", "m35", "m34"], "abstand": 0.330808}
+{"art": "suche", "i": 19, "kategorie": "lexikalisch", "frage": "Carbonara Zutaten", "erwartet": ["m06"], "top": "m06", "treffer": true, "liste": ["m06", "m19", "m18", "m33", "m35"], "abstand": 0.305928}
+{"art": "suche", "i": 20, "kategorie": "lexikalisch", "frage": "KEPTA MCP Architektur", "erwartet": ["m11", "m12"], "top": "m11", "treffer": true, "liste": ["m11", "m01", "m26", "m31", "m33"], "abstand": 0.412835}
+{"art": "suche", "i": 21, "kategorie": "lexikalisch", "frage": "Passwörter sicher verwalten", "erwartet": ["m10"], "top": "m58", "treffer": false, "liste": ["m58", "m57", "m09", "m02", "m17"], "abstand": 0.411393}
+{"art": "suche", "i": 22, "kategorie": "lexikalisch", "frage": "Rechnungen Buchhaltung Tool", "erwartet": ["m09"], "top": "m09", "treffer": true, "liste": ["m09", "m35", "m50", "m34", "m10"], "abstand": 0.408425}
+{"art": "suche", "i": 23, "kategorie": "lexikalisch", "frage": "Zettelkasten Notizen Methode", "erwartet": ["m27"], "top": "m27", "treffer": true, "liste": ["m27", "m37", "m30", "m36", "m28"], "abstand": 0.48131}
+{"art": "suche", "i": 24, "kategorie": "lexikalisch", "frage": "Geburtstag Familie", "erwartet": ["m18"], "top": "m18", "treffer": true, "liste": ["m18", "m38", "m51", "m57", "m50"], "abstand": 0.488263}
+{"art": "suche", "i": 25, "kategorie": "lexikalisch", "frage": "Deployment und Domain", "erwartet": ["m01"], "top": "m01", "treffer": true, "liste": ["m01", "m58", "m29", "m57", "m02"], "abstand": 0.513105}
+{"art": "suche", "i": 26, "kategorie": "umschreibung", "frage": "Was koche ich mit Nudeln?", "erwartet": ["m06"], "top": "m06", "treffer": true, "liste": ["m06", "m48", "m50", "m18", "m51"], "abstand": 0.568669}
+{"art": "suche", "i": 27, "kategorie": "umschreibung", "frage": "Wie bewahre ich meine Zugangsdaten sicher auf?", "erwartet": ["m10"], "top": "m57", "treffer": false, "liste": ["m57", "m02", "m58", "m38", "m09"], "abstand": 0.443033}
+{"art": "suche", "i": 28, "kategorie": "umschreibung", "frage": "Wo lasse ich mein Fahrzeug instand setzen?", "erwartet": ["m23"], "top": "m23", "treffer": true, "liste": ["m23", "m41", "m43", "m46", "m53"], "abstand": 0.473992}
+{"art": "suche", "i": 29, "kategorie": "umschreibung", "frage": "Was mag meine Grossmutter?", "erwartet": ["m18"], "top": "m18", "treffer": true, "liste": ["m18", "m51", "m40", "m48", "m45"], "abstand": 0.510999}
+{"art": "suche", "i": 30, "kategorie": "umschreibung", "frage": "Was tue ich fuer meinen Ruecken?", "erwartet": ["m45"], "top": "m45", "treffer": true, "liste": ["m45", "m19", "m48", "m50", "m41"], "abstand": 0.421934}
+{"art": "suche", "i": 31, "kategorie": "umschreibung", "frage": "Wie lege ich Geld an?", "erwartet": ["m49"], "top": "m31", "treffer": false, "liste": ["m31", "m49", "m35", "m41", "m34"], "abstand": 0.504506}
+{"art": "suche", "i": 32, "kategorie": "umschreibung", "frage": "Wer hilft bei einem medizinischen Notfall?", "erwartet": ["m50"], "top": "m50", "treffer": true, "liste": ["m50", "m10", "m41", "m51", "m40"], "abstand": 0.484853}
+{"art": "suche", "i": 33, "kategorie": "umschreibung", "frage": "Wie fotografiere ich drinnen richtig?", "erwartet": ["m52"], "top": "m38", "treffer": false, "liste": ["m38", "m52", "m37", "m51", "m57"], "abstand": 0.486026}
+{"art": "suche", "i": 34, "kategorie": "umschreibung", "frage": "Was muss ich beim Auszug renovieren?", "erwartet": ["m47"], "top": "m47", "treffer": true, "liste": ["m47", "m25", "m31", "m50", "m34"], "abstand": 0.477621}
+{"art": "suche", "i": 35, "kategorie": "umschreibung", "frage": "Was gibt es an Heiligabend zu essen?", "erwartet": ["m48"], "top": "m06", "treffer": false, "liste": ["m06", "m50", "m18", "m33", "m48"], "abstand": 0.582625}
+{"art": "suche", "i": 36, "kategorie": "graph", "frage": "Anton Bauer", "erwartet": ["m25", "m31", "m32", "m33"], "top": "m32", "treffer": true, "liste": ["m32", "m25", "m31", "m33", "m03"], "abstand": 0.527223}
+{"art": "suche", "i": 37, "kategorie": "graph", "frage": "Weber", "erwartet": ["m08", "m34", "m35"], "top": "m35", "treffer": true, "liste": ["m35", "m08", "m34", "m53", "m29"], "abstand": 0.521476}
+{"art": "suche", "i": 38, "kategorie": "graph", "frage": "Hetzner", "erwartet": ["m01", "m16", "m36", "m37"], "top": "m17", "treffer": false, "liste": ["m17", "m16", "m37", "m36", "m01"], "abstand": 0.499727}
+{"art": "suche", "i": 39, "kategorie": "ablenkung", "frage": "Wie oft wird gesichert?", "erwartet": ["m02", "m37"], "top": "m20", "treffer": false, "liste": ["m20", "m22", "m57", "m44", "m40"], "abstand": 0.487343}
+{"art": "suche", "i": 40, "kategorie": "ablenkung", "frage": "Welches Passwort gilt in der Produktion?", "erwartet": ["m58"], "top": "m58", "treffer": true, "liste": ["m58", "m17", "m16", "m57", "m09"], "abstand": 0.344356}
+{"art": "suche", "i": 41, "kategorie": "ablenkung", "frage": "Welcher Server ist gemeint?", "erwartet": ["m01"], "top": "m40", "treffer": false, "liste": ["m40", "m12", "m29", "m02", "m11"], "abstand": 0.470561}
+{"art": "suche", "i": 42, "kategorie": "ablenkung", "frage": "Was steht zur Datenbank an?", "erwartet": ["m02"], "top": "m39", "treffer": false, "liste": ["m39", "m02", "m09", "m57", "m50"], "abstand": 0.389172}
+{"art": "suche", "i": 43, "kategorie": "temporal", "frage": "Wie bin ich erreichbar?", "erwartet": ["m54"], "top": "m53", "treffer": false, "liste": ["m53", "m50", "m54", "m51", "m41"], "abstand": 0.367513}
+{"art": "suche", "i": 44, "kategorie": "temporal", "frage": "Welche Laufschuhe habe ich?", "erwartet": ["m56"], "top": "m56", "treffer": true, "liste": ["m56", "m19", "m51", "m55", "m35"], "abstand": 0.424237}
+{"art": "suche", "i": 45, "kategorie": "temporal", "frage": "Bis wann muss die Umsatzsteuer abgegeben werden?", "erwartet": ["m08"], "top": "m07", "treffer": false, "liste": ["m07", "m08", "m34", "m35", "m41"], "abstand": 0.225784}

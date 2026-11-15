@@ -1,0 +1,381 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      # Messvorlauf, kein Urteil — bitte nicht als ueberfluessig loeschen. vitest
+      # schreibt seinen JSON-Bericht erst am ENDE eines Laufs, ein Test in diesem
+      # Lauf kann ihn also nicht lesen. Die Zahlenwache (tests/doku-zahlen.test.ts)
+      # haelt die Testzahl im README gegen genau diesen Bericht und verweigert den
+      # Vergleich, wenn er fehlt — ohne diesen Vorlauf waere jeder frische Runner rot.
+      # timeout-minutes: 8 und 12 sind Latten in dieser Datei, keine Messungen — die
+      # Desk-Dauern vom 12.10., aus denen sie gewaehlt wurden, lagen nur in test-results/
+      # (git-ignoriert, gefegt) und sind darum aus CHANGELOG.md und README.md gezogen;
+      # nachmessen will sie niemand, solange scripts/ruhe-sonde.mjs die Maschine belegt
+      # sieht — eine Zeit unter fremder Last ist kein Urteiler. Der Vorlauf bleibt
+      # bei 8, das Gate bei 12, gemessen an den vier Kernen von ubuntu-latest.
+      - name: Messvorlauf (schreibt test-results/vitest.json, Befund zaehlt nicht)
+        run: npm test || true
+        timeout-minutes: 8
+      - name: Tests + Coverage (Gate)
+        run: npm run test:cov
+        timeout-minutes: 12
+      - name: Retrieval-Eval (Hit@1)
+        run: npm run eval
+      - name: Coverage-Zusammenfassung (Job-Summary)
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e '
+              const c = require("./coverage/coverage-summary.json").total;
+              const row = (k) => `| ${k} | ${c[k].pct}% |`;
+              const md = [
+                "## 🧪 Test-Coverage",
+                "",
+                "| Metrik | Abdeckung |",
+                "|---|---|",
+                row("statements"), row("branches"), row("functions"), row("lines"),
+              ].join("\n");
+              require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + "\n");
+            '
+          else
+            echo "Kein coverage-summary.json (json-summary Reporter aktiv?)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      # Zahlen-Belege: jede Messzahl in der Doku wird an ihrem eigenen Artefakt
+      # gemessen (scripts/zahlen-belege.mjs, byte-identisch zum Kern). Am 12.10.
+      # gebaut, nachdem drei Vorher-Zahlen in README und CHANGELOG etwas behauptet
+      # hatten, was das zitierte Log nicht hergab, und seit 13.10. hier verdrahtet:
+      # eine Console, die niemand abhoert, huetet nichts. Nach der Suite und ihrem
+      # Eval, vor dem Bau — die Suite schreibt test-results/, und die Doku darf
+      # keine Laufprodukte zitieren; ein Beleg, den nur dieser Rechner oeffnen kann,
+      # ist hier ein Befund. Der Runner sieht dabei nur diesen Baum: keine
+      # Arbeitsmappe, keine Nachbarbaeume, und genau so ist die Heilung der
+      # README-Zahlen am 13.10. bewiesen (Auspackung nur getrackter Dateien).
+      - name: Zahlen-Belege (jede Zahl in der Doku trifft ihr zitiertes Artefakt)
+        run: node scripts/zahlen-belege.mjs
+      - run: npm run build
+      - name: Audit (high severity)
+        run: npm audit --audit-level=high || true
+
+
+  release:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    # Gebaut und geprueft wird auch bei jedem Push auf main: ob das native Modul
+    # auf jeder Plattform kompiliert und laedt, soll VOR dem Tag feststehen — ein
+    # Probe-Tag ginge nicht, publish.yml veroeffentlicht jeden v*-Tag auf npm.
+    # Hochgeladen wird nur fuer v*-Tags.
+    needs: lint-test-build
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    # Ohne Entwickler-Zertifikat: Signatur-Erkennung explizit aus — der Runner
+    # bricht sonst evtl. an der Keychain-Suche ab (lokal wird sauber übersprungen).
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Kein `|| true`: ein fehlgeschlagener electron-builder-Build muss die CI rot machen.
+      # 2 Versuche gegen flüchtige Netzfehler (Electron-/Binär-Downloads).
+      - name: macOS-Build arm64 + x64 (electron-builder, 2 Versuche)
+        shell: bash
+        run: |
+          set -o pipefail
+          ok=0
+          for i in 1 2; do
+            echo "=== Versuch $i ==="
+            if npm run build:mac -- --publish never --arm64 --x64 2>&1 | tee build-mac.log; then ok=1; break; fi
+            echo "Versuch $i fehlgeschlagen."
+            sleep 10
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "Build endgültig fehlgeschlagen — letzte 60 Zeilen als Annotationen:"
+            tail -60 build-mac.log | while IFS= read -r line; do
+              [ -n "$line" ] && echo "::error::$line"
+            done
+            exit 1
+          fi
+      # Die SQLite-Verschluesselung wird fuer Electron aus dem Quelltext gebaut
+      # (fuer Electron 44 gibt es keinen Vorab-Build). Hier steht fest, dass in
+      # jeder App das Modul der richtigen Architektur steckt — und dass es in
+      # Electron laedt und verschluesselt, fuer die Architektur dieses Runners.
+      - name: Native Verschluesselung in den Apps pruefen
+        shell: bash
+        run: node scripts/pruefe-native.mjs release
+      - name: Artefakte prüfen
+        run: ls -la release/
+      # Der Release-Text bestand nur aus der Installationsanleitung — bei jedem
+      # Release derselbe. Der Abschnitt aus dem CHANGELOG zur getaggten Version
+      # kommt deshalb davor.
+      - name: Release-Text aus dem CHANGELOG bauen
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          node -e '
+            const fs = require("fs");
+            const tag = (process.env.GITHUB_REF || "").replace("refs/tags/v", "");
+            const anleitung = fs.readFileSync(".github/release-notes.md", "utf8");
+            let kopf = "";
+            if (tag) {
+              const changelog = fs.readFileSync("CHANGELOG.md", "utf8");
+              const start = changelog.indexOf("## [" + tag + "]");
+              if (start !== -1) {
+                const rest = changelog.slice(start);
+                const naechster = rest.indexOf("\n## [", 1);
+                const abschnitt = naechster === -1 ? rest : rest.slice(0, naechster);
+                kopf = "# Was ist neu\n\n" + abschnitt.trim() + "\n\n---\n\n";
+              }
+            }
+            fs.writeFileSync("release-body.md", kopf + anleitung);
+            console.log("Release-Text: " + (kopf ? "mit" : "ohne") + " CHANGELOG-Abschnitt, " + (kopf + anleitung).length + " Zeichen");
+          '
+      - name: Upload artifacts
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*.dmg
+            release/*.zip
+          generate_release_notes: true
+          # Eine gemeinsame Quelle fuer alle Release-Jobs, damit der Text nicht
+          # auseinanderdriftet und die Reihenfolge der Jobs egal ist.
+          body_path: release-body.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Linux-Pakete. Eigener Job statt zweitem Target im macOS-Job: AppImage und deb
+  # lassen sich auf einem macOS-Runner nicht bauen.
+
+  release-linux:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    # Gebaut und geprueft wird auch bei jedem Push auf main: ob das native Modul
+    # auf jeder Plattform kompiliert und laedt, soll VOR dem Tag feststehen — ein
+    # Probe-Tag ginge nicht, publish.yml veroeffentlicht jeden v*-Tag auf npm.
+    # Hochgeladen wird nur fuer v*-Tags.
+    needs: lint-test-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # arm64 wird hier quer uebersetzt: das native Modul braucht dafuer einen
+      # aarch64-Compiler — der x64-Compiler baute sonst x64-Code in ein arm64-Paket
+      # (die Pruefung unten faengt genau das ab).
+      - name: aarch64-Compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+      - name: Linux-Build x64 (electron-builder, 2 Versuche)
+        shell: bash
+        run: |
+          set -o pipefail
+          ok=0
+          for i in 1 2; do
+            echo "=== Versuch $i ==="
+            if npm run build:linux -- --publish never --x64 2>&1 | tee build-linux-x64.log; then ok=1; break; fi
+            echo "Versuch $i fehlgeschlagen."
+            sleep 10
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "Build endgültig fehlgeschlagen — letzte 60 Zeilen als Annotationen:"
+            tail -60 build-linux-x64.log | while IFS= read -r line; do
+              [ -n "$line" ] && echo "::error::$line"
+            done
+            exit 1
+          fi
+      - name: Linux-Build arm64 (electron-builder, 2 Versuche)
+        shell: bash
+        run: |
+          set -o pipefail
+          ok=0
+          for i in 1 2; do
+            echo "=== Versuch $i ==="
+            if CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ AR=aarch64-linux-gnu-ar LINK=aarch64-linux-gnu-g++ npx electron-builder --linux --config electron-builder.json --publish never --arm64 2>&1 | tee build-linux-arm64.log; then ok=1; break; fi
+            echo "Versuch $i fehlgeschlagen."
+            sleep 10
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "Build endgültig fehlgeschlagen — letzte 60 Zeilen als Annotationen:"
+            tail -60 build-linux-arm64.log | while IFS= read -r line; do
+              [ -n "$line" ] && echo "::error::$line"
+            done
+            exit 1
+          fi
+      # Die SQLite-Verschluesselung wird fuer Electron aus dem Quelltext gebaut
+      # (fuer Electron 44 gibt es keinen Vorab-Build). Hier steht fest, dass in
+      # jeder App das Modul der richtigen Architektur steckt — und dass es in
+      # Electron laedt und verschluesselt, fuer die Architektur dieses Runners.
+      - name: Native Verschluesselung in den Apps pruefen
+        shell: bash
+        run: node scripts/pruefe-native.mjs release
+      - name: Artefakte prüfen
+        run: ls -la release/
+      # Der Release-Text bestand nur aus der Installationsanleitung — bei jedem
+      # Release derselbe. Der Abschnitt aus dem CHANGELOG zur getaggten Version
+      # kommt deshalb davor.
+      - name: Release-Text aus dem CHANGELOG bauen
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          node -e '
+            const fs = require("fs");
+            const tag = (process.env.GITHUB_REF || "").replace("refs/tags/v", "");
+            const anleitung = fs.readFileSync(".github/release-notes.md", "utf8");
+            let kopf = "";
+            if (tag) {
+              const changelog = fs.readFileSync("CHANGELOG.md", "utf8");
+              const start = changelog.indexOf("## [" + tag + "]");
+              if (start !== -1) {
+                const rest = changelog.slice(start);
+                const naechster = rest.indexOf("\n## [", 1);
+                const abschnitt = naechster === -1 ? rest : rest.slice(0, naechster);
+                kopf = "# Was ist neu\n\n" + abschnitt.trim() + "\n\n---\n\n";
+              }
+            }
+            fs.writeFileSync("release-body.md", kopf + anleitung);
+            console.log("Release-Text: " + (kopf ? "mit" : "ohne") + " CHANGELOG-Abschnitt, " + (kopf + anleitung).length + " Zeichen");
+          '
+      - name: Upload artifacts
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*.AppImage
+            release/*.deb
+          generate_release_notes: true
+          # Eine gemeinsame Quelle fuer alle Release-Jobs, damit der Text nicht
+          # auseinanderdriftet und die Reihenfolge der Jobs egal ist.
+          body_path: release-body.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Windows-Pakete. Eigener Job, da nsis nur auf einem Windows-Runner zuverlaessig
+  # baut. `shell: bash` ist noetig — windows-latest nutzt sonst PowerShell.
+
+  release-windows:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    # Gebaut und geprueft wird auch bei jedem Push auf main: ob das native Modul
+    # auf jeder Plattform kompiliert und laedt, soll VOR dem Tag feststehen — ein
+    # Probe-Tag ginge nicht, publish.yml veroeffentlicht jeden v*-Tag auf npm.
+    # Hochgeladen wird nur fuer v*-Tags.
+    needs: lint-test-build
+    runs-on: windows-latest
+    timeout-minutes: 50
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Windows-Build x64 + arm64 (electron-builder, 2 Versuche)
+        shell: bash
+        run: |
+          set -o pipefail
+          ok=0
+          for i in 1 2; do
+            echo "=== Versuch $i ==="
+            if npm run build:win -- --publish never --x64 --arm64 2>&1 | tee build-win.log; then ok=1; break; fi
+            echo "Versuch $i fehlgeschlagen."
+            sleep 10
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "Build endgültig fehlgeschlagen — letzte 60 Zeilen als Annotationen:"
+            tail -60 build-win.log | while IFS= read -r line; do
+              [ -n "$line" ] && echo "::error::$line"
+            done
+            exit 1
+          fi
+      # Die SQLite-Verschluesselung wird fuer Electron aus dem Quelltext gebaut
+      # (fuer Electron 44 gibt es keinen Vorab-Build). Hier steht fest, dass in
+      # jeder App das Modul der richtigen Architektur steckt — und dass es in
+      # Electron laedt und verschluesselt, fuer die Architektur dieses Runners.
+      - name: Native Verschluesselung in den Apps pruefen
+        shell: bash
+        run: node scripts/pruefe-native.mjs release
+      - name: Artefakte prüfen
+        shell: bash
+        run: ls -la release/
+      - name: Installer als Workflow-Artefakt ablegen
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            release/*.exe
+          if-no-files-found: error
+          # Der Free-Plan hat nur 0,5 GB Actions-Speicher, und die Installer
+          # hängen längst am Release. Ein Tag hält den Speicher frei
+          # (23.9.-Lektion: alte 540-MB-Artefakte füllten das Konto zu 100 %
+          # und drohten, zu kosten).
+          retention-days: 1
+      # Der Release-Text bestand nur aus der Installationsanleitung — bei jedem
+      # Release derselbe. Der Abschnitt aus dem CHANGELOG zur getaggten Version
+      # kommt deshalb davor.
+      - name: Release-Text aus dem CHANGELOG bauen
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          node -e '
+            const fs = require("fs");
+            const tag = (process.env.GITHUB_REF || "").replace("refs/tags/v", "");
+            const anleitung = fs.readFileSync(".github/release-notes.md", "utf8");
+            let kopf = "";
+            if (tag) {
+              const changelog = fs.readFileSync("CHANGELOG.md", "utf8");
+              const start = changelog.indexOf("## [" + tag + "]");
+              if (start !== -1) {
+                const rest = changelog.slice(start);
+                const naechster = rest.indexOf("\n## [", 1);
+                const abschnitt = naechster === -1 ? rest : rest.slice(0, naechster);
+                kopf = "# Was ist neu\n\n" + abschnitt.trim() + "\n\n---\n\n";
+              }
+            }
+            fs.writeFileSync("release-body.md", kopf + anleitung);
+            console.log("Release-Text: " + (kopf ? "mit" : "ohne") + " CHANGELOG-Abschnitt, " + (kopf + anleitung).length + " Zeichen");
+          '
+      - name: Upload artifacts
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*.exe
+            release/*.zip
+          generate_release_notes: true
+          # Eine gemeinsame Quelle fuer alle Release-Jobs, damit der Text nicht
+          # auseinanderdriftet und die Reihenfolge der Jobs egal ist.
+          body_path: release-body.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

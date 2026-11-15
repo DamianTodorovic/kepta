@@ -13,8 +13,9 @@ import crypto from "node:crypto";
 // Die Zuordnung ist reine, abhaengigkeitsfreie Logik — deshalb darf der Kern
 // sie benutzen, ohne sich etwas einzuhandeln.
 import { klassifiziere } from "./klassifikation";
-import { begriffeAusText } from "./begiffe";
 import { leseUmwelt } from "./umwelt";
+import { begriffeAusText } from "./begiffe";
+import { BEHAUPTUNGEN_MAX, SYSTEM_WOERTER, type BehauptungEingabe } from "./wortschatz";
 import type {
   MemoryRecord,
   MemoryInput,
@@ -34,25 +35,77 @@ export { sanitizeTags as normalizeTags } from "./sanitize";
 
 const SCHEMA_VERSION = 1;
 const VALID_TYPES: MemoryType[] = ["semantic", "episodic", "procedural", "reference"];
+// Die Scheibe der Graph-Abfrage: 500 Begriffe und 2 000 Kanten sind unveraendert,
+// neu ist, **wie** die 500 gewaehlt werden (#83-2: Nachbarschaft, nicht Rangliste).
+// Der Pool ist die Rangtiefe, aus der Samen und Blaetter kommen; 8 000 Paare sind
+// die Adjazenz, die der Wachstumslauf im Kopf haelt.
+const GRAPH_FENSTER_KNOTEN = 500;
+const GRAPH_PAAR_POOL = 8000;
+const GRAPH_RANG_POOL = 4000;
 
 /**
- * Die drei Lesefenster des Speichers — exportiert, weil die Antwort sie nennen muss.
- * Eine Kappe, die der Leser nicht kennt, ist ein Ergebnis, das für die ganze Welt
- * gehalten wird (R7). Solange die Zahl nur im SQL stand, konnte der MCP-Pfad sie
- * nur duplizieren und wäre bei jeder Änderung unbemerkt falsch geblieben.
+ * Der Etat der Rueckwaertssuche im Entity-Bein (`begriffeImWortlaut`), drei Zahlen am selben Ort.
+ *
+ * Die Stueck-Kappe ist ein Etat, keine Weltgrenze: gemessen 4.11. an der 40 000-Notizen-Kapsel
+ * kostet eine Lesung mit 4 000 Stuecken 2,22 ms, und was ueber der Kappe faellt, sind die
+ * Theilstuecke innerhalb der Woerter — die ganzen Woerter und Wortfolgen stehen zuerst in der
+ * Liste und gehen nie verloren.
  */
-export const LES_FENSTER = 5000;
-export const GRAPH_ENTITATEN_FENSTER = 500;
-export const GRAPH_RELATIONEN_FENSTER = 2000;
-// Zweiter Wert des Nachbarschaftsfensters (#83-2, Paritaet zur App): die Rangtiefe,
-// aus der Samen und Blaetter kommen, und die Zahl der Paare, deren Adjazenz der
-// Wachstumslauf im Kopf haelt. Beide sind Arbeitsobergrenzen, keine Antworten —
-// was ausserhalb liegt, ist nach Rang und Beleg schwacher als alles darin.
-export const GRAPH_RANG_POOL = 4000;
-export const GRAPH_PAAR_POOL = 8000;
+const BEGRIFF_STUECKE_MAX = 4000;
+/**
+ * Bis zu dieser Laenge wird ein Wort der Anfrage in Theilstuecke zerlegt ("frist" in
+ * "fristenkontrolle"). Die Zahl sitzt ueber der Laenge, die die Welt kennt: kein Begriff wird
+ * laenger als 40 Zeichen gesetzt (`begiffe.ts:32`), laengere Theilstuecke kann es also nicht
+ * geben, und ein kuerzerer Begriff findet sich in einem Wort bis 48 Zeichen immer.
+ */
+const BEGRIFF_STUECK_LAENGE = 48;
+/** Mehrwortige Begriffe werden als Wortfolge bis vier Woerter gesucht — so lang ist der langste, den `begiffe.ts:33` durchlaesst. */
+const BEGRIFF_WORTFOLGE_MAX = 4;
+
+/**
+ * Welche Namen der Wortlaut selbst hergibt: die ganzen Woerter, dann Wortfolgen bis
+ * `BEGRIFF_WORTFOLGE_MAX` Woerter, dann die Theilstuecke innerhalb eines Wortes. In dieser
+ * Reihenfolge, damit eine Kappe immer zuerst die Form trifft, die am seltensten einen Begriff
+ * ergibt: die Theilstuecke innerhalb eines Wortes.
+ */
+function wortstueckeAus(wortlaut: string): string[] {
+  const worter = wortlaut.trim().toLowerCase().split(/\s+/).filter((w) => w.length > 0);
+  if (worter.length === 0) return [];
+  const stuecke = new Set<string>();
+  for (const w of worter) if (w.length >= 3) stuecke.add(w);
+  for (let a = 0; a < worter.length; a++) {
+    let folge = worter[a]!;
+    for (let b = a + 1; b < worter.length && b - a < BEGRIFF_WORTFOLGE_MAX; b++) {
+      folge = `${folge} ${worter[b]!}`;
+      stuecke.add(folge);
+    }
+  }
+  for (const w of worter) {
+    const kern = w.slice(0, BEGRIFF_STUECK_LAENGE);
+    for (let i = 0; i < kern.length; i++) {
+      for (let e = i + 3; e <= kern.length && e - i <= BEGRIFF_STUECK_LAENGE; e++) stuecke.add(kern.slice(i, e));
+    }
+  }
+  return [...stuecke].slice(0, BEGRIFF_STUECKE_MAX);
+}
+
+/**
+ * Die Stufen der Tiefe, die die Flaeche zeigt und die Tuer klemmt — **eine** Zahl, nicht
+ * drei Kopien: `server/router/system.ts` klemmt an diesen Werten, und der Wachtest
+ * (`tests/core/graph-tiefe.test.ts`) faellt, wenn Tuer und Kern unterschiedlich rechnen.
+ */
+export const GRAPH_TIEFE_MIN = 1;
+export const GRAPH_TIEFE_MAX = 4;
+
+// Punkt 126 — was eine Hand als Aussage setzen kann, und welche Woerter keine Aussage sind:
+// beide Antworten liegen in `src/core/wortschatz.ts`, weil Kern und Flaeche dieselbe Menge
+// brauchen. Die Geschichte der zwei Listen steht dort.
 
 export function defaultDataDir(): string {
-  // Beide Namensformen (#64) — derselbe Ordner wie vorher, wenn nur die alte Form gesetzt ist.
+  // Beide Namensformen (Aufgabe #64): K3PTA_DATA_DIR zuerst, KEPTA_DATA_DIR als
+  // Rueckfall. Wer nur die alte Form gesetzt hat, behaelt seinen Ordner — und damit
+  // seinen Bestand. Der Default bleibt `~/.kepta`: ein Zug waehre eine
+  // Auslieferungstatsache, kein Texttausch.
   const env = leseUmwelt("datenordner").wert;
   if (env) return env;
   return path.join(os.homedir(), ".kepta");
@@ -93,13 +146,19 @@ export interface Verschluesselung {
   hinweis?: string;
 }
 
+export interface Stand {
+  id: number;
+  memoryId: string;
+  title: string;
+  content: string;
+  createdAt: number;
+}
+
 export class KeptaStore {
   readonly db: Database.Database;
   readonly dbPath: string;
   readonly extensions: KeptaExtensions;
   readonly verschluesselung: Verschluesselung;
-  /** Letzter FTS-Ausfall, wie er auftrat; null, solange der Index heil ist. */
-  private ftsPanne: { at: string; fehler: string } | null = null;
 
   constructor(dbPath: string = defaultDbPath(), extensions: KeptaExtensions = defaultExtensions()) {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -112,7 +171,7 @@ export class KeptaStore {
     let hinweis: string | undefined;
     let umgewandelt = false;
     try {
-      schluessel = extensions.keys.keyFor(dbPath);
+      schluessel = extensions?.keys ? extensions.keys.keyFor(dbPath) : null;
     } catch (e) {
       hinweis = fehlertext(e);
     }
@@ -138,8 +197,10 @@ export class KeptaStore {
     else pruefeLesbar(this.db, hinweis);
     this.walEinschalten();
     this.db.exec("PRAGMA foreign_keys = ON");
+    this.db.exec("PRAGMA cache_size = -16384");
+    this.db.exec("PRAGMA temp_store = MEMORY");
     this.migrate();
-    const ablage = extensions.keys.ablage;
+    const ablage = extensions?.keys?.ablage;
     this.verschluesselung = schluessel
       ? { aktiv: true, ...(ablage ? { ablage } : {}), ...(umgewandelt ? { umgewandelt } : {}) }
       : { aktiv: false, ...(hinweis ? { hinweis } : {}) };
@@ -226,7 +287,6 @@ export class KeptaStore {
           valid_from INTEGER,
           valid_to INTEGER,
           superseded_by TEXT,
-          superseded_at INTEGER,
           created_at INTEGER NOT NULL,
           updated_at INTEGER NOT NULL,
           deleted_at INTEGER,
@@ -235,10 +295,10 @@ export class KeptaStore {
           utility REAL NOT NULL DEFAULT 0.5
         );
         INSERT INTO memories_neu (rid, id, scope, type, title, content, tags, confidence,
-          valid_from, valid_to, superseded_by, superseded_at, created_at, updated_at, deleted_at,
+          valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at,
           last_access_at, access_count, utility)
         SELECT rid, id, scope, type, title, content, tags, confidence,
-          valid_from, valid_to, superseded_by, superseded_at, created_at, updated_at, deleted_at,
+          valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at,
           last_access_at, access_count, utility
         FROM memories;
         DROP TABLE memories;
@@ -254,11 +314,6 @@ export class KeptaStore {
   }
 
   private migrate() {
-    // superseded_at VOR dem Typ-Neubau nachziehen: der Neubau in
-    // erweitereTypBeschraenkung() kopiert die Spalten namentlich, also muss diese
-    // stehen, wenn er laeuft — sonst verliert eine Altdatenbank beim Umbau ihre
-    // Ersetzungszeiten. Ohne Tabelle (frische Datenbank) scheitert der ALTER still.
-    this.sorgeFuerSpalte("superseded_at", "INTEGER");
     this.erweitereTypBeschraenkung();
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -275,7 +330,6 @@ export class KeptaStore {
         valid_from INTEGER,
         valid_to INTEGER,
         superseded_by TEXT,
-        superseded_at INTEGER,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         deleted_at INTEGER,
@@ -287,6 +341,86 @@ export class KeptaStore {
       CREATE INDEX IF NOT EXISTS idx_memories_type ON memories(type);
       CREATE INDEX IF NOT EXISTS idx_memories_deleted ON memories(deleted_at);
       CREATE INDEX IF NOT EXISTS idx_memories_updated ON memories(updated_at);
+      -- Die Zaehler-Route und der Graph-Leseweg sortieren nach updated_at UND filtern
+      -- deleted_at IS NULL. Einer der beiden Indizes allein genugt dem Planer nicht:
+      -- erklaerplan 19.10. an einer eignen Kapsel (21 066 Zeilen) sagte je Seite
+      -- "SEARCH memories USING INDEX idx_memories_deleted | USE TEMP B-TREE FOR ORDER BY".
+      -- Mit diesem Index faellt der Sortierbaum ganz: erklaerplan zeigt nur noch den
+      -- Index, gemessene Zeit fuer denselben Bestand auf derselben Engine
+      -- (SQLite 3.53.2): 2 936 ms Schleife gegen 39 ms mit Index; zweiter Anlauf bei
+      -- 27 066 Zeilen: 3 199 ms gegen 40 ms. Anlegen + ANALYZE kosten 42 ms und 0,4 MiB
+      -- Datei. Schreiblast gemessen 19.10. 13:44 an derselben Kapsel: 3 000 einzelne
+      -- Schreibungen 0,259 ms je Zeile ohne Index, 0,286 ms mit — +0,027 ms (10,4 %),
+      -- ueber den vollen Bestand 21 066 also rund +0,57 s, verteilt ueber den Lauf.
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_updated ON memories(deleted_at, updated_at DESC, rid);
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_created ON memories(deleted_at, created_at DESC, rid);
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_superseded_updated ON memories(deleted_at, superseded_by, updated_at DESC, rid);
+      CREATE INDEX IF NOT EXISTS idx_memories_superseded_updated ON memories(updated_at DESC) WHERE deleted_at IS NULL AND superseded_by IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_memories_valid_to ON memories(valid_to) WHERE deleted_at IS NULL AND superseded_by IS NULL AND valid_to IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_memories_d_s_u_c ON memories(deleted_at, superseded_by, updated_at DESC, created_at) WHERE deleted_at IS NULL AND superseded_by IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_superseded_valid_to ON memories(deleted_at, superseded_by, valid_to) WHERE valid_to IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_superseded_only ON memories(deleted_at, updated_at DESC) WHERE deleted_at IS NULL AND superseded_by IS NOT NULL;
+      -- Titel-Spur (Punkt 6, 31.10.): der Import sucht je neue Notiz ihren Titel in
+      -- findByTitle, und ohne diese Spur nimmt der Plan idx_memories_deleted_updated —
+      -- bei deleted_at IS NULL also fast alle Zeilen des Bestands, sortiert nach
+      -- updated_at. Gemessen am Schreibweg (6 000 Notizen in Brocken zu 500, eigne Kapsel,
+      -- Vektorspur aus, 23:09 MESZ): die Phase lesen laeuft von 40,34 ms auf 590,94 ms
+      -- hoch, waehrend einsetzen flach bleibt (211,20 -> 217,34). Der Index kehrt das um:
+      -- Titel ist die Gleichheit, deleted_at die Filterzeile, rid haelt den Sturz bei
+      -- doppeltem Titel eindeutig.
+      -- (Kein Backtick in diesem Kommentar: er steht in einem Template-Literal, und ein
+      -- Backtick dort schliesst die Zeichenkette — gemessen 23:14 an diesem Blatt.)
+      -- Die Sortierzeile bleibt in der Spur: ohne updated_at DESC im Index gewinnt
+      -- idx_memories_deleted_updated, weil er den Sortierbaum spart. Plan gemessen
+      -- 23:16 MESZ vor dem zweiten Versuch: SEARCH memories USING INDEX
+      -- idx_memories_deleted_updated (deleted_at=?) — die Gleichheit auf dem Titel
+      -- wurde nie gesucht.
+      CREATE INDEX IF NOT EXISTS idx_memories_title ON memories(title, deleted_at, updated_at DESC, rid);
+      -- Standfolge (BAU-P3-11, 24.10.): der Text VOR einer Aenderung, damit ein Mensch
+      -- zurueckgehen kann. Bewusst eine eigene Tabelle statt einer zweiten Zeile in
+      -- 'memories': die Notiz bleibt eine Notiz, ihre Suche und ihr Graph aendern sich nicht.
+      -- Geschrieben wird nur bei einem echten Textwechsel (updateMemory), nie bei Tags,
+      -- Typ, Zeigern oder einem Schreibvorgang mit identischem Text.
+      CREATE TABLE IF NOT EXISTS memory_stande (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        memory_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_memory_stande_note ON memory_stande(memory_id, created_at DESC, id DESC);
+      -- Die Deckungs-Zaehlung der Graph-Route ('notizenMitBegriff()', src/core/store.ts:1362)
+      -- filtert 'm.deleted_at IS NULL' und braucht von 'memories' weiter nichts als 'm.id'.
+      -- Ohne diese zwei Spalten in einem Index muss sie fuer jede Trefferzeile in die
+      -- Tabellenblaetter — an seiner verschluesselten Platte heisst das: jede Seite, jede
+      -- Entschluesselung. Kapsel mit dem WORTLICHEN DDL-Satz von 'migrate()' (alle Indizes der
+      -- beiden Tabellen, 16-Spalten-Zeilen zu ~1 400 B Inhalt, Chiffre wie 'store.ts:1490', WAL,
+      -- Engine des ausgelieferten Buendels, SQLite 3.53.2), Korpus in Realstruktur: 21 066 aktive
+      -- Notizen + 502 Papierkorb, 2 756 Begriffe, 3 054 Erwaehnungen auf 1 018 gedeckte.
+      -- Zwei Durchlaeufe, 19.10. 20:55 und 20:57 MESZ, auf derselben Kapsel. Zeilen: vorher
+      -- 21 568 / 23 568, nachher 22 568 / 24 568 — je ein Schreiblast-Zweig zu 1 000 Notizen liegt
+      -- zwischen der vorher- und der nachher-Lesung. Je fuenf Anlaeufe: Zaehlung **189,42 ms** und
+      -- **206,46 ms** Median (Spannen der vier
+      -- waermeren Anlaeufe 188,50-210,14 und 203,51-208,33; der erste Anlauf in frischer Verbindung
+      -- 197,40 und 358,64 ms) gegen **2,51 ms** und **2,29 ms** Median (waermere 2,32-2,60 und
+      -- 2,28-2,29; erster Anlauf 6,04 und 4,32 ms) = **75x** und **90x**.
+      -- Die Zahl selbst aendert der Index nicht: 1 018 gedeckte in beiden Plaenen. Plan vorher
+      -- 'SEARCH m USING INDEX idx_memories_deleted', nachher 'SEARCH m USING COVERING INDEX
+      -- idx_memories_deleted_id'. Anlegen 595,62 ms und 234,65 ms, Datei jeweils +0,4 MiB.
+      -- Schreiblast, je 1 000 Notizen auf getrennten Zeilmengen: Durchlauf 1 0,0252 ms ohne gegen
+      -- 0,0310 ms mit (+0,0058 ms je Zeile), Durchlauf 2 0,0225 ohne gegen 0,0236 mit (+0,0011 ms).
+      -- Der Zuwachs ist klein, aber von Durchlauf zu Durchlauf NICHT stabil — ueber den vollen
+      -- Bestand sind das 0,02 bis 0,12 s, verteilt ueber viele Schreibungen.
+      -- An der Tuer gemessen (3.2.23 @ 64433, n=20): die Kontroll-Lesung ohne Begriffs-Fund
+      -- kostet **p50 298,5 ms**. Von den 189-206 ms, die diese Kapsel fuer die Zahlung braucht,
+      -- nimmt der Index dort alles ausser 2-3 ms; die restlichen ~90-110 ms der Kontroll-Lesung
+      -- erklaert er **nicht** — dafuer fehlt ein Zeitsensor im Prozess, und die laufende Tuer
+      -- traegt ausserdem weder diese Fassung noch diesen Index.
+      -- Nebenbefund, gegen meine eigne Behauptung geprueft: nach diesem Index aendert das
+      -- Wegfallen von 'idx_memories_deleted' (Zeile 273) an drei geprueften Lesungen (Deckung,
+      -- Durchstich, Blaetterliste) keinen Plan. Das sind drei Pruefungen, nicht die ganze Route —
+      -- die Raeumentscheidung bleibt die Leitung, dieser Flicken ruehrt nichts an.
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_id ON memories(deleted_at, id);
 
       CREATE TABLE IF NOT EXISTS chunks (
         memory_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
@@ -306,6 +440,22 @@ export class KeptaStore {
         entity_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
         PRIMARY KEY (memory_id, entity_id)
       );
+      -- Der Primarschluessel oben deckt (memory_id, entity_id) — die Nachschlage des
+      -- Graphen filtert aber NACH entity_id: server/router/system.ts:97 ruft
+      -- store.memoryIdsForEntities([id]) je Begriff des Fensters, also 500 mal pro
+      -- /api/graph-Abruf. Die Abfrage steht auf src/core/store.ts:1341, dieselbe Form
+      -- auf src/core/store.ts:551, und src/core/engine.ts:390 ruft sie gebuendelt.
+      -- Ohne Index ist das ein Vollscan je Begriff.
+      -- Gemessen 19.10. 15:24 MESZ an der eignen Kapsel (SQLite 3.53.2 aus dem
+      -- ausgelieferten BUndel, eigne Tabellen, sein Bestand nie geoeffnet):
+      --   3 054 Erwaehnungen: 500 Nachschlaege = 22,46 ms | ein IN(500) = 0,21 ms
+      --  30 540 Erwaehnungen: 500 Nachschlaege = 209,59 ms | ein IN(500) = 1,92 ms
+      --  mit diesem Index: 2,25 ms statt 209,59 ms (Plan: SEARCH … USING INDEX,
+      --  vorher SCAN memory_entities) — 93x.
+      --  Schreiblast, gleiche Kapsel, getrennte Zeilmengen: 6 000 Erwaehnungen
+      --  0,0007 ms je Zeile ohne Index, 0,0010 ms mit (+0,0003 ms, +50,6 %, absolut
+      --  +2,1 ms auf 6 000 Zeilen); Anlegen 3,37 ms.
+      CREATE INDEX IF NOT EXISTS idx_memory_entities_entity ON memory_entities(entity_id);
       CREATE TABLE IF NOT EXISTS relations (
         id INTEGER PRIMARY KEY,
         source_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
@@ -317,6 +467,13 @@ export class KeptaStore {
       );
       CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
       CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
+      CREATE INDEX IF NOT EXISTS idx_relations_memory ON relations(memory_id);
+      -- Die Frage einer Notiz nach IHREN Kanten (Punkt 6, 31.10.): verknuepfeNotiz stellt
+      -- sie pro geschriebener Notiz, und ohne diese Spur war der Plan "SCAN relations" —
+      -- die ganze Kantentabelle fuer eine Notiz. Erklaerplan gemessen 23:3x MESZ vor dem
+      -- Index: SCAN relations. Die Teilzeiten des Schreibwegs sagten dasselbe in Zahlen:
+      -- begriffekanten 311,95 -> 1 378,13 ms, waehrend chunksetzen flach blieb (62,75 ->
+      -- 82,07 ms) -- eine Phase, die mit dem Bestand mitlaeuft, nicht mit der Arbeit.
     `);
 
     // FTS5 über externe Tabelle, via Trigger synchron gehalten
@@ -346,22 +503,37 @@ export class KeptaStore {
     if (!row) {
       this.db.prepare("INSERT INTO meta (key, value) VALUES ('schema_version', ?)").run(String(SCHEMA_VERSION));
     }
-    // Additive Spalten idempotent nachziehen
-    this.sorgeFuerSpalte("last_access_at", "INTEGER");
-    this.sorgeFuerSpalte("access_count", "INTEGER NOT NULL DEFAULT 0");
-    this.sorgeFuerSpalte("utility", "REAL NOT NULL DEFAULT 0.5");
-  }
-
-  /**
-   * Additive Spalte nachziehen, idempotent. Nur interne Literale erreichen das —
-   * die Aufrufer stehen in diesem File, es ist keine Stelle fuer Fremdworte.
-   */
-  private sorgeFuerSpalte(name: string, typ: string): void {
-    try {
-      this.db.exec(`ALTER TABLE memories ADD COLUMN ${name} ${typ}`);
-    } catch {
-      // Spalte steht schon, oder die Tabelle noch nicht (frische Datenbank)
+    // Additive Spalten idempotent nachziehen (ALTER schlägt fehl, wenn vorhanden)
+    const columns = [
+      ["last_access_at", "INTEGER"],
+      ["access_count", "INTEGER NOT NULL DEFAULT 0"],
+      ["utility", "REAL NOT NULL DEFAULT 0.5"],
+    ] as const;
+    for (const [name, type] of columns) {
+      try {
+        this.db.exec(`ALTER TABLE memories ADD COLUMN ${name} ${type}`);
+      } catch {
+        // Spalte existiert bereits
+      }
     }
+
+    // Dieselbe Masche fuer chunks: embeddingStats() oeffnete ohne diese Spalte jede Zeile der
+    // Tabelle, weil ihr Praedikat auf einem BLOB steht — also jede Seite, also jede
+    // Entschluesselung. Die generierte Spalte haelt die Wahrheit von selbst ab: sie leitet
+    // `embedding IS NOT NULL` ab, sie wird von keinem Schreibweg gesetzt. An der eignen Kapsel
+    // 19.10. 17:50 gezaehlt: Wahrheit 1 001, generiert 1 001, gegen embedding_model 1 000
+    // (eine Zeile mit Vektor ohne Modell) — deshalb zaehlt diese Fassung NICHT die Modell-Spalte.
+    try {
+      this.db.exec(
+        `ALTER TABLE chunks ADD COLUMN embedding_hat INTEGER GENERATED ALWAYS AS (CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) VIRTUAL`,
+      );
+    } catch {
+      // Spalte existiert bereits
+    }
+    // (embedding_hat, embedding_model) bedient beide Zahlungen ohne BLaetterbaum:
+    // `WHERE embedding_hat = 1` und `… GROUP BY embedding_model`. Plan gemessen in der Kapsel:
+    // vorher "SCAN chunks" (+ "USE TEMP B-TREE FOR GROUP BY"), nachher "SEARCH chunks USING INDEX".
+    this.db.exec("CREATE INDEX IF NOT EXISTS idx_chunks_hat_model ON chunks(embedding_hat, embedding_model)");
   }
 
   // ---------- Einstellungen ----------
@@ -447,7 +619,6 @@ export class KeptaStore {
       validFrom: (r.valid_from as number | null) ?? null,
       validTo: (r.valid_to as number | null) ?? null,
       supersededBy: (r.superseded_by as string | null) ?? null,
-      supersededAt: (r.superseded_at as number | null) ?? null,
       createdAt: Number(r.created_at),
       updatedAt: Number(r.updated_at),
       deletedAt: (r.deleted_at as number | null) ?? null,
@@ -458,7 +629,7 @@ export class KeptaStore {
   }
 
   private static readonly COLS =
-    "id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, superseded_at, created_at, updated_at, deleted_at, last_access_at, access_count, utility";
+    "id, scope, type, title, content, tags, confidence, valid_from, valid_to, superseded_by, created_at, updated_at, deleted_at, last_access_at, access_count, utility";
 
   private getRow(id: string): Record<string, unknown> | undefined {
     return this.db.prepare(`SELECT ${KeptaStore.COLS} FROM memories WHERE id = ?`).get(id) as
@@ -469,10 +640,10 @@ export class KeptaStore {
   // ---------- CRUD ----------
 
   listMemories(opts: ListOptions = {}): MemoryRecord[] {
-    // Kappe LES_FENSTER = Server-Limit für aktive Knoten (server.ts), damit Export/Import
+    // Kappe 5000 = Server-Limit für aktive Knoten (server.ts), damit Export/Import
     // bei vollem Gehirn nicht still abschneiden. Vollständigkeit sichern Aufrufer
     // über Paginierung (offset), nicht über einen höheren Einzel-Page-Limit.
-    const limit = Math.min(Math.max(opts.limit ?? 100, 1), LES_FENSTER);
+    const limit = Math.min(Math.max(opts.limit ?? 100, 1), 5000);
     const offset = Math.max(opts.offset ?? 0, 0);
     const where: string[] = [];
     const params: (string | number)[] = [];
@@ -498,6 +669,32 @@ export class KeptaStore {
     return rows.map((r) => this.rowToRecord(r));
   }
 
+  /**
+   * Der ganze Bestand in EINEM Durchstich, nicht in Seitenchleifen.
+   *
+   * Warum das hier steht: "ORDER BY updated_at DESC LIMIT ? OFFSET ?" ist ueber dem
+   * nicht-eindeutigen Schluessel nicht dasselbe wie ein Durchstich. Gemessen 19.10.
+   * an einer eignen Kapsel (21 066 Zeilen, drei verschiedene updated_at-Werte, also
+   * maximaller Gleichstand; eigne DB, nicht Damians Bestand): **0 doppelte und 0
+   * fehlende Zeilen**, die Reihenfolge war ueber zwei Anlaeufe **gleich**, aber
+   * **Seite 3 der Schleife teilte keine einzige Position mit Zeile 2000..2999 des
+   * Durchstichs (0/1000)**. Ein Leib, ueber dem ein ETag steht
+   * (`server/router/memories.ts`, Zeile 294), haengt damit an der Blattaufteilung,
+   * nicht am Bestand.
+   *
+   * Der zweite Grund ist die Zahl selbst: je Seite faellt ein Sortierbaum
+   * ("USE TEMP B-TREE FOR ORDER BY",erklaerplan gemessen), bei 21 066 Zeilen und
+   * Seite 1000 also 22 mal. Derselbe Bestand, dieselbe Engine (SQLite 3.53.2,
+   * better-sqlite3 12.11.1): **2 936 ms Schleife gegen 93 ms Durchstich**.
+   */
+  alleMemories(opts: { trash?: boolean } = {}): MemoryRecord[] {
+    const wo = opts.trash ? "deleted_at IS NOT NULL" : "deleted_at IS NULL";
+    const rows = this.db.prepare(
+      `SELECT ${KeptaStore.COLS} FROM memories WHERE ${wo} ORDER BY updated_at DESC`,
+    ).all() as Record<string, unknown>[];
+    return rows.map((r) => this.rowToRecord(r));
+  }
+
   countMemories(): { active: number; trashed: number } {
     const active = (this.db.prepare("SELECT COUNT(*) c FROM memories WHERE deleted_at IS NULL").get() as { c: number }).c;
     const trashed = (this.db.prepare("SELECT COUNT(*) c FROM memories WHERE deleted_at IS NOT NULL").get() as { c: number }).c;
@@ -505,18 +702,9 @@ export class KeptaStore {
   }
 
   /**
-   * Grundmenge des Privatheits-Floors: die IDs aller Notizen, die der Besitzer in
-   * der App als privat markiert hat (scope = 'private') — auch die im Papierkorb.
-   * Gelöschte mitzuzählen ist kein Detail: "wird noch 30 Tage im Papierkorb
-   * gehalten" ist eine Aufbewahrung, keine Freigabe an Agenten, und ein Titel einer
-   * privat gelöschten Notiz lebt als Graph-Entität weiter (siehe memory_graph).
-   * Endgültig purgierte Knoten fehlen hier, haben aber auch nichts mehr zu zeigen.
-   *
-   * Ein einziger indizierter Scan (idx_memories_scope) statt seitenweisem
-   * listMemories(): ein Vollbestand-Durchlauf mit Limit würde private Notizen
-   * still verschlucken und der Floor gelte lückenhaft — genau die 22.9.-Fehler-
-   * klasse beim Geräte-Sync (100 von 3.644). Bewusst ohne audit("read"): der
-   * Filter ist die Suche nach dem Auszuschließenden, kein Lesen der Notiz.
+   * Die privaten ids auf einmal — für die Kanäle, die eine Menge prüfen (Graph,
+   * Konsolidierung). Dieselbe Grenze wie istPrivat(), ein Zugriff statt n
+   * Abfragen.
    */
   privateMemoryIds(): Set<string> {
     const zeilen = this.db.prepare("SELECT id FROM memories WHERE scope = 'private'").all() as { id: string }[];
@@ -528,6 +716,85 @@ export class KeptaStore {
     return this.db.prepare("SELECT 1 FROM memories WHERE id = ? AND scope = 'private'").get(id) !== undefined;
   }
 
+  /**
+   * Die Notizen, die eine Entität tragen. Entitäten sind abgeleitete Daten: ein
+   * Knoten fällt erst, wenn ALLE seine Träger-Notizen privat sind — nennt ihn
+   * auch eine offene Notiz, gehört der Name zur offenen Welt.
+   */
+  memoryIdsByEntity(entityIds: number[]): Map<number, string[]> {
+    const map = new Map<number, string[]>();
+    if (entityIds.length === 0) return map;
+    const placeholders = entityIds.map(() => "?").join(",");
+    const rows = this.db
+      .prepare(`SELECT entity_id, memory_id FROM memory_entities WHERE entity_id IN (${placeholders})`)
+      .all(...entityIds) as { entity_id: number; memory_id: string }[];
+    for (const r of rows) {
+      const Liste = map.get(r.entity_id);
+      if (Liste) Liste.push(String(r.memory_id));
+      else map.set(r.entity_id, [String(r.memory_id)]);
+    }
+    return map;
+  }
+
+  /**
+   * Macht einen Stand wieder zur aktuellen Fassung (BAU-P3-11, dritter Koerper).
+   * Ein Umschlag, drei Schritte: (1) den Text, der ersetzt wird, als neuen Stand sichern,
+   * (2) die Policy fragen, (3) schreiben. Faellt (2) oder (3), rollt (1) mit zurueck -
+   * ein Stand fuer eine Aenderung, die nie kam, waere ein halber Zustand.
+   */
+  restoreStand(memoryId: string, standId: number): MemoryRecord | null {
+    const row = this.getRow(memoryId);
+    if (!row) return null;
+    const stand = this.db
+      .prepare("SELECT title, content FROM memory_stande WHERE id = ? AND memory_id = ?")
+      .get(standId, memoryId) as { title: string; content: string } | undefined;
+    if (!stand) return null;
+    const jetzt = Date.now();
+    this.db.transaction(() => {
+      this.db
+        .prepare("INSERT INTO memory_stande (memory_id, title, content, created_at) VALUES (?, ?, ?, ?)")
+        .run(memoryId, String(row.title), String(row.content), jetzt);
+      if (!this.extensions.policy.canWrite(this.actor(), { id: memoryId, scope: String(row.scope), type: String(row.type) })) {
+        throw new Error("Write denied (PolicyGate)");
+      }
+      this.db
+        .prepare("UPDATE memories SET title = ?, content = ?, updated_at = ? WHERE id = ?")
+        .run(stand.title, stand.content, jetzt, memoryId);
+      this.db.prepare("DELETE FROM chunks WHERE memory_id = ?").run(memoryId);
+    })();
+    this.audit("update", memoryId);
+    this.meldeMemorie(memoryId);
+    return this.getMemory(memoryId);
+  }
+
+  /** Die Staende EINER Notiz, neueste zuerst (BAU-P3-11, gratis, ohne Schluessel). */
+  listStande(
+    memoryId: string,
+    opts: { limit?: number; offset?: number } = {},
+  ): { staende: Stand[]; total: number } {
+    const limit = Math.max(0, Math.min(Math.floor(opts.limit ?? 20), 200));
+    const offset = Math.max(0, Math.floor(opts.offset ?? 0));
+    const kopf = this.db
+      .prepare("SELECT COUNT(*) AS n FROM memory_stande WHERE memory_id = ?")
+      .get(memoryId) as { n: number } | undefined;
+    const total = Number(kopf?.n ?? 0);
+    const rows = this.db
+      .prepare(
+        "SELECT id, memory_id, title, content, created_at FROM memory_stande WHERE memory_id = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+      )
+      .all(memoryId, limit, offset) as Array<Record<string, unknown>>;
+    return {
+      staende: rows.map((r) => ({
+        id: Number(r.id),
+        memoryId: String(r.memory_id),
+        title: String(r.title),
+        content: String(r.content),
+        createdAt: Number(r.created_at),
+      })),
+      total,
+    };
+  }
+
   getMemory(id: string): MemoryRecord | null {
     const row = this.getRow(id);
     if (!row) return null;
@@ -535,6 +802,41 @@ export class KeptaStore {
     if (!this.extensions.policy.canRead(this.actor(), { id: record.id, scope: record.scope, type: record.type })) return null;
     this.audit("read", record.id);
     return record;
+  }
+
+  getMemoriesByIds(ids: readonly string[]): MemoryRecord[] {
+    if (ids.length === 0) return [];
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const id of ids) {
+      if (typeof id === "string" && id && !seen.has(id)) {
+        seen.add(id);
+        unique.push(id);
+      }
+    }
+    if (unique.length === 0) return [];
+    const byId = new Map<string, MemoryRecord>();
+    const BATCH = 500;
+    const actor = this.actor();
+    for (let i = 0; i < unique.length; i += BATCH) {
+      const slice = unique.slice(i, i + BATCH);
+      const marks = slice.map(() => "?").join(",");
+      const rows = this.db
+        .prepare(`SELECT ${KeptaStore.COLS} FROM memories WHERE id IN (${marks})`)
+        .all(...slice) as Record<string, unknown>[];
+      for (const r of rows) {
+        const record = this.rowToRecord(r);
+        if (!this.extensions.policy.canRead(actor, { id: record.id, scope: record.scope, type: record.type })) continue;
+        this.audit("read", record.id);
+        byId.set(record.id, record);
+      }
+    }
+    const ordered: MemoryRecord[] = [];
+    for (const id of unique) {
+      const rec = byId.get(id);
+      if (rec) ordered.push(rec);
+    }
+    return ordered;
   }
 
   findByTitle(title: string): MemoryRecord | null {
@@ -570,7 +872,6 @@ export class KeptaStore {
       validFrom: input.validFrom ?? null,
       validTo: input.validTo ?? null,
       supersededBy: null,
-      supersededAt: null,
       createdAt: input.createdAt ?? now,
       updatedAt: input.updatedAt ?? now,
       deletedAt: null,
@@ -634,9 +935,6 @@ export class KeptaStore {
     if (!row) return null;
     const sets: string[] = [];
     const params: (string | number | null)[] = [];
-    // Ein Instant fuer updated_at und superseded_at: derselbe Schreibvorgang,
-    // zwei Felder, keine Millisekunde Auseinander.
-    const zeitstempel = patch.updatedAt ?? Date.now();
     if (patch.title !== undefined) {
       sets.push("title = ?");
       params.push(cleanText(patch.title, 200) || "Untitled");
@@ -672,20 +970,30 @@ export class KeptaStore {
     if (patch.supersededBy !== undefined) {
       sets.push("superseded_by = ?");
       params.push(patch.supersededBy);
-      // Der Ersetzungszeitpunkt faellt mit dem Zeiger — ohne ihn kann die Zeitreise
-      // (asOf) Ersetztes nicht ausblenden. Ein Zuruecknehmen (null) nimmt ihn wieder.
-      sets.push("superseded_at = ?");
-      params.push(patch.supersededBy === null ? null : zeitstempel);
     }
     if (sets.length === 0) return this.rowToRecord(row);
     // Explizites updatedAt (Import/Resync) gewinnt — sonst "jetzt"
+    const jetzt = patch.updatedAt ?? Date.now();
     sets.push("updated_at = ?");
-    params.push(zeitstempel);
+    params.push(jetzt);
     params.push(id);
     if (!this.extensions.policy.canWrite(this.actor(), { id, scope: String(row.scope), type: String(row.type) })) {
       throw new Error("Write denied (PolicyGate)");
     }
-    this.db.prepare(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`).run(...params);
+    // Standfolge (BAU-P3-11): nur ein echter Textwechsel legt einen Stand an, und der Stand
+    // traegt die Zeile, die JETZT in der Tabelle steht. Beides in einem Umschlag, damit es
+    // keinen halben Zustand gibt (Stand ohne Update oder Update ohne Stand).
+    const neuerTitel = patch.title !== undefined ? (cleanText(patch.title, 200) || "Untitled") : String(row.title);
+    const neuerInhalt = patch.content !== undefined ? cleanText(patch.content, 200_000) : String(row.content);
+    const textWechselt = neuerTitel !== String(row.title) || neuerInhalt !== String(row.content);
+    this.db.transaction(() => {
+      if (textWechselt) {
+        this.db
+          .prepare("INSERT INTO memory_stande (memory_id, title, content, created_at) VALUES (?, ?, ?, ?)")
+          .run(id, String(row.title), String(row.content), jetzt);
+      }
+      this.db.prepare(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`).run(...params);
+    })();
     // Content-Änderung macht Chunks + Embeddings obsolet
     if (patch.content !== undefined) this.db.prepare("DELETE FROM chunks WHERE memory_id = ?").run(id);
     this.audit("update", id);
@@ -778,6 +1086,28 @@ export class KeptaStore {
     this.db
       .prepare("UPDATE chunks SET embedding = ?, embedding_model = ? WHERE memory_id = ? AND seq = ?")
       .run(float32ToBlob(embedding), model, memoryId, seq);
+    // Die Vektor-Spur in src/core/engine.ts traegt genau diese Notiz nach, statt die ganze
+    // Welt einzulesen. Dafuer muss sie wissen, dass ihr Prozess den Vektor gesetzt hat —
+    // gemeldet wird hier, nicht ueber `meldeMemorie`: die Notiz selbst ist unveraendert, und
+    // der Erinnerungs-Vorrat darf wegen eines Vektors nicht neu rechnen.
+    this.meldeVektor(memoryId);
+  }
+
+  /**
+   * Zeilen mit Vektor, die die Datenbank fuer ein Modell haelt — ein reiner Index-Griff auf
+   * `idx_chunks_hat_model`, ohne ein einziges Blob zu beruehren.
+   *
+   * Die Zahl ist die Gleichung, die der Nachzug der Vektor-Spruefuellung braucht: haelt die
+   * Spur danach dieselbe Menge wie die Datenbank, hat dieser Prozess alles gesehen; wenn
+   * nicht, hat ein andrer geschrieben oder geloescht, und nur der Volllauf ist ehrlich.
+   */
+  vektorZeilen(modell: string): number {
+    this.midiereDatenGeneration();
+    return Number(
+      (this.db
+        .prepare("SELECT COUNT(*) AS n FROM chunks WHERE embedding_hat = 1 AND embedding_model = ?")
+        .get(modell) as { n: number }).n
+    );
   }
 
   // Daten-Generation: JEDE Mutation an memories/chunks/entities/relations/
@@ -797,6 +1127,7 @@ export class KeptaStore {
       this.db.exec(`
         INSERT OR IGNORE INTO meta (key, value) VALUES ('daten_generation', '0');
         INSERT OR IGNORE INTO meta (key, value) VALUES ('mem_generation', '0');
+        INSERT OR IGNORE INTO meta (key, value) VALUES ('embed_generation', '0');
         CREATE TRIGGER IF NOT EXISTS daten_gen_memories_i AFTER INSERT ON memories BEGIN
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation';
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'mem_generation'; END;
@@ -819,6 +1150,15 @@ export class KeptaStore {
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_chunks_d AFTER DELETE ON chunks BEGIN
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS embed_gen_chunks_u AFTER UPDATE OF embedding ON chunks
+        WHEN NEW.embedding IS NOT OLD.embedding BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'embed_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS embed_gen_chunks_i AFTER INSERT ON chunks
+        WHEN NEW.embedding IS NOT NULL BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'embed_generation'; END;
+        CREATE TRIGGER IF NOT EXISTS embed_gen_chunks_d AFTER DELETE ON chunks
+        WHEN OLD.embedding IS NOT NULL BEGIN
+          UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'embed_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_entities_i AFTER INSERT ON entities BEGIN
           UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'daten_generation'; END;
         CREATE TRIGGER IF NOT EXISTS daten_gen_entities_u AFTER UPDATE ON entities BEGIN
@@ -866,6 +1206,25 @@ export class KeptaStore {
     return Number(row?.value ?? 0);
   }
 
+  /**
+   * Zaehler NUR der Schreibfaelle, die ein Embedding beruehren (setzt, aendert, loescht).
+   *
+   * Der Grund ist die Vektor-Spur in src/core/engine.ts: sie darf nach einer gemeldeten
+   * Aenderung ihre Zeilen fuer genau die gemeldeten Notizen nachtragen, statt den ganzen
+   * Bestand wieder einzulesen. Sicher ist das nur, wenn sich ausserhalb dessen, was dieser
+   * Prozess meldet, nichts an den Vektoren getan hat — entschieden wird das nicht an dieser Zahl,
+   * sondern an `vektorZeilen`: die Spur muss nach dem Nachtrag genauso viele Zeilen halten,
+   * wie die Datenbank zaehlt. Ein neuer Abschnitt ohne Embedding (der Regel-Fall beim
+   * Schreiben) ruehrt sie nicht; der Nachzug der Queue ruehrt sie, und die Gleichung geht auf.
+   */
+  embedGeneration(): number {
+    this.midiereDatenGeneration();
+    const row = this.db.prepare("SELECT value FROM meta WHERE key = 'embed_generation'").get() as
+      | { value: string }
+      | undefined;
+    return Number(row?.value ?? 0);
+  }
+
   // ---------- Such-Cache-Delta ----------
   // Der Suchpfad (engine.ts) cacht die aktiven Erinnerungen an der Generation.
   // Statt bei jedem Write den teuren Volllauf zu erzwingen, meldet der Store
@@ -884,6 +1243,23 @@ export class KeptaStore {
     for (const fn of this.memorieZuhörer) fn(id);
   }
 
+  /**
+   * Der zweite Kanal, fuer die andre Zeile der Welt: die Notizen, deren **Vektoren** dieser
+   * Prozess gesetzt hat. Die Vektor-Spur traegt genau diese Zeilen nach, statt die ganze Welt
+   * einzulesen, und `vektorZeilen` sagt ihr danach, ob das reicht — ein fremder Schreibfall
+   * meldet hier nichts, und dann gilt die Zahl nicht.
+   */
+  private vektorZuhörer = new Set<(id: string) => void>();
+
+  onVektorAenderung(fn: (id: string) => void): () => void {
+    this.vektorZuhörer.add(fn);
+    return () => this.vektorZuhörer.delete(fn);
+  }
+
+  private meldeVektor(id: string): void {
+    for (const fn of this.vektorZuhörer) fn(id);
+  }
+
   /** Chunks ohne Embedding oder mit veraltetem Modell (für die Hintergrund-Queue) */
   chunksNeedingEmbedding(limit = 64, model?: string): { memoryId: string; seq: number; text: string }[] {
     // Mit Modell-Argument zählt auch ein Modell-Mismatch als "braucht Embedding" —
@@ -900,7 +1276,7 @@ export class KeptaStore {
   /** Chunk-Text + Embedding aller aktiven Memories (für die Vektor-Suche) */
   allEmbeddableChunks(): { memoryId: string; seq: number; text: string; embedding: Float32Array; model: string }[] {
     const rows = this.db
-      .prepare("SELECT memory_id, seq, text, embedding, embedding_model FROM chunks WHERE embedding IS NOT NULL")
+      .prepare("SELECT memory_id, seq, text, embedding, embedding_model FROM chunks WHERE embedding_hat = 1")
       .all() as Record<string, unknown>[];
     return rows.map((r) => ({
       memoryId: String(r.memory_id),
@@ -912,19 +1288,42 @@ export class KeptaStore {
   }
 
   /**
-   * Stand der Vektor-Bein. `chunksOhneVektor` ist die Zahl, die ein Nutzer horen
-   * muss, wenn die semantische Suche nach einem Import noch nichts findet — die
-   * Queue arbeitet, aber wie lange noch, steht bisher in keinem Feld.
+   * Chunks mit Embedding NUR fuer die genannten Notizen — derselbe Zeilen-Schnitt wie
+   * `allEmbeddableChunks`, nur nicht fuer die ganze Welt.
+   *
+   * Der Aufrufer ist die Vektor-Spur in src/core/engine.ts: nach einer gemeldeten
+   * Memory-Aenderung reichen ihre eignen Zeilen, um den Vorrat nachzutragen. An der echten
+   * Tuer kostete der Volllauf 188,00 ms gegen 8,85 ms am stehenden Vorrat (P51, 3.11.2026,
+   * 40 000 Notizen) — dieser Schnitt ist der Weg, den Volllauf zu umgehen.
    */
-  embeddingStats(): { total: number; embedded: number; chunksOhneVektor: number; models: Record<string, number> } {
+  chunksFuerMemories(ids: string[]): ReturnType<KeptaStore["allEmbeddableChunks"]> {
+    if (ids.length === 0) return [];
+    const platz = ids.map(() => "?").join(",");
+    const rows = this.db
+      .prepare(`SELECT memory_id, seq, text, embedding, embedding_model FROM chunks WHERE embedding_hat = 1 AND memory_id IN (${platz})`)
+      .all(...ids) as Record<string, unknown>[];
+    return rows.map((r) => ({
+      memoryId: String(r.memory_id),
+      seq: Number(r.seq),
+      text: String(r.text),
+      embedding: blobToFloat32(r.embedding as Buffer),
+      model: String(r.embedding_model ?? ""),
+    }));
+  }
+
+  embeddingStats(): { total: number; embedded: number; models: Record<string, number> } {
     const total = (this.db.prepare("SELECT COUNT(*) c FROM chunks").get() as { c: number }).c;
-    const embedded = (this.db.prepare("SELECT COUNT(*) c FROM chunks WHERE embedding IS NOT NULL").get() as { c: number }).c;
+    // Beiden Zahlungen laufen gegen die generierte Spalte, damit der Planer den Index benutzen
+    // kann. `embedding IS NOT NULL` bleibt die Definition — die Spalte leitet sie ab, niemand setzt
+    // sie. Gemessen an der echten Tuer 2 256 ms Median (n=10, 3.2.23, Port 64433, 64 163
+    // Abschnitte) fuer 842 Byte, gegen 4,4 ms fuer /api/memories?limit=1 in demselben Lauf.
+    const embedded = (this.db.prepare("SELECT COUNT(*) c FROM chunks WHERE embedding_hat = 1").get() as { c: number }).c;
     const modelRows = this.db
-      .prepare("SELECT embedding_model m, COUNT(*) c FROM chunks WHERE embedding IS NOT NULL GROUP BY embedding_model")
+      .prepare("SELECT embedding_model m, COUNT(*) c FROM chunks WHERE embedding_hat = 1 GROUP BY embedding_model")
       .all() as Record<string, unknown>[];
     const models: Record<string, number> = {};
     for (const r of modelRows) models[String(r.m ?? "unknown")] = Number(r.c);
-    return { total, embedded, chunksOhneVektor: total - embedded, models };
+    return { total, embedded, models };
   }
 
   // ---------- Entities & Relations ----------
@@ -948,80 +1347,6 @@ export class KeptaStore {
     }
     return ids;
   }
-  /**
-   * Setzt die Begriffe und Kanten **einer** Notiz neu — derselbe Name wie in der App
-   * (`kepta-app/src/core/store.ts:950`), damit die Paritaet grepbar bleibt. Der Kern
-   * liest hier keinen Text: die Begriffe kommen von dem, der schreibt (Agentenkanal,
-   * Import). Zwei Naturen, zwei Worte: Titel -> Begriff ist `mentions`, zwei Begriffe
-   * aus derselben Aussage sind `co-mentions`.
-   *
-   * Verglichen wird (Ende, Ende, **Wort**), nicht (Ende, Ende): ein Paar, das frueher
-   * ein anderes Wort trug, wird beim naechsten Setzen umgeschrieben, statt dass zwei
-   * Worte fuer dieselbe Aussage stehen. Und weil jede Kante zu *einer* Notiz gehoert,
-   * faellt sie mit ihr — `addRelation` allein ist ein nacktes INSERT, und ein
-   * Wieder-Speichern des Agentenkanals legte denselben Stich bisher noch einmal.
-   *
-   * Gekappt auf die ersten acht Begriffe fuer die Paarbildung: aus 14 Namen wuerden 91
-   * Paare, und eine lange Notiz waere ein Knotenwerk statt einer Aussage.
-   */
-  verknuepfeNotiz(memoryId: string, titel: string, namen: string[]): number {
-    const t = String(titel ?? "").trim().toLowerCase();
-    // Der eigene Text spricht zuerst. Ueberschriften und Wiki-Links der Notiz sind
-    // Begriffe, egal welcher Schreibweg gerade speichert — sonst gilt die Regel nur fuer
-    // die Pfade, die zufaellig selbst verknuepfen, und was aus einem Import kommt, bleibt
-    // ein Blatt ohne Kante. Das ist die Stelle, an der DMG und npm-Paket auseinanderliefen.
-    const notiz = this.getMemory(memoryId);
-    const eigenen = notiz ? begriffeAusText(`${notiz.title}\n${notiz.content}`) : [];
-    const knoten = new Set<string>();
-    if (t.length >= 2) knoten.add(t);
-    const paare = new Map<string, [string, string, string]>();
-    const schluessel = (a: string, b: string, wort: string): string => a + "|" + b + "|" + wort;
-    for (const roh of [...eigenen, ...(namen ?? [])]) {
-      const n = String(roh ?? "").trim().toLowerCase();
-      if (n.length < 2 || n === t) continue;
-      knoten.add(n);
-      paare.set(schluessel(t, n, "mentions"), [t, n, "mentions"]);
-    }
-    // Zwei Begriffe, dieselbe Aussage: das ist eine andere Behauptung als „die Notiz
-    // nennt den Begriff", und sie verdient ihr eigenes Wort. Gekappt auf die ersten
-    // acht Begriffe — aus 14 Namen wuerden 91 Paare, ein Knotenwerk statt einer Aussage.
-    const fuerPaare = [...knoten].filter((k) => k !== t).slice(0, 8);
-    for (let i = 0; i < fuerPaare.length; i++) {
-      for (let j = i + 1; j < fuerPaare.length; j++) {
-        const a = fuerPaare[i]!;
-        const b = fuerPaare[j]!;
-        const von = a < b ? a : b;
-        const nach = a < b ? b : a;
-        paare.set(schluessel(von, nach, "co-mentions"), [von, nach, "co-mentions"]);
-      }
-    }
-    const setzen = this.db.transaction(() => {
-      const ids: number[] = [];
-      for (const name of [...knoten].slice(0, 40)) ids.push(this.ensureEntity(name));
-      const erlaubt = new Set(ids);
-      const eintrag = this.db.prepare("INSERT OR IGNORE INTO memory_entities (memory_id, entity_id) VALUES (?, ?)");
-      for (const eid of ids) eintrag.run(memoryId, eid);
-      const traeger = this.db.prepare("SELECT entity_id FROM memory_entities WHERE memory_id = ?").all(memoryId) as { entity_id: number }[];
-      const entfaernen = this.db.prepare("DELETE FROM memory_entities WHERE memory_id = ? AND entity_id = ?");
-      for (const r of traeger) if (!erlaubt.has(r.entity_id)) entfaernen.run(memoryId, r.entity_id);
-      const vorhanden = this.db
-        .prepare("SELECT id, source_id, target_id, relation FROM relations WHERE memory_id = ?")
-        .all(memoryId) as { id: number; source_id: number; target_id: number; relation: string }[];
-      const gewollt = new Set<string>();
-      for (const [, [quelle, ziel, wort]] of paare) {
-        const sid = this.ensureEntity(quelle);
-        const zid = this.ensureEntity(ziel);
-        gewollt.add(schluessel(String(sid), String(zid), wort));
-        if (!vorhanden.some((v) => v.source_id === sid && v.target_id === zid && v.relation === wort)) {
-          this.addRelation(quelle, ziel, wort, memoryId);
-        }
-      }
-      const loeschen = this.db.prepare("DELETE FROM relations WHERE id = ?");
-      for (const v of vorhanden) if (!gewollt.has(schluessel(String(v.source_id), String(v.target_id), v.relation))) loeschen.run(v.id);
-      return gewollt.size;
-    });
-    return setzen() as number;
-  }
 
   addRelation(source: string, target: string, relation: string, memoryId: string | null, validFrom: number | null = null, validTo: number | null = null): RelationRecord {
     const sid = this.ensureEntity(source);
@@ -1032,11 +1357,278 @@ export class KeptaStore {
     return { id: Number(res.lastInsertRowid), sourceId: sid, targetId: tid, relation, validFrom, validTo, memoryId };
   }
 
+  /**
+   * Setzt die Verknüpfungen einer Notiz **neu** statt sie anzuhäufen. Zwei
+   * Gründe, beide gemessen: `linkEntities`/`addRelation` sind insert-only — wer
+   * dieselbe Notiz zweimal speicherte, bekam dieselbe Kante zweimal; und ein
+   * Wiki-Link, der aus dem Text verschwand, ließ eine Kante zurück, die
+   * weiterhin behauptete, die Notiz meine sie.
+   *
+   * Kanten gehören zu *einer* Notiz (memory_id) und fallen mit ihr: das ist die
+   * Grenze, die auch der Privatheits-Floor im Agentenkanal braucht.
+   */
+  verknuepfeNotiz(memoryId: string, titel: string, links: string[], behauptungen?: readonly BehauptungEingabe[]): number {
+    const t = String(titel ?? "").trim().toLowerCase();
+    // Der eigene Text spricht zuerst. Ueberschriften und Wiki-Links der Notiz sind
+    // Begriffe, egal welcher Schreibweg gerade speichert — sonst gilt die Regel nur
+    // fuer die zwei Pfade, die zufaellig selbst verknuepfen (Vault, Agentenkanal),
+    // und alles aus dem Rechner-Scan bleibt ein Blatt ohne Kante.
+    const notiz = this.getMemory(memoryId);
+    const eigenen = notiz ? begriffeAusText(`${notiz.title}\n${notiz.content}`) : [];
+    const knoten = new Set<string>();
+    const paare = new Map<string, [string, string, string]>();
+    for (const roh of [...eigenen, ...links]) {
+      const n = String(roh ?? "").trim().toLowerCase();
+      if (n.length < 2) continue;
+      knoten.add(n);
+      if (n !== t) paare.set(`${t}\u0000${n}`, [t, n, "mentions"]);
+    }
+
+    // Begriffe, die eine Notiz zusammen nennt, sind miteinander gesetzt — nicht
+    // ueber den Titel der Notiz. Ein Titel traegt eine einzige Notiz, faellt
+    // damit gegen jeden Bedeutungsschnitt, und die Route liefert ausserdem nur
+    // Kanten, deren beide Enden mitgeliefert werden: ueber den Titel haengen
+    // Begriffe nie aneinander, und uebrig bleibt ein Kreis aus Blaettern. Die
+    // Notiz selbst ist die Aussage — wer in einem Text Budget und Fristen nennt,
+    // hat sie verbunden.
+    //
+    // Gekappt auf die ersten acht Begriffe je Notiz: aus 14 Wuerfen wuerden 91
+    // Paare, und eine lange Notiz waere ein Knotenwerk statt einer Aussage.
+    // Der Titel bleibt aus der Paarbildung draussen: er haengt schon an jedem
+    // seiner Begriffe, und dieselbe Kante zweimal zu setzen ist der alte Fehler.
+    const fuerPaare = [...knoten].filter((k) => k !== t).slice(0, 8);
+    for (let i = 0; i < fuerPaare.length; i++) {
+      for (let j = i + 1; j < fuerPaare.length; j++) {
+        const a = fuerPaare[i];
+        const b = fuerPaare[j];
+        if (!a || !b) continue;
+        paare.set(a < b ? a + "|" + b : b + "|" + a, a < b ? [a, b, "co-mentions"] : [b, a, "co-mentions"]);
+      }
+    }
+
+    // Punkt 126: eine Behauptung von einer Hand. Beide Enden werden Begriffe **dieser**
+    // Notiz — `entitaetsNetz` (src/lib/graphLayout.ts:2200) zeichnet eine Aussage ohne
+    // beurkundende Notiz nur, wenn beide Enden im Bild stehen, und ein Ende, das niemand
+    // traegt, ware eine Kante ins Leere: geschrieben, gezaehlt, nicht zu sehen.
+    //
+    // Das Wort ist keine Zierde: ein Systemwort malt die Flaeche nie
+    // (`SYSTEM_WOERTER`, src/lib/graphLayout.ts:287), also setzt der Kern es gar nicht
+    // erst — lieber abgewiesen als unsichtbar gespeichert.
+    // Drei Zustände, nicht zwei: **nicht genannt** (undefined) heisst "die Hand hat die
+    // Behauptungen nicht angefasst" und haelt, was steht — jeder Agent, der dieselbe
+    // Notiz speichert, ruft diese Funktion mit drei Feldern auf, und ein viertes Feld zu
+    // erfinden, das er nicht schickt, waere das eigne Wort wegzuwischen. Ein **leeres
+    // Feld** heisst dagegen "alle weg": so loescht die Oberflaeche.
+    const gewuenschte = behauptungen ?? this.behauptungenVonNotiz(memoryId);
+    for (const roh of gewuenschte.slice(0, BEHAUPTUNGEN_MAX)) {
+      const q = String(roh?.quelle ?? "").trim().toLowerCase().slice(0, 40);
+      const z = String(roh?.ziel ?? "").trim().toLowerCase().slice(0, 40);
+      const w = String(roh?.wort ?? "").trim().toLowerCase().slice(0, 40);
+      if (q.length < 2 || z.length < 2 || q === z) continue;
+      if (w.length < 2 || SYSTEM_WOERTER.has(w)) continue;
+      knoten.add(q);
+      knoten.add(z);
+      paare.set(`${q}\u0000${z}\u0000${w}`, [q, z, w]);
+    }
+
+    // Ein Knoten ohne Kante ist auf der Flaeche ein Punkt, kein Netz: das
+    // Kraftfeld legt unverbundene Knoten auf einen Kreis. Gemessen am
+    // 14.000-Notizen-Kunstbestand — jeder Titel als eigener Begriff ergab
+    // 14.216 Begriffe fuer denselben Bestand, der mit dieser Regel 2.568 hat — eine
+    // Ueberschwemmung aus Knoten, denen keine Kante folgt. Eine
+    // Notiz, die keinen zweiten Begriff nennt, hinterlaesst darum nichts; und
+    // weil das Setzen pro Notiz geschieht, fallen ihre fruheren Kanten weg,
+    // sobald der letzte Begriff aus ihrem Text verschwindet.
+    if (paare.size === 0) knoten.clear();
+    else if (t.length >= 2) knoten.add(t);
+
+    const setzen = this.db.transaction(() => {
+      const entityIds: number[] = [];
+      for (const name of [...knoten].slice(0, 40)) entityIds.push(this.ensureEntity(name));
+      const erlaubt = new Set(entityIds);
+
+      const eintrag = this.db.prepare("INSERT OR IGNORE INTO memory_entities (memory_id, entity_id) VALUES (?, ?)");
+      for (const eid of entityIds) eintrag.run(memoryId, eid);
+      const traeger = this.db.prepare("SELECT entity_id FROM memory_entities WHERE memory_id = ?").all(memoryId) as { entity_id: number }[];
+      const entfaernen = this.db.prepare("DELETE FROM memory_entities WHERE memory_id = ? AND entity_id = ?");
+      for (const r of traeger) if (!erlaubt.has(r.entity_id)) entfaernen.run(memoryId, r.entity_id);
+
+      // Das Wort gehört zum Paar wie das Paar zur Notiz: verglichen wird
+      // (Ende, Ende, Wort), nicht nur (Ende, Ende). Sonst bleibt eine Kante, die
+      // frueher "mentions" hiess, unter diesem Wort stehen, obwohl dieselbe Notiz
+      // sie jetzt als Mitnennung setzt — und das Paar fuehrte zwei Worte fuer
+      // dieselbe Aussage.
+      const vorhanden = this.db.prepare("SELECT id, source_id, target_id, relation FROM relations WHERE memory_id = ?").all(memoryId) as
+        { id: number; source_id: number; target_id: number; relation: string }[];
+      const gewollt = new Set<string>();
+      for (const [, [quelle, ziel, wort]] of paare) {
+        const sid = this.ensureEntity(quelle);
+        const zid = this.ensureEntity(ziel);
+        gewollt.add(`${sid}|${zid}|${wort}`);
+        if (!vorhanden.some((v) => v.source_id === sid && v.target_id === zid && v.relation === wort)) {
+          this.addRelation(quelle, ziel, wort, memoryId);
+        }
+      }
+      const loeschen = this.db.prepare("DELETE FROM relations WHERE id = ?");
+      for (const v of vorhanden) if (!gewollt.has(`${v.source_id}|${v.target_id}|${v.relation}`)) loeschen.run(v.id);
+      return gewollt.size;
+    });
+
+    return setzen() as number;
+  }
+
   getEntityByName(name: string): EntityRecord | null {
     const row = this.db.prepare("SELECT id, name FROM entities WHERE name = ?").get(name.trim().toLowerCase()) as
       | { id: number; name: string }
       | undefined;
     return row ?? null;
+  }
+
+  /**
+   * Die Begriffe, die ein Wortlaut nennt — umgekehrt gefragt: nicht die Rangfolge der Begriffe
+   * durchgehen und pruefen, welcher darin vorkommt, sondern die Stuecke des Wortlauts gegen den
+   * Namensindex (`entities.name UNIQUE`) lesen.
+   *
+   * Warum: der Vorrat war eine Zusammenrechnung ueber den ganzen Bestand — gemessen 4.11. an der
+   * 40 000-Notizen-Kapsel (40 008 Begriffe, 360 000 Kanten, 160 000 Verknuepfungen) 63,90 ms warm
+   * und 123,41 ms kalt, und jeder Notiz-Schreibfall hebt `daten_generation`, an der der Vorrat in
+   * `engine.ts` haengt. Die erste Anfrage nach einem Speichern zahlte sie: 134,74 ms von 157 ms
+   * an der Tuer. Diese Lesung waechst stattdessen mit der Laenge der Anfrage (2,22 ms fuer
+   * 4 000 Stuecke) und findet jeden Begriff, auch ausserhalb eines Pools — Treffer koennen nur
+   * mehr werden.
+   *
+   * Die Folge ist die Reihenfolge der Anfrage, nicht die Rangfolge der Bedeutung; ein Begriff,
+   * der zweimal vorkommt, zaehlt einmal.
+   *
+   * Was nicht gefragt wird: ein Name, der in der MITTE eines Anfrage-Wortes beginnt und in der
+   * Mitte des naechsten endet. Der alte Vorrat fand ihn durch die rohe Teilzeichenkette; die
+   * Stuecke hier halten die Wortgrenze. Diese Form kann kein Name annehmen, den die Flaeche je
+   * setzt: Begriffe sind Woerterfolgen bis vier Woerter, kein Theil zweier Woerter
+   * (`begiffe.ts:31-33`: `NAME`, `MAX_LAENGE`, `MAX_WOERTER`).
+   */
+  begriffeImWortlaut(wortlaut: string): { id: number; name: string }[] {
+    const stuecke = wortstueckeAus(wortlaut);
+    if (stuecke.length === 0) return [];
+    const zeilen = this.db
+      .prepare(`SELECT id, name FROM entities WHERE name IN (${stuecke.map(() => "?").join(",")})`)
+      .all(...stuecke) as { id: number; name: string }[];
+    const nachName = new Map(zeilen.map((z) => [z.name, Number(z.id)]));
+    const funde: { id: number; name: string }[] = [];
+    const schon = new Set<number>();
+    for (const stueck of stuecke) {
+      const id = nachName.get(stueck);
+      if (id === undefined || schon.has(id)) continue;
+      schon.add(id);
+      funde.push({ id, name: stueck });
+    }
+    return funde;
+  }
+
+  /**
+   * Rangfolge der Begriffe nach Bedeutung: die Zahl der Notizen, die ihn tragen,
+   * **und** die Zahl der Kanten, die an ihm sitzen — zusammen, nicht hintereinander
+   * (#56). Gekappt auf `pool` Zeilen: das Fenster will 500, und was hinter dem Pool
+   * liegt, ist weniger bedeutsam als alles darin. Ein Begriff ausserhalb des Pools
+   * kann also nie Samen sein; als Blatt eines Samens fehlt er hochstens dort, wo ein
+   * Hub mit mehr Blaettern als Poolkappe steht — die Scheibe waere dann nicht die
+   * Bedeutungsspitze, sondern der ganze Hub.
+   */
+  private graphRang(pool: number): { id: number; name: string }[] {
+    return (
+      this.db
+        .prepare(
+          `WITH grad AS (
+             SELECT entity_id, SUM(n) AS n FROM (
+               SELECT source_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY source_id
+               UNION ALL
+               SELECT target_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY target_id
+             ) GROUP BY entity_id
+           )
+           SELECT e.id AS id, e.name AS name,
+                  (COUNT(me.memory_id) + COALESCE(MAX(g.n), 0)) AS trag
+           FROM entities e
+           LEFT JOIN memory_entities me ON me.entity_id = e.id
+           LEFT JOIN grad g ON g.entity_id = e.id
+           GROUP BY e.id, e.name
+           ORDER BY trag DESC, e.id ASC
+           LIMIT ${pool}`
+        )
+        .all() as Record<string, unknown>[]
+    ).map((r) => ({ id: Number(r.id), name: String(r.name) }));
+  }
+
+  /**
+   * Die Begriffscheibe als **Nachbarschaft**, nicht als Rangliste (#83-2).
+   *
+   * Rueber die Rangliste: sie war die Bedeutungsspitze, aber keine zusammenhaengende
+   * Menge. Gemessen an Damians laufender App — 500 Begriffe, 979 Kanten, 41 % der
+   * Knoten Satzfetzen — und an meinem 14.702-Kunstbestand, wo jeder einzelne der 500
+   * gelieferten Knoten an keiner Kante hielt, weil die Kantenscheibe jede Kante
+   * verwirft, deren Ende nicht mitgeliefert wird. Eine Wolke, die nichts
+   * zusammenhaelt, ist kein Wissensgraph.
+   *
+   * Darum: der erste Samen in Rangfolge wird ueber Kanten erweitert (Breadth-first,
+   * die staerkere Kante zuerst), dann der naechste, bis die Kappe voll ist. Erst wenn
+   * die Nachbarschaften nicht reichen, fuellt der Rest nach Rang auf — ein Bestand,
+   * dessen Begriffe gar nicht verknuepft sind, darf keinen leeren Graphen zeigen.
+   * Zwei Aufrufe auf demselben Bestand liefern dieselbe Folge.
+   */
+  private graphNachbarschaft(rang: { id: number; name: string }[], tiefe = GRAPH_TIEFE_MAX): EntityRecord[] {
+    if (rang.length === 0) return [];
+    const imFenster = new Set<number>();
+
+    const nachbarn = new Map<number, { id: number; n: number }[]>();
+    const paare = this.db
+      .prepare(
+        `SELECT source_id AS a, target_id AS b, COUNT(*) AS n
+         FROM relations GROUP BY source_id, target_id
+         ORDER BY n DESC, source_id ASC, target_id ASC
+         LIMIT ${GRAPH_PAAR_POOL}`
+      )
+      .all() as { a: number; b: number; n: number }[];
+    const bekannt = new Set(rang.map((e) => e.id));
+    const fuege = (von: number, nb: number, n: number): void => {
+      const liste = nachbarn.get(von) ?? [];
+      liste.push({ id: nb, n });
+      nachbarn.set(von, liste);
+    };
+    for (const p of paare) {
+      if (!bekannt.has(p.a) || !bekannt.has(p.b)) continue;
+      fuege(p.a, p.b, p.n);
+      if (p.a !== p.b) fuege(p.b, p.a, p.n);
+    }
+    for (const list of nachbarn.values()) list.sort((x, y) => y.n - x.n || x.id - y.id);
+
+    for (const samen of rang) {
+      if (imFenster.size >= GRAPH_FENSTER_KNOTEN) break;
+      if (imFenster.has(samen.id)) continue;
+      imFenster.add(samen.id);
+      let schnitt = [samen.id];
+      // Die Stufe des Nutzers ist hier, nicht nur im Entity-Zweig: ohne diese Grenze
+      // waechst ein Same ungebremst die Kette hinunter, bis die Kappe kommt, und die
+      // Tiefenstufe der Flaeche bewegt nichts (gemessen 05:28 Uhr: vier Stufen, eine
+      // Antwort auf die Byte — Mappe BEFUND-124-FENSTER-2910.md).
+      for (let schritt = 0; schritt < Math.max(1, tiefe) && schnitt.length > 0 && imFenster.size < GRAPH_FENSTER_KNOTEN; schritt++) {
+        const naechster: number[] = [];
+        for (const id of schnitt) {
+          for (const nb of nachbarn.get(id) ?? []) {
+            if (imFenster.has(nb.id)) continue;
+            imFenster.add(nb.id);
+            naechster.push(nb.id);
+            if (imFenster.size >= GRAPH_FENSTER_KNOTEN) break;
+          }
+          if (imFenster.size >= GRAPH_FENSTER_KNOTEN) break;
+        }
+        schnitt = naechster;
+      }
+    }
+
+    for (const e of rang) {
+      if (imFenster.size >= GRAPH_FENSTER_KNOTEN) break;
+      imFenster.add(e.id);
+    }
+
+    return rang.filter((e) => imFenster.has(e.id)).map((e) => ({ id: e.id, name: e.name }));
   }
 
   /** Subgraph um eine Entität (oder der ganze Graph, gekappt) */
@@ -1090,32 +1682,38 @@ export class KeptaStore {
       ).map((r) => ({ id: Number(r.id), name: String(r.name) }));
       return { entities, relations };
     }
-    // #83 (2), Paritaet zur App: die 500 Begriffe sind keine Rangliste mehr, sondern
-    // eine **Nachbarschaft**. Rangieren allein reicht nicht: die Kantenscheibe liefert
-    // Kanten, deren Enden ausserhalb der Begriffsscheibe liegen, und was die Flaeche
-    // danach uebrig behaelt, ist eine Wolke ohne Halt. Gemessen an demselben
-    // 14.702-Notizen-Bestand mit der Rangregel der App: 500 Begriffe, 1.402 Kanten,
-    // 41 Knoten ohne jede Kante, groesster Teil 8 Knoten in 201 Teilen; nach dem
-    // Wachstum 0 Knoten ohne Halt und groesster Teil 27 in 31 Teilen. Der Nutzer sagt
-    // dazu "ich erkenn nix außer 'nem großen Kreis".
+    // #83 (2): die Rangliste ist kein Netz. Sie war es schon einmal nicht — A7-08
+    // fand das `LIMIT 500` ohne ORDER BY, und A7-Vermessung sowie #56 setzten die
+    // Rangformel: Traegerzahlen **und** Tragweite (Kantenenden), zusammen, nicht
+    // hintereinander. Aber rangieren allein reicht nicht: an Damians laufender App
+    // (21.066 Notizen) schickt das Fenster 500 Begriffe und 979 Kanten, und 41 % der
+    // Knoten sind Fetzen; an meinem 14.702-Kunstbestand hielt **jeder** der 500
+    // gelieferten Knoten an keiner Kante, weil die Kantenscheibe alles verwirft, was
+    // ausserhalb der Begriffsliste liegt. Wer den Graphen oeffnete, sah eine Wolke,
+    // die nichts zusammenhaelt.
     //
-    // Regel: Samen in Rangfolge (Traegerzahlen **und** Tragweite), jeder um ueber
-    // Kanten Erreichte erweitert, bis die Kappe voll ist; erst wenn die
-    // Nachbarschaften nicht reichen, fuellt der Rest nach Rang auf. Ein Bestand,
-    // dessen Begriffe gar nicht verknuepft sind, darf keinen leeren Graphen zeigen.
-    const entities = this.graphNachbarschaft(this.graphRang(GRAPH_RANG_POOL));
+    // Darum wird jetzt von den bedeutsamsten Samen aus **ueber Kanten** gewaechselt
+    // (graphNachbarschaft). Ein Knoten kommt nur ins Fenster, wenn eine Kante von
+    // einem schon gewaehlten zu ihm fuehrt. Reichen die Nachbarschaften nicht bis an
+    // die Kappe, fuellt der Rest nach Rang auf: ein Bestand, dessen Begriffe
+    // ueberhaupt nicht verknuepft sind, darf keinen leeren Graphen zeigen
+    // (guardiert von tests/core/graphkappe.test.ts).
+    const entities = this.graphNachbarschaft(this.graphRang(GRAPH_RANG_POOL), Math.min(Math.max(depth, GRAPH_TIEFE_MIN), GRAPH_TIEFE_MAX));
+    const knotenIds = entities.map((e) => e.id);
     // Dasselbe fuer die Kanten: was hinter einer 2 000er-Scheibe liegt, darf
     // nicht die Einfuegereihenfolge entscheiden. Paare mit mehr Belegen — drei
     // Aussagen ueber demselben Paar sind ein staerkeres Paar als eine — stehen
     // vorne. Innerhalb des Paares die aelteste zuerst, damit der Schnitt bei
     // gleichem Bestand derselbe bleibt.
     //
-    // Und die Scheibe ist **in sich geschlossen**: eine Kante, deren Ende der
-    // Begriffsschnitt nicht mitliefert, ist keine Kante des Graphen, sondern ein
-    // Zeiger ins Leere. Die App-Tuer wirft sie seit A7-08 weg; ein Verbraucher, der
-    // die Zahl der Kanten gegen die Zahl der Knoten rechnet, haette sonst eine
-    // Bilanz, die er nie zeichnen kann.
-    const knotenIds = entities.map((e) => e.id);
+    // Und die Scheibe muss in sich geschlossen sein: eine Kante, deren Ende der
+    // Begriffsschnitt nicht mitliefert, warf die Tuer bisher weg (`system.ts:95` filtert
+    // gegen dieselbe Menge). Darum ist ihr Zaehler `kantenVerworfen` seitdem **per
+    // Konstruktion 0** — gemessen 07:12 Uhr an einem 2 120-Kanten-Bestand: "dropped 0",
+    // waehrend 1 771 Kanten nie ankommen. Was hier steht, ist die Heilung von 16.10.:
+    // 1.593 von 2 000 Kanten auf einem echten Bestand und 1.711 von 2 000 im Test-Fixture
+    // waren die Zahlen VOR dieser Scheibe; die Flaeche haette ihre Bilanz gegen eine Zahl
+    // gezogen, die sie nie zeichnet. Was heute fehlt, zaehlt `ausriss.kantenAusserhalb`.
     const kantenPlaceholders = knotenIds.map(() => "?").join(",");
     const relations = knotenIds.length === 0 ? [] : (
       this.db
@@ -1130,7 +1728,7 @@ export class KeptaStore {
            LEFT JOIN traeger tt ON tt.entity_id = r.target_id
            WHERE r.source_id IN (${kantenPlaceholders}) AND r.target_id IN (${kantenPlaceholders})
            ORDER BY p.paare DESC, (COALESCE(ts.n, 0) + COALESCE(tt.n, 0)) DESC, r.id ASC
-           LIMIT ${GRAPH_RELATIONEN_FENSTER}`
+           LIMIT 2000`
         )
         .all(...knotenIds, ...knotenIds) as Record<string, unknown>[]
     ).map((r) => ({
@@ -1146,102 +1744,92 @@ export class KeptaStore {
   }
 
   /**
-   * Der Namensvorrat fuer die Such-Erweiterung: Begriffe in Rangfolge, tiefer als
-   * das Sichtfenster der Graphflaeche. Getrennt, weil beide verschiedene Dinge sind
-   * — seit #83 ist das Fenster eine Nachbarschaft, und eine Nachbarschaft von 500
-   * ist ein schlechter Vorrat aller Namen, die eine Anfrage nennen koennte.
+   * Was die Wissensbasis WIRKLICH enthält — im Gegensatz zu dem, was `getGraph`
+   * höchstens liefert. Die Kappen selbst (500 Begriffe, 2000 Kanten) sind
+   * unverändert: wer mehr auf einmal schickt, bezahlt mit einer langsameren
+   * Fläche, nicht mit einer besseren. Was fehlt, war die Zahl dahinter, damit
+   * eine Fläche sagen kann „ich zeige einen Ausschnitt" statt „so viel ist da".
    */
-  entityNamen(pool = GRAPH_RANG_POOL): string[] {
-    return this.graphRang(pool).map((e) => e.name);
+  graphBestand(): { knoten: number; kanten: number } {
+    const knoten = this.db.prepare("SELECT COUNT(*) AS n FROM entities").get() as { n: number };
+    const kanten = this.db.prepare("SELECT COUNT(*) AS n FROM relations").get() as { n: number };
+    return { knoten: Number(knoten.n), kanten: Number(kanten.n) };
   }
 
   /**
-   * Rangfolge der Begriffe nach Bedeutung: die Zahl der Notizen, die ihn tragen,
-   * **und** die Zahl der Kanten, die an ihm sitzen — zusammen, nicht hintereinander
-   * (dieselbe Formel wie die App seit #56). Gekappt auf `pool` Zeilen: das Fenster
-   * will 500, und was hinter dem Pool liegt, ist weniger bedeutsam als alles darin.
+   * Wie viele NOTIZEN an wenigstens einem Begriff haengen — die Deckung des
+   * Netzes, nicht seine Groesse. Eine Tuer, die 2.756 Begriffe und 2.726 Kanten
+   * nennt, aber nicht sagt, wie viele ihrer 21.066 Notizen davon beruehrt werden,
+   * laesst den Leser raten, ob das Netz knapp oder weit ist.
+   *
+   * Gezaehlt wird ueber `memory_entities` (der Traeger, nicht die Behauptung):
+   * eine Notiz mit vier Begriffen ist eine gedeckte Notiz.
    */
-  private graphRang(pool: number): { id: number; name: string }[] {
-    return (
+  notizenMitBegriff(): number {
+    const row = this.db
+      .prepare(
+        `SELECT COUNT(DISTINCT me.memory_id) AS n
+           FROM memory_entities me
+           JOIN memories m ON m.id = me.memory_id
+          WHERE m.deleted_at IS NULL`
+      )
+      .get() as { n: number };
+    return Number(row.n);
+  }
+
+  /**
+   * Punkt 124b — das Feld der Haufen-Rechnung **ohne** die Kappen des Sichtfensters.
+   *
+   * Warum eine eigne Auszugsmenge und nicht `getGraph`: `getGraph` liefert 500 Begriffe und
+   * 2 000 Kanten (`GRAPH_FENSTER_KNOTEN`, Zeile 42; Schleife :1366-1393). Ein Haufen, der nur
+   * in diesem Fenster gerechnet wird, sagt nichts über die Größe der Haufen — die Antwort wäre
+   * eine Verteilung über 18 % der Begriffe, als wäre sie eine über alle. Hier steht der ganze
+   * Bestand: jede aktive Notiz, jeder Begriff, jede Erwähnung, jede Behauptung.
+   *
+   * Der Auszug ist reine Zahlenschieberei nach oben: `src/lib/haufenordnung.ts` rechnet die
+   * Verteilung, die Tür nennt sie. Diese Methode erfindet keine Rangfolge und keinen Schnitt.
+   */
+  haufenFeld(): {
+    notizen: string[];
+    begriffe: string[];
+    erwaehnungen: [string, string][];
+    behauptungen: { source: string; target: string }[];
+  } {
+    const notizen = (
+      this.db.prepare("SELECT id FROM memories WHERE deleted_at IS NULL ORDER BY id").all() as { id: string }[]
+    ).map((r) => String(r.id));
+    const begriffe = (this.db.prepare("SELECT name FROM entities ORDER BY name").all() as { name: string }[]).map((r) =>
+      String(r.name),
+    );
+    const erwaehnungen = (
       this.db
         .prepare(
-          `WITH grad AS (
-             SELECT entity_id, SUM(n) AS n FROM (
-               SELECT source_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY source_id
-               UNION ALL
-               SELECT target_id AS entity_id, COUNT(*) AS n FROM relations GROUP BY target_id
-             ) GROUP BY entity_id
-           )
-           SELECT e.id AS id, e.name AS name,
-                  (COUNT(me.memory_id) + COALESCE(MAX(g.n), 0)) AS trag
-           FROM entities e
-           LEFT JOIN memory_entities me ON me.entity_id = e.id
-           LEFT JOIN grad g ON g.entity_id = e.id
-           GROUP BY e.id, e.name
-           ORDER BY trag DESC, e.id ASC
-           LIMIT ${pool}`
+          `SELECT me.memory_id AS notiz, e.name AS begriff
+             FROM memory_entities me
+             JOIN memories m ON m.id = me.memory_id
+             JOIN entities e ON e.id = me.entity_id
+            WHERE m.deleted_at IS NULL
+            ORDER BY me.memory_id, e.name`
         )
-        .all() as Record<string, unknown>[]
-    ).map((r) => ({ id: Number(r.id), name: String(r.name) }));
-  }
-
-  /**
-   * Die Begriffscheibe als Nachbarschaft, nicht als Rangliste (#83-2). Der erste
-   * Samen in Rangfolge wird ueber Kanten erweitert (Breadth-first, die staerkere
-   * Kante zuerst), dann der naechste, bis die Kappe voll ist; danach fuellt der Rest
-   * nach Rang auf. Zwei Aufrufe auf demselben Bestand liefern dieselbe Folge.
-   */
-  private graphNachbarschaft(rang: { id: number; name: string }[]): EntityRecord[] {
-    if (rang.length === 0) return [];
-    const imFenster = new Set<number>();
-    const nachbarn = new Map<number, { id: number; n: number }[]>();
-    const paare = this.db
-      .prepare(
-        `SELECT source_id AS a, target_id AS b, COUNT(*) AS n
-         FROM relations GROUP BY source_id, target_id
-         ORDER BY n DESC, source_id ASC, target_id ASC
-         LIMIT ${GRAPH_PAAR_POOL}`
-      )
-      .all() as { a: number; b: number; n: number }[];
-    const bekannt = new Set(rang.map((e) => e.id));
-    const fuege = (von: number, nb: number, n: number): void => {
-      const liste = nachbarn.get(von) ?? [];
-      liste.push({ id: nb, n });
-      nachbarn.set(von, liste);
-    };
-    for (const p of paare) {
-      if (!bekannt.has(p.a) || !bekannt.has(p.b)) continue;
-      fuege(p.a, p.b, p.n);
-      if (p.a !== p.b) fuege(p.b, p.a, p.n);
-    }
-    for (const liste of nachbarn.values()) liste.sort((x, y) => y.n - x.n || x.id - y.id);
-
-    for (const samen of rang) {
-      if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
-      if (imFenster.has(samen.id)) continue;
-      imFenster.add(samen.id);
-      let schnitt = [samen.id];
-      while (schnitt.length > 0 && imFenster.size < GRAPH_ENTITATEN_FENSTER) {
-        const naechster: number[] = [];
-        for (const id of schnitt) {
-          for (const nb of nachbarn.get(id) ?? []) {
-            if (imFenster.has(nb.id)) continue;
-            imFenster.add(nb.id);
-            naechster.push(nb.id);
-            if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
-          }
-          if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
-        }
-        schnitt = naechster;
-      }
-    }
-
-    for (const e of rang) {
-      if (imFenster.size >= GRAPH_ENTITATEN_FENSTER) break;
-      imFenster.add(e.id);
-    }
-
-    return rang.filter((e) => imFenster.has(e.id)).map((e) => ({ id: e.id, name: e.name }));
+        .all() as { notiz: string; begriff: string }[]
+    ).map((r) => [String(r.notiz), String(r.begriff)] as [string, string]);
+    const begriffSet = new Set(begriffe);
+    const behauptungen = (
+      this.db
+        .prepare(
+          `SELECT qs.name AS quelle, zs.name AS ziel
+             FROM relations r
+             JOIN entities qs ON qs.id = r.source_id
+             JOIN entities zs ON zs.id = r.target_id
+            ORDER BY r.id`
+        )
+        .all() as { quelle: string; ziel: string }[]
+    )
+      // Ein Ende ohne Begriff wäre eine Kante ins Leere: die Maske unten würde sie verwerfen,
+      // und die Antwort hätte eine Kantenzahl, die kein Knoten trägt.
+      .filter((r) => begriffSet.has(String(r.quelle)) && begriffSet.has(String(r.ziel)))
+      .map((r) => ({ source: String(r.quelle), target: String(r.ziel) }));
+    return { notizen, begriffe, erwaehnungen, behauptungen };
   }
 
   /** Memory-IDs, die eine der Entitäten mentionen */
@@ -1264,23 +1852,25 @@ export class KeptaStore {
   }
 
   /**
-   * entity_id → Träger-Notizen, in einem Query. memoryIdsForEntities() kann nur die
-   * Sammelmenge; den Graphen filtert der Privatheits-Floor aber Knoten für Knoten,
-   * und das dürften 500 Einzelabfragen sein (LIMIT 500 im ganzen Graphen).
+   * Die Behauptungen, die eine Hand an dieser Notiz gesetzt hat — nicht die Mitnennungen,
+   * die aus ihrem Text wachsen. Die Oberflaeche braucht diesen Leser: ein Feld, das
+   * schreibt, ohne zu zeigen, was schon steht, laesst die Person ihre eigne Aussage
+   * zweimal tippen oder gar nicht mehr loeschen.
    */
-  memoryIdsByEntity(entityIds: number[]): Map<number, string[]> {
-    const map = new Map<number, string[]>();
-    if (entityIds.length === 0) return map;
-    const placeholders = entityIds.map(() => "?").join(",");
-    const rows = this.db
-      .prepare(`SELECT entity_id, memory_id FROM memory_entities WHERE entity_id IN (${placeholders})`)
-      .all(...entityIds) as { entity_id: number; memory_id: string }[];
-    for (const r of rows) {
-      const Liste = map.get(r.entity_id);
-      if (Liste) Liste.push(String(r.memory_id));
-      else map.set(r.entity_id, [String(r.memory_id)]);
-    }
-    return map;
+  behauptungenVonNotiz(memoryId: string): BehauptungEingabe[] {
+    const reihen = this.db
+      .prepare(
+        `SELECT q.name AS quelle, z.name AS ziel, r.relation AS wort
+           FROM relations r
+           JOIN entities q ON q.id = r.source_id
+           JOIN entities z ON z.id = r.target_id
+          WHERE r.memory_id = ?
+          ORDER BY r.id`
+      )
+      .all(memoryId) as { quelle: string; ziel: string; wort: string }[];
+    return reihen
+      .filter((x) => typeof x.wort === "string" && x.wort.length > 0 && !SYSTEM_WOERTER.has(x.wort))
+      .map((x) => ({ quelle: x.quelle, ziel: x.ziel, wort: x.wort }));
   }
 
   // ---------- FTS ----------
@@ -1316,30 +1906,9 @@ export class KeptaStore {
         rows = rows.slice(0, limit);
       }
       return rows.map((r) => ({ id: String(r.id), bm25: Number(r.rank) }));
-    } catch (e) {
-      // Degradation bleibt gewollt: Vektor- und Graph-Bein liefern weiter, eine
-      // kaputte Wortspur darf die Suche nicht killen. Unsichtbar darf sie aber
-      // nicht sein — die Terme sind vorqualifiziert und auf \p{L}\p{N} reduziert
-      // (stopwords.ts), Syntaxfehler durch Nutzereingaben sind damit praktisch
-      // ausgeschlossen. Was hier also schlägt, ist ein echter Defekt: korrupter
-      // Index, gesperrte DB, Query-Bug.
-      //
-      // Zwei Abnehmer, weil einer nicht reicht: audit für die Organisation mit
-      // Journal, ftsPanne für /api/health — der Sink im freien Kern ist ein Noop,
-      // audit allein sähe niemand.
-      this.ftsPanne = { at: new Date().toISOString(), fehler: e instanceof Error ? e.message : String(e) };
-      this.audit("search", "fts", { fehler: this.ftsPanne.fehler });
+    } catch {
       return [];
     }
-  }
-
-  /**
-   * Zustand der Wortspur für Statusanzeigen. `ok: true` heißt nicht "Index
-   * gefüllt", sondern nur: die letzte Suche blieb fehlerfrei. Eine Panne wird
-   * nie zurückgesetzt — die letzte ist die, die jemand sehen soll.
-   */
-  ftsStatus(): { ok: true } | { ok: false; at: string; fehler: string } {
-    return this.ftsPanne ? { ok: false, ...this.ftsPanne } : { ok: true };
   }
 }
 
@@ -1351,9 +1920,20 @@ export function float32ToBlob(vec: Float32Array): Buffer {
   return buf;
 }
 
+const IS_LITTLE_ENDIAN = new Uint8Array(new Uint16Array([0x0102]).buffer)[0] === 0x02;
+
 export function blobToFloat32(buf: Uint8Array): Float32Array {
+  const count = Math.floor(buf.byteLength / 4);
+  if (IS_LITTLE_ENDIAN) {
+    if (buf.byteOffset % 4 === 0) {
+      return Float32Array.from(new Float32Array(buf.buffer, buf.byteOffset, count));
+    }
+    const copy = new Uint8Array(count * 4);
+    copy.set(buf.subarray(0, count * 4));
+    return new Float32Array(copy.buffer);
+  }
   const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  const out = new Float32Array(Math.floor(buf.byteLength / 4));
+  const out = new Float32Array(count);
   for (let i = 0; i < out.length; i++) out[i] = view.getFloat32(i * 4, true);
   return out;
 }
@@ -1367,7 +1947,7 @@ const KOPIE = ".encrypting";
 const SPERRE = ".encrypting-lock";
 const VERWAIST_MS = 10 * 60_000;
 const ANDERES_PROGRAMM =
-  "The knowledge base is open in another program (an AI agent over MCP, an older K3PTA?) — it stays unencrypted until K3PTA has it to itself. Close the other program and restart K3PTA.";
+  "The knowledge base is open in another program (an AI agent over MCP, an older KEPTA?) — it stays unencrypted until K3PTA has it to itself. Close the other program and restart K3PTA.";
 const WIRD_UMGEWANDELT = "The knowledge base is being encrypted by another K3PTA process — try again in a moment.";
 
 function fehlertext(e: unknown): string {
@@ -1406,18 +1986,6 @@ function schluesselPragmas(db: Database.Database, schluessel: Uint8Array, pragma
   db.pragma(`${pragma} = "x'${Buffer.from(schluessel).toString("hex")}'"`);
 }
 
-/**
- * `herkunft` ist bewusst optional und wird nur weitergegeben, wenn der Aufrufer sie
- * wirklich weiss. Ohne sie nennt diese Meldung **keine** Quelle — genau das war der
- * Befund A1-08/A3-10: Der alte Satz behauptete „the key in the keychain does not
- * belong to this database" in drei verschiedenen Fällen, und in zweien davon war nie
- * ein Schlüsselbund im Spiel (Schlüssel aus KEPTA_DB_KEY; die Datei war Müll).
- *
- * Was sich an dieser Stelle ehrlich trennen lässt, ist nur, was die Datei selbst
- * verraet: SQLite antwortet auf einen fremden Schlüssel und auf eine beschädigte
- * Datei mit dem einen Code SQLITE_NOTADB. Wer daraus eine Ursache destilliert,
- * erzählt eine Geschichte — also werden beide genannt und keine geraten.
- */
 function setzeSchluessel(db: Database.Database, schluessel: Uint8Array, herkunft?: string): void {
   schluesselPragmas(db, schluessel, "key");
   try {
@@ -1437,7 +2005,7 @@ function setzeSchluessel(db: Database.Database, schluessel: Uint8Array, herkunft
       }
       if (groesse >= 0 && groesse % 512 !== 0) {
         throw new Error(
-          `The file at ${db.name} is not a SQLite database at all — ${groesse} bytes is not a multiple of any page size, ` +
+          `The file at ${db.name} is not a database at all — ${groesse} bytes is not a whole number of pages, ` +
             `so it is either not a database or the damaged remnant of one. No key can open it, and none was tried again. ` +
             `Nothing was changed. If a restore or another program wrote here, point KEPTA_DATA_DIR at the real knowledge base.`,
         );

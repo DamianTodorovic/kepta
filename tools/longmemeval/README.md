@@ -15,22 +15,15 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
    Quellverweis `session_id` in der Notiz. Determinismus: Memory-ID = Hash aus
    `session_id#turn`, Dedup per Turn — ein zweiter Lauf ändert nichts.
 2. **Antworten:** Jede Frage läuft durch den EINEN Suchpfad (FTS5-BM25 + Vektoren +
-   Graph → RRF → Boosts), die Top-k-Notizen bilden den Antwortkontext. **Es antwortet
-   kein Generator-LLM** — die Treffer werden als nummerierter Kontext weitergegeben.
-   Orakel-Felder (`answer_session_ids`) werden NIE gelesen; der Runner warnt, wenn der
+   Graph → RRF → Boosts), die Top-k-Notizen bilden den Antwortkontext. Orakel-
+   Felder (`answer_session_ids`) werden NIE gelesen; der Runner warnt, wenn der
    Datensatz sie trägt.
 3. **Richten:** Ein lokales LLM (Ollama, gleiche Maschine) bewertet Kontext gegen
-   Referenz — **gemessen wird Kontext-Suffizienz** („does the CONTEXT alone contain the
-   information needed"), nicht eine generierte Antwort. Urteil ja/nein/teilweise pro
-   Frage, **teilweise zählt als halber Punkt** — die Genauigkeit ist kein Ja-Anteil.
-   **Modell fixiert: `llama3.2:3b`**,
+   Referenz — ja/nein/teilweise, pro Frage. **Modell fixiert: `llama3.2:3b`**,
    Temperatur 0. Judge-Prompt committed (`JUDGE_PROMPT`, Version 1), ändert sich
    nur mit Versionsbump. Abstention-Fragen werden **umgekehrt gewertet**: liefert
    der Suchpfad nichts, kann die Assistenz korrekt verzichten (Punkt); enthält der
    Kontext „eine Antwort", halluziniert sie (kein Punkt).
-   Deterministischer Vorweg: Steht die Referenz wörtlich in einem Treffer, zählt das
-   als Ja **ohne Judge-Aufruf** (`verbatimTreffer`, Anteil im Record als
-   `verbatim_quote` — im 2.13.22-Lauf, der 61,5 % brachte, 29,8 %.
 4. **Report:** Genauigkeit gesamt + pro Fähigkeit, Abstention-Leer-Quote,
    Judge-Parse-Fehler — JSON in `ergebnisse/` mit Datum, Modell (+Ollama-Version),
    K3PTA-Version, Commit, Top-k und Datensatz-SHA-256. Nichts wird behauptet, was
@@ -39,9 +32,8 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
 ## Stand (21.9.2026): Pipeline komplett, erste Zahl steht aus
 
 - `harness.ts` — alle drei Phasen implementiert (Ingest/Antworten/Judge) + Report;
-  14 Tests in `tests/longmemeval.test.ts` (Wertung, Judge-Parser, Verbatim-Pfad,
-  Fragen-Slices, Zeit-Hebel, Datensatz-Laden — ohne Ollama, ohne Download);
-  End-to-End-Smoke mit echtem Ollama-Judge verifiziert.
+  9 Tests in `tests/longmemeval.test.ts`; End-to-End-Smoke mit echtem Ollama-Judge
+  verifiziert.
 - `lade-datensatz.mjs` — Download von der offiziellen Hugging-Face-Quelle
   (`xiaowu0162/LongMemEval`), SHA-256 wird ausgegeben; der Datensatz landet in
   `datensatz/` (gitignored) und wird **nicht** ins Repo committed.
@@ -49,7 +41,7 @@ Knowledge-Updates, Abstention („das weiß ich nicht" erkennen).
   (bewertet wörtlich enthaltene Fakten als NO) → `llama3.2:3b` fixiert, im
   OriginaI-Prompt verifiziert auf Ja/Nein/Teilweise-Fällen.
 
-## Stand (22.9.2026, kepta_version 2.13.2): erste Zahl — 29,2 % auf LongMemEval-S (Baseline)
+## Stand (22.9.2026): erste Zahl — 29,2 % auf LongMemEval-S (Baseline)
 
 Erster voller Lauf, 500/500 gerichtet, 0 Judge-Parse-Fehler. Bericht:
 `ergebnisse/longmemeval-2026-09-21-08d8dad4.json` (Modell llama3.2:3b 0.34.2,
@@ -93,34 +85,6 @@ Die Hebel aus der Baseline sind umgesetzt, jeder mit veröffentlichter Messung:
 | 24.9. | topk 12 | **32,5 %** | 2d6dc38 |
 | 24.9. | topk 12 + Timeline-Block (`--temporal`) | **33,2 %** | c047e7f |
 | 25.9. | + Vektorspur über alle 441k Chunks (`--vektoren`) | **37,0 %** | Record committed |
-| 1.10. | topk 16 + `--temporal` auf der neuen Such-Pipeline (Such-Cache, AND-first-FTS) | **39,0 %** | Record committed |
-| 1.10. | **Judge-A/B (60 Fragen):** 3b 42,5 % vs. **14B 54,2 %** — der stärkere lokale Judge bewertet dieselbe Pipeline fairer (der 3b unterschätzt lange Kontexte) | — | Records committed |
-| 1.10. | **Voller 500er mit dem 14B-Judge** (qwen2.5:14b, Q4, RTX 3060, komplett lokal) | **54,6 %** | Record committed |
-| 1.10. | **Embedder-A/B: bge-m3 im eigenen Store** (500er, 3B-Judge — direkt vergleichbar mit 39,0) | **38,0 %** | A/B-Record — **nomic bleibt** (arctic-Muster: der Wechsel zahlt nicht) |
-| 1.10. | **+ HyDE-lite** (500er, 14B-Judge — direkt vergleichbar mit 54,6; 569 Erweiterungen erzeugt) | **55,0 %** | Neue Bestmarke — der Wortlaut-Abstand zwischen Frage und Beleg schließt sich |
-| 2.10. | **MAX: topk 32 + Zeitsplit + HyDE + `--temporal`** (500er, 14B-Judge, RTX 3060, komplett lokal) | **61,5 %** | Neue Bestmarke — Kontext-Suffizienz, lokal gerichtet (kein End-to-End-Wert, siehe Judge-Frame) |
-| 2.10. | **A/B: topk 32 + HyDE + `--temporal` OHNE Zeitsplit** (500er, 14B-Judge — direkt vergleichbar mit 61,5) | **61,1 %** | Der Zeitsplit-Hebel ist isoliert: +0,4 — die Bestmarke bleibt 61,5 % |
-
-**Judge-Frame (Ehrlichkeitsregel):** Die 3b-Serie (29,2→39,0) bleibt die Vergleichsbasis — ein Judgesprung ist eine bessere MESSLATTE, kein Retrieval-Fortschritt. Der 14B-Wert misst dieselbe Retrieval-Pipeline fairer: **61,5 % lokal, null Cloud**. **Was die Zahl ist:** Kontext-Suffizienz, gerichtet von qwen2.5:14b (Temperatur 0, Prompt v1), halbe Punkte für `teilweise`, und 29,8 % der Fragen ohne Judge-Aufruf durch den Wörtlich-Treffer entschieden. Zeps veröffentlichte 63,8 % sind **End-to-End-Antwortgenauigkeit** einer Generierungspipeline, gerichtet von einem Cloud-LLM — verwandte Evidenz, nicht dieselbe Metrik; wer beide Zahlen nebeneinanderstellt, muss diesen Unterschied dazuschreiben. bge-m3-Embedding ist geprüft (38,0 % gegen 39,0 — **nomic bleibt**, A/B-Record).
-
-**Kein Holdout — die Serie ist in-sample.** Jeder Hebel (topk 8→12→16→32, `--temporal`,
-`--zeitsplit`, HyDE, Vektor-Band/Floor, Judge-Größe 3b→14b) wurde auf denselben 500 Fragen
-bzw. Pilot-Teilmengen davon ausgewählt (`pilot-10-fragen-*`, `pilot60-cabdd3ee-*`,
-`temporal133-*`, `judge-ab-pilot60-*`). 61,5 % ist damit ein **optimistisch verzerrter
-In-Sample-Wert**, kein generalisierungsfähiger Messwert. Die Records im Ordner belegen
-die Auswahl eins zu eins — das ist der Stand, nicht eine Schönfärberei davon.
-Folgen, die man mitlesen sollte:
-- Die Zeitsplit-Differenz 61,5 % vs. 61,1 % sind **2 Punkte bei n=500** — das ist Rauschen,
-  kein Nachweis. Der Hebel bleibt trotzdem stehen, weil er unabhängig begründet ist.
-- **Abstention wurde nie geübt:** der LongMemEval-S-Split enthält keine solchen Fragen
-  (`abstention: n 0`, `abstention_quote_leer: 0`), obwohl die umgekehrte Wertung existiert.
-  Das ist eine Eigenschaft des Splits, kein Bug — aber die Fähigkeit bleibt unbelegt.
-- Seit diesem Stand kennt der Runner `--offset N` (neu) neben `--limit N`: Tuning auf
-  `--offset 0`, die eingefrorene Konfiguration danach auf dem unberührten Rest
-  (`--offset 400` für die letzten 100). Slice-Läufe bekommen `-offsetN` im Record-Namen und
-  schreiben `offset` ins JSON, damit ein Teillauf nie einen Gesamtlauf überschreibt oder
-  für einen gehalten wird. Ein echter Holdout-Lauf steht noch aus — er ist die einzige
-  Zahl, die 61,5 % ersetzen dürfte.
 
 Weitere Pilot-Messungen (60 stratifizierte Fragen, 29.142 Notizen, 76.871
 Chunks — **nicht** mit den 500er-Zahlen vergleichbar): topk 8 lexikalisch
@@ -133,25 +97,65 @@ sie verdrängt bei engem topk die exakten Treffer · topk 12 35,0 % ·
 | Flag | Wirkung |
 |---|---|
 | `--topk K` | Breite der Retrieval (12 hat sich gegen 8 durchgesetzt) |
-| `--limit N` | nur die ersten N Fragen (Pilotläufe) |
-| `--offset N` | N Fragen am Anfang überspringen — der Holdout-Slice: Tuning auf `--offset 0`, eingefrorene Konfiguration auf dem Rest |
 | `--vektoren` | bettet alle Chunks über die Produkt-Embedding-Queue ein; ohne Ollama lexikalisch |
 | `--zeitsplit` | Zeitfragen werden in Ereignis-Teilfragen zerlegt, Treffer nur ergänzend |
 | `--temporal` | Zeitfragen bekommen einen Timeline-Block (Memory-Daten, Abstände, Spanne) vorangestellt |
 
 ### Nächste Hebel
 
-1. **Holdout vor nächstem Hebel:** Konfiguration einfrieren (topk 32 + Zeitsplit +
-   HyDE + `--temporal`, 14B-Judge), dann `--offset 400` auf den unberührten letzten
-   100 Fragen laufen lassen. Erst dieser Wert darf öffentlich neben die 61,5 %.
-2. Temporal-Tiefe: die Timeline deckt nur geretrieviewte Memories ab — wenn die
+1. Temporal-Tiefe: die Timeline deckt nur geretrieviewte Memories ab — wenn die
    Retrieval ein Ereignis verpasst, ist die Spanne falsch. Kandidat: Zeitsplit +
    Timeline kombiniert (messung offen).
-3. Vektor-Band-Feintuning (Band/Floor der Engine), erst wenn die Vektorspur
+2. Vektor-Band-Feintuning (Band/Floor der Engine), erst wenn die Vektorspur
    netto gewinnt.
-4. Jede Verbesserung wird mit vollem 500er-Lauf und per-question Record
+3. Jede Verbesserung wird mit vollem 500er-Lauf und per-question Record
    veröffentlicht — die Serie ist das Asset.
 
-## Kein Qualitaetswert fuer den ausgelieferten Stand
+## Stand (1.10.2026): 61,5 % — und der größte Sprung kam vom Richter
 
-Kein Qualitaetswert dieser Serie ist eine Messung des ausgelieferten Kerns: jeder Record in diesem Ordner nennt eine `kepta_version` zwischen **2.13.2 und 2.13.22**, ausgeliefert ist **3.4.0** (`package.json`). Das ist kein Widerspruch und keine Auslassung — die Records gelten für den Stand, gegen den sie gefahren wurden, und eine Version, die ohne neuen Lauf steigt, sagt über 3.4.0 nichts: sie hebt keinen dieser Werte auf und entwertet keinen. Bis die Kette gegen den ausgelieferten Stand neu läuft, gilt jeder Wert hier als Protokoll eines aelteren Standes und nicht als Qualitaetswert des Produkts — die Zahlen bleiben in den Records, und `tests/benchmark-belege.test.ts` prueft genau das.
+Alle Läufe unterhalb sind 500-Fragen-Läufe, jeder mit Per-Frage-Record im
+öffentlichen Core-Repo unter `tools/longmemeval/ergebnisse/`:
+
+| Datum | Konfiguration | Richter | LongMemEval-S (500) |
+|---|---|---|---|
+| 22.9. | lexikalisch, topk 8 | llama3.2:3b | 29,2 % |
+| 24.9. | topk 12 | llama3.2:3b | 32,5 % |
+| 24.9. | topk 12 + `--temporal` | llama3.2:3b | 33,2 % |
+| 25.9. | + Vektorspur (`--vektoren`) | llama3.2:3b | 37,0 % |
+| 1.10. | topk 16, Vektorspur | llama3.2:3b | 39,0 % |
+| 1.10. | **dieselbe Engine, nur der Richter getauscht** | qwen2.5:14b-instruct | **54,6 %** |
+| 1.10. | + HyDE | qwen2.5:14b-instruct | 55,0 % |
+| 1.10. | + topk 32 | qwen2.5:14b-instruct | 61,1 % |
+| 1.10. | + `--zeitsplit` | qwen2.5:14b-instruct | **61,5 %** |
+
+**Was die Serie zeigt:** Der einzelne größte Sprung ist keine Retrieval-
+Änderung, sondern das Judge-Modell — 39,0 % mit `llama3.2:3b` gegen 54,6 % mit
+`qwen2.5:14b-instruct` bei identischer Engine. Der A/B auf 60 geschichteten
+Fragen weist es isoliert aus: 42,5 % → 54,2 % (+11,7 pp),
+`judge-ab-pilot60-3b.json` gegen `judge-ab-pilot60-14b.json`. Wer eine Zahl aus
+dieser Serie vergleicht, vergleicht immer auch den Richter.
+
+**Was 61,5 % heißt:** 202 `ja`, 211 `teilweise`, 87 `nein` — ein halber Punkt
+für eine teilweise richtige Antwort. Streng binär (nur `ja`) sind es **40,4 %**.
+Pro Fähigkeit: information_extraction 126 → 84,9 % · multi_session_reasoning
+133 → 50,4 % · temporal_reasoning 133 → 45,5 % · knowledge_updates 78 → 76,9 % ·
+abstention 0 (der Split enthält keine).
+
+**Der Lauf selbst:** `qwen2.5:14b-instruct-q4_K_M`, Ollama 0.33.2, Temperatur 0,
+topk 32, HyDE (569 Erweiterungen), `--zeitsplit` + `--temporal`, Vektorspur an,
+Datensatz `longmemeval_s` SHA-256 `08d8dad4…`, K3PTA 2.13.22, 10.376
+Judge-Aufrufe, 0 Parse-Fehler, 98 min Laufzeit.
+Record: `longmemeval-2026-10-01-08d8dad4-topk32-hyde-zeitsplit-14b.json`.
+
+**Drei Grenzen, die dazugehören:**
+
+1. **In-sample.** Die Schalter (topk, HyDE, Band/Floor) sind auf demselben Split
+   getuned, auf dem gemessen wird. Der Runner im öffentlichen Core-Repo hat seit
+   dem Audit `--offset`, das einen Holdout abschneidet — gelaufen ist der noch
+   nicht. Diese App-Kopie kennt das Flag noch nicht; die Messreihe läuft auf dem
+   Core-Stand.
+2. **Vektorspur an.** `used_vectors: true`; ohne laufenden Embedder fällt die
+   Antwort auf die lexikalische Spur zurück, und die liegt deutlich niedriger.
+3. **Kontext-Suffizienz, kein Leaderboard.** Bewertet wird, ob der gerufene
+   Kontext die Antwort trägt — lokal, ohne Generator-LLM. Das ist nicht die
+   End-to-End-Genauigkeit, mit der Vendor-Benchmarks vergleichen.

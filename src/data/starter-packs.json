@@ -1,0 +1,20 @@
+{
+  "_base": [
+    {
+      "title": "Welcome to K3PTA — local and private",
+      "content": "No login, no cloud. Everything lives in ~/.kepta/kepta.db on this machine. Back it up through System → JSON export. MCP shares the very same store with Claude and Cursor.",
+      "tags": [
+        "start",
+        "system"
+      ]
+    },
+    {
+      "title": "Shortcuts",
+      "content": "⌘K opens the command list. ⌘N saves a new note. Search finds it again, and Graph draws how your notes hang together. The Context number decides how many notes travel with your question — fewer notes in, shorter answer back.",
+      "tags": [
+        "start",
+        "shortcuts"
+      ]
+    }
+  ]
+}

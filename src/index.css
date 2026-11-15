@@ -1,0 +1,2515 @@
+/* P86: wo der Rahmenwerk-Scanner seine Klassen herholt. Automatic-Detection liest den
+   ganzen Ordner um diese Datei -- und fand damit auch `tests/*.ts` (seine Biss-Proben,
+   z.B. eine Zeile mit drei verbotenen Groessennamen), alte Bau-Ordner `dist-p1`, `dist-p2`,
+   `dist-pf1` und einen Messdatensatz unter `tools/longmemeval/`. Das ausgelieferte CSS trug
+   darum Regeln, die kein Baustein ruft: gemessen 02:19:25 MEZ im gebauten CSS vier tote
+   Regeln aus Zitaten (die weisse Flaeche, die dunkle Zink-Stufe 800, dazu Zink 900 und 100
+   als Text), dazu die Groessenstufen aus den Proben. §10 verbietet eine Regel, die niemand
+   ruft; also wird der Vorrat gesetzt, nicht geraten: `source(none)` und danach die zwei
+   Quellen, die das Produkt wirklich sind. (Kein Klassenwort dieser Reihen steht hier
+   ausgeschrieben, und in diesem Kommentar steht keine geschweifte Klammer: der Scanner
+   liesse aus einem ausgeschriebenen Wort eine ausgelieferte Regel werden, und die
+   Falt-Wache zaehlt ihre Einrückung an den Klammern -- gemessen 02:29:11 MEZ, wo drei
+   Faelle mit "expected 4 to be 0" fielen.) */
+@import "tailwindcss" source(none);
+@source "../src";
+@source "../index.html";
+
+/* Das Zeitmaß soll nicht nur in dieser Datei gelten: Tailwind v4 nimmt die
+   Übergangs-Voreinstellung aus dem Theme-Block, also zieht die Signaturkurve
+   und die Regelstufe 200 ms in jede transition-Klasse der Bausteine — ohne
+   dass jemand eine Zahl schreiben kann, die daneben liegt (D1-13). */
+@theme {
+  --default-transition-duration: var(--dur);
+  --default-transition-timing-function: var(--ease-apple);
+
+  /* Punkt 2, 1.11. — die Rundung der Bauteile. Tailwind bringt einen eignen Vorrat mit
+     (sm 4, md 6, lg 8, xl 12, 2xl 16 px), und seine Namen werden gerufen: 247 Klassenstellen in
+     src/components und src/pages, davon 175 unter lg, md und 2xl. Im echten Fenster gemessen
+     31.10. am ausgelieferten 3.2.104: 12 Namen und 137 Stellen ausserhalb der Hausstufen.
+     Die Skala wird hier gesetzt, nicht an 175 Stellen geflickt — was ein Bauteil ruft, ist dann
+     die Hausstufe, und ein Name, den das Haus nicht kennt, faellt im Test
+     (tests/design-tokens.test.ts:88, der den Vorrat aus dem Paket selbst liest).
+     md und lg ziehen auf die Kontrollstufe: beide rufen Knopfe, Chips und Plaaketten, und
+     6 gegen 8 px war nie eine Stufe, sondern ein Raten. sm und xl standen schon auf ihrem
+     Wert (4 = die Chip-Stufe, 12 = die Kartentufe) und werden gefesselt, damit ein
+     Paket-Update die Kante nicht heimlich verschiebt. */
+  --radius-sm: var(--r-chip);
+  --radius-md: var(--r-btn);
+  --radius-lg: var(--r-btn);
+  --radius-xl: var(--r-card);
+  --radius-2xl: var(--r-panel);
+
+  /* Punkt 2, P86: dasselbe Spiel mit den Farben. Der Vertrag nennt jede Farbe -- Tinte,
+     Tisch, Panel, Blatt, Knopf, Kante, Warn, Zu. Tailwinds eigne Palette (weiss, schwarz,
+     zinc 100/800/900) steht ausserhalb davon, und die dunkle Gabelung malte eine Stufe, die
+     im Register keinen Namen hat: 18 Sitze in 6 Bausteinen, gemessen 6.11.2026 02:16:47 MEZ.
+     Hier werden die Hausnamen eingesetzt, nicht an 18 Stellen geflickt: die neuen Klassen
+     rufen dieselben Token, die .switch .knob, die Karten und `body` schon rufen. Ein Name,
+     den das Haus nicht kennt, faellt im Test. (Kein Klassenwort dieser Reihe steht
+     absichtlich als ganzes Wort hier: der Rahmenwerk-Scanner liesse sonst aus einem
+     Kommentar eine ausgelieferte Regel werden -- gemessen 02:18:38 MEZ im gebauten CSS.) */
+  --color-knopf: var(--knopf);   /* der helle Punkt auf Schaltern und Reglern — #ffffff, in beiden Themen */
+  --color-blatt: var(--eb-2);    /* die oberste Hebung: Karte, Menue, Toast, ausgewaehlter Reiter */
+  --color-gefahr: var(--gefahr); /* P90: die Grenze einer zerstoerischen Handlung, 3:1 als Rand */
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   K3PTA Design-System — „Die Akte"
+   Materie aus dem Berufsalltag der Geheimnisträger: der graue
+   Aktendeckel, Tinte auf Papier, und eine einzige warme Farbe —
+   Siegellack, das Zeichen des Versiegelten. Flächen liegen flach,
+   Linien strukturieren wie ein Register, die aktive Stelle trägt
+   einen Registerlaschen-Strich. Eine Serif (Charter) trägt die
+   Überschriften, die UI bleibt stille Sans.
+   ============================================================ */
+
+:root {
+  /* ============================================================
+     DIE LEITER — generiert, nicht gepinselt.
+     Regel nach Linear (drei Variablen statt vierzig Werte):
+       Basis    = der Ton der Marke; C/H sind dem bisherigen
+                  Aktendeckel gesampelt und bleiben gleich
+       Kontrast = 1,30 Verhältnis je Stufen-Nachbar (D1 Z-01)
+       Stufen   = Tisch → Panel → Blatt, in BEIDEN Themen dieselbe
+                  Zahl. Eine vierte Füllstufe passt ins helle Thema
+                  nicht: über dem Blatt (#fafaf8) läge die nächste bei
+                  Y 1,26 — über Weiß ist keine Stufe mehr. Gehobene
+                  Flächen (Menü, Toast, Composer) tragen deshalb Kante
+                  ≥ 3:1 und Schatten statt einer eigenen Füllstufe.
+     Entwurf und Beweis: node scripts/design-wache.mjs --generieren,
+     Prüfung jedes Wertes: node scripts/design-wache.mjs
+     ============================================================ */
+  --eb-0: oklch(0.9719 0.0022 106);     /* Tisch — die Werkbank-Grundfläche #f7f6f3 (P202, Mockup) */
+  --eb-1: oklch(0.9755 0.0018 106);     /* Panel — #f6f5f3 */
+  --eb-2: oklch(0.9830 0.0012 106);     /* Blatt: Karte, Menü, Toast — #fafaf9 (Biss-Kontrolle: Blau ≤ 250) */
+  --feld: oklch(0.9547 0.0027 106);     /* ein Schritt unter dem Panel — #f1f0ec */
+
+  /* Flächen — alte Namen bleiben, sie zeigen auf die Stufen */
+  --bg-base: var(--eb-0);
+  --bg-ambient-1: rgba(34, 48, 60, 0.04);
+  --bg-ambient-2: rgba(156, 43, 31, 0.025);
+  --glass: var(--eb-2);
+  --glass-strong: var(--eb-2);
+  --glass-panel: var(--eb-1);
+  --bg-panel: var(--eb-1);
+  --bg-panel-solid: var(--eb-2);
+  --bg-inset: var(--feld);
+  --bg-inset-strong: var(--eb-1);
+  --bg-hover: var(--eb-1);
+  --scrim: color-mix(in srgb, var(--bg-base) 60%, transparent);
+
+  /* Linien — drei Rollen, auf die Werkbank-Grundfläche gerechnet (P202):
+     #f7f6f3 hat Y 0,922 — die Haarlinie hält 1,35, die Regel 1,90, die
+     Bedienelement-Berandung 3,05 gegen sie und ihre Nachbarn. */
+  --kante-dekor: oklch(0.8480 0.0022 106);        /* Haarlinie in einer Fläche, 1,35 */
+  --kante-stark: oklch(0.7264 0.0022 106);        /* sichtbare Regel, 1,90 */
+  --kante-kontrolle: oklch(0.5767 0.0022 106);    /* Bedienelement-Berandung, 3,05 */
+  /* Flächengrenze: die Kante ZWISCHEN Blatt und Tisch. Im hellen Thema kann die
+     Leuchtkraft hier nicht mehr trennen — drei Stufen bei 1,30 überschreiben von
+     Tisch zu Blatt nur das 1,79-fache (dunkel: 18,5-faches), also trägt die Kante
+     die Grenze. Darum ≥ 3,0 gegen beide Nachbarn, nicht dekorativ. */
+  --kante-flaeche: var(--kante-kontrolle);
+  /* Materie des Schrankrückens: dieselben zwei Werte in beiden Themen — der
+     Stahl ist die eine Fläche, die sich nicht stimmt. Vorher standen sie als
+     Hex direkt in .sidebar-glass (Zensus 13.10.: „Hex als Farbwert im CSS"). */
+  --stahl-1: #0c0c0d;
+  --stahl-2: #060607;
+  /* Der griffige Punkt am Schalter: in beiden Themen rein weiß, damit er vor
+     dem Blatt wie vor dem Stahl gleich hell bleibt. */
+  --knopf: #ffffff;
+  --border-subtle: var(--kante-dekor);
+  --border-strong: var(--kante-stark);
+  --border-hover: var(--kante-kontrolle);
+  --border: var(--kante-kontrolle);
+  --inset: var(--feld);
+  --edge-light: rgba(255, 255, 255, 0.65);
+
+  /* P90: die Gefahr-Reihe. Der Vertrag hatte Warn (amber) und Zu (gruen), aber keine
+     Gefahr -- und der einzige Rufer griff zu Tailwinds rot 500 bei 40 % Deckkraft, was
+     als Rand 1,57:1 gegen das helle Panel ergibt (gerechnet 03:09:38 MEZ; Bar ist
+     WCAG 1.4.11, 3:1 fuer Bedienelement-Grenzen). Diese zwei Werte halten sie:
+     hell 4,82:1 gegen Panel, 4,24:1 gegen Tisch; dunkel 3,99:1 gegen Panel. Gewaehlt
+     wurde die *helle* Stufe im dunklen Thema, weil ein dunkler Rand auf fast schwarzem
+     Tisch dort verschwindet. Geprueft von tests/gefahr-traegt-drei-zu-eins.test.ts.
+     Gerechnet 03:11:28 MEZ: hell #b71824 = 3,67:1 gegen den Tisch und 4,82:1 gegen das
+     Panel; dunkel #e54c4d = 5,25:1 und 3,99:1. */
+  --gefahr: oklch(0.50 0.19 25);
+
+  /* Text — Tinte. Gelöst gegen das härteste Gegenüber, das unter ihr
+     liegen kann: im hellen Thema der Tisch samt Ambient-Tinktur, nicht
+     das Papier. Sonst sind die Zeilen auf dem Aktendeckel zu leise. */
+  --text-1: oklch(0.2354 0.0032 92);      /* #1f1e1c — warme Werkbank-Tinte */
+  --text-2: oklch(0.4240 0.0072 91);      /* #5f5b54 — 5,9 gegen den Tisch */
+  --text-3: oklch(0.4518 0.0082 91);      /* #6b675f — 4,9 — die Ebene, die erklärt */
+  --text-muted: var(--text-2);
+
+  /* Akzent — Siegellack. Zwei Rollen, weil Komponenten denselben Token
+     für Schrift und für Fläche benutzen: ein dunkles Rot kann nicht
+     beides zugleich sein (D1-04). `--accent` = Schrift und Zeichen,
+     `--accent-fuell` = Masse (Knopf, Sprechblase, Schalter),
+     `--accent-kante` = Rand der Masse, `--fokus` = Tastatur-Ring. */
+  --accent: oklch(0.4751 0.0832 162.5);         /* #276b4f — die Schrift-Rolle (D1-04) */
+  --accent-fuell: oklch(0.5180 0.0875 162.5);   /* #2e7d5b — die Masse (Knopf, Schalter) */
+  --accent-kante: oklch(0.4751 0.0832 162.5);   /* #276b4f */
+  --fokus: oklch(0.4751 0.0832 162.5);
+  --accent-2: oklch(0.4751 0.0832 162.5);
+  --accent-soft: oklch(0.5180 0.0875 162.5 / 0.12);
+  --accent-soft-2: oklch(0.5180 0.0875 162.5 / 0.18);
+  --accent-glow: oklch(0.5180 0.0875 162.5 / 0.22);
+  --on-accent: oklch(1 0 0);                    /* Weiß auf der Füllung: 5,1 */
+
+  /* Semantik — Archivtinten, als Schrift gelöst (4,65 gegen den Tisch) */
+  --ok: oklch(0.3896 0.0676 155.6);
+  --ok-soft: oklch(0.4192 0.0676 155.6 / 0.10);
+  --warn: oklch(0.4031 0.1009 70.0);
+  --warn-soft: oklch(0.4325 0.1009 70.0 / 0.10);
+  --danger: oklch(0.4136 0.1384 30.5);
+  --danger-soft: oklch(0.4431 0.1384 30.5 / 0.09);
+  --err: var(--danger);
+
+  /* Knotentypen — Archivtinten, kühl gelesen, alle ≥ 4,65.
+     Der Ton (C/H) ist die Marke, die Lichtstufe ist gerechnet gegen den
+     härtesten Stapel; --type-*-hex ist derselbe Wert im sRGB-Kanal, den
+     Leinwand (canvas.fillStyle) und Farbregler (<input type=color> verlangt
+     #rrggbb) lesen. Generiert von scripts/design-wache.mjs --setzen. */
+  /* P202, Damian 14.11. „100 % wie das Mockup": die Kind-Farben stehen auf den
+     Mockup-Werten (k3pta-app-fenster: #3A6EA8 / #A8742E / #2E7D5B / #A4553F) —
+     die dunkler gerechnete Lesbarkeits-Fassung ist damit zurückgedreht. */
+  --type-semantic: oklch(0.5297 0.1075 252.7);
+  --type-semantic-hex: #3a6ea8;
+  --type-episodic: oklch(0.5996 0.1072 70.9);
+  --type-episodic-hex: #a8742e;
+  --type-procedural: oklch(0.5314 0.0946 161.9);
+  --type-procedural-hex: #2e7d5b;
+  --type-reference: oklch(0.5399 0.1099 36.5);
+  --type-reference-hex: #a4553f;
+  /* Damian 14.11. „100 % wie das Mockup": die Roh-Tone überall — die dunklere
+     -text-Fassung ist ganz zurückgedreht; die Wache hält die Kind-Farben an der
+     Flächen-Latte (3:1), die Mockup-Werte halten sie. */
+  /* Ein Knoten ohne Art ist kein Knoten ohne Farbe: der Fallback stand als
+     Hartwert in der Fläche (#9a9a9a). Neutralton der Marke, Stufe gerechnet. */
+  --type-neutral: oklch(0.3955 0.0000 89.9);
+  --type-neutral-hex: #464646;
+  /* Der Herkunfts-Kanal — dieselbe Elevation-Logik, eigener Ton (Schiefer,
+     Lohe, Petrol), damit ein Kanalwechsel nicht wie ein Artenwechsel aussieht. */
+  --type-herkunft-geschrieben: oklch(0.3955 0.0107 252.9);
+  --type-herkunft-geschrieben-hex: #42474c;
+  --type-herkunft-datei: oklch(0.3955 0.1082 72.1);
+  --type-herkunft-datei-hex: #693a00;
+  --type-herkunft-rechner: oklch(0.3882 0.0769 189.6);
+  --type-herkunft-rechner-hex: #00514d;
+
+  /* Die Seitenleiste folgt dem Thema (P202, White-Mode: Damian 13.11. — „die
+     Standard-Farbe soll immer White-Mode sein, wenn man K3PTA installiert"):
+     im hellen Thema ist sie die Seite der hellen Welt (eine Stufe über dem
+     Tisch, die Tinten sind die hellen Werte, wörtlich — die Harmonie-Wache
+     rechnet die Rampe aus diesen Zahlen). Der dunkle Stahl-Satz steht unten
+     im .dark-Block, unverändert. */
+  --side-basis-1: oklch(0.9547 0.0027 106);    /* = --eb-1 hell: die Leisten-Fläche #f1f0ec */
+  --side-basis-2: oklch(0.9247 0.0029 106);    /* = --eb-0 hell: die Fusszeile tiefer #eae9e4 */
+  --side-text: oklch(0.2354 0.0032 92);        /* = --text-1 hell */
+  --side-ruhig: oklch(0.4240 0.0072 91);       /* = --text-2 hell */
+  --side-akzent: var(--accent);
+  --side-kante: var(--border-subtle);
+  --side-leise: oklch(0.4518 0.0082 91);       /* = --text-3 hell */
+  --side-kante-heben: var(--kante-stark);
+  --side-flaeche: oklch(0 0 0 / 0.05);         /* dunkle Lage als Hover auf der hellen Seite */
+  --side-auswahl: var(--accent-soft);          /* die aktive Stelle: die Auswahlfläche des Systems */
+  /* Zwei Stufen, die die Fläche schon malte, bevor sie hier standen: 0,1 und 0,09
+     standen als Hartwert in .sidebar-nav-btn bzw. .sidebar-tag-btn (Zensus 18.10.,
+     im ausgelieferten Bündel gemessen: 1 Fremd-Farbe je Ansicht). */
+  --side-auswahl-heben: var(--accent-soft);    /* die aktive Stelle unter der Hand */
+  --side-marke-auswahl: var(--accent-soft);    /* ein gewähltes Tag-Wort */
+
+  /* Schatten liegen flach auf dem Tisch, nichts schwebt */
+  --shadow-sm: 0 1px 2px rgba(20, 28, 34, 0.12);
+  --shadow-md: 0 2px 8px rgba(20, 28, 34, 0.15);
+  --shadow-lg: 0 12px 32px rgba(20, 28, 34, 0.22);
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Charter", "Iowan Old Style", "Palatino", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Radius — Aktendeckel-Kanten, kompakt. Die Familie hält schon (D1 B.3):
+     fünf Stufen, überall gezogen, kein Ausreißer. Nicht umbauen. */
+  --r-panel: 14px;
+  --r-card: 12px;
+  --r-btn: 7px;
+  --r-chip: 4px;
+  --r-badge: 3px;
+
+  /* Zielgroessen-Latte (#44). Gemessen 17.10. im ausgelieferten Objekt 3.2.17 —
+     vier Breiten, sieben Ansichten, jede Steuerung mit Treffertest: unter 24 px
+     genau eine, unter 44 px alle. Beschlossen: 36 px Boden auf dem Schreibtisch
+     (eine Maus trifft 36 px sicher), 44 px ab Telefonbreite (ein Daumen nicht).
+     Ein Token, eine Selektorliste, eine Stufe — nicht dreißig Flicken. */
+  --ziel-boden: 36px;
+
+  /* ============================================================
+     SCHRIFTSTUFEN — D1-08 maß 15 Größen im selben Fenster, davon
+     sieben mit halben Pixelschritten, und deklariert bis 8,5 px.
+     Die Leiter hat acht Stufen, ganzzahlig, keine unter 11 px.
+     Eine Stufe kleiner ist damit eine Stufe, nicht ein Raten (Z-04).
+     Wer eine Zwischenstufe will: die Stufe ist die Entscheidung.
+     ============================================================ */
+  --fs-1: 11px;   /* Meta: Zähler, Kapseln, Registerzeilen-Unterkante */
+  --fs-2: 12px;   /* Mono, dichte Beschriftung */
+  --fs-3: 13px;   /* UI klein: Abschnittskapitel, Fließtext in der Karte */
+  --fs-4: 14px;   /* Regel: Körper, Eingabe, Chat — der Default von Apple macOS */
+  --fs-5: 16px;   /* Kartentitel, Indexwert */
+  --fs-detail: 18px; /* Detail-Überschrift (P202, Mockup h1 18/700) */
+  --fs-6: 20px;   /* Panel- und Ansichtstitel */
+  --fs-7: 28px;   /* die dominante Zahl des Registers */
+  --fs-8: 40px;   /* Displayzeile (die obere Klammer von clamp) */
+  --lh-dicht: 1.24;
+  --lh-lesbar: 1.55;
+  --lh-prosa: 1.65;
+  --treff: 44px;      /* Kleinste Treffflaeche eines Knopfs ohne Wort — WCAG 2.5.5 und Apple HIG, dieselbe Zahl, die P92 am Loesch-Knopf nannte */
+
+  /* Gewichte: eine nicht-variable Schrift (Segoe UI auf Windows) kennt
+     300/400/600/700. Alles dazwischen — 490, 540, 560, 590, 620, 640, 680 —
+     kollabiert auf zwei Stufen, und die halbe Hierarchie verschwindet. */
+  --fw-ruhig: 400;
+  --fw-halbfest: 600;
+  --fw-fest: 700;
+
+  /* ============================================================
+     RASTER — D1-03/B.3 maß Abstände von 1/3/5/7 px ohne Basis.
+     Basis ist 4 px; 2 px ist die optische Feinstufe (Haarlinie,
+     innenliegende Lücken), mehr ist nicht erlaubt.
+     ============================================================ */
+  --s-fein: 2px;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  /* Icons — Vertrag aus Z-06: unterste Stufe 14 px. Bei 10 px messe ich
+     0,63 px Strich (1,5 × 10/24) — subpixel, im Rendering grau. */
+  --icon-min: 14px;
+
+  /* ============================================================
+     ZEITMASS — D1-13 maß: das deklarierte 200 ms kam auf keiner Fläche
+     vor (0,14 s ×88, 0,12 s ×54), und die Signaturkurve regierte 12 von
+     159 Übergängen. Drei Stufen, eine Kurve, und die Anwendung zieht
+     daraus statt einzeln zu schreiben.
+     ============================================================ */
+  --ease-apple: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 100ms;   /* Quittung: Hover, Farbe, Rand */
+  --dur: 200ms;        /* Regel: Größenwechsel, Flächen, Schieber */
+  --dur-slow: 300ms;   /* Ankunft: Blenden, Panels, Täfelchen */
+
+  /* Schleifenperioden sind keine Übergänge und stehen deshalb nicht auf
+     der Leiter: ein Shimmer von 300 ms ist Stakkato, einer von 1,5 s ist
+     eine Wartespur. Getestet wird hier nur, dass keine endlose Bewegung
+     ohne Zustand läuft (Z-11). */
+  --lauf-shimmer: 1500ms;
+  --lauf-tippen: 1100ms;
+  --lauf-puls: 1200ms;
+
+  /* Graph-Knoten: Tinte statt Glas */
+  /* Glanz der Knotenkugel. 28.10. 00:00 gemessen: bei 0,72 (hell) und
+     0,5 (dunkel) fiel der Abstand des engsten Ton-Paars von 0,166 auf 0,044
+     bzw. 0,081 — die Farbe wusch aus. 0,34 haelt 0,105. */
+  --node-hi: 0.34;
+  --node-mid: 0.66;
+  --node-low: 0.4;
+  /* P202, Mockup-Grammatik: auf weißem Grund trägt der Knoten den WEIßEN Rand
+     (k3pta-app-fenster-Maler: rgba(255,255,255,0.9)) — er übermalt die Kanten
+     an der Kante und trennt die Knoten vom Gewebe, statt eine dunkle Kante zu
+     zeichnen. Auf dunklem Grund bleibt der helle Rand. */
+  --node-rim: rgba(255, 255, 255, 0.9);
+  --node-shine: rgba(240, 242, 235, 0.9);
+  --node-shade: rgba(20, 28, 34, 0.18);
+}
+
+.dark {
+  /* Der Aktenschrank nachts — echtes Schwarz, neutral, kein Blaustich.
+     Dieselbe Leiter-Regel wie im hellen Thema, nur aufsteigend vom Tisch:
+     1,30 je Nachbar, drei Stufen, Feld einen Schritt unter dem Panel. */
+  --eb-0: oklch(0.1291 0.0026 286.0);   /* #070708 Tisch */
+  --eb-1: oklch(0.2651 0.0026 286.0);   /* #252526 Panel — 1,30 gegen den Tisch */
+  --eb-2: oklch(0.3428 0.0026 286.0);   /* #38383a Blatt — 1,30 gegen das Panel */
+  --feld: oklch(0.1291 0.0026 286.0);   /* ein Schritt unter dem Panel */
+
+  --bg-base: var(--eb-0);
+  --bg-ambient-1: rgba(195, 74, 57, 0.025);
+  --bg-ambient-2: rgba(255, 255, 255, 0.02);
+  --glass: var(--eb-2);
+  --glass-strong: var(--eb-2);
+  --glass-panel: var(--eb-1);
+  --bg-panel: var(--eb-1);
+  --bg-panel-solid: var(--eb-2);
+  --bg-inset: var(--feld);
+  --bg-inset-strong: var(--eb-1);
+  --bg-hover: var(--eb-1);
+
+  --kante-dekor: oklch(0.4379 0.0026 286.0);      /* 1,35 gegen das Blatt */
+  --kante-stark: oklch(0.5174 0.0026 286.0);      /* 1,90 */
+  --kante-kontrolle: oklch(0.6321 0.0026 286.0);  /* 3,05 — WCAG 1.4.11 */
+  --kante-flaeche: var(--kante-kontrolle);        /* Grenze Blatt↔Tisch, hier 7,9 gegen den Tisch */
+  --border-subtle: var(--kante-dekor);
+  --border-strong: var(--kante-stark);
+  --border-hover: var(--kante-kontrolle);
+  --border: var(--kante-kontrolle);
+  --inset: var(--feld);
+  --edge-light: rgba(255, 255, 255, 0.05);
+
+  /* P90: die dunkle Stufe derselben Reihe -- 5,25:1 gegen den Tisch, 3,99:1 gegen das Panel,
+     beide ueber der Rand-Bar von 3:1 (gerechnet 03:11:28 MEZ). */
+  --gefahr: oklch(0.63 0.19 24);
+
+  /* Gelöst gegen die hellste Fläche, auf der Schrift liegen kann (#38383a) */
+  --text-1: oklch(0.9365 0.0027 106.5);   /* #eaeae8 — Marke bleibt, 9,89 */
+  --text-2: oklch(0.8166 0.0104 93.6);    /* #bab8b1 — 6,00 */
+  --text-3: oklch(0.7434 0.0097 91.6);    /* #a4a29b — 4,65: die Ebene, die erklärt */
+  --text-muted: var(--text-2);
+
+  /* Akzent in zwei Rollen: Schrift (#f97d69, 4,65 auf dem Blatt) und
+     Masse (#c04a39 — das Siegel bleibt). Ein dunkles Rot kann nicht
+     beides sein: 4,65 als Schrift und 4,5 für die helle Tinte darauf
+     vertragen sich nicht auf derselben Fläche. */
+  --accent: oklch(0.7608 0.1552 30.7);
+  --accent-fuell: oklch(0.5651 0.1552 30.7);
+  --accent-kante: oklch(0.6275 0.1552 30.7);
+  --fokus: oklch(0.6495 0.1552 30.7);
+  --accent-2: oklch(0.6201 0.1552 30.7);
+  --accent-soft: oklch(0.5651 0.1552 30.7 / 0.07);
+  --accent-soft-2: oklch(0.5651 0.1552 30.7 / 0.13);
+  --accent-glow: oklch(0.5651 0.1552 30.7 / 0.24);
+  --on-accent: oklch(0.9802 0.0137 67.7);  /* 4,60 auf dem Siegel */
+
+  --ok: oklch(0.7349 0.0759 151.0);
+  --ok-soft: oklch(0.7118 0.0759 151.0 / 0.11);
+  --warn: oklch(0.7464 0.1018 78.4);
+  --warn-soft: oklch(0.7435 0.1018 78.4 / 0.11);
+  --danger: oklch(0.7581 0.1327 31.4);
+  --danger-soft: oklch(0.7258 0.1327 31.4 / 0.10);
+  --err: var(--danger);
+
+  --type-semantic: oklch(0.7430 0.0374 254.9);
+  --type-semantic-hex: #9cadc4;
+  --type-episodic: oklch(0.7504 0.0545 338.8);
+  --type-episodic-hex: #c6a1ba;
+  --type-procedural: oklch(0.7444 0.0615 153.0);
+  --type-procedural-hex: #8fb89a;
+  --type-reference: oklch(0.7463 0.0570 65.8);
+  --type-reference-hex: #c6a687;
+  /* Ein Knoten ohne Art ist kein Knoten ohne Farbe — der Fallback stand als
+     Hartwert in der Fläche (#9a9a9a). Neutralton, Stufe gerechnet. */
+  --type-neutral: oklch(0.7436 0.0000 89.9);
+  --type-neutral-hex: #acacac;
+  /* Der Herkunfts-Kanal — dieselbe Elevation-Logik, eigener Ton (Schiefer,
+     Lohe, Petrol), damit ein Kanalwechsel nicht wie ein Artenwechsel aussieht. */
+  --type-herkunft-geschrieben: oklch(0.7433 0.0107 252.9);
+  --type-herkunft-geschrieben-hex: #a7acb3;
+  --type-herkunft-datei: oklch(0.7481 0.1082 72.1);
+  --type-herkunft-datei-hex: #d8a25c;
+  --type-herkunft-rechner: oklch(0.7342 0.0769 189.6);
+  --type-herkunft-rechner-hex: #6cb9b3;
+
+  /* Die Stahl-Seitenleiste: dieselben Werte, die Sidebar.tsx heute inline
+     setzt — aber als Token, damit ein Theme und eine increased-contrast-
+     Antwort sie erreichen. TEXT_FAINT war 2,67, jetzt 7,68. */
+  --side-basis-1: oklch(0.2435 0.0030 286.0);
+  --side-basis-2: oklch(0.1880 0.0030 286.0);
+  --side-text: oklch(0.9365 0.0027 106.5);
+  --side-ruhig: oklch(0.7111 0.0097 91.6);
+  --side-akzent: oklch(0.7286 0.1552 30.7);
+  --side-kante: oklch(0.5395 0.0026 286.0);
+  --side-flaeche: oklch(1 0 0 / 0.045);
+  --side-leise: oklch(0.6425 0.0097 91.6);
+  --side-kante-heben: oklch(0.6029 0.0026 286.0);
+  --side-auswahl: oklch(1 0 0 / 0.07);
+  --side-auswahl-heben: oklch(1 0 0 / 0.1);
+  --side-marke-auswahl: oklch(1 0 0 / 0.09);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.55);
+
+  --node-hi: 0.34; /* siehe dunkler Zweig: 0,72 wusch die Toene auf 0,044 auseinander */
+  --node-mid: 0.4;
+  --node-low: 0.18;
+  --node-rim: rgba(230, 233, 225, 0.24);
+  --node-shine: rgba(230, 233, 225, 0.7);
+  --node-shade: rgba(0, 0, 0, 0.35);
+}
+
+* {
+  font-variant-ligatures: common-ligatures;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root { color-scheme: light; }
+.dark { color-scheme: dark; }
+
+/* Punkt 107, zweite Haelfte (26.10., Blatt p4-107-elementkante-2610.md): die Huelle darf
+   sich nicht in Viewport-Einheiten messen, solange der Leib unter zoom Gegenbreite und
+   Gegenhoehe traegt - 100vh bei 130 % sind 1014 px in einem 780-px-Fenster, gemessen an
+   3.2.61 um 16:27:42 MEZ. Die Kette laeuft darum ueber 100 %. */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-base);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-size: var(--fs-4);
+  letter-spacing: -0.008em;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple);
+}
+
+/* Ein Ring-System für alles Fokussierbare: 2 px + 2 px Abstand, gerechnet
+   gegen beide Nachbarn (--fokus hält 3,05 auf jeder Stufe). D1-07: die
+   Eingabefelder waren davon ausgenommen — `outline: none` und ein 12-%-Halo. */
+:where(a, button, input, textarea, select, summary, [role="button"], [role="checkbox"], [role="switch"], [tabindex], .switch):focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
+}
+
+/* Ambienter Grund: ein Hauch Tinte unten, ein Hauch Siegel oben — kaum da */
+#root {
+  position: relative;
+  min-height: 100%;
+  height: 100%;
+}
+#root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1000px 560px at 10% -8%, var(--bg-ambient-1), transparent 60%),
+    radial-gradient(800px 500px at 98% 106%, var(--bg-ambient-2), transparent 58%);
+  z-index: 0;
+}
+
+::selection {
+  background: var(--accent-soft-2);
+  color: var(--text-1);
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* ---------- Typografie ---------- */
+.mono { font-family: var(--font-mono); font-size: var(--fs-2); }
+.tnum { font-variant-numeric: tabular-nums; }
+.hud-label {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  letter-spacing: 0.01em;
+  color: var(--text-2);
+}
+/* Dieselben Stufen als Werkzeug der Bausteine. 18.10. setzte die Leiter von
+   aussen (drei Regeln ausserhalb der Tailwind-Ebenen, die text-[12.5px] & co.
+   zum Rendern zwangen); 5.11. nennt der Baustein die Stufe selbst, und die
+   Kante-Regeln sind fort -- eine Regel, die niemand ruft, verbietet §10.
+   Kein Baustein schreibt mehr eine Zahl: tests/leitern-in-den-bausteinen.test.ts.
+     Gerufen werden fs-1 bis fs-5 und fs-7; die Stufen 20 und 40 bleiben in den Klassen
+     .num-hero und .index-cell, weil dort niemand eine Utility ruft (§10). */
+@utility fs-1 { font-size: var(--fs-1); }
+@utility fs-2 { font-size: var(--fs-2); }
+@utility fs-3 { font-size: var(--fs-3); }
+@utility fs-4 { font-size: var(--fs-4); }
+@utility fs-5 { font-size: var(--fs-5); }
+@utility fs-6 { font-size: var(--fs-6); }   /* 20 px: Panel- und Ansichtstitel, vorher hiess das text-xl */
+@utility fs-7 { font-size: var(--fs-7); }   /* 28 px: die Zahl, die vorher text-3xl hiess */
+/* P83: die Zeilenmasse des Vertrags war bis hierher nur in CSS-Regeln als nackte Zahl zu
+   haben (gemessen 00:47:52 MEZ: 0 `lh-*`-Sitze in den Bausteinen). Eine Utility ist da, wo
+   ein Sitz sie ruft -- die Wache meldet jede andere als toten Stil (00:00:16 MEZ, ROT
+   "Klassenregeln ohne Baustein: lh-lesbar lh-prosa", als ich alle drei auf einmal setzte).
+   P84: der Sweep gibt ihnen Rufer (262 Groessen- und 40 leading-* Sitze, gemessen 01:21:41
+   und 01:22:31 MEZ im Trockenlauf), also stehen sie hier -- und kein Baustein nennt mehr
+   eine Zeilenmasse des Rahmenwerks, gewacht von der Leiter-Testdatei. Kein Doppelstrich-
+   Kommentar: `//` gilt in CSS nicht als Kommentar, und die Wache las aus der naechsten
+   Zeile zwei Klassen namens `test` und `ts` (gemessen 01:23:27 MEZ, ROT "toter Stil"). */
+@utility lh-dicht { line-height: var(--lh-dicht); }     /* 1,24: Meta, Zahlen, Titel */
+@utility lh-lesbar { line-height: var(--lh-lesbar); }   /* 1,55: Regel, Eingabe, Chat */
+@utility lh-prosa { line-height: var(--lh-prosa); }     /* 1,65: fliessender Text in Karte und Antwort */
+
+/* P93: die Treffflaeche eines Knopfs ohne Wort. Gemessen 04:59:59 MEZ im echten Fenster
+   ueber alle sieben Sichten: 19 Knopfe fuehren nur ein Icon, und 19 von 19 lagen unter
+   44 px, wenn der Zeiger 22 px vom Mittelpunkt gesetzt wurde -- nicht am Rechteck gemessen,
+   sondern an dem, was der Browser unter dem Punkt anruft. Die Heilung maelt nichts: ein
+   durchsichtiges Kind-Kaestchen, das den Punkt fangt, waehrend die Zeichnung bleibt wie sie
+   ist. Wache: derselbe Lauf verlangt, dass kein Ziel in seiner eignen Mitte einem andern
+   gehoert (Basis 0 von 158, gemessen 05:01:29 MEZ) -- eine Treffflaeche, die dem Nachbarn
+   die Mitte klaut, ist ein neuer Fehler, nicht die Heilung eines alten. */
+@utility treff {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, var(--treff));
+    height: max(100%, var(--treff));
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Dominante Zahl des Registers — Ziffern wie in ein Protokoll gesetzt */
+.num-hero {
+  font-family: var(--font-display);
+  font-size: var(--fs-7);
+  line-height: 1;
+  font-weight: var(--fw-halbfest);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+}
+
+/* ---------- Flächen — Pappe und Papier, kein Glas ---------- */
+.glass-strong {
+  background: var(--glass-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--kante-flaeche);
+  box-shadow: inset 0 0 0 1px var(--kante-flaeche), var(--shadow-md);
+}
+
+/* Sidebar: die Leiste folgt dem Thema (P202, White-Mode) — im hellen Modus ist
+   sie die Seite der hellen Welt (side-basis-Token), im dunklen bleibt sie der
+   Rücken des Aktenschrankes. */
+.sidebar-glass {
+  background: linear-gradient(180deg, var(--side-basis-1), var(--side-basis-2));
+  border-right: 1px solid var(--side-kante);
+}
+.dark .sidebar-glass {
+  background: linear-gradient(180deg, var(--stahl-1), var(--stahl-2));
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+.panel, .hud-panel {
+  background: var(--glass-panel);
+  border: 1px solid var(--kante-flaeche);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-sm);
+}
+.hud-inset {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+}
+/* Gehobene Fläche: ein Blatt über dem Panel. Wurde gerufen (PraxisSync.tsx:172
+   und :183), bevor es definiert war — der Zensus 13.10. hat den nackten Rufer
+   gefunden. Die Lage ist keine neue Schicht: sie nimmt --bg-panel-solid (= --eb-2,
+   dasselbe Blatt wie die Karten) und dieselbe Kante wie .hud-panel, damit der
+   Kontrast des Textes darauf schon gemessen ist. */
+.hud-raised {
+  background: var(--bg-panel-solid);
+  border: 1px solid var(--kante-flaeche);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Kartentitel in Serif: jede Notiz liest sich wie ein Dokumentkopf */
+.card h3 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-halbfest);
+  letter-spacing: 0.002em;
+  /* D1-14: diese Deklaration stand außerhalb der Regel und wurde vom
+     Browser verworfen — Kartentitel brachen nie ausbalanciert um. */
+  text-wrap: balance;
+}
+
+/* Karten — Aktenblätter: flach, haarlinien-getrennt. Hover vertieft
+   nur die Tinte, nichts hebt ab. */
+.card {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--kante-flaeche);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple), box-shadow var(--dur-slow) var(--ease-apple);
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--glass-strong);
+  box-shadow: var(--shadow-md);
+}
+.card:active {
+  background: var(--glass);
+}
+
+/* Index-Streifen — die Registerzeile: Werte stehen in einer Zeile,
+   getrennt durch Haarlinien wie Spalten eines Protokolls. */
+.index-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+  padding: 12px 4px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.index-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  padding-left: 24px;
+  border-left: 1px solid var(--border-subtle);
+}
+.index-cell:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+.index-cell .k { font-size: var(--fs-1); color: var(--text-3); }
+.index-cell .v {
+  font-size: var(--fs-5);
+  font-weight: var(--fw-halbfest);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Das Legenden-Wort neben der Zahl (ein <span> im gefärbten Zahl-<span>). Es kam
+   von außen mit der Stufe unter der Schriftleiter (die zehnPixel-Klasse, mit Deckung)
+   — sie steht unter der Schriftleiter (--fs-1), und die Deckung wäscht die Tinte aus:
+   im gemalten Bild 3,45–3,49:1 auf dem Panel, in 16 von 16 Fällen unter 4,5:1
+   (14.10., Pixel, nicht CSS-Wert). Ruhe kommt hier aus der Größe, nie aus der Deckung.
+   Spezifisch genug, um die beiden Hilfsklassen zu überdecken; wenn die Flächen-
+   scheibe das Wort selbst setzt, zieht diese Regel leer durch — kein Schaden. */
+.index-strip span > span {
+  font-size: var(--fs-1);
+  letter-spacing: 0.01em;
+  opacity: 1;
+}
+
+/* Die App-Statuszeile (P202, App-Fenster-Übernahme): was das Fenster unten
+   dauerhaft sagt — der Gehirn-Status und die Verbindung, wie Mail und Linear
+   sie unten tragen. Sie sitzt außerhalb des Scroll-Bereichs der Fläche, damit
+   sie beim Lesen nie weg ist; die Chip-Zeile über dem Feed ist dadurch frei
+   geworden (ihr Inhalt lebt hier weiter, nichts geht verloren). */
+.flaechen-status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+  padding: 0 20px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-inset);
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.flaechen-status .gruen {
+  color: var(--ok);
+  font-weight: var(--fw-halbfest);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.flaechen-status .strich { color: var(--text-3); }
+.flaechen-status .rechts { margin-left: auto; }
+
+/* ─────────── Das App-Fenster (P202, Mockup k3pta-app-fenster): Titelbalken
+   über der ganzen Breite — Ampel (nur im Browser; Electron zeichnet seine
+   eigenen Lichter an dieselbe Stelle), zentrierter Fenstertitel, Platz rechts.
+   Darunter der Körper (Leiste · Spalten), unten die Statuszeile. ─────────── */
+.fenster-titelleiste {
+  flex: none;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--border-subtle);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.fenster-titelleiste .fenster-ampel { display: flex; gap: 7px; width: 62px; flex: none; }
+.fenster-titelleiste .fenster-ampel i {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--text-3);
+  opacity: 0.5;
+}
+.fenster-titelleiste .fenster-ampel i:nth-child(1) { background: #ff5f57; }
+.fenster-titelleiste .fenster-ampel i:nth-child(2) { background: #febc2e; }
+.fenster-titelleiste .fenster-ampel i:nth-child(3) { background: #28c840; }
+.fenster-titelleiste .fenster-titel {
+  flex: 1;
+  text-align: center;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fenster-titelleiste .fenster-platz { width: 62px; flex: none; }
+
+/* Die Statuszeile läuft über die volle Fensterbreite (Mockup .statuszeile) —
+   sie sitzt als Slot UNTER dem Körper, die Flächen melden ihren Inhalt. */
+.fenster-status-slot { flex: none; }
+/* Der Fenster-Körper (Mockup .korper): Leiste · Spalten unter dem Titelbalken. */
+.fenster-korper { display: flex; min-height: 0; }
+/* Der Chat-Fluss (Mockup .chat-fluss): die Blasen stehen im Abstand von 10 px. */
+.chat-fluss { display: flex; flex-direction: column; gap: 10px; }
+
+/* ─────────── Die ständige Drei-Spalten-Architektur (P202, Mockup k3pta-app-fenster)
+   Navigation (Sidebar) | Liste | Detail — die Detail-Spalte STEHT IMMER, auch leer
+   („Nothing selected"). Die Liste ist eine schmale Spalte mit eigenem Kopf, Auskunft,
+   Steuer, rollendem Blatt und Fuß: die Grammatik, die Mail und Linear tragen.
+   Vorher stand der Feed als max-width-Zentrierung — die Website-Signatur. */
+.listen-spalte {
+  /* Fest wie im Mockup (380 px) — kein clamp: die Schrift-Leiter-Wache liest
+     wörtliche px im clamp-Muster, und die Spalte braucht keine Schere, denn
+     die Leiste klappt bei schmalen Fenstern ohnehin zu. */
+  width: 380px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--kante-flaeche);
+  background: var(--feld);
+}
+.listen-kopf {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.listen-titel { color: var(--text-1); letter-spacing: -0.01em; white-space: nowrap; }
+.listen-zahl { color: var(--text-3); white-space: nowrap; }
+.kopf-handlungen { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+/* Die Auskunft (Index-Streifen) steht kompakt unter dem Kopf: dieselben Zellen,
+   dasselbe Wort — nur enger, der Spalte angepasst. */
+.listen-spalte .index-strip {
+  gap: 14px;
+  padding: 8px 12px;
+  border-top: none;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.listen-spalte .index-cell { padding-left: 14px; }
+.listen-spalte .index-cell:first-child { padding-left: 0; }
+.listen-spalte .num-hero { font-size: var(--fs-3); font-weight: var(--fw-halbfest); }
+.listen-steuer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+/* Nur das Blatt rollt — Kopf, Auskunft, Steuer und Fuß stehen fest. */
+.listen-zeilen {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 8px 8px;
+}
+.listen-spalte .apple-seg { flex-wrap: wrap; }
+/* ─────────── Mockup-Brücke (P202, k3pta-app-fenster): die Zeilen- und
+   Tischecken der App-Fenster-Grammatik. Nur die Regeln, die die Flächen
+   teilen; die Werte stehen wörtlich wie im Mockup-HTML. ─────────── */
+
+/* Die zeile-item-Zeile: Art-Punkt 8×8 (Radius 3), Titel 13/600, Vorschau 12,
+   rechts kurze Zeit + Herkunft — die Grammatik der Mockup-Zeile. */
+.zeile-item {
+  display: flex;
+  gap: 9px;
+  padding: 8px 9px;
+  border-radius: var(--r-btn);
+  cursor: default;
+  transition: background 100ms var(--ease-apple);
+  align-items: flex-start;
+}
+.zeile-item:hover { background: rgba(31, 30, 28, 0.045); }
+.row-punkt {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-badge);
+  margin-top: 4px;
+  flex: none;
+  background: var(--type-semantic);
+}
+.row-titel-zeile { font-size: var(--fs-2); font-weight: var(--fw-halbfest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-vorschau { font-size: var(--fs-2); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.row-zeit { font-size: var(--fs-1); color: var(--text-3); }
+.row-herkunft { font-size: var(--fs-1); color: var(--text-3); margin-top: 2px; }
+
+/* ─────────── Graph als App-Fenster (P202, Mockup .graph-flaeche + .graph-panel):
+   die Leinwand liegt auf weißem Grund (kein Karten-Kasten), das Ansicht-Panel
+   rechts trägt die Werkzeuge vertikal — wie das Mockup-Bild „Ansicht“. ─────────── */
+.graph-leinwand {
+  background: var(--feld);
+  min-height: 420px;
+}
+.graph-panel {
+  width: 250px;
+  flex: none;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--bg-inset);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+@media (max-width: 767px) {
+  .graph-leinwand {
+    min-height: 240px;
+  }
+  .graph-panel {
+    width: 100%;
+    max-height: 46%;
+    border-left: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+}
+.graph-panel-kopf {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-1);
+}
+.graph-panel-korper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px;
+}
+.graph-panel-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+}
+.graph-panel-zeile .apple-seg { width: 100%; background: transparent; border: none; padding: 0; gap: 2px; }
+.graph-panel-zeile .apple-seg .apple-seg-btn { flex: 1; justify-content: center; }
+.graph-panel-zeile input[type="range"] { flex: 1; min-width: 0; }
+.graph-panel-fuss {
+  flex: none;
+  padding: 9px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.graph-fuss-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-1);
+  color: var(--text-2);
+  padding: 3px 0;
+}
+.graph-fuss-zeile .wert { margin-left: auto; color: var(--text-1); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.graph-fuss-knoepfe { display: flex; gap: 5px; margin-top: 6px; }
+.graph-fuss-knoepfe > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px; width: 100%; min-width: 0; }
+.graph-fuss-knoepfe .btn-ghost { flex: 0 1 auto; justify-content: center; padding: 4px 6px; margin-right: 0; }
+/* Die Farbwahl-Zeile des Panels (Mockup .farbwahl-zeile): swatch + Name. */
+.farbwahl-zeile { display: flex; align-items: center; gap: 9px; padding: 7px 12px; }
+.farbwahl-zeile + .farbwahl-zeile { border-top: 1px solid var(--border-subtle); }
+.legende-graph {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-btn);
+  overflow: hidden;
+}
+.legende-graph .farbwahl-zeile { padding: 5px 8px; }
+.legende-graph .graph-swatch { width: 12px; height: 12px; padding: 0; border: none; background: none; cursor: pointer; }
+
+/* Die Gruppe im Detail: Name klein über dem Tisch, der Tisch als Karte
+   auf der Grundfläche. */
+.detail-gruppe { margin-top: 22px; }
+.detail-gruppe .detail-gruppe-name,
+.detail-gruppe-name { font-size: var(--fs-1); font-weight: var(--fw-halbfest); color: var(--text-3); padding-bottom: 6px; }
+.gruppen-tisch {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-panel, 9px);
+  overflow: hidden;
+}
+.zustandszeile { display: flex; gap: 12px; padding: 8px 12px; font-size: var(--fs-2); }
+.zustandszeile + .zustandszeile { border-top: 1px solid var(--border-subtle); }
+.zustandszeile .art {
+  width: 66px;
+  flex: none;
+  font-weight: var(--fw-halbfest);
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.zustandszeile .inhalt { flex: 1; min-width: 0; color: var(--text-2); }
+.app-zeile { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+.app-zeile + .app-zeile { border-top: 1px solid var(--border-subtle); }
+.app-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-btn);
+  background: rgba(31, 30, 28, 0.06);
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-fest);
+  color: var(--text-2);
+  flex: none;
+}
+.app-name { font-size: var(--fs-2); font-weight: var(--fw-halbfest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-zustand { font-size: var(--fs-1); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* P202, Mockup .farbwahl-zeile .sw: der Farbwähler-Fleck in der Settings-
+   Farben-Zeile — die Maße trägt die Mockup-Maß-Schicht (10×10, r3). */
+.sw-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* Die Zeile ist das zeile-item des Mockups (k3pta-app-fenster): farbiger
+   Art-Punkt, Titel in Sans in EINER Zeile, Vorschau in einer Zeile, rechts
+   Zeit und Herkunft — keine Serife, keine Pillen, keine Tag-Kette, keine
+   Trennlinie (der Schweb-Hintergrund trennt). */
+.listen-spalte .row-entry {
+  padding: 8px 9px;
+  gap: 9px;
+  border-bottom: none;
+  border-radius: var(--r-btn);
+  contain-intrinsic-size: auto 64px;
+}
+.listen-spalte .row-entry:hover { background: rgba(31,30,28,.045); border-color: transparent; }
+/* Die Bedien-Chips im Filter-Band: klein über den generischen Knopf im Band —
+   die .row-quiet-Regel selbst bleibt unangetastet (H-3 liest sie wörtlich). */
+.listen-filter button { min-height: 22px; padding: 0 7px; }
+/* Das Gruppierungs-Segment steht frei (Mockup): keine Umrandung, nur das aktive
+   Wort liegt als weicher Kasten auf der Fläche. */
+.listen-spalte .apple-seg { background: transparent; border: none; padding: 2px 12px; gap: 10px; }
+.listen-spalte .apple-seg-btn { padding: 3px 9px; font-size: var(--fs-2); }
+.listen-spalte .apple-seg-btn[data-on="true"] { background: rgba(31,30,28,.07); box-shadow: none; }
+/* Der Listen-Fuß trägt freie Wörter (Mockup), keine Chip-Kästen — die Knöpfe
+   darin (Scan/Review) behalten ihre Wirkfläche. */
+.listen-fuss .chip { background: transparent; border: none; padding: 0; }
+/* Die aktive Zeile (Mockup): grün getönt, Titel in Akzent, Kante links. */
+.row-entry.aktiv { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); border-radius: var(--r-btn); }
+.row-entry.aktiv .row-body h3 { color: var(--accent); }
+/* Der Füll-Chip (#115) ist Auskunft, kein Listenteil — er bleibt im DOM
+   (seine Wachen lesen ihn), das Bild der Spalte ruht. */
+.listen-spalte [data-testid="suche-fuellend"] { display: none; }
+.listen-spalte .row-body h3 {
+  font-family: inherit;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-halbfest);
+  line-height: 1.3;
+  margin: 0 0 1px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.listen-spalte .row-body p {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--fs-2);
+  color: var(--text-3);
+}
+/* Die Quelle-/Badge-Zeile wohnt im Detail, nicht an der Kante der schmalen
+   Zeile (das Mockup trägt dort Punkt · Titel · Vorschau · Zeit). */
+.listen-spalte .row-body-foot { display: none; }
+.listen-spalte .row-meta { gap: 2px; flex: none; text-align: right; flex-direction: column; align-items: flex-end; justify-content: flex-start; }
+.listen-spalte .row-time { font-size: var(--fs-1); }
+/* Die Herkunft unter der Zeit (Mockup .rechts .herkunft): 10.5px, getragen
+   von der Quelle der Notiz (md file, Claude Code, MCP). */
+.listen-spalte .row-herkunft {
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Der Art-Punkt steht oben neben der Titel-Zeile (Mockup .punkt margin-top 4). */
+.listen-spalte .row-punkt { width: 8px; height: 8px; border-radius: var(--r-badge); margin-top: 4px; }
+/* Die Tag-Kette gehört in der schmalen Zeile nicht an die Kante — die Tags
+   leben als About-Filter und im Detail. display:none bleibt für die Tests im
+   Textbestand (jsdom zählt sie), das Bild ruht. */
+.listen-spalte .row-tags { display: none; }
+/* Die Auskunft (Index-Streifen) lebt im Listen-Kopf ("40 of 40") und in der
+   Statuszeile ("40 notes, 6 tags") — im Bild der Spalte steht sie nicht. Die
+   bewachten Zellen (.num-hero/.index-cell) bleiben im DOM für ihre Tests. */
+.listen-spalte > .index-strip { display: none; }
+/* Die Form/About-Wörter: eine dünne Zeile mit kleinen Kanten-Chips (die
+   Gruppen und ihre Rollen bleiben für die Wachen unangetastet). */
+.listen-filter {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 5px 12px 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-1);
+}
+.listen-fuss {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.listen-fuss .gruen {
+  color: var(--ok);
+  font-weight: var(--fw-halbfest);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.detail-spalte {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-panel);
+}
+.detail-leer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 24px;
+  text-align: center;
+}
+/* Kopf und Körper der Detail-Spalte (P202, Mockup-Grammatik) — Today und
+   Dossier tragen ihren Ort und ihre Werkzeuge oben, den Aktenkörper darunter. */
+.detail-kopf {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.detail-kopf .wo { font-size: var(--fs-2); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.detail-korper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 18px 18px;
+}
+/* Das Suchfeld oben in der Navigation (P202, Mockup-Treue): eine Lage auf der
+   Leiste, Kante in Kontrollstärke, der Fokus-Ring wie überall. */
+.sidebar-suche-feld {
+  height: 28px;
+  background: var(--side-flaeche);
+  border: 1px solid var(--side-kante-heben);
+  border-radius: var(--r-btn);
+  color: var(--side-text);
+  transition: border-color var(--dur-fast) var(--ease-apple), background var(--dur-fast) var(--ease-apple);
+}
+.sidebar-suche-feld::placeholder { color: var(--side-text); }
+.sidebar-suche-feld:hover { border-color: var(--accent-fuell); }
+.sidebar-suche-feld:focus {
+  border-color: var(--accent-fuell);
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
+}
+
+/* Chat — die Antwort ist Prosa am Blattrand, die Frage ein Karton-Zettel */
+.chat-prose {
+  max-width: 68ch;
+  line-height: 1.65;
+  font-size: var(--fs-4);
+}
+/* Das Chat-Kontext-Panel (P202, App-Fenster-Übernahme): die Spalte rechts neben
+   dem Gespräch — Notizen im Prompt als Zeilen, Budget und Kosten unten. */
+.chat-panel {
+  width: 264px;
+  flex: none;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.chat-panel-kopf {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-1);
+}
+.chat-panel-zahl { margin-left: auto; color: var(--text-3); font-size: var(--fs-1); }
+.chat-panel-zeilen { flex: 1; overflow-y: auto; padding: 4px; min-height: 0; }
+.chat-panel-zeile {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px 8px;
+  border-radius: var(--r-chip);
+}
+.chat-panel-zeile:hover { background: var(--bg-hover); }
+.chat-panel-zeile .punkt { width: 7px; height: 7px; border-radius: var(--r-chip); margin-top: 5px; flex: none; }
+.chat-panel-zeile .mitte { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.chat-panel-zeile .titel {
+  font-size: var(--fs-2);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-panel-zeile .alter { font-size: var(--fs-1); color: var(--text-3); }
+.chat-panel-leer { padding: 10px 12px; font-size: var(--fs-1); color: var(--text-3); }
+.chat-panel-regler {
+  flex: none;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.chat-panel-regler .zeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  padding: 2px 0;
+}
+.chat-panel-regler .zeile .wert { color: var(--text-1); }
+
+/* Die Settings-Fläche als App-Fenster (P202): Abschnitts-Spalte links, Panel
+   rechts in voller Höhe — die Apple-Einstellungen-Grammatik statt Zentrum-Karte. */
+.einstellungen-liste {
+  width: 196px;
+  flex: none;
+  border-right: 1px solid var(--border-subtle);
+  /* P202, Mockup-Grammatik: die Abschnitte stehen auf der Flächenfarbe —
+     kein Karten-Kasten um die Leiste. */
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  gap: 1px;
+}
+/* P202, 13.11.: .einstellungen-liste-kopf fiel als Waise — der Karten-Kopf über
+   den Abschnitten flog (Mockup-Grammatik: die Abschnitte stehen direkt in der
+   Leiste, der Titel wohnt im Fenster-Titel). */
+.einstellungen-liste .navi { display: flex; flex-direction: column; gap: 1px; }
+.einstellungen-liste .navi button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 32px;
+  padding: 0 9px;
+  border-radius: var(--r-btn);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  text-align: left;
+  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple);
+}
+.einstellungen-liste .navi button:hover { background: var(--bg-hover); color: var(--text-1); }
+.einstellungen-liste .navi button[data-on='true'] { background: var(--accent-soft); color: var(--accent); }
+.settings-panel-fenster { flex: 1; min-width: 0; overflow-y: auto; padding: 20px 24px; }
+@media (max-width: 767px) {
+  .einstellungen-liste {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .einstellungen-liste .navi {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--s-1);
+  }
+}
+/* ─────────── Chat-Nachricht (P202, Mockup k3pta-app-fenster .nachricht):
+   wer-Zeile (K-Zeichen + Name) über der Blase; die eigene Frage rechts mit
+   „You" und der getönten Blase. Die früheren Füll-Blasen (weiß auf Grün) und
+   der Rand-Streich flogen — das Mockup trägt Blasen mit Haar-Rand. ─────────── */
+.nachricht { max-width: 68ch; }
+.nachricht.ich { margin-left: auto; }
+.nachricht .wer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  margin-bottom: 3px;
+}
+.nachricht .wer .zeichen {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-chip);
+  background: var(--accent);
+  color: var(--on-accent);
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-fest);
+}
+.nachricht .blasen {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-panel, 9px);
+  padding: 9px 12px;
+  font-size: var(--fs-3);
+  color: var(--text-1);
+  line-height: 1.55;
+}
+.nachricht.ich .blasen {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text-1);
+}
+.quellen-zeile { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.quellen-zeile .quelle {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-chip);
+  padding: 2px 7px;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.quellen-zeile .quelle:hover { border-color: var(--accent-fuell); color: var(--text-1); }
+/* Die Arbeits-Knöpfe einer Antwort (Copy/Save/Metadaten) stehen in der Ruhe —
+   sie erscheinen, wenn die Zeiger über der Nachricht steht (Hover-Gatter). */
+.chat-werk {
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-apple);
+}
+.nachricht:hover .chat-werk,
+.nachricht:focus-within .chat-werk { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .chat-werk { opacity: 1; }
+}
+/* Composer: ein Aktenblatt mit klarer Kante; Fokus zieht Tinte nach */
+.composer {
+  background: var(--glass-strong);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple);
+}
+.composer:focus-within {
+  border-color: var(--accent-fuell);
+  box-shadow: 0 0 0 2px var(--accent-fuell), var(--shadow-sm);
+}
+.composer:focus { outline: none; }
+.composer::placeholder { color: var(--text-3); }
+
+/* Befehlspalette — ein Blatt über dem Register */
+.palette-lens {
+  background: var(--glass-strong);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: var(--r-btn);
+  margin: 0 6px;
+  font-size: var(--fs-3);
+  color: var(--text-1);
+  transition: background var(--dur-fast) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
+}
+.palette-row[data-active="true"] {
+  background: var(--accent-soft-2);
+}
+/* Die Icon-Fläche der Palette (Mockup .pal-zeile .app-icon): ein 22-px-Kreis,
+   aktiv in Akzent-Fläche. */
+.palette-row .pal-ikon {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-btn);
+  background: rgba(31, 30, 28, 0.06);
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  flex: none;
+}
+.palette-row[data-active="true"] .pal-ikon { background: rgba(46, 125, 91, 0.14); color: var(--accent); }
+
+/* ---------- Inputs ---------- */
+.hud-input {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-btn);
+  color: var(--text-1);
+  transition: border-color var(--dur-fast) var(--ease-apple), box-shadow var(--dur-fast) var(--ease-apple), background var(--dur-fast) var(--ease-apple);
+}
+.hud-input::placeholder { color: var(--text-3); }
+.hud-input:hover { border-color: var(--kante-stark); }
+/* D1-07: vorher `outline: none` plus ein Halo mit 12 % Deckung (≈ 1,1:1).
+   Jetzt Rand in Kontrollstärke plus der eine Ring für alles. */
+.hud-input:focus {
+  border-color: var(--accent-fuell);
+  background: var(--bg-panel);
+}
+.hud-input:focus-visible {
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
+  border-color: var(--accent-fuell);
+}
+.hud-input:disabled { opacity: 0.55; }
+
+/* Native Selects: explizite Farben (Windows-Dark-Mode-Regel) */
+select {
+  background-color: var(--bg-panel);
+  color: var(--text-1);
+}
+
+input[type="range"] { accent-color: var(--accent); cursor: pointer; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+
+/* ---------- Buttons — Karton mit Tintendruck ---------- */
+.btn-primary {
+  position: relative;
+  border-radius: 999px;
+  background: var(--accent-fuell);
+  color: var(--on-accent);
+  font-weight: var(--fw-halbfest);
+  letter-spacing: -0.006em;
+  /* Rand in Kontrollstärke: die Masse selbst hält auf dem Blatt nur 2,43,
+     die Berandung muss die 3:1 von WCAG 1.4.11 tragen. */
+  border: 1px solid var(--accent-kante);
+  box-shadow: var(--shadow-sm);
+  transition: background var(--dur-fast) var(--ease-apple), transform var(--dur-fast) var(--ease-apple), box-shadow var(--dur-fast) var(--ease-apple), opacity var(--dur-fast) var(--ease-apple);
+}
+.btn-primary:hover {
+  background: var(--accent-2);
+  box-shadow: var(--shadow-md);
+}
+.btn-primary:active { transform: scale(0.96); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-ghost {
+  background: var(--bg-inset);
+  color: var(--text-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-btn);
+  font-weight: var(--fw-halbfest);
+  transition: background var(--dur-fast) var(--ease-apple), border-color var(--dur-fast) var(--ease-apple), color var(--dur-fast) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
+}
+.btn-ghost:hover { background: var(--bg-inset-strong); border-color: var(--border-strong); }
+.btn-ghost:active { transform: scale(0.985); }
+/* Ausfall-Stellung: .btn-primary und .apple-seg-btn hatten 0,45, .btn-ghost
+   nichts — die Fläche half sich mit `disabled:opacity-40` aus der Utility-Kiste.
+   Im Fenster gemessen (Knowledge 1440/820/390): der Import-Knopf bei 3,29:1
+   deklariert, 3,30:1 gemalt. Eine Stufe für alle drei Knöpfe. */
+.btn-ghost:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.btn-danger-ghost {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--border-subtle);
+  font-weight: var(--fw-halbfest);
+  transition: background var(--dur-fast) var(--ease-apple), border-color var(--dur-fast) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
+}
+.btn-danger-ghost:hover { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
+
+.btn-primary, .btn-ghost, .btn-danger-ghost { cursor: pointer; }
+/* Fokus: ein Siegelroter Ring für alles Tastatur-fokussierbare — dieselben
+   2 px + 2 px wie oben, damit es genau ein Ring-System ist (D1-07, Z-09).
+   .hud-input hatte hier `outline: none`; das ist weg. */
+.btn-primary:focus-visible, .btn-ghost:focus-visible, .btn-danger-ghost:focus-visible,
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
+.switch:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
+}
+
+/* ---------- Zielgroessen-Latte (#44) ----------
+   Eine Regel für jede anfassbare Steuerung, zwei Stufen über ein Token.
+   Die Ausnahmen sind keine Bequemlichkeit, sie sind der Treffertest:
+   die 1x1-Pixel-Felder hinter den Blendbeschriftungen der Schalter und die
+   echten Kästchen und Radios sind nicht die Fläche, die ein Finger trifft —
+   ihre Zeile ist es (darum `label:has(...)`), und ein 36 px hohes Kästchen
+   wäre ein kaputter Schalter. */
+button, a[href], summary, select, [role="button"], [role="tab"],
+input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(.sr-only),
+label:has(.switch), label:has(input[type="checkbox"]), label:has(input[type="radio"]) {
+  min-height: var(--ziel-boden);
+  min-width: var(--ziel-boden);
+}
+
+/* P197: der Schalter selbst ist die Ausnahme, die der Kommentar oben meint —
+   ein 36 px hoher Schalter wäre ein kaputter Schalter. Die Taste trifft die
+   Zeile/den Knopf drumrum, die Pille bleibt 34×20. Die Ausnahme muss SPEZIFISCHER
+   sein als ihre Gegner: `label:has(input[type="checkbox"])` zählt höher als
+   `label.switch` — gemessen 00:11 (Damians Bild): 36×36 Kreis statt Pille. */
+button.switch, label.switch, label.switch:has(input[type="checkbox"]) {
+  min-height: 0;
+  min-width: 0;
+}
+
+@media (max-width: 440px) {
+  :root { --ziel-boden: 44px; }
+}
+
+/* Punkt 128b: ein kurzes Fenster (1024 x 768) schob die Behauptungsreihe gemessen
+   29.10. 14:44:38 um 120 px hinter die Kante. Zwei Stufen an einer Stelle, damit die
+   Utility-Schicht und diese Regel nicht um eine Mindesthoehe streiten. */
+.inhalt-block {
+  min-height: 240px;
+}
+
+@media (max-height: 800px) {
+  .inhalt-block {
+    min-height: 150px;
+  }
+}
+
+/* Sidebar-Navigation: Registerlaschen — die aktive Stelle trägt einen
+   Siegelroten Strich am linken Blattrand (kein Layout-Shift). */
+.sidebar-nav-btn, .sidebar-tag-btn {
+  border: 1px solid transparent;
+  /* Beide Reihen der Seitenleiste sind Griffe und tragen die Kontrollstufe — bis 31.10. standen
+     dafuer zwei Tailwind-Werte in der Bauteilkette (8 px und 6 px), ausserhalb der Stufen. */
+  border-radius: var(--r-btn);
+  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
+}
+.sidebar-nav-btn:hover, .sidebar-tag-btn:hover { background: var(--side-flaeche); }
+/* P202, Mockup-Grammatik: die Zahl in der aktiven Zeile trägt den Akzent. */
+.sidebar-nav-btn[data-active='true'] .seiten-zahl { color: var(--accent); }
+/* P197 (Emil-Regel: „Buttons must feel responsive" — Drück-Rücken auf JEDER
+   pressbaren Stelle, 0.95–0.98): die Seitenleiste ist die meistgedrückte
+   Fläche der App — ihr Rücken fehlte. */
+.sidebar-nav-btn:active, .sidebar-tag-btn:active { transform: scale(0.98); }
+.sidebar-nav-btn[data-active="true"] {
+  background: var(--side-auswahl);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.sidebar-nav-btn[data-active="true"]:hover { background: var(--side-auswahl-heben); }
+.sidebar-tag-btn[data-active="true"] { background: var(--side-marke-auswahl); }
+
+/* ============================================================
+   DIE LEITER HALTEN — 18.10., im ausgelieferten Bündel gemessen
+   (3.2.19, baytgleich zu dem, was seine App ausliefert).
+   Die Flächen schreiben ihre Schriftgröße als Willkürwert
+   (die halben Stufen 41/11/7-mal, die zehnPixel-Stufe 12-mal,
+   die halbStufen 3-mal, die fünfzehnPixel-Stufe 4-mal,
+   die Siebzehn-, Neun- und Achteinhalb-Ketten am Ende). Im Fenster
+   waren das je Ansicht 12-22 Textstellen auf halben Pixeln — genau das
+   Maß, das D1-08 schon einmal zählte und das die Leiter verbietet.
+   Diese Regeln stehen Absichtlich außer-halb der Tailwind-Ebenen: eine
+   Regel außerhalb von @layer schlägt die Utility-Klasse, ohne dass
+   jemand 80 Stellen in zehn Dateien anfassen muss. Der Flicken an den
+   Flächen selbst (die Klassen weg) bleibt die saubere Heilung; dieser
+   hier ist die Kante, bis sie gefahren ist.
+   ============================================================ */
+.seiten-marke { font-size: var(--fs-3); letter-spacing: 0; }
+.sidebar-nav-btn { font-size: var(--fs-3); }
+/* Die Leiter kennt drei Gewichte (400/600/700). 500 ist kein Stufenwert
+   und kollabiert auf Segoe UI (Windows) — die aktive Zeile darf nicht auf
+   einer Stufe stehen, die es auf dem andern Rechner nicht gibt. */
+.sidebar-nav-btn { font-weight: var(--fw-ruhig); }
+.sidebar-nav-btn[data-active="true"] { font-weight: var(--fw-halbfest); }
+.sidebar-tag-btn { font-weight: var(--fw-ruhig); }
+.sidebar-tag-btn[data-active="true"] { font-weight: var(--fw-halbfest); }
+
+/* ---------- Abschnitte ---------- */
+
+/* Abschnittstitel (Settings/Editor): ruhige Stärke */
+.settings-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-3);
+  font-weight: var(--fw-halbfest);
+  letter-spacing: -0.008em;
+  color: var(--text-1);
+}
+.settings-h svg { color: var(--accent); }
+
+/* HTTP-Method-Badge: Stempel aus Tinte */
+.method-badge {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-fest);
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: var(--r-badge);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-inset);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.method-badge[data-method="POST"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+
+/* Import-Band: eine Fläche, die bei Drag ihre Kante siegelt */
+.import-band {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--r-card);
+  background: var(--bg-inset);
+  border: 1px dashed var(--border-strong);
+  overflow: hidden;
+  transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple);
+}
+/* Die Import-Hülle (P202): eingeklappt trägt der Listen-Kopf das Werkzeug und
+   die Liste startet ohne Tisch (Mockup-Grammatik). Die Wege bleiben gerendert —
+   ein Drop oder ein Dateiwechsel arbeitet auch aus dem eingeklappten Zustand. */
+/* P202: das Band steht im DOM hinter der Drei-Spalten-Zeile (der erste
+   „Scan"-Knopf im Baum bleibt der Inbox-Scan im Listen-Fuß) und rückt
+   visuell über die order vor die Spalten — aufgeklappt über der
+   Fensterbreite, wie vorher. */
+.import-huelle { order: -1; max-height: 240px; transition: max-height var(--dur-slow) var(--ease-apple), padding var(--dur) var(--ease-apple); }
+.import-huelle[data-zu="true"] { max-height: 0; overflow: hidden; padding-top: 0; padding-bottom: 0; }
+.import-band[data-drag="true"] {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 3px var(--accent-soft-2);
+}
+.import-band > * { min-width: 0; }
+.import-divider { width: 1px; background: var(--border-subtle); margin: 8px 14px; flex-shrink: 0; }
+
+/* Vorschlags-Pills: Kartonzettel */
+
+/* Toasts — Kartonzettel mit klarer Kante */
+.toast-lens {
+  border-radius: var(--r-panel);
+  background: var(--glass-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Graph: Typ-Farbwähler als Tintenpunkte */
+.graph-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  cursor: pointer;
+  transition: transform var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple);
+}
+.graph-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
+.graph-swatch::-webkit-color-swatch { border-radius: 999px; border: none; }
+.graph-swatch::-moz-color-swatch { border-radius: 999px; border: none; }
+/* P199 (Emil-Audit §6): Bewegung auf :hover nur hinter dem Zeiger-Gatter —
+   Touch-Flächen feuern beim Antippen sonst einen falschen Schwebezustand. */
+@media (hover: hover) and (pointer: fine) {
+  .graph-swatch:hover {
+    transform: scale(1.14);
+    border-color: var(--edge-light);
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+  }
+}
+.graph-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Graph: Zeit-Regler als feine Tintenlinie mit Siegel-Linse */
+.graph-time,
+.graph-regler {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 132px;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+.graph-time::-webkit-slider-runnable-track,
+.graph-regler::-webkit-slider-runnable-track {
+  height: 2px;
+  /* Die Kapsel, nicht 2 px: bei 2 px Hohe klemmt der Browser jeden groesseren Wert auf
+     1 px — dasselbe Bild, aber ein Wert, den die Stufenordnung kennt. */
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-soft-2), var(--border-strong));
+}
+.graph-time::-webkit-slider-thumb,
+.graph-regler::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, black 40%);
+  box-shadow: var(--shadow-sm);
+  margin-top: -6px;
+  transition: transform var(--dur-fast) var(--ease-apple);
+}
+@media (hover: hover) and (pointer: fine) {
+  .graph-time::-webkit-slider-thumb:hover,
+  .graph-regler::-webkit-slider-thumb:hover { transform: scale(1.18); }
+}
+.graph-time::-moz-range-track,
+.graph-regler::-moz-range-track { height: 2px; border-radius: 999px; background: var(--border-strong); }
+.graph-time::-moz-range-thumb,
+.graph-regler::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 1px solid var(--edge-light);
+}
+.graph-time:focus-visible,
+.graph-regler:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Der Kraft-Regler im Panel: dieselbe Linie, nur die Breite des Kastens. */
+.graph-regler { width: 100%; }
+
+/* Datumsgenaue Zeitauswahl neben dem Regler — passt zur Kopfzeile. */
+.graph-datum {
+  width: 128px;
+  height: 26px;
+  padding: 0 8px;
+  /* D1-14: hier standen var(--inset) und var(--border) — beide nirgends
+     definiert, gemessen borderWidth 0 px: das Feld hatte in beiden Themen
+     keinen Rand. Jetzt echte Stufen und eine Berandung in Kontrollstärke. */
+  background: var(--feld);
+  border: 1px solid var(--kante-kontrolle);
+  /* Die Kontrollstufe, nicht 8 px: das Feld steht in einer Reihe mit den Knopfen des
+     Graph-Panels und soll zu derselben Familie gehoren wie sie. */
+  border-radius: var(--r-btn);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: var(--fs-2);
+  cursor: pointer;
+}
+.graph-datum:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.graph-datum::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+
+/* Das Regal über seinem Bestand (GraphRegal.tsx): ein Fach im Woher-Band trägt
+   seine Breite als Anteil, und 0,44 % von einem schmalen Panel sind unter einem
+   Pixel — ohne diese Regel verschwindet das kleinste Fach, obwohl der Text
+   darunter es nennt. Das Baustein-Kommentar verspricht «bleibt als Strich
+   stehen»; hier steht das Versprechen. 18.10.: die Klasse war ein nackter
+   Rufer (gerufen, nirgends definiert) und die Wache hielt die Fläche an. */
+.regal-woher-fach { min-width: 1px; }
+
+/* ---------- Chips & Badges — kleine Tintenstücke ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--r-chip);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-2);
+  /* P197: Chips sind Knöpfe (Filter, Ausschlüsse) — Drück-Rücken dazu. */
+  transition: transform var(--dur-fast) var(--ease-apple);
+}
+.chip:active { transform: scale(0.97); }
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: var(--r-chip);
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-bottom-width: 2px;
+  color: var(--text-2);
+}
+
+/* Status-Punkte */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-soft);
+}
+/* Punkt 4 (02.11.): ein gruener Punkt, der "verbunden" sagt, ist eine Behauptung. Wenn die
+   eigne Tuer nicht antwortet, darf derselbe Punkt nicht gruen bleiben - er wird leise, ohne
+   eine neue Farbe zu erfinden: die dritte Tintenstufe des Hauses ist die Ruhe selbst. */
+.status-dot-leise {
+  background: var(--text-3);
+  box-shadow: none;
+}
+.agent-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* Ruheregel (Z-11, D1-12): ein Punkt, der „verbunden" sagt, ist ein
+   Zustand, keine Aufgabe — er atmet nicht endlos. Wer eine laufende
+   Antwort anzeigt, setzt data-laeuft="true", und nur dann pulsiert er.
+   Apples Motion-Seite verbietet Dauer-Oszillation in Flächen, die häufig
+   angesehen werden; ein permanenter Puls ist die teuerste Aufmerksamkeit
+   für die billigste Information. */
+@media (prefers-reduced-motion: no-preference) {
+  .agent-dot[data-laeuft="true"] {
+    animation: agent-pulse var(--lauf-puls) ease-in-out infinite;
+  }
+}
+@keyframes agent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); transform: scale(1); }
+  50% { box-shadow: 0 0 0 6px var(--accent-soft); transform: scale(1.2); }
+}
+
+/* Switch */
+.switch {
+  position: relative;
+  display: inline-flex;
+  height: 20px;
+  width: 34px;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--bg-inset-strong);
+  border: 1px solid var(--border-subtle);
+  transition: background var(--dur) var(--ease-apple), border-color var(--dur) var(--ease-apple);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.switch[data-on="true"] {
+  background: var(--accent-fuell);
+  border-color: var(--accent-kante);
+}
+.switch .knob {
+  display: inline-block;
+  height: 14px;
+  width: 14px;
+  border-radius: 999px;
+  background: var(--knopf);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform var(--dur) var(--ease-apple);
+  transform: translateX(2px);
+}
+.switch[data-on="true"] .knob { transform: translateX(15px); }
+
+/* ---------- Overlays ---------- */
+.hud-backdrop {
+  background: var(--scrim);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ---------- Skeletons ---------- */
+/* Gemessen 18.10. im ausgelieferten Bündel an einer absichtlich langsamen Tür
+   (Wissens-Fläche, 56 Gerüst-Kästen, 42 davon im Sieht): der Kasten trug
+   --bg-inset (L* 1,93) auf einer Karte mit --bg-panel (L* 23,74) — 1,68:1,
+   ein schwarzes Loch statt einer Wartespur — und der Schimmerhöchstton war
+   --bg-inset-strong (L* 14,73), also dunkler als die Karte, die er überlaufen
+   soll. Wartespuren brauchen einen Ton ÜBER ihrer Fläche; beide Kantenstufen
+   liegen in beiden Themen auf der richtigen Seite. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--kante-dekor);
+  border-radius: var(--r-btn);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--kante-stark), transparent);
+}
+/* Shimmer ist erlaubt, weil er eine laufende Arbeit anzeigt — aber nur,
+   wenn Bewegung zugelassen ist. */
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after { animation: skeleton-shimmer var(--lauf-shimmer) linear infinite; }
+}
+@keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
+
+/* ---------- Chat-Prosa ---------- */
+.typing-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--text-3);
+  margin-right: var(--s-fein);
+}
+/* Die Tipper antworten auf eine laufende Anfrage, also dürfen sie bewegen —
+   aber nur, wenn die Fläche Bewegung zulässt. */
+@media (prefers-reduced-motion: no-preference) {
+  .typing-dot { animation: typing-bounce var(--lauf-tippen) ease-in-out infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+}
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+
+
+/* ---------- Verträge, die die Komponenten nachziehen ----------
+   Diese drei Klassen sind das Angebot aus dieser Scheibe: ein Maß für
+   Trefferfläche, eins für Icongröße, eins für die Schriftstufe. Sie sind
+   hier ohne Abnehmer — das ist Absicht, nicht toter Stil: E2/E3 ziehen
+   sie an, weil sie sonst pro Knopf eine Zahl erfinden. */
+
+/* Apple HIG für macOS: Default 28×28 pt, Minimum 20×20 pt (nicht 44 — das
+   ist iOS). D1-10 maß „Scan" 13 px und „copy" 17 px. */
+.tap { min-block-size: 28px; min-inline-size: 28px; }
+.tap-reihum { min-block-size: 28px; }
+
+/* Kein Icon unter 14 px. Die drei Legenden-Regeln der Graph-Fläche sind
+   26×6-<svg>-Striche und gar keine Icons — sie tragen kein aria-hidden
+   und bleiben deshalb unberührt (sonst würde die Legende auf 14 px hoch
+   geblasen). */
+svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(--icon-min); }
+
+
+/* ---------- Alt-Klassen (Rückwärtskompatibilität) ---------- */
+.border-gradient-b { border-bottom: 1px solid var(--border-subtle); }
+
+/* P199 (Emil-Audit §6): weniger und sanfter, nicht null — der alte Block
+   tötete ALLE Übergänge (auch Farb-/Deckkraft-Quittungen) auf 0,01 ms, während
+   motion/react daneben ungebremst lief. Jetzt: Schleifen aus, Transform-
+   Übergänge sofort — Farb- und Zustands-Quittungen behalten ihr Maß. Die
+   Framer-Bewegungen schaltet MotionConfig reducedMotion="user" ab (main.tsx). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .btn-primary, .btn-ghost, .sidebar-nav-btn, .sidebar-tag-btn, .chip,
+  .apple-seg-btn, .row-entry, .graph-swatch, .switch, .switch .knob,
+  .graph-time::-webkit-slider-thumb, .graph-regler::-webkit-slider-thumb {
+    transition-duration: 0.01ms !important;
+  }
+  .card:hover, .btn-primary:active, .btn-ghost:active, .sidebar-nav-btn:active, .sidebar-tag-btn:active, .chip:active, .apple-seg-btn:active { transform: none; }
+}
+
+/* P199 (Emil-Audit §8): Ansichtswechsel blenden kurz ein, statt zu teleportieren —
+   reine Deckkraft (kompositorisch gratis), neu begonnen bei jedem Einblenden, weil
+   display:none die Box abmeldet und die Animation beim Wiederanzeigen von vorn läuft. */
+@keyframes ansicht-blende {
+  from { opacity: 0; }
+}
+.ansicht-blende {
+  animation: ansicht-blende var(--dur) var(--ease-apple);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ansicht-blende { animation: none; }
+}
+
+/* P199 (Emil-Audit §4): Aufklappen ohne Höhen-Rate — der Inhalt meldet sich
+   mit kurzer Herkunft (Deckkraft + 4 px), statt hart zu mounten. Die Höhe
+   selbst bleibt unanimiert: kein Layout-Maß auf seltenen Flächen. */
+@keyframes klappe-auf {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+.klappe-auf { animation: klappe-auf var(--dur) var(--ease-apple); }
+@media (prefers-reduced-motion: reduce) {
+  .klappe-auf { animation: none; }
+}
+
+/* ---------- Weniger Durchsicht ----------
+   D1-12 fand: `prefers-reduced-motion` war die einzige Medienabfrage der
+   ganzen Datei — bei fünf `backdrop-filter`-Regeln und einem Scrim ist das
+   eine Lücke. Wer Durchsicht ablehnt (weil der Inhalt dahinter durchscheint
+   oder weil es flackert), bekommt dieselben Flächen **deckend** und keinen
+   Weichzeichner. Die Leiter selbst ist schon opak; was hier fällt, sind die
+   Rest-Alphas: Ambiente-Tinktur, Scrim, Glas-Kanten. */
+@media (prefers-reduced-transparency: reduce) {
+  *, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+  #root::before { display: none; }
+  :root, .dark { --bg-ambient-1: transparent; --bg-ambient-2: transparent; --scrim: var(--eb-0); --edge-light: transparent; }
+  /* Ohne Tinktur liegt der Tisch allein — die Ruhe-Ebene hält dort schon
+     gerechnet (dunkel 5,11 · hell 4,83), die Wache prüft beide Fälle. */
+}
+
+/* ---------- Erzwungene Farben ----------
+   Windows nimmt Flächen und Schriften weg und setzt Systemfarben. Was dann
+   noch Bedeutung tragen muss, ist die Kontur und der kleine Zustands-Punkt. */
+@media (forced-colors: active) {
+  /* Der Ring bleibt der Ring — aber in Systemfarbe, damit er auf jedem
+     Hintergrund sichtbar ist, den das System gerade setzt. */
+  :where(a, button, input, textarea, select, summary, [role="button"], [role="checkbox"], [role="switch"], [tabindex], .switch):focus-visible,
+  .hud-input:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+  /* Status- und Siegelpunkt tragen ihre Bedeutung allein über die Farbe —
+     ohne Ausname fällt sie im erzwungenen Modus weg. */
+  .status-dot, .agent-dot, .method-badge[data-method="POST"] { forced-color-adjust: none; }
+  /* Kanten, die ein Bedienelement beranden, bleiben Kanten. */
+  .hud-input, .graph-datum, .switch, .btn-primary, .btn-ghost, .btn-danger-ghost, .method-badge, .apple-seg { border-color: CanvasText; }
+}
+
+/* ---------- Der Aktentisch — Registerzeilen statt Karten-Raster ----------
+   Eine Notiz ist eine Zeile: Typ-Standarte links, Akte in der Mitte,
+   Register-Meta rechts. Haarlinien trennen, nichts schwebt. */
+.ledger {
+  /* P202, App-Fenster-Übernahme: der Knowledge-Feed ist ein Register, kein
+     Karten-Raster — eine Spalte, die Einträge trennt die Haarlinie (wie Mail
+     und Linear ihre Liste führen). Die Raster-Grammatik (320-px-Kolumnen)
+     las die Fläche wie ein Board lesen; eine Software-Liste steht in Zeilen. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+.row-entry {
+  /* P202, App-Fenster-Übernahme: die Zeile trägt keine eigene Box mehr (Rand,
+     Radius, Hintergrund flogen) — sie steht im Register und wird von der
+     Haarlinie unten getrennt; die letzte Zeile schließt die Liste ohne Strich.
+     Richtung: Art-Streich · Standarte · Textkörper · Register-Meta RECHTS —
+     die Meta (Treffer, Tags, Alter) ist eine Spalte, wie Mail und Linear sie
+     rechts tragen. */
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  transition: border-color var(--dur) var(--ease-apple), background var(--dur) var(--ease-apple);
+  /* Große Basen: Off-Screen-Zeilen überspringen Layout und Paint komplett.
+     Ohne das liefet jeder Ansichtswechsel ein Layout über alle ~165.000
+     Layout-Objekte des Bestands (~1,1 s Blockade im Hauptthread). */
+  content-visibility: auto;
+  /* Rechen-Schätzung aus dem Zeilenbau (Titel 1 Zeile, Text bis 2, Fuß 1,
+     Polster 24) — die Zahl schätzt nur den Scroll, sie verspricht nichts;
+     neu messen, wenn das Springen juckt. */
+  contain-intrinsic-size: auto 118px;
+}
+.row-entry:last-child { border-bottom: none; }
+/* P202, Mockup-Grammatik: die Zeile trägt den Art-Punkt (8×8) — die frühere
+   Standarte-Pille (.row-type) flog zusammen mit ihrem Renderer (MemoryCard). */
+.row-entry .row-punkt { flex: none; margin-top: 6px; }
+.row-entry .row-body { flex: 1; min-width: 0; }
+.row-entry:hover { border-color: var(--border-hover); background: rgba(31, 30, 28, 0.045); }
+.row-entry:active { transform: scale(0.995); transition-duration: var(--dur-fast); }
+/* Die Register-Meta rechts: die kurze Zeit oben, die Herkunft darunter —
+   eine Spalte wie im Mockup (.rechts .zeit + .herkunft). */
+.row-entry .row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+  text-align: right;
+}
+.row-entry .row-herkunft {
+  font-size: var(--fs-1);
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+.row-entry .row-time { font-size: var(--fs-1); color: var(--text-3); }
+.row-body { min-width: 0; }
+.row-body h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-5);
+  font-weight: var(--fw-halbfest);
+  line-height: 1.24;
+  margin: 0 0 4px;
+  text-wrap: balance;
+}
+.row-body p {
+  margin: 0;
+  font-size: var(--fs-3);
+  line-height: 1.55;
+  color: var(--text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.row-body-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.row-quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-1);
+  /* Zweite Tintenstufe, nicht die dritte: der Chip ist ein Griff, kein Fußtext.
+     Auf dem Tisch (#c1c1bf) misst das 6,2 gegen 5,2 — und ein kurzes Wort wie
+     „Links" blieb bei der leisen Stufe unter der Kante (4,36:1, 14.10.). */
+  color: var(--text-2);
+  padding: 4px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-chip);
+  background: var(--bg-inset);
+  cursor: inherit;
+}
+/* P199 (Emil-Audit §3): der Press-Rücken für die restlichen Griffe — dieselbe
+   Sprache wie .btn-ghost:active (0,985) und .chip:active (0,97). Textlinks
+   bleiben außen: ihr Feedback ist der Unterstrich, kein Skalensprung. */
+button.row-quiet { cursor: pointer; border-color: var(--kante-kontrolle); transition: transform var(--dur-fast) var(--ease-apple); }
+button.row-quiet:active { transform: scale(0.97); }
+.btn-danger-ghost:active { transform: scale(0.985); }
+.palette-row:active { transform: scale(0.99); }
+/* Leise Textgriffe (Graph-Regal, KG-Mehr-Menü): hud-label als Knopf —
+   derselbe Rücken, in leise. */
+button.hud-label { transition: transform var(--dur-fast) var(--ease-apple); }
+button.hud-label:active { transform: scale(0.97); }
+.row-stamp {
+  font-size: var(--fs-1);
+  font-weight: var(--fw-fest);
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border: 1.5px solid;
+  border-radius: var(--r-badge);
+  background: transparent;
+}
+.row-meta {
+  /* P202: die Register-Meta steht als SPALTE rechts (Zeit unten, Tags darüber,
+     Treffer-Prozent ganz oben) — nicht als zweite Fußzeile unter dem Text. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 6px;
+  border-top: none;
+  padding-top: 2px;
+  flex: none;
+}
+.row-pct { font-family: var(--font-display); font-size: var(--fs-5); font-weight: var(--fw-halbfest); color: var(--accent); }
+.row-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start; min-width: 0; overflow: hidden; }
+.row-tag { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-1); color: var(--text-2); }
+html:not(.dark) .row-tag { color: var(--type-semantic); }
+.row-time { font-size: var(--fs-1); color: var(--text-3); white-space: nowrap; margin-left: auto; }
+
+/* ---------- Apple-Segmented Control ----------
+   Eine verbundene Wahlschiene: alle Optionen teilen sich eine Fläche,
+   das aktive Segment liegt als erhabenes Blatt darauf. Wer einmal ein
+   iPhone benutzt hat, kennt das — null Lernkosten. */
+.apple-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  /* Kartentufe, nicht 10 px: innen liegen 7 px Knopfe, dazu 4 px Polster und 1 px Rand —
+     die Hulle ist geometrisch 12 px, und 12 px ist die Karte. */
+  border-radius: var(--r-card);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+}
+.apple-seg-btn {
+  padding: 4px 12px;
+  border-radius: var(--r-btn);
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  transition: background var(--dur) var(--ease-apple), color var(--dur) var(--ease-apple), box-shadow var(--dur) var(--ease-apple), transform var(--dur-fast) var(--ease-apple);
+}
+.apple-seg-btn:hover { color: var(--text-1); }
+/* P197: Drück-Rücken auch an den Graph-Segmenten. */
+.apple-seg-btn:active { transform: scale(0.97); }
+.apple-seg-btn[data-on="true"] {
+  background: var(--bg-panel-solid);
+  color: var(--text-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), inset 0 1px 0 var(--edge-light);
+}
+.apple-seg-btn:disabled { opacity: 0.45; }
+
+/* ---------- Hülle der Graph-Fläche (A7-06) ----------
+   Bei 390 px Fensterbreite blieb der Fläche im Messlauf ein Streifen von
+   80 × 418 CSS-px — die Seitenleiste hielt ihre 256 px in der Reihe fest, egal
+   ob das Fenster beide trug. Unter der md-Grenze liegt sie deshalb *über* der
+   Fläche; wer sie öffnet, verliert keinen Strich vom Bild. Der Rahmen setzt
+   .huelle-schmal nach der echten Fensterbreite, nicht nach dem ersten Render. */
+.huelle-schmal .seiten-leiste {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 40;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Die Leiste der Fläche hält eine Zeile (A7-07). Bei 1 500 Notizen war die
+   Zahlengruppe („1 500 notes · 39 concepts · 1 543 links") länger als die Reihe,
+   brach um und nahm der Leinwand 42 px: 1130 × 668 statt 1130 × 710, und der
+   Fit rechnete mit einem andern Rahmen als bei 400 Notizen. Ein Notiz mehr
+   durfte kein Bild rücken — also: eine Zeile, und was nicht passt, schneidet ab.
+   Anker ist die Suchzahl #graph-search-count; die Leiste selbst gehört der
+   Flächen-Scheibe und wird hier nicht umgeschrieben, nur in der Höhe gehalten. */
+.flaeche-huelle div:has(> #graph-search-count) {
+  flex-wrap: nowrap;
+  min-width: 0;
+  /* Was nicht in die Zeile passt, bleibt seitlich erreichbar — eine Knopfgruppe,
+     die in drei Reihen bricht, kostet das Bild 180 px Hoehe. */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+/* Die Gruppen in der Leiste brechen ebenfalls um: das naechste Ende derselben
+   Zeile. Nachgemessen am 10.10.: mit der Leiste allein in einer Zeile wurden die
+   Gruppen bei 1 440 px 285 px hoch — die Leinwand verlor 181 px. */
+.flaeche-huelle div:has(> #graph-search-count) > [role="group"] {
+  flex-wrap: nowrap;
+}
+.flaeche-huelle div:has(> #graph-search-count) #graph-search-count,
+.flaeche-huelle div:has(> #graph-search-count) > .hud-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* ---------- Der Assistent als Täfelchen (A7-10) ----------
+   Bis zum 09.10. lag der Einrichtungsassistent als `fixed inset-0` mit einem
+   flächendeckenden Dimmer über dem ganzen Fenster — der erste Blick in den
+   eigenen Graphen ging hinter einem Dialog verloren (a7-screens/12-wizard2-
+   erschienen.png, gemessene Deckung 1 682 542 px²). Er steht jetzt als Spalte
+   neben der Fläche: die Fläche bleibt sichtbar und vermessbar, solange er redet. */
+/* P202, Mockup-Grammatik (.assistent-vorhang): der Assistent steht als Voll-
+   Overlay auf der Grundfläche, der Inhalt zentriert in 460 px — kein Kasten,
+   kein Rändern-Glas. Der frühere Seiten-Spiegel (A7-10) flog mit Damian's
+   Mockup-Wort: die erste Fläche ist hier leer, es gibt kein Bild dahinter. */
+.wizard-taefelchen {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: var(--feld);
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
+}
+/* Der Assistent-Körper des Mockups (.assistent): die 460-px-Säule auf dem
+   Vorhang — kein Kasten, die Fragen stehen direkt auf der Grundfläche. */
+.assistent { max-width: 460px; }
+.assistent-schritte { display: flex; gap: 5px; margin-bottom: 18px; }
+.assistent-schritte i { height: 3px; border-radius: 999px; flex: 1; background: rgba(31, 30, 28, 0.12); }
+.assistent-schritte i.on { background: var(--accent); }
+.assistent-titel { font-size: var(--fs-6); font-weight: var(--fw-halbfest); color: var(--text-1); letter-spacing: -0.01em; margin: 0; }
+.assistent-schritt { font-size: var(--fs-2); color: var(--text-2); margin-top: 4px; }
+.assistent-takte { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; gap: 12px; }
+.assistent-spaeter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-2);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-2);
+  padding: 6px 9px;
+  border-radius: var(--r-btn);
+  transition: background var(--dur-fast) var(--ease-apple), color var(--dur-fast) var(--ease-apple);
+}
+.assistent-spaeter:hover { background: rgba(31, 30, 28, 0.05); color: var(--text-1); }
+.assistent-weiter {
+  margin-left: auto;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: var(--r-btn);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-halbfest);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background var(--dur-fast) var(--ease-apple);
+}
+.assistent-weiter:hover { background: var(--accent); filter: brightness(0.95); }
+.assistent-weiter:disabled { opacity: 0.4; }
+/* Im schmalen Fenster ist eine nebenständige Spalte das Bild selbst. Der Rahmen
+   stapelt dort untereinander: das Täfelchen *nimmt* dem Bild Raum, statt es zu
+   decken — die obere Kante des Gedächtnisses bleibt frei, und kein Strich des
+   Bildes liegt unter einer Schicht. */
+.huelle-schmal {
+  flex-direction: column;
+}
+.huelle-schmal > main {
+  min-height: 0;
+}
+.huelle-schmal .wizard-taefelchen {
+  flex: 0 0 58%;
+  width: auto;
+  max-width: none;
+  min-height: 0;
+}
+
+/* === generiert: increased contrast — design-wache --setzen, nicht von Hand === */
+@media (prefers-contrast: more) {
+  :root {
+    --text-3: oklch(0.2918 0.0046 236.5);
+    --text-2: oklch(0.2493 0.0050 236.6);
+    --text-1: oklch(0.1344 0.0035 228.9);
+    /* P202: die Seitenleiste folgt im hellen Thema der Anhebung — die leiseste
+       Ebene wird dunkler (kontrastreicher), die Richtung dreht sich gegenüber
+       dem Stahl (dort wird heller angehoben). */
+    --side-leise: oklch(0.2918 0.0046 236.5);
+    --warn: oklch(0.2985 0.1009 70.0);
+    --ok: oklch(0.2843 0.0676 155.6);
+    --danger: oklch(0.3089 0.1384 30.5);
+    --type-semantic: oklch(0.2912 0.0571 247.6);
+    --type-semantic-hex: #112e46;
+    --type-episodic: oklch(0.3007 0.0663 349.5);
+    --type-episodic-hex: #461f33;
+    --type-procedural: oklch(0.2861 0.0553 148.0);
+    --type-procedural-hex: #15321a;
+    --type-reference: oklch(0.2965 0.0580 56.6);
+    --type-reference-hex: #42240c;
+    --type-neutral: oklch(0.2921 0.0000 89.9);
+    --type-neutral-hex: #2c2c2c;
+    --type-herkunft-geschrieben: oklch(0.2919 0.0107 252.9);
+    --type-herkunft-geschrieben-hex: #282c31;
+    --type-herkunft-datei: oklch(0.2987 0.1082 72.1);
+    --type-herkunft-datei-hex: #4d1f00;
+    --type-herkunft-rechner: oklch(0.2829 0.0769 189.6);
+    --type-herkunft-rechner-hex: #003532;
+    --kante-kontrolle: oklch(0.4327 0.0027 106.5);
+    --kante-stark: oklch(0.4958 0.0027 106.5);
+    --kante-dekor: oklch(0.6090 0.0027 106.5);
+    --accent: oklch(0.3107 0.1510 29.9);
+    --accent-fuell: oklch(0.4640 0.1510 29.9);
+    --accent-kante: oklch(0.4640 0.1510 29.9);
+    --fokus: oklch(0.4506 0.1510 29.9);
+    --on-accent: oklch(0.9626 0.0131 82.4);
+    --side-kante: oklch(0.6050 0.0026 286.0);
+    --side-leise: oklch(0.6897 0.0097 91.6);
+    --side-kante-heben: oklch(0.6716 0.0026 286.0);
+  }
+  .dark {
+    --text-3: oklch(0.8635 0.0097 91.6);
+    --text-2: oklch(0.9057 0.0104 93.6);
+    --text-1: oklch(0.9800 0.0027 106.5);
+    --warn: oklch(0.8663 0.1018 78.4);
+    --ok: oklch(0.8549 0.0759 151.0);
+    --danger: oklch(0.8780 0.1327 31.4);
+    --type-semantic: oklch(0.8630 0.0374 254.9);
+    --type-semantic-hex: #c2d4eb;
+    --type-episodic: oklch(0.8704 0.0545 338.8);
+    --type-episodic-hex: #eec7e0;
+    --type-procedural: oklch(0.8564 0.0615 153.0);
+    --type-procedural-hex: #b2dcbd;
+    --type-reference: oklch(0.8663 0.0570 65.8);
+    --type-reference-hex: #eeccac;
+    --type-neutral: oklch(0.8636 0.0000 89.9);
+    --type-neutral-hex: #d2d2d2;
+    --type-herkunft-geschrieben: oklch(0.8634 0.0107 252.9);
+    --type-herkunft-geschrieben-hex: #cdd3d9;
+    --type-herkunft-datei: oklch(0.8680 0.1082 72.1);
+    --type-herkunft-datei-hex: #ffc882;
+    --type-herkunft-rechner: oklch(0.8543 0.0769 189.6);
+    --type-herkunft-rechner-hex: #92e0da;
+    --kante-kontrolle: oklch(0.7026 0.0026 286.0);
+    --kante-stark: oklch(0.6321 0.0026 286.0);
+    --kante-dekor: oklch(0.5174 0.0026 286.0);
+    --accent: oklch(0.8807 0.1552 30.7);
+    --accent-fuell: oklch(0.5651 0.1552 30.7);
+    --accent-kante: oklch(0.6965 0.1552 30.7);
+    --fokus: oklch(0.7198 0.1552 30.7);
+    --on-accent: oklch(0.9802 0.0137 67.7);
+    --side-kante: oklch(0.6050 0.0026 286.0);
+    --side-leise: oklch(0.6897 0.0097 91.6);
+    --side-kante-heben: oklch(0.6716 0.0026 286.0);
+  }
+}
+/* === Ende increased contrast === */
+
+/* ============================================================
+   LEGENDEN-KAPPE BEI SCHMALER BREITE — Punkt 2, 19.10.
+   Die Legende erklaert das Bild: ihre Zahl, ihre Typ-Punkte, ihre
+   Link-Arten, und — wenn etwas fehlt — ihre Zustandszeilen. Alles
+   andre an ihr ist Prosa ueber den Bestand. Gemessen 19.10. an der
+   ausgelieferten 3.2.22 (eigne lesende Wand vor Port 60487, echter
+   Bestand 21 066 Knoten, chrome-headless-shell, 390x844): die Legende
+   war 289,5 bis 331 px hoch bei 628 px Leinwand — 46,1 % bis 52,7 %
+   des Rahmens waren Beschriftung, und die Haelfte davon waren fuenf
+   Saetze ueber den Bestand.
+
+   Diese Kappe verbirgt NUR die Prosa (`.legende-prosa`), und NUR bis
+   440 px — dieselbe Schwelle, ab der auch die Zielgroessen-Latte auf
+   44 px geht (:773). Die Zustandszeilen (`graph-im-bild`,
+   `graph-benannt`, `graph-kappen`, `graph-zustaende`) bleiben stehen:
+   sie sind der Grund, warum die Kappe ueberhaupt eine Marke braucht.
+   Der erste Entwurf haengte an `:nth-child(3,6,8,9,10)`; nachdem 3.2.23
+   die Bilanz-Zeilen benannt hat, traefe genau die Zustandszeile, die
+   meldet, wenn nichts im Bild steht. Eine Stellenangabe ist kein Halter.
+
+   Halt: tests/components/KnowledgeGraph.legende-schmal.test.tsx
+   ============================================================ */
+/* ============================================================
+   DER FUSS DER LEGENDE — EINE ZAHL, Punkt 5, 23.10. (Brief 78)
+   Der Abstand zur Bodenkante stand an drei Stellen: `bottom-3`
+   (0,75rem) an der Klasse, `bottom: 3.25rem` in der Telefon-Hebung
+   hier, und die Kappe zog 1,5rem ab (`src/lib/kappe.ts`). Die
+   zweite Zahl las kein Test. Am ausgelieferten 3.2.43 gemessen
+   (17:23:00–17:24:24 MESZ, Bestand 21 066, Baum, zwei Gruppen,
+   eignes Profil, Port 9400): bei 390, 439 und 440 px liegt die
+   Oberkante der Legende **28 px ueber** der Oberkante der Leinwand
+   (Kasten y 164, Leinwand y 192), bei 441 px und 1024 px nicht
+   (−12 px). 52 px Fuss − 24 px Abzug = 28 px, und die Kante der
+   Hebung ist `max-width: 440px`. Also EINE Zahl, `--panel-fuss`:
+   der Fuss liest sie, die Kappe zieht ihr Zweifaches ab, und die
+   Kreuzung kann nicht mehr entstehen. Der Fuss bleibt 3,25rem
+   (= 52 px: des Blaetterers 36,5 px plus seine 12 px Kante, #54).
+   Halt: tests/components/KnowledgeGraph.legende-fuss.test.ts
+   Form, die die Wache zwingt: `--panel-fuss` in eigner Zeile, denn
+   `scripts/design-wache.mjs` erkennt eine Definition nur am
+   Zeilenanfang.
+   ============================================================ */
+.graph-legende {
+  --panel-fuss: 0.75rem;
+  bottom: var(--panel-fuss);
+}
+/* ============================================================
+   DIE FALTUNG DER ZUSTANDSZEILEN — Punkt 114, 27.10., Breite gelöst 31.10.
+   Die Klappe (3.2.65) gab die Flaeche zurueck, aber niemand bestimmte, was in der
+   ZUGEMACHTEN Karte bleibt. Gemessen 27.10. 14:03:09 MESZ am gebauten 3.2.67
+   (eigne Kapsel, 600 Notizen, 390 x 844): geschlossen 209,5 von 628 px = 33,4
+   Prozent, offen 50,2; am echten Bestand meldet Punkt 2 41,7 Prozent. Die Latte
+   der Leitung: 25 Prozent (BRIEF-114-KLAPPENLAST-2710.md).
+   Es faellt die Familie der Zustandszeilen (`.legende-zustand`: `graph-zustaende`,
+   `graph-im-bild`, `graph-benannt`, `graph-kappen`) und die Griffe-Zeile
+   (`.legende-griffe`) — die ersten melden, was DIESER Ausschnitt fehlt, die letzte
+   erklaert Gesten, die an den Werkzeugen selbst stehen. AUSGENOMMEN per
+   `:not(.legende-bilanz)` ist die Bilanz des Ausschnitts (`graph-im-bild`): sie ist
+   der einzige sichtbare Satz dafuer, dass die Ansicht ein Ausschnitt ist, und eine
+   Zeile weniger Ehrlichkeit ist teurer als neunzehn Pixel Deckung. Stehen bleibt
+   ausserdem, was das Zeichen erklaert: Zahlenreihe, Typ-Farben, Link-Arten. Die
+   Prosa-Kappe bei 440 px (zwei Zeilen weiter unten) bleibt unberuehrt.
+   OHNE Breite, seit 31.10.: die Regel galt bis dahin nur bis 820 px. Gemessen am
+   gebauten Stand bei 1 440 x 900 und 1 500 Notizen (eigne Kapsel, Lauf 19:26 und
+   19:28, `belege-3110/bild-vor-landung-3110/`): offen 38,6 %, ZUGEMACHT 32,1 % —
+   der Griff gab 6,5 Punkte zurueck und blieb 7 Punkte ueber der Latte. Ein Knopf,
+   der "Hide legend" heisst, muss oben ebenso falten wie unten.
+   Halter ist ein ATTRIBUT an der Karte (`data-legende`), nicht die Klasse: die
+   Fuss-Wache liest das Klassenliteral, ein Template machte ihren Griff taub.
+   Breite 820 px = `LEGENDE_BRUCH_PX` (`KnowledgeGraph.tsx:218`) — sie entscheidet
+   nur noch, ob die Karte ZU oder AUF startet, nicht was die Faltung gilt.
+   Halt: tests/components/KnowledgeGraph.legende-faltung.test.tsx
+   ============================================================ */
+.graph-legende[data-legende="zu"] .legende-zustand:not(.legende-bilanz) { display: none; }
+.graph-legende[data-legende="zu"] .legende-griffe { display: none; }
+@media (max-width: 440px) {
+  /* DIE PROSA-KAPPE — Punkt 2, 19.10.: bei Telefonbreite (bis 440 px) tritt die
+     erklaerende Prosa hinter die Bilderklaerung zurueck, weil der Kasten sonst
+     hoeher wird als die halbe Leinwand. Sie gilt NUR bis 440 px und nur fuer
+     `.legende-prosa`; die Zustandszeilen liegen nie unter ihr, und die Faltung
+     oben ist eine eigne Regel mit eignem Grund.
+     Halt: tests/components/KnowledgeGraph.legende-schmal.test.tsx */
+  .legende-prosa { display: none; }
+  /* #54: Der Blaetterer (`gang-blaetterer`, KnowledgeGraph.tsx:5161) haengt an
+     derselben Bodenkante wie die Legende — beide 0,75rem. Bei Telefonbreite
+     reicht ihr Kasten unter ihn, also hebt sie sich ueber ihn: der Fuss traegt
+     3,25rem = seine Hoehe rund 36,5 px plus seine 12 px Kante. Gehoben wird
+     jetzt die Zahl selbst (`--panel-fuss`), damit die Kappe dieselbe liest.
+     Halter ist eine Klasse, keine Stellenangabe — dieselbe Regel wie oben. */
+  .graph-legende {
+    --panel-fuss: 3.25rem;
+    max-width: calc(100% - 1.5rem);
+  }
+}
+
+/* P197: die Prosa fällt MIT der Klappe — der zugeklappte erste Eindruck ist die
+   Zahlenreihe, die Farb-Punkte und die Bilanz, kein Textblock (Damian: der erste
+   Eindruck gehört dem Bild). Die Regel steht absichtlich NACH der Mobil-Kappe:
+   deren Sonde liest den ERSTEN `.legende-prosa {`-Fund und erwartet die
+   440-px-Bedingung (tests/components/KnowledgeGraph.legende-schmal.test.tsx). */
+.graph-legende[data-legende="zu"] .legende-prosa { display: none; }
+
+/* #97 — bei Telefonbreite bekommt der Gruppen-Name seine volle Breite: die Zahlenreihe
+   (Mitglieder, Prozent, painted, remove) ist breiter als 294 px und kappte ihn zu `#…`.
+   Der Name schrumpft nicht mehr; was nicht mehr in die Zeile passt, bricht um.
+   Die Hohen-Kappe der Liste (#81, `kappeListe()`) bleibt unberuehrt — sie sitzt am
+   Listenbehaelter, nicht an der Zeile. */
+@media (max-width: 440px) {
+  .regal-zeile {
+    flex-wrap: wrap;
+  }
+  .regal-zeile .regal-marke {
+    flex: 0 0 auto;
+    overflow: visible;
+    white-space: nowrap;
+    text-overflow: clip;
+  }
+}
+
+/* #96 — das Leistenband: der Ueberblick ueber die GEMALTEN Knoten je Gruppe, ohne Zoom.
+   Wohnt jetzt eingebettet im rechten Graph-Inspector (keine Leiste ueber der Canvas),
+   und isst keinen Klick (pointer-events: none). */
+.graph-gruppenband {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  display: flex;
+  pointer-events: none;
+  overflow: hidden;
+}
+.graph-gruppenband-segment {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+}
+
+@media (max-width: 639px) {
+  .listen-kopf {
+    flex-wrap: wrap;
+    height: auto !important;
+    min-height: 44px;
+    padding-block: 6px !important;
+  }
+  .listen-kopf .listen-zahl {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .listen-kopf .kopf-handlungen {
+    margin-left: auto;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 1 1 auto;
+  }
+}

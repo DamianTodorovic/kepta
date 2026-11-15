@@ -1,0 +1,313 @@
+{
+ "dateien": {
+  "README.md": {
+   "saetze": 411,
+   "absolut": 137,
+   "mit_zeug": 137,
+   "ohne_zeug": 0
+  },
+  "SECURITY.md": {
+   "saetze": 33,
+   "absolut": 9,
+   "mit_zeug": 9,
+   "ohne_zeug": 0
+  },
+  "ROADMAP.md": {
+   "saetze": 77,
+   "absolut": 16,
+   "mit_zeug": 16,
+   "ohne_zeug": 0
+  },
+  ".github/release-notes.md": {
+   "saetze": 50,
+   "absolut": 20,
+   "mit_zeug": 20,
+   "ohne_zeug": 0
+  }
+ },
+ "zusammen": {
+  "saetze": 571,
+  "absolut": 182,
+  "mit_zeug": 182,
+  "ohne_zeug": 0
+ },
+ "abschnitt": {
+  "README.md": {
+   "absolut": 137,
+   "mit_zeug": 68,
+   "ohne_zeug": 69
+  },
+  "SECURITY.md": {
+   "absolut": 9,
+   "mit_zeug": 3,
+   "ohne_zeug": 6
+  },
+  "ROADMAP.md": {
+   "absolut": 16,
+   "mit_zeug": 2,
+   "ohne_zeug": 14
+  },
+  ".github/release-notes.md": {
+   "absolut": 20,
+   "mit_zeug": 11,
+   "ohne_zeug": 9
+  }
+ },
+ "zusammen_abschnitt": {
+  "absolut": 182,
+  "mit_zeug": 84,
+  "ohne_zeug": 98
+ },
+ "maschinell_pruefbar": {
+  "README.md": {
+   "absolut": 137,
+   "maschinell": 31
+  },
+  "SECURITY.md": {
+   "absolut": 9,
+   "maschinell": 2
+  },
+  "ROADMAP.md": {
+   "absolut": 16,
+   "maschinell": 1
+  },
+  ".github/release-notes.md": {
+   "absolut": 20,
+   "maschinell": 2
+  }
+ },
+ "summe_pruefbar": 36,
+ "pruefbar_liste": [
+  {
+   "datei": "README.md",
+   "satz": "While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Every memory carries a type and a confidence score — the type is the rules' answer when nobody set one, never a silent fall-back to *fact*, and an unset confidence reads as 1 (tests/core/notiz-drei-felder.test.ts:53, :67",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "The validity window is the one field a note really can lack: the row then holds null, and the reader decides — no start means the note's own creation date, no end means it never expires (:75 reads both nulls back, :87 an",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (tests/scan/regeln.test.ts tries to open the barrier with a widened file-type list and is refused) — becau",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry (no unchosen foreign address travels in the shipped code — tests/keine-telemetrie.test.ts:73 — and the licence route answers nothing, read or wri",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Private notes — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app (tests/mcp.test.ts refuses it over MCP even when an agent asks by scope; tests/enterprise-",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Expired entries are marked, never quietly hidden (tests/engine.test.ts:78-83 asks for an expired note, gets it back with expired: true, and sees it ranked below the fresh one rather than missing)",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on (tests/core/lokaler-rerank.test.ts scores with the embed",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Meaning search can be switched off, and the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All — tests/components/Dashboard.test.tsx:206 drives all seven positions of the rendered control and reads each label back, te",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable (tests/eval-metrik.test.ts:37 pins the capped divisor, :55 pins the division by five and the P@5 name, :48",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "It is computed on the server, so no embedding ever travels into the view (tests/rest-semantik.test.ts:70 reads the raw HTTP body and refuses any word like embedding, vektor or vector in it)",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.tsx:73 holds the one promise that surv",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey (tests/components/KnowledgeGraph.render.test.tsx:3537 finds the Provenance control disa",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "*Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted — tests/enterprise-api.test.ts:215 reads the replaced note back with supersededBy set, and tests/engine.test.ts:167 counts both notes sti",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched (tests/lib/einrichtung.test.ts:42 checks the backup and the untouched neighbours, :61 hands a co",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Private notes never reach an app or a cloud model — the same two checks apply here: tests/mcp.test.ts refuses a private note at the MCP door even when an agent asks for it by scope, and tests/enterprise-api.test.ts reads",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers (tests/lib/schild.test.ts:39 runs both validators head-on — one shifted IBAN digit and an all-zero card number fai",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Without a reachable local LLM it always degrades to ADD — the gate can never block you (tests/engine.test.ts:333 runs it with the embedding service at 503 and still lands on ADD without asking the model; :360 feeds it a ",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Settings can only narrow what is read, never widen it (tests/scan/regeln.test.ts:190 tries to talk the barrier into reading secrets by ticking file types and is refused; :199 allows a smaller size cap and refuses a bigge",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note (tests/core/klassifikation.test.ts:112 strips script, style and tags into rea",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "The list groups by file, by kind or by period, and *Load more* never cuts a group in half (tests/lib/gruppenfenster.test.ts pins the window rule: a group that starts is shown whole, so a five-part file never appears as t",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "GET /api/memories/:id therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and tests/doku-plattform.test.ts fails if the tw",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "A page whose name rebinds to 127.0.0.1 is refused before any handler runs (tests/herkunft.test.ts:76), a page under another name gets no Access-Control-Allow-Origin and so cannot read a byte back (tests/server-herkunft.t",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "Nothing is sent by the app itself, and the store never syncs on its own: the device sync hands you an AES-256-GCM bundle and stops at that answer (server/router/sync.ts:40 returns it to the window, it posts it nowhere), ",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no \"first day free\" and no message about a limit (tests/keine-grenzen.test.",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "It was never a lock — but it was counting, and counting needed places to hide the tally: an AES-256-GCM blob in the store's settings, two keychain entries under app.kepta.plan, and a trial-anchor file in a per-user direc",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "The data is never hostage (tests/keine-grenzen.test.ts:102-116 shows the licence route answers nothing, read or write, and no part of the surface asks it; tests/server.test.ts:327 writes the store out as Markdown files).",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "They are built from this source and never published here — every electron-builder call in .github/workflows/build.yml carries --publish never (:111, :204, :310; driven by tests/ci-publish.test.ts:51), so they are unteste",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "One limit travels with the number: a short :165 with no file beside it on its own line cannot be attributed, so the guard counts those instead of guessing at a file — measured 2026-11-07 10:44 MEZ.",
+   "zeuge": true
+  },
+  {
+   "datei": "README.md",
+   "satz": "src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key \"src/scan/\") | what may be read, and what never is",
+   "zeuge": true
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "The three keychain paths are covered by tests/core/schluessel.test.ts — :101 reads a Windows entry through the injected command runner with the path passed in the environment, :111 proves the key never sits in the argume",
+   "zeuge": true
+  },
+  {
+   "datei": "SECURITY.md",
+   "satz": "It never leaves the keychain on its own — what that means is checked, not promised: tests/core/schluessel.test.ts:111 reads the argument list of every launch and finds the key absent there (it travels in the child's envi",
+   "zeuge": true
+  },
+  {
+   "datei": "ROADMAP.md",
+   "satz": "Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access (tests/engine.test.ts:254 shows the older note and hides the later one at t",
+   "zeuge": true
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf — nothing in this app reads, sells or validates one: the licence route answers neither read nor write and no surface calls it ",
+   "zeuge": true
+  },
+  {
+   "datei": ".github/release-notes.md",
+   "satz": "Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste — nichts in dieser App liest, verkauft oder prüft einen: die Lizenz-Route antwortet weder lesend noch schreibend, und",
+   "zeuge": true
+  }
+ ],
+ "beweise": {
+  "bilder_markdown": 12,
+  "bilder_img_tag": 8,
+  "bilder_semantic": 0,
+  "readme_sagt_kein_semantic_bild": true,
+  "flaechen_dateien": [
+   {
+    "Datei": "src/components/KnowledgeGraph.tsx",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/components/GraphRegal.tsx",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphLayout.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphSemantik.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphSchema.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphHierarchy.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphHerkunft.ts",
+    "vorhanden": true,
+    "funde": 0
+   },
+   {
+    "Datei": "src/lib/graphTime.ts",
+    "vorhanden": true,
+    "funde": 0
+   }
+  ],
+  "embedding_in_flaechen_dateien": 0,
+  "tests_mit_embedding_wort": 37
+ },
+ "ohne_zeug": []
+}

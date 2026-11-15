@@ -1,0 +1,52 @@
+Beleg P147 -- der Zaehler und seine drei Verstecke, im Quelltext unmittelbar vor der Heilung
+Gezogen 7.11.2026, 02:15:44 MEZ mit: node docs/belege/p147-0711/zeugen.mjs
+Gelesener Stand: 113093c (Eltern von c7cde55, "3.1.5: die app zaehlt nicht mehr -- kein schluessel, keine grenzen, kein upgrade-panel")
+
+Was der Heilungs-Commit loescht (git show --numstat c7cde55, Zeilen, die auf 0 fallen):
+    server/helfer/planzustand.ts  --  376 Zeilen entfernt
+    tests/probetag.test.ts  --  217 Zeilen entfernt
+    tests/lizenz-api.test.ts  --  197 Zeilen entfernt
+    src/components/ProUpgrade.tsx  --  168 Zeilen entfernt
+    server/router/license.ts  --  105 Zeilen entfernt
+    server/helfer/freemium.ts  --  99 Zeilen entfernt
+    server/helfer/plan-schluesselbund.ts  --  98 Zeilen entfernt
+    tests/components/ProUpgrade.test.tsx  --  98 Zeilen entfernt
+    server/helfer/probetag.ts  --  31 Zeilen entfernt
+
+Schicht 1 -- der Zustand liegt authentifiziert in der Datenbank (Einstellungen der Wissensbasis):
+    server/helfer/planzustand.ts:29  const ZUSTAND_SCHLUESSEL = "plan_zustand";
+    server/helfer/planzustand.ts:101  const chiffer = crypto.createCipheriv("aes-256-gcm", schluessel, iv);
+    server/helfer/planzustand.ts:113  const chiffer = crypto.createDecipheriv("aes-256-gcm", schluessel, iv);
+    server/helfer/planzustand.ts:133  const einstellungen = store.einstellungen();
+    server/helfer/planzustand.ts:134  const blob = einstellungen[ZUSTAND_SCHLUESSEL];
+    server/helfer/planzustand.ts:165  store.setzeEinstellungen({ [ZUSTAND_SCHLUESSEL]: wert });
+    server/helfer/planzustand.ts:302  * der Klartext-Einstellung müssen zusammenpassen — jede Diskrepanz ist eine
+    server/helfer/planzustand.ts:310  const klartext = Number(store.einstellungen()[ANKER_SCHLUESSEL]);
+    server/helfer/planzustand.ts:333  store.setzeEinstellungen({ [ANKER_SCHLUESSEL]: String(start) });
+    server/helfer/planzustand.ts:372  store.setzeEinstellungen({ [VERFALLEN_SCHLUESSEL]: "1" });
+
+Schicht 2 -- der Anker liegt im Schluesselbund (macOS security, Linux Secret Service, Windows DPAPI):
+    server/helfer/plan-schluesselbund.ts:38  return ausf("/usr/bin/security", ["find-generic-password", "-s", ziel.dienst, "-a", ziel.konto, "-w"]).trim() || null;
+    server/helfer/plan-schluesselbund.ts:48  ausf("/usr/bin/security", ["add-generic-password", "-s", ziel.dienst, "-a", ziel.konto, "-l", ziel.label ?? "KEPTA key
+    server/helfer/plan-schluesselbund.ts:53  `Restore the original entry with: security add-generic-password -s ${ziel.dienst} -a ${ziel.konto} -w <key>`,
+    server/helfer/plan-schluesselbund.ts:62  /** Linux: Secret Service (GNOME Keyring, KWallet) über secret-tool — Exit-Code 1, wenn es nichts gibt. */
+    server/helfer/plan-schluesselbund.ts:68  return ausf("secret-tool", ["lookup", "service", ziel.dienst, "account", ziel.konto]).trim() || null;
+    server/helfer/plan-schluesselbund.ts:72  throw new Error("No Secret Service on this system (secret-tool not found, ENOENT) — install libsecret-tools, or set KE
+    server/helfer/plan-schluesselbund.ts:79  ausf("secret-tool", ["store", `--label=${ziel.label ?? "KEPTA key"}`, "service", ziel.dienst, "account", ziel.konto], 
+    server/helfer/planzustand.ts:32  const PLAN_ZIEL: SchluesselbundZiel = { dienst: "app.kepta.plan", konto: "kepta", label: "KEPTA plan state" };
+    server/helfer/planzustand.ts:33  const ANKER_ZIEL: SchluesselbundZiel = { dienst: "app.kepta.plan", konto: "probetag", label: "KEPTA trial day" };
+    server/helfer/planzustand.ts:78  const bund = zielSchluesselbund(PLAN_ZIEL, process.platform, datenordner);
+    server/helfer/planzustand.ts:248  const bund = zielSchluesselbund(ANKER_ZIEL, process.platform, datenordner);
+    server/helfer/planzustand.ts:286  const bund = zielSchluesselbund(ANKER_ZIEL, process.platform, datenordner);
+
+Schicht 3 -- der Erststart liegt zusaetzlich in einer Datei in einem versteckten Benutzerordner:
+    server/helfer/planzustand.ts:173  * Datenordners (~/Library/Application Support bzw. %APPDATA% bzw.
+    server/helfer/planzustand.ts:183  if (plattform === "darwin") return path.join(os.homedir(), "Library", "Application Support", "KEPTA", "trial-anchor");
+    server/helfer/planzustand.ts:184  if (plattform === "win32") return path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "KEP
+    server/helfer/planzustand.ts:185  return path.join(os.homedir(), ".config", "KEPTA", "trial-anchor");
+    server/helfer/planzustand.ts:218  fs.writeFileSync(datei, wert, { encoding: "utf8", flag: "wx" }); // nie überschreiben
+    server/helfer/planzustand.ts:228  if (!roh.endsWith("|V")) fs.writeFileSync(datei, `${roh}|V`, "utf8");
+
+Und was der Satz "It was never a lock" traegt: das Modul hat nie eine Funktion verriegelt,
+es hat gezaehlt und den Erststand gemerkt. Die Kappe selbst lag an den Werkzeug-Wegen;
+gelesen in c7cde55: dasselbe Commit entfernt Routen, Zaehler und Schluesselfeld.

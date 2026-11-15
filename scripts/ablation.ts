@@ -11,9 +11,6 @@
 //
 // Aufruf:  npx tsx scripts/ablation.ts        (braucht Ollama mit nomic-embed-text)
 //          npx tsx scripts/ablation.ts --json
-import { tmpdir } from "node:os";
-import path from "node:path";
-import fs from "node:fs";
 import { KeptaStore } from "../src/core/store";
 import { searchMemories } from "../src/core/engine";
 import { CORPUS, QUERIES } from "./eval-corpus";

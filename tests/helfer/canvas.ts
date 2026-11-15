@@ -15,6 +15,11 @@ export interface Aufruf {
   args: unknown[];
 }
 
+let wurfGrund: string | null = null;
+
+/** Laesst die naechsten `toDataURL`-Rufe werfen — der befleckte Fall der echten Leinwand. */
+export function lassLeinwandWerfen(grund: string | null): void { wurfGrund = grund; }
+
 export interface Leinwand {
   aufrufe: Aufruf[];
   /** Alle Aufrufe einer Art. */
@@ -27,6 +32,16 @@ export interface Leinwand {
   index(op: string, n?: number): number;
   /** Alle gezeichneten Texte. */
   texte(): { text: string; x: number; y: number }[];
+  /**
+   * Texte des letzten Bildes MIT ihrer Groesse auf dem Schirm.
+   *
+   * Die transformierte Leinwand kennt keine Buchstaben, sondern nur Aufrufe: ein
+   * Etikett mit `font = 15px` ist bei 0,12 Zoom 1,8 Bildpunkte hoch. Wer die
+   * Lesbarkeit pruefen will, muss die Schriftgroesse durch die Transformation
+   * rechnen — genau so, wie A7s Mal-Rekorder im Browser es tut (`sx = |t.a|/dpr`).
+   * Ohne diese Grenze gilt ein 1,4-px-Titel im Test als 15 px.
+   */
+  schriften(): { text: string; x: number; y: number; px: number; schrift: number }[];
   /**
    * Nur die Aufrufe des LETZTEN Bildes. Jedes Bild beginnt mit clearRect —
    * ohne diese Grenze zaehlt man ueber mehrere Bilder hinweg und misst Unsinn.
@@ -54,13 +69,22 @@ const METHODEN = [
 ] as const;
 
 /**
+ * Die Schriftgröße aus einem CSS-Schriftkurzbefehl — die letzte Zahl vor „px".
+ * Ohne erkennbare Größe gilt 12 px, der Satz, mit dem der Graph arbeitet.
+ */
+function schriftgroesse(font: unknown): number {
+  const treff = [...String(font ?? "").matchAll(/(\d+(?:\.\d+)?)px/g)].pop();
+  return treff ? Number(treff[1]) : 12;
+}
+
+/**
  * Baut den Buchfuehrungs-Kontext und haengt ihn an HTMLCanvasElement — inklusive
  * der Leinwaende, die die Komponente sich selbst fuer die Sprites anlegt.
  */
 export function installiereLeinwand(): Leinwand {
   const aufrufe: Aufruf[] = [];
 
-  const machKontext = () => {
+  const machKontext = (element?: HTMLCanvasElement) => {
     const ctx: Record<string, unknown> = {};
     for (const name of METHODEN) {
       ctx[name] = (...args: unknown[]) => { aufrufe.push({ op: name, args }); };
@@ -78,16 +102,45 @@ export function installiereLeinwand(): Leinwand {
       return { addColorStop: (...a: unknown[]) => aufrufe.push({ op: "addColorStop", args: a }) };
     };
     ctx.createLinearGradient = ctx.createRadialGradient;
+    /**
+     * Breite im eingestellten Satz — nicht in einem festgeschriebenen. Vorher
+     * standen hier sture 6 px pro Zeichen, gleichgültig was `ctx.font` sagte.
+     * Der Wissensgraph verkleinert seine Etiketten mit dem Zoom: im Test waren
+     * sie damit bis zu viermal zu breit und verdrängten Nachbarn, wo der
+     * Browser sie nebeneinander stellt. 0,5 × Schriftgröße pro Zeichen hält den
+     * gewohnten Wert bei 12 px und folgt doch der gesetzten Größe.
+     */
     ctx.measureText = (t: string) => {
       aufrufe.push({ op: "measureText", args: [t] });
-      return { width: String(t).length * 6 };
+      const text = String(t);
+      if (!text.length) return { width: 0 };
+      const groesse = schriftgroesse(ctx.font);
+      return { width: text.length * groesse * 0.5 };
     };
     ctx.getImageData = (x: number, y: number, w: number, h: number) => ({
       data: new Uint8ClampedArray(Math.max(0, w) * Math.max(0, h) * 4),
       width: w, height: h,
     });
-    ctx.canvas = null;
+    /* Die echte Schnittstelle sagt, WELCHE Leinwand dieser Kontext bedient
+       (`CanvasRenderingContext2D.canvas`). Null war hier eine Luecke, die ein
+       Koerper sofort findet: die Sammelmarke legt ihr Rechteck auf
+       `ctx.canvas.dataset` ab, und mit null brach das Bild mitten im Malen ab. */
+    ctx.canvas = element ?? null;
     return ctx as unknown as CanvasRenderingContext2D;
+  };
+
+  // `toDataURL` fehlt in jsdom ganz (ein Wurf "not implemented"), und der Bildexport der
+  // Graph-Flaeche haengt daran. Die Attrappe tut, was der echte Browser tut: sie liefert eine
+  // Datenkette, in der die Groesse der Leinwand steckt — ein Test kann also lesen, WELCHES Bild
+  // herauskaeme — und sie kann werfen, wie eine befleckte Leinwand wirft.
+  (HTMLCanvasElement.prototype as unknown as Record<string, unknown>).toDataURL = function (
+    this: HTMLCanvasElement,
+    typ?: string
+  ) {
+    aufrufe.push({ op: "toDataURL", args: [typ || "image/png"] });
+    if (wurfGrund) throw new Error(wurfGrund);
+    const mass = `${this.width}x${this.height}`;
+    return `data:${typ || "image/png"};base64,${Buffer.from(mass).toString("base64")}`;
   };
 
   // Jede Leinwand bekommt ihren eigenen Kontext, alle schreiben in dieselbe Liste.
@@ -98,7 +151,7 @@ export function installiereLeinwand(): Leinwand {
   ) {
     if (art !== "2d") return null;
     let k = kontexte.get(this);
-    if (!k) { k = machKontext(); kontexte.set(this, k); }
+    if (!k) { k = machKontext(this); kontexte.set(this, k); }
     return k;
   };
 
@@ -121,6 +174,34 @@ export function installiereLeinwand(): Leinwand {
       aufrufe
         .filter((a) => a.op === "fillText")
         .map((a) => ({ text: String(a.args[0]), x: Number(a.args[1]), y: Number(a.args[2]) })),
+    /**
+     * Die Transformation des letzten Bildes nachgespielt: pro fillText die
+     * Groesse, die der Mensch auf dem Schirm sieht.
+     *
+     * Geraetet wird nur, was die Flaeche tatsaechlich aufruft — `setTransform`
+     * setzt, `scale` verletzt, `save`/`restore` stapeln. Der Faktor geteilt durch
+     * devicePixelRatio ist dieselbe Rechnung wie im Rekorder der Messstrasse.
+     */
+    schriften: () => {
+      const rahmen = buch.letzterRahmen();
+      const dpr = (globalThis as unknown as { devicePixelRatio?: number }).devicePixelRatio || 1;
+      const out: { text: string; x: number; y: number; px: number; schrift: number }[] = [];
+      let sx = 1;
+      const stapel: number[] = [];
+      let schrift = 12;
+      for (const a of rahmen) {
+        if (a.op === "setTransform") sx = Math.abs(Number(a.args[0])) || 1;
+        else if (a.op === "scale") sx *= Math.abs(Number(a.args[0])) || 1;
+        else if (a.op === "save") stapel.push(sx);
+        else if (a.op === "restore") sx = stapel.pop() ?? sx;
+        else if (a.op === "set:font") schrift = schriftgroesse(a.args[0]);
+        else if (a.op === "fillText") {
+          const px = (schrift * sx) / dpr;
+          out.push({ text: String(a.args[0]), x: Number(a.args[1]), y: Number(a.args[2]), px, schrift });
+        }
+      }
+      return out;
+    },
     letzterRahmen: () => {
       let start = 0;
       for (let i = aufrufe.length - 1; i >= 0; i--) if (aufrufe[i].op === "clearRect") { start = i; break; }
@@ -140,7 +221,8 @@ export function installiereResizeObserver(breite = 1000, hoehe = 700): (b: numbe
   const rueckrufe: ResizeObserverCallback[] = [];
   let masse = { width: breite, height: hoehe };
   class Attrappe implements ResizeObserver {
-    constructor(private cb: ResizeObserverCallback) { rueckrufe.push(cb); }
+    private cb: ResizeObserverCallback;
+    constructor(cb: ResizeObserverCallback) { this.cb = cb; rueckrufe.push(cb); }
     observe(ziel: Element) {
       // Sofort melden, wie es ein echter ResizeObserver beim Beobachten tut.
       this.cb([{ target: ziel, contentRect: { ...masse, x: 0, y: 0, top: 0, left: 0, right: masse.width, bottom: masse.height, toJSON: () => ({}) } } as unknown as ResizeObserverEntry], this);
@@ -181,8 +263,29 @@ export function installiereZeiger(): void {
 /** Theme-Variablen setzen, wie sie index.css im jeweiligen Modus liefert. */
 export function setzeTheme(modus: "hell" | "dunkel"): void {
   const w = document.documentElement.style;
+  // Die Rollen-Farben (E1s Leiter) holt sich die Flaeche aus dem Stylesheet —
+  // `leseRollenHexe()` liesst `--type-*-hex` von der Wurzel. Ein jsdom-Fixture
+  // kennt index.css nicht, also standen dort vorher die Hex-Literale der
+  // Komponente; seit die Token Quelle sind, malt die Leinwand ohne diese Zeilen
+  // gar nichts (undefined-Farbe -> TypeError im Mal-Pass, 63 Tests fielen).
+  // Die Werte sind die von index.css:107-126 (hell) und 295-314 (dunkel).
+  const rollen = modus === "hell"
+    ? {
+      "--type-semantic-hex": "#2d4964", "--type-episodic-hex": "#643a4f",
+      "--type-procedural-hex": "#304e34", "--type-reference-hex": "#604028",
+      "--type-neutral-hex": "#464646",
+      "--type-herkunft-geschrieben-hex": "#42474c", "--type-herkunft-datei-hex": "#693a00",
+      "--type-herkunft-rechner-hex": "#00514d",
+    }
+    : {
+      "--type-semantic-hex": "#9cadc4", "--type-episodic-hex": "#c6a1ba",
+      "--type-procedural-hex": "#8fb89a", "--type-reference-hex": "#c6a687",
+      "--type-neutral-hex": "#acacac",
+      "--type-herkunft-geschrieben-hex": "#a7acb3", "--type-herkunft-datei-hex": "#d8a25c",
+      "--type-herkunft-rechner-hex": "#6cb9b3",
+    };
   const werte = modus === "hell"
-    ? { "--bg-panel-solid": "#fbf9f4", "--text-1": "#1a1712", "--text-3": "#6b6555", "--accent": "#8f7440", "--node-rim": "rgba(64, 56, 38, 0.34)", "--node-shade": "rgba(40, 32, 16, 0.16)", "--node-hi": "0.5" }
-    : { "--bg-panel-solid": "#121214", "--text-1": "#e8e6e1", "--text-3": "#7a7a7a", "--accent": "#c9b785", "--node-rim": "rgba(255, 255, 255, 0.2)", "--node-shade": "rgba(0, 0, 0, 0.3)", "--node-hi": "0.72" };
-  for (const [k, v] of Object.entries(werte)) w.setProperty(k, v);
+    ? { "--bg-panel-solid": "#f0f2eb", "--text-1": "#232526", "--text-2": "#5b5e60", "--text-3": "#8d9092", "--accent": "#9c2b1f", "--node-rim": "rgba(34, 48, 60, 0.4)", "--node-shade": "rgba(40, 32, 16, 0.16)", "--node-hi": "0.5" }
+    : { "--bg-panel-solid": "#121214", "--text-1": "#eaeae8", "--text-2": "#9b9992", "--text-3": "#66645e", "--accent": "#c04a39", "--node-rim": "rgba(230, 233, 225, 0.24)", "--node-shade": "rgba(0, 0, 0, 0.35)", "--node-hi": "0.72" };
+  for (const [k, v] of Object.entries({ ...werte, ...rollen })) w.setProperty(k, v);
 }

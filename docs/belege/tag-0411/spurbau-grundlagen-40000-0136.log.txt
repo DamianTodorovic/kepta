@@ -1,0 +1,55 @@
+== Grundgesamtheit ==
+  memories: 40002
+  entities: 40008
+  memory_entities: 160000
+  relations: 360000
+  chunks: 80004
+  chunks mit Vektor: 160
+  Zaehler: [{"key":"daten_generation","value":"680176"},{"key":"mem_generation","value":"40002"},{"key":"embed_generation","value":"160"}]
+== Ausloeser: welche Tabelle hebt welchen Zaehler ==
+  daten_gen_chunks_d -> daten_generation
+  daten_gen_chunks_i -> daten_generation
+  daten_gen_chunks_u -> daten_generation
+  daten_gen_entities_d -> daten_generation
+  daten_gen_entities_i -> daten_generation
+  daten_gen_entities_u -> daten_generation
+  daten_gen_mem_ent_d -> daten_generation
+  daten_gen_mem_ent_i -> daten_generation
+  daten_gen_memories_d -> daten_generation,mem_generation
+  daten_gen_memories_i -> daten_generation,mem_generation
+  daten_gen_memories_u -> daten_generation,mem_generation
+  daten_gen_relations_d -> daten_generation
+  daten_gen_relations_i -> daten_generation
+  daten_gen_relations_u -> daten_generation
+  embed_gen_chunks_d -> embed_generation
+  embed_gen_chunks_i -> embed_generation
+  embed_gen_chunks_u -> embed_generation
+  memories_ad -> ?
+  memories_ai -> ?
+  memories_au -> ?
+== Die einzelnen Lesungen, je drei Laeufe ==
+  store.entityNamen(): 126.20 / 64.66 / 65.95 ms (4000 Zeilen)
+  store.datenGeneration(): 0.56 / 0.01 / 0.01 ms
+  store.allEmbeddableChunks(): 27.60 / 1.30 / 1.26 ms (160 Zeilen)
+  store.chunksFuerMemories([1 Notiz]): 0.10 / 0.01 / 0.01 ms (2 Zeilen)
+  store.ftsSearch(Fristenkontrolle, 500): 34.23 / 3.24 / 3.04 ms (500 Zeilen)
+== derselbe Griff, vier Bein-Stellungen (vektor-Segment der Tuer bleibt ungeaendert) ==
+  alle drei Beine: gesamt 233.48 ms | treffer 10 | teilzeiten {"wortlese":3.646,"einbettung":34.373,"vektor":136.107,"gesamt":233.227}
+  ohne entity-Bein: gesamt 58.31 ms | treffer 10 | teilzeiten {"wortlese":34.146,"einbettung":17.884,"vektor":6.23,"gesamt":58.307}
+  ohne vector-Bein: gesamt 9.26 ms | treffer 10 | teilzeiten {"wortlese":3.806,"einbettung":0,"vektor":5.389,"gesamt":9.241}
+  nur bm25: gesamt 9.12 ms | treffer 10 | teilzeiten {"wortlese":3.402,"einbettung":0,"vektor":5.66,"gesamt":9.106}
+==erklaerung der entities-lesung (plan) ==
+  MATERIALIZE grad
+  CO-ROUTINE (subquery-2)
+  COMPOUND QUERY
+  LEFT-MOST SUBQUERY
+  SCAN relations USING COVERING INDEX idx_relations_source
+  UNION ALL
+  SCAN relations USING COVERING INDEX idx_relations_target
+  SCAN (subquery-2)
+  USE TEMP B-TREE FOR GROUP BY
+  SCAN e
+  SEARCH me USING INDEX idx_memory_entities_entity (entity_id=?) LEFT-JOIN
+  BLOOM FILTER ON g (entity_id=?)
+  SEARCH g USING AUTOMATIC COVERING INDEX (entity_id=?) LEFT-JOIN
+  USE TEMP B-TREE FOR ORDER BY

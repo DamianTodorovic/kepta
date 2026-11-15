@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { KeptaStore } from "../../src/core/store";
-import { searchMemories, suchCacheStatistik } from "../../src/core/engine";
+import { searchMemories, suchCacheStatistik, aktiviereSuchCacheDelta } from "../../src/core/engine";
 
 // Such-Cache-Audit: der Cache in engine.ts hängt an der datenGeneration
 // (Trigger auf memories/chunks/entities/relations). Diese Tests stellen sicher,
@@ -117,5 +117,28 @@ describe("Such-Cache-Invalidierung über die datenGeneration", () => {
     );
     expect(await treffer("Roh ohne Meldung")).toContain("Roh ohne Meldung");
     expect(suchCacheStatistik.vollaufbauten).toBe(vor + 1); // Sicherheitsnetz griff
+  });
+
+  it("Vor dem ersten Write aktiviert: der Ingest wächst mit, der erste Suchlauf zahlt keinen Volllauf", async () => {
+    // Derselbe Aufrufpunkt wie im Bootstrap (server/bootstrap.ts, Kern-server.ts).
+    aktiviereSuchCacheDelta(store);
+    store.createMemory({ title: "Warmstart Basis", content: "Der erste Datensatz, noch vor jeder Suche." });
+    store.createMemory({ title: "Warmstart Zweit", content: "Der zweite, beide patches nur ins Delta." });
+
+    const vor = suchCacheStatistik.vollaufbauten;
+    expect(await treffer("Warmstart")).toEqual(expect.arrayContaining(["Warmstart Basis", "Warmstart Zweit"]));
+    expect(suchCacheStatistik.vollaufbauten).toBe(vor); // Cache stand schon vor der ersten Suche
+  });
+
+  it("onMemorieAenderung meldet wieder ab — kein Listener bleibt heimlich hängen", () => {
+    const gesehene: string[] = [];
+    const abmelden = store.onMemorieAenderung((id) => gesehene.push(id));
+
+    const erste = store.createMemory({ title: "Abmelden Eins", content: "Sieht der Listener." });
+    expect(gesehene).toEqual([erste.id]);
+
+    abmelden();
+    store.createMemory({ title: "Abmelden Zwei", content: "Sieht der abgemeldete Listener nicht." });
+    expect(gesehene).toEqual([erste.id]);
   });
 });

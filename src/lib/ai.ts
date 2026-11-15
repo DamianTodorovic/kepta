@@ -1,0 +1,715 @@
+// Aufgabe #94 (24.10.): das Lokal-Kriterium wohnt an einer Stelle - dieselbe Funktion wie die Tuer.
+import { ApiFehler, coalescedJson, invalidateApiCache } from './api';
+import { istLokaleAdresse } from './schild';
+
+export type Protocol = 'openai' | 'anthropic';
+
+export interface ProviderPreset {
+  id: string;
+  label: string;
+  protocol: Protocol;
+  baseUrl: string;
+  defaultModel: string;
+  needsKey: boolean;
+  hint: string;
+}
+
+// Alle sprechen OpenAI-Protokoll — ein Key, jedes Modell nutzbar.
+// OpenRouter allein gibt Zugriff auf hunderte Modelle, die Direkt-Anbieter sind schneller/günstiger.
+export const PROVIDERS: ProviderPreset[] = [
+  {
+    id: 'openai',
+    label: 'OpenAI (GPT)',
+    protocol: 'openai',
+    baseUrl: 'https://api.openai.com/v1',
+    defaultModel: 'gpt-4o-mini',
+    needsKey: true,
+    hint: 'Key from platform.openai.com — gpt-4o, gpt-4o-mini, o1, o3',
+  },
+  {
+    id: 'anthropic',
+    label: 'Anthropic (Claude)',
+    protocol: 'anthropic',
+    baseUrl: 'https://api.anthropic.com',
+    defaultModel: 'claude-sonnet-4-20250514',
+    needsKey: true,
+    hint: 'Key from console.anthropic.com — Sonnet 4, Haiku 3.5, Opus 4',
+  },
+  {
+    id: 'gemini',
+    label: 'Google Gemini',
+    protocol: 'openai',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    defaultModel: 'gemini-2.5-flash',
+    needsKey: true,
+    hint: 'Key from aistudio.google.com — 2.5 Flash/Pro, 2.0 Flash',
+  },
+  {
+    id: 'openrouter',
+    label: 'OpenRouter (every model)',
+    protocol: 'openai',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    defaultModel: 'openai/gpt-4o-mini',
+    needsKey: true,
+    hint: 'One key for hundreds of models from every provider — the most flexible choice',
+  },
+  {
+    id: 'mistral',
+    label: 'Mistral',
+    protocol: 'openai',
+    baseUrl: 'https://api.mistral.ai/v1',
+    defaultModel: 'mistral-large-latest',
+    needsKey: true,
+    hint: 'Key from console.mistral.ai — Large 2, Small, Codestral',
+  },
+  {
+    id: 'groq',
+    label: 'Groq',
+    protocol: 'openai',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    defaultModel: 'llama-3.3-70b-versatile',
+    needsKey: true,
+    hint: 'Very fast — Llama 3.3, Mixtral, Gemma',
+  },
+  {
+    id: 'deepseek',
+    label: 'DeepSeek',
+    protocol: 'openai',
+    baseUrl: 'https://api.deepseek.com/v1',
+    defaultModel: 'deepseek-chat',
+    needsKey: true,
+    hint: 'Key from platform.deepseek.com — V3, R1 reasoner',
+  },
+  {
+    id: 'xai',
+    label: 'xAI (Grok)',
+    protocol: 'openai',
+    baseUrl: 'https://api.x.ai/v1',
+    defaultModel: 'grok-3',
+    needsKey: true,
+    hint: 'Key from console.x.ai — Grok 3 and Grok 3 mini',
+  },
+  {
+    id: 'perplexity',
+    label: 'Perplexity (Sonar)',
+    protocol: 'openai',
+    baseUrl: 'https://api.perplexity.ai',
+    defaultModel: 'sonar',
+    needsKey: true,
+    hint: 'Key from perplexity.ai — sonar, sonar-pro, with web search',
+  },
+  {
+    id: 'together',
+    label: 'Together AI',
+    protocol: 'openai',
+    baseUrl: 'https://api.together.xyz/v1',
+    defaultModel: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
+    needsKey: true,
+    hint: 'Key from api.together.ai — every open-source model, cheaply',
+  },
+  {
+    id: 'fireworks',
+    label: 'Fireworks AI',
+    protocol: 'openai',
+    baseUrl: 'https://api.fireworks.ai/inference/v1',
+    defaultModel: 'accounts/fireworks/models/llama-v3p1-405b-instruct',
+    needsKey: true,
+    hint: 'Key from fireworks.ai — Llama 405B, Qwen, DeepSeek, fast',
+  },
+  {
+    id: 'cohere',
+    label: 'Cohere',
+    protocol: 'openai',
+    baseUrl: 'https://api.cohere.com/compatibility/v1',
+    defaultModel: 'command-r-plus',
+    needsKey: true,
+    hint: 'Key from dashboard.cohere.com — Command R+, Embed v4',
+  },
+  {
+    id: 'cerebras',
+    label: 'Cerebras',
+    protocol: 'openai',
+    baseUrl: 'https://api.cerebras.ai/v1',
+    defaultModel: 'llama3.1-70b',
+    needsKey: true,
+    hint: 'Extremely fast — key from cerebras.ai, Llama 3.1 70B',
+  },
+  {
+    id: 'huggingface',
+    label: 'Hugging Face',
+    protocol: 'openai',
+    baseUrl: 'https://api-inference.huggingface.co/v1',
+    defaultModel: 'meta-llama/Meta-Llama-3-8B-Instruct',
+    needsKey: true,
+    hint: 'Key from huggingface.co — thousands of open-source models',
+  },
+  {
+    id: 'novita',
+    label: 'Novita AI',
+    protocol: 'openai',
+    baseUrl: 'https://api.novita.ai/v3/openai',
+    defaultModel: 'meta-llama/llama-3.1-70b-instruct',
+    needsKey: true,
+    hint: 'Cheap — key from novita.ai, all the Llama and Qwen models',
+  },
+  {
+    id: 'github',
+    label: 'GitHub Models',
+    protocol: 'openai',
+    baseUrl: 'https://models.inference.ai.azure.com',
+    defaultModel: 'gpt-4o-mini',
+    needsKey: true,
+    hint: 'Key from github.com/marketplace/models — gpt-4o, Llama, Phi',
+  },
+  {
+    id: 'azure',
+    label: 'Azure OpenAI',
+    protocol: 'openai',
+    baseUrl: '',
+    defaultModel: 'gpt-4o',
+    needsKey: true,
+    hint: 'Enter your Azure URL: https://{name}.openai.azure.com/openai/deployments/{id}',
+  },
+  {
+    id: 'ollama',
+    label: 'Ollama (local, free)',
+    protocol: 'openai',
+    baseUrl: 'http://localhost:11434/v1',
+    defaultModel: 'llama3.2',
+    needsKey: false,
+    hint: 'Runs entirely offline on your machine. Pull a model with "ollama pull llama3.2".',
+  },
+  {
+    id: 'lmstudio',
+    label: 'LM Studio (local)',
+    protocol: 'openai',
+    baseUrl: 'http://localhost:1234/v1',
+    defaultModel: '',
+    needsKey: false,
+    hint: 'Start LM Studio with its local server enabled.',
+  },
+  {
+    id: 'custom',
+    label: 'Custom endpoint (OpenAI-compatible)',
+    protocol: 'openai',
+    baseUrl: '',
+    defaultModel: '',
+    needsKey: false,
+    hint: 'Any API that speaks the OpenAI format (vLLM, Jan, GPT4All, …).',
+  },
+];
+
+export interface AISettings {
+  providerId: string;
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  /**
+   * Optionales, kleines Modell nur für Auto-Learn. Leer = dasselbe wie `model`.
+   * Grosse Reasoning-Modelle brauchen für Titel und drei Tags Minuten pro Antwort;
+   * ein 3B-Modell erledigt das in Sekunden.
+   */
+  extractModel?: string;
+}
+
+// Der Sitzungsname darf nicht unter `kepta_` / `ki_gehirn_` liegen: src/lib/settings.ts
+// huellt localStorage ein und spiegelt jeden Namen mit diesen Praefixen in
+// /api/settings zurueck — gemessen am gebauten Buendel stand der Klartext des
+// Schluessels nach dem Neustart wieder in der rohen Antwort (f13-evidence/klage-buendel.txt).
+const SITZUNGS_NAME = 'aiVerbindung';
+const ALTE_SITZUNGS_NAME = 'ki_gehirn_ai_settings';
+
+// ---------- F13: der Schluessel bleibt lokal, die API sieht ihn nie ----------
+//
+// GET /api/settings maskiert seit A3-09 secretfoermige Namen und den
+// ai_settings-Blob — und genau darin lag bisher der KI-Schluessel der App.
+// Die App kann sich auf den Rueckweg nicht mehr verlassen, also holt sie sich
+// den Schluessel nicht mehr von dort: die Verbindung liegt unter einem Namen,
+// den die Maske durchlaesst (`ai_connection`), der Schluessel selbst nur als
+// Umschlag, versiegelt mit dem Datenbankschluessel dieser Installation. Der
+// wohnt im Schluesselbund des Betriebssystems und kommt über die
+// Wiederherstellungs-Route heraus — die Antwort der Einstellungs-Route traegt
+// ihn nie.
+const SPIEGEL_NAME = 'ai_connection';
+const ALTER_BLOB = 'ai_settings';
+const UMSCHLAG_KENNUNG = 'v1.';
+const HKDF_SALT = 'kepta-app/ai-connection';
+const HKDF_INFO = 'ki-schluessel';
+
+/** Der Wert des Schluesselfelds, das keinen Reim verdient: lokaler Provider. */
+const LOKALER_WERT = 'local';
+
+function hexZuBytes(hex: string): Uint8Array<ArrayBuffer> {
+  const bytes = new Uint8Array(new ArrayBuffer(hex.length / 2));
+  for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return bytes;
+}
+
+function bytesZuBase64(bytes: Uint8Array): string {
+  let text = '';
+  for (const b of bytes) text += String.fromCharCode(b);
+  return btoa(text);
+}
+
+function base64ZuBytes(base64: string): Uint8Array<ArrayBuffer> {
+  const roh = atob(base64);
+  const bytes = new Uint8Array(new ArrayBuffer(roh.length));
+  for (let i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
+  return bytes;
+}
+
+/** Was im Spiegel steht: die Verbindung, der Schluessel nur als Umschlag. */
+interface GespiegelteVerbindung {
+  v?: number;
+  providerId?: string;
+  baseUrl?: string;
+  model?: string;
+  extractModel?: string;
+  schluessel?: string;
+}
+
+interface Huelle {
+  schluessel: CryptoKey;
+  /** Wo der Datenbankschluessel liegt — macOS Keychain, DPAPI, Secret Service. */
+  ablage: string | null;
+}
+
+/** Einmal geholt, fuer die Sitzung behalten. Scheitern wird nicht gepuffert. */
+let gespeicherteHuelle: Huelle | null = null;
+
+async function baueHuelle(): Promise<Huelle | null> {
+  const r = await fetch('/api/recovery-key', { method: 'POST', headers: { 'x-kepta-recovery': '1' } });
+  if (!r.ok) return null;
+  const d = (await r.json()) as { key?: unknown; storedIn?: unknown };
+  const hex = typeof d.key === 'string' ? d.key.trim() : '';
+  if (!/^[0-9a-f]{64}$/i.test(hex)) return null;
+  const basis = await crypto.subtle.importKey('raw', hexZuBytes(hex), 'HKDF', false, ['deriveKey']);
+  const schluessel = await crypto.subtle.deriveKey(
+    { name: 'HKDF', hash: 'SHA-256', salt: new TextEncoder().encode(HKDF_SALT), info: new TextEncoder().encode(HKDF_INFO) },
+    basis,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+  return { schluessel, ablage: typeof d.storedIn === 'string' ? d.storedIn : null };
+}
+
+async function huelle(): Promise<Huelle | null> {
+  if (gespeicherteHuelle) return gespeicherteHuelle;
+  const versucht = await baueHuelle().catch(() => null);
+  if (versucht) gespeicherteHuelle = versucht;
+  return versucht;
+}
+
+/** Der Klartext als Umschlag, oder null, wenn diese Installation keinen Verschluss hat. */
+async function versiegle(klartext: string): Promise<string | null> {
+  const h = await huelle();
+  if (!h) return null;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const dicht = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, h.schluessel, new TextEncoder().encode(klartext)));
+  const paket = new Uint8Array(iv.length + dicht.length);
+  paket.set(iv, 0);
+  paket.set(dicht, iv.length);
+  return UMSCHLAG_KENNUNG + bytesZuBase64(paket);
+}
+
+/**
+ * #31: ein Umschlag, der nicht aufgeht, ist kein leerer Speicher. Die Auskunft bleibt leer
+ * (die App faellt auf die Defaults), aber welcher der drei Gruende es war, geht ins
+ * Protokoll - sonst steht danach "keine Verbindung" ueber jemanden, der eine hat.
+ */
+function meldetUmschlagAusfall(grund: string, ...bei: unknown[]): void {
+  console.warn(`kepta: stored key could not be opened (${grund})`, ...bei);
+}
+
+/** Macht einen Umschlag auf. Anderer Datenbankschluessel → leer, nie ein Absturz. */
+async function oeffne(wert: string): Promise<string> {
+  if (!wert) return '';
+  if (wert === LOKALER_WERT) return LOKALER_WERT;
+  if (!wert.startsWith(UMSCHLAG_KENNUNG)) {
+    meldetUmschlagAusfall('the stored value carries no envelope marker');
+    return '';
+  }
+  const h = await huelle();
+  if (!h) {
+    meldetUmschlagAusfall('this installation has no sealing key');
+    return '';
+  }
+  const paket = base64ZuBytes(wert.slice(UMSCHLAG_KENNUNG.length));
+  if (paket.length <= 12) {
+    meldetUmschlagAusfall('the envelope is shorter than its own start vector');
+    return '';
+  }
+  try {
+    const klar = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: paket.slice(0, 12) },
+      h.schluessel,
+      paket.slice(12),
+    );
+    return new TextDecoder().decode(klar);
+  } catch (e) {
+    meldetUmschlagAusfall('the sealing key did not fit this envelope', e);
+    return '';
+  }
+}
+
+/**
+ * #31: die Maskierung der Einstellungs-Route mit ihrem ersten Leser. GET /api/settings
+ * zeigt secretfoermige Namen nur als `{gesetzt, ende}` (A3-09,
+ * server/router/settings.ts:50-51). Genau daraus liest die Flaeche jetzt, ob ein
+ * Altbestand in der Datenbank liegt, den sie nicht lesen kann.
+ */
+export interface AltFund {
+  /** Der Reihenname, den die Maske traegt. */
+  name: string;
+  /** true = die Tuer meldet einen Wert. */
+  gesetzt: boolean;
+  /** Die letzten vier Zeichen, die die Tuer zeigt, oder null. */
+  ende: string | null;
+  /**
+   * Wie die Reihe aus der Tuer kommt: "maske" = nur die Anzeige, "klartext" = die
+   * Tuer gaebe sie lesbar heraus. Gelesen wird sie seit 3.2.45 in keinem Fall mehr;
+   * die Form sagt nur, was die Flaeche einem Menschen erzaehlen darf.
+   */
+  form: "maske" | "klartext";
+}
+
+export interface AISchluesselStatus {
+  /** true = der Schluessel ist versiegelt und hält einen Neustart aus. */
+  verschlossen: boolean;
+  /** Wo der Verschluss liegt — null, wenn diese Installation keinen hat. */
+  ablage: string | null;
+  /** Ein unlesbarer Altbestand, oder null, wenn die Maske nichts verbirgt. */
+  altFund: AltFund | null;
+}
+
+export async function kiSchluesselStatus(): Promise<AISchluesselStatus> {
+  const [h, fund] = await Promise.all([huelle(), altFund()]);
+  return { verschlossen: h !== null, ablage: h?.ablage ?? null, altFund: fund };
+}
+
+/**
+ * #31: der Klartext des Schluessels lebt in diesem Modul, nicht im Speicher der
+ * Flaeche. `localStorage` haelt die Verbindung ohne ihn; nach einem Neustart oeffnet
+ * `hydrateAISettings` den Umschlag aus `ai_connection` und fuellt dieses Feld. Ein
+ * Feld, das maskiert aussieht und unmaskiert geschrieben wird, ist kein Verschluss.
+ */
+let sitzungsSchluessel = "";
+
+function ohneSchluessel(s: AISettings): AISettings {
+  return { ...s, apiKey: "" };
+}
+
+export function loadAISettings(): AISettings {
+  try {
+    const roh = localStorage.getItem(SITZUNGS_NAME) ?? localStorage.getItem(ALTE_SITZUNGS_NAME);
+    if (roh) {
+      const gelesen = JSON.parse(roh) as AISettings;
+      // eine Zeile von vor diesem Schlag kann den Klartext noch tragen; der Wert der
+      // Sitzung zaehlt erst, wenn die eigene Zeile ihn nicht mehr haelt
+      return { ...gelesen, apiKey: gelesen.apiKey || sitzungsSchluessel };
+    }
+  } catch (e) {
+    // #31: ein unlesbarer eigner Wert ist ein Fakt, keine Gleichgueltigkeit. Die Flaeche
+    // faellt auf den Katalog zurueck und sagt "kein Anbieter gewaehlt" — ohne diese Zeile
+    // waere der Unterschied zwischen "niemand hat gewaehlt" und "wir konnten es nicht lesen"
+    // verloren. Der Rueckgriff bleibt, der Grund wird hoerbar.
+    console.warn("kepta: stored AI settings could not be read, falling back to the catalog", e);
+  }
+  // Katalogzeile ja, Adresse nein: niemand hat sie gewaehlt, und die Tuer lehnt jede
+  // ab, die nicht genannt ist (grund=kein-anbieter). Wer einen Anbieter waehlt, bekommt
+  // seine Adresse zurueck - ueber selectProvider, nicht ueber diesen Weg.
+  const p = PROVIDERS[0];
+  return { providerId: p.id, apiKey: '', baseUrl: '', model: '' };
+}
+
+/**
+ * Spiegel in die verschluesselte Datenbank: das localStorage haengt am
+ * Origin — und der Port der App ist bei jedem Start ein anderer
+ * (26.9.-Audit: zehn verwaiste Origins im Chromium-Profil). Ohne diesen
+ * Spiegel war die AI-Verbindung nach jedem Neustart weg.
+ *
+ * Der Spiegel traegt die Verbindung, nie den Schluessel im Klartext: der geht
+ * als Umschlag mit hinein (`versiegle`). `haelt` sagt, ob der Spiegel auch den
+ * Schluessel sicher verwahrt — nur dann darf die alte Klartext-Spiegelung
+ * (`ai_settings`) geloescht werden. Sonst bliebe der Nutzer ohne Schluessel da
+ * stehen, und genau das ist der Fall, an dem solche Aenderungen aussperren.
+ */
+async function spiegelbild(s: AISettings): Promise<{ text: string; haelt: boolean }> {
+  let schluessel: string | undefined;
+  let haelt = true;
+  if (s.apiKey && s.apiKey !== LOKALER_WERT) {
+    const umschlag = await versiegle(s.apiKey);
+    if (umschlag) schluessel = umschlag;
+    else haelt = false; // ohne Verschluss wird der Schluessel nirgends abgelegt
+  } else if (s.apiKey === LOKALER_WERT) {
+    schluessel = LOKALER_WERT;
+  }
+  const text = JSON.stringify({
+    v: 1,
+    providerId: s.providerId,
+    baseUrl: s.baseUrl,
+    model: s.model,
+    ...(s.extractModel ? { extractModel: s.extractModel } : {}),
+    ...(schluessel ? { schluessel } : {}),
+  });
+  return { text, haelt };
+}
+
+/** Die Reihen, in denen aeltere Versionen den Klartext ablegten. */
+const ALTE_ABLAGEN = [ALTER_BLOB, ALTE_SITZUNGS_NAME];
+
+
+/**
+ * Der Leser der Maske. Jede der alten Reihen ist ein Fund, egal in welcher Form sie
+ * kommt: als Anzeige `{gesetzt, ende}` (Maske) oder als Zeichenkette (eine Tuer von
+ * vor der Maske). Gelesen wird sie in keinem Fall mehr - seit 3.2.45 gibt es keinen
+ * Rueckfall auf einen lesbaren Altbestand. Was bleibt, ist die Meldung an den
+ * Menschen und die Regel, dass `spiegle` einen Fund nicht loescht.
+ */
+async function altFund(): Promise<AltFund | null> {
+  try {
+    const r = await coalescedJson<Record<string, unknown>>('/api/settings', { ttlMs: 500 });
+    if (!r.ok || !r.data) {
+      console.warn(`kepta: legacy key check did not answer (HTTP ${r.status})`);
+      return null;
+    }
+    const d = r.data;
+    for (const name of ALTE_ABLAGEN) {
+      const wert = d[name];
+      if (typeof wert === 'string' && wert) return { name, gesetzt: true, ende: null, form: 'klartext' };
+      if (wert && typeof wert === 'object' && (wert as { gesetzt?: unknown }).gesetzt === true) {
+        return { name, gesetzt: true, ende: (wert as { ende?: string | null }).ende ?? null, form: 'maske' };
+      }
+    }
+  } catch (e) {
+    // #31: "kein Fund" und "wir konnten nicht fragen" sind zwei verschiedene Auskunften ueber
+    // den Bestand des Nutzers. Die eine bleibt die Antwort, der andern Grund geht ins Protokoll.
+    console.warn("kepta: legacy key check did not answer", e);
+  }
+  return null;
+}
+
+async function spiegle(s: AISettings): Promise<boolean> {
+  const { text, haelt } = await spiegelbild(s);
+  const leib: Record<string, string | null> = { [SPIEGEL_NAME]: text };
+  // #31: geloescht wird nur, was die Flaeche auch lesen konnte. Ein unlesbarer
+  // Altbestand bleibt liegen, bis jemand den Schluessel neu eingibt - ein blinder
+  // Wurf haette ihn spaetestens hier verloren, ohne dass jemand es gemerkt haette.
+  const fund = await altFund();
+  if (haelt && !fund) for (const alt of ALTE_ABLAGEN) leib[alt] = null;
+  invalidateApiCache('/api/settings');
+  const antwort = await fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(leib),
+  });
+  // P4-02: die Antwort war bisher ein blinder Wurf. 413 (Etat voll), 429 (Schreibkante)
+  // und 500 (Datenbank) liefen als Erfolg weiter, weil die Kette sie schluckte.
+  //
+  // 3.2.152 (Fehler-Feger #31): dieselbe Zahl, aber im eigner Typ. Ein kahler Error nennt
+  // der Flaeche nur seinen Wortlaut, und die Herkunfts-Kante (src/lib/absage.ts) darf keinen
+  // Wortlaut lesen — sie erkennt die eigne Tuer am `ApiFehler`. Also: die Zahl traegt nun,
+  // was sie schon immer war, und die Absage-Zeile in Settings bleibt wortgleich.
+  if (!antwort.ok) throw new ApiFehler(`HTTP ${antwort.status}`, antwort.status);
+  return haelt;
+}
+
+/**
+ * #31, die dritte Seite (Wanderung): eine Bestandsinstallation darf nicht
+ * ausgesperrt werden, nur weil ihr Klartext aus dem Browserspeicher genommen
+ * wird. Geoeffnet wird er erst, wenn die Tuer denselben Schluessel schon
+ * versiegelt haelt - ein Umschlag unter `ai_connection`, nicht die Maske.
+ */
+async function versiegeltVorhanden(): Promise<boolean> {
+  try {
+    const r = await coalescedJson<Record<string, unknown>>('/api/settings', { ttlMs: 500 });
+    if (!r.ok || !r.data) {
+      // #31: "nicht versiegelt" und "ich konnte die Tuer nicht fragen" sind zwei Antworten.
+      // Die Richtung bleibt die sichere - der Klartext wird nicht fortgenommen, niemand
+      // wird ausgesperrt -, aber der Ausfall steht jetzt im Protokoll.
+      console.warn(`kepta: sealing check did not answer (HTTP ${r.status})`);
+      return false;
+    }
+    const d = r.data;
+    const roh = d[SPIEGEL_NAME];
+    if (typeof roh !== 'string' || !roh) return false;
+    const gespiegelt = JSON.parse(roh) as GespiegelteVerbindung;
+    const umschlag = gespiegelt?.schluessel ?? '';
+    return umschlag === LOKALER_WERT || umschlag.startsWith(UMSCHLAG_KENNUNG);
+  } catch (e) {
+    console.warn('kepta: sealing check did not answer', e);
+    return false;
+  }
+}
+
+/** Die Spiegelung laeuft hinterher her und der Reihenfolge nach — nie durcheinander. */
+let spiegelKette: Promise<void> = Promise.resolve();
+
+/**
+ * localStorage ist die sofortige Wahrheit der Sitzung, die Datenbank das
+ * Gedaechtnis ueber den Neustart. Fire-and-forget wie zuvor, aber die
+ * Rueckgabe der Kette laesst darauf warten (Tests, Wanderung).
+ */
+export function saveAISettings(s: AISettings): Promise<void> {
+  // #31: die Sitzung traegt den Schluessel von nun an selbst. Der Browserspeicher
+  // bekommt ihn erst gar nicht neu dazu, und was darin schon steht, wird erst
+  // herausgenommen, wenn die Tuer denselben Schluessel versiegelt haelt (`haelt`).
+  sitzungsSchluessel = s.apiKey;
+  localStorage.setItem(SITZUNGS_NAME, JSON.stringify(ohneSchluessel(s)));
+  // nimmt die gespiegelte Reihe mit: removeItem laeuft durch die Huelle von
+  // src/lib/settings.ts und loescht damit auch die Zeile in der Datenbank
+  localStorage.removeItem(ALTE_SITZUNGS_NAME);
+  const lauf = spiegelKette.then(() => spiegle(s));
+  // P4-02: wer wartet, sieht den Fehlschlag; wer ignoriert, nicht. Die Kette haelt an
+  // einem abgewiesenen Spiegel zusammen, aber der Rueckweg bleibt offen — der Handler
+  // an `lauf` verhindert zugleich jede unbehandelte Ablehnung an den drei Aufrufstellen,
+  // die nicht warten (Chat.tsx:135, OnboardingWizard.tsx:86, Settings.tsx:780).
+  const nach = lauf.then((haelt) => {
+    // ohne Umschlag bei der Tuer waere das Herausnehmen eine Sperre: dann bleibt
+    // die Arbeitskopie im Speicher der Flaeche liegen, wie es die Zeile sagt
+    if (!haelt) localStorage.setItem(SITZUNGS_NAME, JSON.stringify(s));
+  });
+  spiegelKette = nach.catch(() => { /* offline: localStorage traegt weiter */ });
+  return nach;
+}
+
+function legeFest(s: AISettings): void {
+  sitzungsSchluessel = s.apiKey;
+  localStorage.setItem(SITZUNGS_NAME, JSON.stringify(ohneSchluessel(s)));
+  localStorage.removeItem(ALTE_SITZUNGS_NAME);
+}
+
+/**
+ * Beim App-Start die DB-Spiegelung zuruecklesen. Die Regel ist simpel und
+ * ehrlich: JEDES saveAISettings spiegelt sofort in die DB — ist lokal also ein
+ * Eintrag vorhanden, ist er mindestens so frisch wie die Spiegelung (gleicher
+ * Port, laufende Sitzung) und bleibt unangetastet. Ist localStorage LEER (der
+ * Normalfall nach einem Neustart — neuer Port, neuer Origin), uebernimmt die
+ * Spiegelung komplett, und der Umschlag geht mit dem Schluessel dieser
+ * Installation auf.
+ *
+ * Ein Bestand von VOR dieser Aenderung liegt nicht mehr lesbar in der Antwort: die
+ * Einstellungs-Route maskiert genau diese Reihen (A3-09), und `altFund` meldet die
+ * Maskierung als Fund. Die Flaeche liest, was sie lesen kann, und loescht nichts,
+ * was sie nicht gelesen hat - der Fund bleibt liegen und wird an der Schluessel-
+ * zeile gesagt.
+ */
+export async function hydrateAISettings(): Promise<AISettings> {
+  try {
+    if (localStorage.getItem(SITZUNGS_NAME)) {
+      // #31: eine Zeile von vor diesem Schlag kann den Klartext noch tragen. Er geht
+      // in die Sitzung ueber und wird aus dem Speicher der Flaeche nur dann
+      // herausgenommen, wenn die Tuer ihn schon versiegelt haelt - sonst ist die
+      // Wanderung eine Sperre fuer genau die Installationen, die nichts getan haben.
+      const s = loadAISettings();
+      if (s.apiKey && (await versiegeltVorhanden())) legeFest(s);
+      return s;
+    }
+    const r = await coalescedJson<Record<string, unknown>>('/api/settings', { ttlMs: 500 });
+    if (!r.ok || !r.data) {
+      // #31: die Tuer hat abgewiesen. "Keine Verbindung" ist hier keine Auskunft ueber
+      // den Bestand, sondern ueber die Antwort — der Rueckgriff bleibt, die Zahl nicht.
+      console.warn(`kepta: settings door refused, the mirror was not read (HTTP ${r.status})`);
+      return loadAISettings();
+    }
+    const d = r.data;
+
+    const roh = typeof d[SPIEGEL_NAME] === 'string' ? (d[SPIEGEL_NAME] as string) : '';
+    if (roh) {
+      try {
+        const gespiegelt = JSON.parse(roh) as GespiegelteVerbindung;
+        if (gespiegelt?.model) {
+          const s: AISettings = {
+            providerId: gespiegelt.providerId ?? PROVIDERS[0].id,
+            apiKey: await oeffne(gespiegelt.schluessel ?? ''),
+            baseUrl: gespiegelt.baseUrl ?? '',
+            model: gespiegelt.model,
+            ...(gespiegelt.extractModel ? { extractModel: gespiegelt.extractModel } : {}),
+          };
+          legeFest(s);
+          return s;
+        }
+      } catch (e) {
+        // #31: der Spiegel war da und war nicht zu lesen. Ohne diese Zeile steht die
+        // Flaeche danach da und sagt "nichts gewaehlt" — eine falsche Aussage ueber den
+        // Bestand des Menschen: er hatte gewaehlt, nur war es kaputt.
+        console.warn("kepta: mirrored AI settings could not be read, falling back to the defaults", e);
+      }
+    }
+
+    // Hier stand bis 3.2.45 der Rueckfall auf einen lesbaren Altbestand
+    // (`typeof d[name] === 'string'`). Die Einstellungs-Route maskiert genau diese
+    // Reihen seit A3-09 (server/router/settings.ts:51), also konnte der Zweig gegen
+    // die ausgelieferte Tuer nie wahr werden. Was von ihm bleibt, ist der Leser der
+    // Maske: `altFund` meldet den Fund, `spiegle` loescht ihn nicht (ai.ts:436 und
+    // :463). Ein Bestand aus der Zeit vor der Maske erreicht damit niemanden mehr.
+    return loadAISettings();
+  } catch (e) {
+    // #31: dieser Fang deckt drei Wege — die Tuer war nicht erreichbar, ihr Leib war
+    // kein Vertrag, und der Rueckweg durch die Sitzung warf. Genannt wird, was nicht
+    // geschah (die eigne Verbindung kam nicht an); welche der drei es war, steht in der
+    // Ausnahme selbst, die mitgeht.
+    console.warn("kepta: own AI settings could not be restored, falling back to what the session holds", e);
+    return loadAISettings();
+  }
+}
+
+export function providerById(id: string): ProviderPreset {
+  return PROVIDERS.find(p => p.id === id) || PROVIDERS[0];
+}
+
+/**
+ * Entkoppelt die aktuelle KI: Modell und (bei Cloud-Providern) der Key werden
+ * gelöscht, der Provider-Merker bleibt. Nach dem Aufruf meldet
+ * `resolveAIConnection` ehrlich „disconnected" — bis neu verbunden wird.
+ */
+export function disconnectAI(): AISettings {
+  const s = loadAISettings();
+  const p = providerById(s.providerId);
+  const getrennt: AISettings = {
+    ...s,
+    model: '',
+    apiKey: p.needsKey ? '' : s.apiKey,
+    extractModel: '',
+  };
+  // P4-03: der Trenner wartete nicht und wusste darum nicht, ob die Trennung in der
+  // Datenbank landete. Jetzt: die Spiegelung traegt die Trennung, sonst sagt der
+  // ruecklesende Pfad sie erneut an — und die Kette bricht nicht an ihr.
+  void saveAISettings(getrennt).catch(() => { /* die Trennung sitzt im Browserspeicher */ });
+  return getrennt;
+}
+
+// ---------- Verbindungsstatus (ehrlich: nur "connected", wenn wirklich nutzbar) ----------
+
+export type AIConnection =
+  | { state: 'connected'; label: string; model: string; local: boolean }
+  | { state: 'disconnected' };
+
+/**
+ * Bestimmt den echten Verbindungsstatus aus Settings + Provider + optionalem
+ * Local-Probe-Ergebnis. Cloud-Provider gelten nur mit API-Key als verbunden,
+ * lokale Provider (needsKey=false) nur, wenn ihr Server erreichbar ist.
+ * `localReachable`: true/false nach Probe, null = noch nicht geprobt.
+ */
+export function resolveAIConnection(
+  settings: AISettings,
+  provider: ProviderPreset,
+  localReachable: boolean | null
+): AIConnection {
+  const model = settings.model?.trim();
+  if (!model) return { state: 'disconnected' };
+
+  if (provider.needsKey) {
+    if (settings.apiKey?.trim()) return { state: 'connected', label: provider.label, model, local: false };
+    // Aufgabe #94 (24.10.): dasselbe Kriterium wie die Tuer (server/router/chat.ts:46) - ein
+    // lokaler Endpunkt braucht keinen Schluessel. Bis heute las diese Stelle nur den Schluessel
+    // und der Chat-Kopf sagte "No AI connected", waehrend dieselbe Anfrage hinausging.
+    if (istLokaleAdresse(settings.baseUrl)) return { state: 'connected', label: provider.label, model, local: true };
+    return { state: 'disconnected' };
+  }
+  // Lokaler / kein-Key-Provider: verbunden nur bei erreichbarem Server.
+  return localReachable === true
+    ? { state: 'connected', label: provider.label, model, local: true }
+    : { state: 'disconnected' };
+}

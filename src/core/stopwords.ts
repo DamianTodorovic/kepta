@@ -37,15 +37,7 @@ const STOPWORDS_EN = new Set([
 
 export const STOPWORDS: ReadonlySet<string> = new Set<string>([...STOPWORDS_DE, ...STOPWORDS_EN]);
 
-/**
- * Hoechstzahl an Begriffen pro Anfrage — schuetzt die FTS5-Query vor Ausufern.
- *
- * NUR eine Anfrage-Kappe. Sie darf nicht als Indexier-Regel wiederverwendet
- * werden: ein Titel mit 30 Begriffen verliert dann still seine Haelfte, und ein
- * Index, der die halbe Welt nicht kennt, malt einen Graphen duenner als der
- * Bestand ist. Fuer Notizen und Tags steht die eigene Zerlegung in
- * src/core/graf-terms.ts (indexierBegriffe).
- */
+/** Hoechstzahl an Begriffen pro Anfrage — schuetzt die FTS5-Query vor Ausufern. */
 export const MAX_QUERY_TERMS = 12;
 
 /**

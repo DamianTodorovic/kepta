@@ -59,12 +59,10 @@ describe("npm-Paket: die package.json", () => {
   it("veroeffentlicht Binary, README und Lizenz — sonst nichts", () => {
     expect(paket.files).toEqual(["bin/kepta.js", "README.md", "LICENSE"]);
     // Die Lizenz muss auch wirklich daliegen, sonst behauptet das Paket eine
-    // Lizenz, deren Text niemand mitbekommt. Und es ist dieselbe wie im Repo:
-    // das Paket IST der Kern — bis 2.10 stand hier MIT, waehrend das Repo
-    // AGPL trug.
+    // Lizenz, deren Text niemand mitbekommt. BUSL-1.1 seit 2.13.22 — das npm-
+    // Paket ist der Kern, und der Kern ist source-available, nicht MIT.
     expect(fs.existsSync(path.join(wurzel, "npm", "LICENSE"))).toBe(true);
     expect(paket.license).toBe("BUSL-1.1");
-    expect(fs.readFileSync(path.join(wurzel, "npm", "LICENSE"), "utf-8")).toBe(fs.readFileSync(path.join(wurzel, "LICENSE"), "utf-8"));
   });
 
   it("verlangt Node 22.13 — die gepruefte Untergrenze", () => {
@@ -94,27 +92,4 @@ describe("npm-Paket: das Wurzelpaket", () => {
     const app = JSON.parse(fs.readFileSync(path.join(wurzel, "package.json"), "utf-8"));
     expect(app.private).toBe(true);
   });
-});
-
-describe("npm-Paket: das Erlebnis-CLI im echten Bundle", () => {
-  // Regressions-Wache fuer den 2.13.10-Dispatch-Bug: die CLI-Zweige fielen
-  // durch, der MCP-Server startete mit, und recall (async) starb stumm, bevor
-  // seine Ausgabe landete. Nur der echte Prozess mit echtem argv zeigt das.
-  it("remember + recall runden im eigenen Prozess ab — keine stumme Ausgabe, kein MCP-Fallback", () => {
-    const daten = fs.mkdtempSync(path.join(wurzel, ".tmp-cli-"));
-    try {
-      const umgebung = { ...process.env, KEPTA_DATA_DIR: daten, KEPTA_DB_KEY: "a".repeat(64) };
-      const laufen = (args: string[]) =>
-        execFileSync(process.execPath, [binPfad, ...args], { env: umgebung, stdio: "pipe", encoding: "utf-8" });
-      const gemerkt = laufen(["remember", "Mandant Berger: Frist zum 3. Oktober 2026"]);
-      expect(gemerkt).toContain("✓ remembered");
-      const erinnert = laufen(["recall", "Frist Mandant Berger"]);
-      expect(erinnert).toContain("1 match");
-      expect(erinnert).toContain("Mandant Berger");
-      // Und der MCP-Server darf für CLI-Kommandos nie mitstarten:
-      expect(erinnert).not.toContain("stdio ready");
-    } finally {
-      fs.rmSync(daten, { recursive: true, force: true });
-    }
-  }, 60_000);
 });

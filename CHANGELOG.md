@@ -1,411 +1,5934 @@
+## [3.2.213]
+
+### Fixed
+
+- **Holding a dragged node no longer moves the rest of the field**
+  (P200; Damian: "it goes back now, but when I hold a node I pulled away, the
+  others move too"). The image loop kept stepping the simulation for as long
+  as the grip lasted (`bewegt = … || draggingRef !== null`): the collision
+  shoved neighbours out from under the held node every frame, and the link
+  spring tugged connected neighbours back and forth. Now the field freezes
+  while the grip lasts — only the dragged node follows the pointer directly;
+  neighbours stand still until the mouse is released. "Release pinned" still
+  restores the whole frozen picture (P197 snapshot).
+  Held by `tests/components/KnowledgeGraph.griff-frost.test.ts` and a live
+  pixel proof against the installed app (`scripts/p200-griff-frost.mjs`).
+
+## [3.2.212]
+
+### Changed
+
+- **The whole app now runs on ONE motion system** (P199 — a full
+  animation audit with the Emil Kowalski skills, four parallel auditors over
+  every component). What was measured and healed:
+  - One curve everywhere: nine bare `ease` declarations in `index.css` now call
+    the house curve `--ease-apple` — the switch knob, the buttons, the sidebar,
+    the palette rows, the body (previously two curves fought inside one
+    declaration on the highest-frequency button).
+  - House springs as tokens (`src/lib/motionTokens.ts`): toasts, the shortcuts
+    sheet, editor and preview drawers now call two shared springs instead of
+    four hand-typed configs (the toast was the bounciest motion in a crisp app;
+    it now sits at ≈0.78 damping ratio).
+  - Reduced motion finally covers the WHOLE app: `MotionConfig
+    reducedMotion="user"` in `main.tsx` gates every Framer transform, and the
+    old CSS block that killed ALL transitions (including colour feedback) now
+    only stops movement — colour/state feedback survives (AUDIT §6: fewer and
+    gentler, not zero).
+  - View switches fade instead of teleporting: the dead mount animations
+    (which played invisibly at startup and never again) are replaced by the
+    `ansicht-blende` — a 200 ms opacity fade that replays on every reveal.
+    Measured live in the packaged app: opacity dips to 0.000 and lands at 1.
+  - The card list no longer runs a main-thread layout animation on the
+    busiest surface (every search tick, filter and resize shoved up to 48
+    cards around); cards snap like in Linear/Notion.
+  - Press feedback for the remaining grips: `.btn-danger-ghost`,
+    suggestion pills, quiet row buttons, palette rows, hud-label buttons and
+    the toast buttons now all give the same subtle press-back (0.96–0.99) the
+    main buttons had.
+  - Hover motion sits behind `@media (hover: hover) and (pointer: fine)` so
+    touch devices don't fire false hovers; collapsibles announce themselves
+    with a 4 px origin instead of mounting hard.
+  - Chat messages rise in (6 px origin instead of a bare fade); the token
+    budget bar animates `scaleX` instead of relayout on every drag tick.
+- The `agent-dot` pulse contract is finally honoured: the four running-state
+  dots set `data-laeuft="true"`, so the pulse shows only while something is
+  actually running.
+- A stale `null` vs `undefined` type error in the P197 snapshot helpers is
+  fixed (`graphLayout.ts` — the suite never typechecks, `npm run lint` does).
+
+Held by six new guards in `tests/design-tokens.test.ts` (no bare ease, no
+hand-typed seconds, mild reduced-motion, hover gates, house springs,
+no card layout animation) — suite 3904/3904.
+
+## [3.2.211]
+
+### Fixed
+
+- **"Release pinned" restores the WHOLE field, not just the dragged nodes**
+  (P197; Damian: "it doesn't all go back like before"). The drag shoves
+  neighbours out of the way — the old release returned only the pinned nodes and
+  left every shoved neighbour displaced. The first grab now freezes the whole
+  field (`feldSchnappschuss`), and the release puts everything back exactly as
+  it was — pinned nodes, shoved neighbours, velocities, origins
+  (`src/lib/graphLayout.ts`, `feldSchnappschuss`/`feldZurueck`; the view switch
+  discards a stale snapshot).
+- **The collision shove around a dragged node is damped** (0.6 per pass instead
+  of 1.0): dragging through a dense area no longer makes the field erupt — the
+  same overlap resolves over a few frames.
+  Held by `tests/lib/graph-feld-schnappschuss.test.ts`.
+
+## [3.2.210]
+
+### Removed
+
+- **The dendrogram internals are excised** (P198): after the Tree view left the
+  product (3.2.207), the type, the hierarchy build, the tree time-rebuild effect,
+  the tree edge/label/tooltip branches and the tree fit are gone from
+  `src/components/KnowledgeGraph.tsx` — compiler-guided (the narrowed
+  `GraphAnsicht` listed every site). The shelf model now counts in every view.
+  The word-chain "N notes in all" (a tree-view sentence) left with it
+  (`scripts/pruefe-asar-inhalt.cjs` updated).
+
+## [3.2.209]
+
+### Fixed
+
+- **The graph heals itself when the window comes back to the front.** The root
+  of the "empty graph" reports: an **occluded** window (K3PTA behind another
+  app) receives no frame ticks — the paint loop stands still, the canvas keeps
+  its 300×150 HTML-default bitmap, and the view reads as black/empty. Measured
+  live on 11.11., 21:17 (freshly started: canvas 968×656 CSS, buffer 300×150,
+  `document.hidden` stuck true). The new self-heal guard re-measures the real
+  box every 5 s while the graph view is open, pulls missed sizing in, and wakes
+  the paint tick — bringing the window forward shows the picture immediately
+  (`src/components/KnowledgeGraph.tsx`).
+
+## [3.2.208]
+
+### Changed
+
+- **The shelf's 13+ controls sit in four named groups** (P197 step 2): "What the
+  picture carries" (Schema, Connected, Self, Similar, unlinked filter), "Shape &
+  colour" (colour channel, pickers, claim direction, thickness, depth, label
+  density), "Motion" (motion, forces), "Time & scope" (time, date, tag filter) —
+  anything outside the groups falls under "Everything else". The flat "N out of
+  the row — everything here works the same" sentence is gone; each group says
+  what its controls belong to.
+- **The knowledge cards show the kind colour on the card itself** (P197 step 3):
+  the side ridge is 6 px, and the type label wears a soft tint of the same colour
+  (colour-mix 14 %) — a pick from the graph or Settings is visible on every card
+  without opening anything.
+- **The Auto-learn switch sits beside its title** instead of wrapping below the
+  text (the text block grows, the switch stays) (P197 step 4).
+
+## [3.2.207]
+
+### Removed
+
+- **The Tree diagram is out of the product.** Damian (11.11.): "absolutely bad
+  and confusing." The Claims and Meaning views remain (they are the graph); the
+  Tree button is gone, and a remembered tree view falls back to the field. The
+  dendrogram internals stay in the bundle for now (unreachable from any surface)
+  and will be excised in a dedicated cleanup; twenty-two tree-view test cases
+  that tested the removed face are gone with it
+  (`tests/components/KnowledgeGraph.render.test.tsx`, the shelf guard asserts
+  only Claims and Meaning).
+
+## [3.2.206]
+
+### Changed
+
+- **The graph's first impression belongs to the picture (P197 step 1).** The
+  legend starts **closed** everywhere — the width no longer decides
+  (`KnowledgeGraph.tsx`; the pick is remembered once made). The collapsed state
+  now folds the explanatory prose too: what stays is the numbers row, the four
+  kind dots with their names, and the honesty line. Held by the reworked
+  `legende-klappe` case ("starts closed — even wide").
+- **The group shelf and the "colour by group" controls stay mounted behind the
+  fold** instead of vanishing from the tree when the legend closes — the colour
+  pickers are reachable by opening the legend, and the group model never
+  unmounts mid-session (`KnowledgeGraph.tsx`; the #54 guards now assert the
+  fold-holder instead of a removed node).
+
+## [3.2.205]
+
+### Changed
+
+- **The four kind names say what falls under them.** Damian (23:03): the labels
+  must be understood at a glance. Renamed by their assignment rules in
+  `src/core/klassifikation.ts`: **Facts & knowledge** (formulated text without
+  steps or dates), **Events & dates** (event word in the title, event tag),
+  **How-tos & instructions** (numbered steps, instruction words), **Files &
+  documents** (file extension, machine scan, markup-heavy). One source
+  (`TYP_BESCHREIBUNG`) — the graph legend, schema panel, shelf swatches and the
+  Settings "Colours" section all flip together.
+- **Every on/off control wears the one house switch.** The graph shelf's dot
+  toggles (`punkt`) now render the same 34×20 `.switch` as Settings, and the
+  note editor's "Private" switch — the third hand-rolled copy with the knob
+  14 px outside the pill — is replaced too. One switch design in all of K3PTA.
+  Held by the updated shelf/leiste, editor and schema guards.
+
+## [3.2.204]
+
+### Fixed
+
+- **A colour pick is worn exactly — no more visible re-toning.** Damian
+  (22:32): "I can't take the colours I want." The first acceptance pass lifted
+  the pick itself onto the readability ladder, so a chosen `#ff3366` painted
+  `#ff7a9c` — visible change, still not the colour he chose. Now the raw pick
+  rides `--type-*` (graph dots, card ridge, swatch); only the type **label**
+  reads a derived `--type-*-text` that lifts itself just enough. The picker
+  shows exactly what was chosen.
+- **The two hand-rolled toggles are replaced by the house switch.** Damian's
+  screenshots (22:32/22:33): the Privacy-shield switch carried an 18 px knob at
+  `left: 18` inside a 40 px pill — the knob stood 14 px outside the pill; the
+  Auto-learn switch was a 44 px custom pill that wrapped below its own text.
+  Both now use the one `.switch` (34×20, knob inside, one design app-wide)
+  (`src/components/PrivacyShield.tsx`, `src/components/Settings.tsx`).
+  Held by `tests/lib/typ-farben.test.ts` (raw-on-surface contract).
+
+## [3.2.203]
+
+### Fixed
+
+- **Every colour pick is accepted — the silent snap-back is dead.** Damian
+  (10.11.): "you can't change the colours in the graph." The old gate
+  (`tintetauglich`) silently rejected any pick that failed 4.5:1 *text* contrast
+  on the dark papers — measured 18.10.: `#cc00bb` held 3.9:1, `#007bff` 3.1:1 —
+  so a large part of the colour wheel snapped back to the registry tone with no
+  word. The colour maths now lives in `src/lib/typFarben.ts`: a pick is always
+  accepted and only its lightness is lifted until the tone reads on both papers
+  (hue preserved). `src/components/KnowledgeGraph.tsx` reads it; the four swatches
+  in the shelf are labelled with their kind.
+- **The same four pickers now live in Settings → System status** ("Colours") —
+  `src/components/TypFarbenReihe.tsx` shares one store with the graph shelf, and
+  the choice carries app-wide through `--type-*` (dots, card ridge, type label,
+  legend). The knowledge list has always read those variables; now the setting is
+  reachable from both places Damian expected it.
+  Held by `tests/lib/typ-farben.test.ts` (acceptance, hue preservation, persistence,
+  junk rejection).
+
+## [3.2.202]
+
+### Fixed
+
+- **The blank-panel blackscreen is dead: the main panel can no longer be scrolled away.**
+  The P195 live anatomy (10.11., 20:52) settled it: Damian saw an empty panel while
+  the DOM held the full Settings page (6938 characters, visible, 814 px). The tell
+  was `main.scrollTop = 1455` (scrollHeight 2269): a focus outside the visible view
+  made the browser scroll **every** scrollable ancestor — and `overflow: hidden`
+  refuses to show a scrollbar, not to scroll. The visible view was dragged out of
+  the window; what remained was the empty panel frame. Scrolling back to 0 brought
+  the page back instantly (screenshot-proven). The fix: `overflow-clip` on `main`
+  (`src/components/Dashboard.tsx:1613`) — `clip` refuses all scrolling, programmatic
+  included, so the stage can never be dragged away again. Held by
+  `tests/components/dashboard-main-clip.test.tsx`. The trigger (which code path
+  focuses outside the visible view) remains its own hunt — the stage, however, is
+  now unmovable.
+
+## [3.2.201]
+
+### Added
+
+- **The empty-surface state now names itself.** The P195 Lupe run (10.11.)
+  caught the blackscreen with measurements: the main panel renders as an empty
+  rounded frame while all eight view shells carry `hidden` — the active-view
+  state held a value none of them knows. The shell now carries that value as a
+  `data-ansicht` attribute (`src/components/Dashboard.tsx`, the shell div) and
+  keeps the last 40 view changes on `window.__ansichtSpur`, so the Lupe reads
+  the culprit value and its history in the broken state instead of guessing.
+  No behaviour change — a trace, not a fix.
+
+## [3.2.200]
+
+### Fixed
+
+- **The voice switches reset the result list — no more thousand-card freeze.**
+  Damian's blackscreen (9.11., video): clicking Words/Meaning/Graph delivered
+  new results to a list whose visible counter had been grown by earlier
+  Load-mores — the surface painted the whole grown list at once and the window
+  froze. The list-reset now also listens to the three voice switches
+  (`src/components/Dashboard.tsx`, the pagination reset): every switch click
+  brings the list back to its first 48 cards, and scrolling grows it again
+  gradually. Held by the P193 case in
+  `tests/components/dashboard-trefferstufe.test.tsx` (3000 results, expand,
+  switch — seen red before the rule: 192 rows stood).
+
+## [3.2.199]
+
+### Fixed
+
+- **The server leaves its last words when it crashes.** Damian's Settings
+  blackscreen (9.11./10.11.) survived the renderer crash screen — the failing
+  part is the server, not the surface, and a dead server left nothing to read.
+  The bootstrap now hangs `uncaughtException` and `unhandledrejection` guards
+  that append the full stack to `letzte-worte.log` in the data folder and keep
+  serving (the surface answers instead of staring black). Damian reproduces
+  once, sends the file — the place is named. Held by the bootstrap being
+  excluded from coverage but compiled into every bundle (`tsc` clean,
+  `pruefe-asar` path unchanged).
+
+## [3.2.198]
+
+### Fixed
+
+- **A crash shows its text instead of a black window.** The React error screen
+  only catches render throws — a crash inside a click handler or a promise
+  flew past it, the window went black, and nobody (not even Damian, who
+  reported the Settings blackscreen on 9.11.) could read WHY. A window guard
+  (`spanneCrashWachter`, `src/lib/crashZeug.ts`) now hangs on `window.onerror`
+  and `unhandledrejection` and paints the error as raw DOM over the surface:
+  message, file:line, a copy button, and a close-and-continue button. Damian
+  photographs the text; the place is named. Held by
+  `tests/components/crach-zeug.test.tsx` (four cases: window error, rejected
+  promise, copy line, close).
+
+## [3.2.197]
+
+### Fixed
+
+- **A refused shield switch no longer goes unexplained.** With the central
+  policy `privacy_shield = force_on` the PUT route silently booked the switch
+  back to "on" — the user saw a button that "jumps back", without a word
+  (Damian's report, 9.11.). The answer now carries `erzwungen: true`, the
+  audit line names `force_on`, and the Settings surface shows "Your
+  organization keeps the shield on — the switch stays on." instead of a
+  silently bouncing switch. Held by `tests/schild-zwang.test.ts`.
+  The language-trigger repro (P185) ran 48 steps across Dashboard and
+  Settings at two widths with zero exceptions — the tracks toggle is
+  innocent in isolation; the report needs the real store (see the paper).
+
+## [3.2.196]
+
+### Added
+
+- **The search-model line is now a switch.** The Settings Search section grew
+  the model picker behind the P183 line: a select of the models Ollama
+  actually has (`GET /api/such-modell`), an Apply button (`POST
+  /api/such-modell`) that refuses a model Ollama does not know with the
+  existing tag list, persists the choice in the store's settings table, turns
+  the background embedding queue to the new model (its tick re-embeds every
+  chunk whose stored model no longer matches — the mismatch counter ships in
+  the answer as `neuZuEinbetten`), and the search, duplicate check and chat
+  query embeddings all move with it (`aktivesSuchModell`). During the
+  re-embed the existing "index is still filling" chip reports honestly.
+  Held by `tests/such-modell-wechsel.test.ts` (persistence, refusal,
+  env fallback, and the door on a listening server), the K-2 body-cap guard
+  (path-scoped cap like the repair route) and the surface guards.
+  The query embedding moves to the active model in
+  `src/core/engine.ts:520` and the duplicate check in `:867`.
+
+## [3.2.195]
+
+### Added
+
+- **The Settings page now tells you what your search model is — and what it
+  costs across a language line, in measured numbers.** The Search section grew
+  a "Search model" row, driven by the live embedding models from `/api/health`
+  (P183, #44): nomic-embed-text reads "Built for English notes. Asking across a
+  language line finds 4 of 15 notes; in the same language it finds 9 of 15.
+  For notes in mixed languages, bge-m3 finds 10 of 15 across the line —
+  switching to it re-embeds your whole store once." bge-m3 stores read their
+  own line (10 of 15 across, 9 of 15 within). Every number is measured on this
+  machine (15 request pairs, English question over German notes, two
+  byte-identical runs per stage — `docs/belege/tag-0911/sprache-*-193-*.log.txt`,
+  `docs/belege/konkurrenz-0911e/sprache-bge-m3-regel-0911.log.txt`), and the
+  health gate now also loads on the System tab. No button is promised: the
+  re-embed cost is named in the sentence. Held by
+  `tests/components/suche-modell-zeile.test.ts` and the language-line guard.
+
+## [3.2.194]
+
+### Fixed
+
+- **A weak vector voice could outvote the word voice that was right.** P176
+  woke the vector leg below the absolute floor (3.2.193); the follow-up
+  measurement (`docs/belege/konkurrenz-0911d/`, P180) showed the price: in the
+  rank fusion that voice arrived with full weight even when its best cosine sat
+  below the floor, and two first places flipped („Was koche ich mit Nudeln?",
+  „React Build Setup"). The fusion now weights the vector voice by its standing:
+  above the floor it counts in full, below it only when no other leg speaks —
+  the leg itself never goes silent (it stays listed, tracked, counted in
+  Recall@5). Measured on the same corpus, twice each, byte-identical runs:
+  bge-m3 stage **36/45 = 80,0 %** Hit@1 (was 34/45; 35/45 before P176 — the
+  best first-place rate any ledger row ever held), R@5 94,4 % and MRR 0,836
+  unchanged-high, nomic stage untouched (34/45 = 75,6 %, null flips). With it,
+  K3PTA now leads or ties **every category** against mem0 on the same
+  embedding (umschreibung 6/6, the one category mem0 led after P178). Held by
+  the Nudeln rule in `tests/core/ablation.test.ts` (seen red before the rule)
+  and the competitor latte at [45, 36, 80].
+
+## [3.2.193]
+
+### Fixed
+
+- **The vector leg went silent below an absolute floor, and the floor was tuned
+  to one model.** In `src/core/engine.ts:551` the candidate cut was
+  `Math.max(VECTOR_FLOOR, bestSim * VECTOR_BAND)` with `VECTOR_FLOOR = 0.58` —
+  a number tuned on nomic-embed-text. When the best cosine of a query sat below
+  it (measured in P120: 13 of 45 queries at the bge-m3 stage, 2 of them ending
+  with a completely empty answer), the whole candidate list fell through the
+  filter and the leg answered with silence and no reason. The cut now holds the
+  best candidate — `bestSim > 0 ? Math.min(bestSim, Math.max(VECTOR_FLOOR,
+  bestSim * VECTOR_BAND)) : VECTOR_FLOOR` — so the relative band still rules
+  above the floor (the 8-near/120-far contract of
+  `tests/core/suchbreite.test.ts` stayed green) and the floor only stops
+  deciding the outcome at the bottom. The search-width contract was re-tuned
+  with it: where the best cosine is *under* the floor, the best group is now
+  shown instead of an unexplained nothing (P176, decided against the 6.9.
+  "267 hits for carbonara" alarm, whose real protection — the band — is
+  untouched; the decision can be overridden at `engine.ts:551`). Held by
+  `tests/core/ablation.test.ts` (two P176 cases, seen red before the fix) and
+  the re-tuned `tests/core/suchbreite.test.ts:126`. Measured in the real
+  window at 1440/390 px: a query with best cosine 0.3436 now returns its best
+  hit with the vector track (`vektor: 1`) instead of the P47 "Nothing found"
+  notice, and a genuinely empty store still shows that notice, unobstructed
+  (`scripts/leerer-fall-im-fenster.mjs`,
+  `docs/belege/tag-0911/leerer-fall-193-1923.log.txt`).
+
+## [3.2.192]
+
+### Fixed
+
+- **The clipper's SSRF gate read IPv6 literals too narrowly, and an embedded
+  127.0.0.1 walked through.** The gate covered the five IPv4 notations and the
+  IPv4-mapped form; it did not cover IPv6 addresses that *carry* an IPv4:
+  `::7f00:1` (IPv4-compatible), `64:ff9b::7f00:1` and `64:ff9b:1::7f00:1`
+  (NAT64), `2002:7f00:1::` (6to4) and `2001:0::80ff:fffe` (Teredo, whose remote
+  half is the complement). Measured before the fix at 11:30:49 MEZ:
+  `POST /api/clip` with `http://[64:ff9b::7f00:1]/` answered **200** and fetched
+  it, while `::1`, `fe80::1` and `fc00::1` were already refused. `eingebettetesIpv4`
+  in `server/helfer/ssrf.ts` now lifts the carried address out of all four forms
+  (Teredo in both readings) and lets the existing private-range verdict decide,
+  so a genuinely public IPv6 target still opens. Held by
+  `tests/server.test.ts:1031` (eleven notations, plus the public control) and
+  `tests/server.test.ts:1111`/:1134 (three hops re-checked before each fetch;
+  five hops deep, then 508).
+- **The rebinding sentence had no machine.** README.md:262 has sold "a website
+  using DNS rebinding gets nothing" for weeks; nothing proved it, because no
+  test ever sent an `Origin`. What actually holds the door is
+  `server/app.ts:211-221`: a foreign origin receives no
+  `Access-Control-Allow-Origin`, so the browser blocks reading the body. That
+  branch is now measured in `tests/server-herkunft.test.ts:53` (foreign origin →
+  no CORS grant), `tests/server-herkunft.test.ts:59` (the app's own localhost
+  origin keeps its body) and `tests/server-herkunft.test.ts:65` (no Origin —
+  curl, MCP, the Electron main — is not slowed).
+
+### Documented
+
+- `README.md:108` and `README.md:263` now name those witnesses instead of saying
+  "every notation" and "every hop", and the census moved with them: 79 of 181
+  absolute claims name their instrument (measured 11:37:21 MEZ, was 76), 102
+  still do not.
+
+## [3.2.191]
+
+### Fixed
+
+- **A shipped line ended its clause with a bare hyphen, and no bar could see it.**
+  `KnowledgeGraph.tsx:1048` builds its window sentence from three parts:
+  `` `… of … concepts and ` `` `+` `` `… claims reach this picture - ` `` `+`
+  `"no zoom can bring in what the window left out"`. The delivered text reads
+  "… reach this picture - no zoom …", which is the one dash the house never ships.
+  Neither eye saw it: the sentence bar needs a word *after* the dash inside the same
+  string, and the literal sweep reads one line at a time. Measured 18:25:07 MEZ with the
+  census's own gates, after teaching the instruction pattern that `+` is an instruction
+  position too (129 fields checked, **10 candidates that were in no corpus**, **1** at a
+  dash junction). The clause now ends in a semicolon, the bar counts junctions, and
+  `URTEIL STRICH` prints them: *"… dazu 0 an einer Fuge"*.
+
+### Changed
+
+- **`+` is an instruction position.** A template field hung onto another with `+` is the
+  same delivered sentence as one after `return` or `:`. Werkzeug gained 9 candidates
+  (49 → 58) and surface 4 (499 → 503) — measured against the installed 3.2.190 before the
+  swap: `die Objekt-Gleichung verwirft: Flaeche 1, Werkzeug 5, Diener 0`, where the 1 is
+  exactly the line this cut changes.
+
+## [3.2.190]
+
+### Changed
+
+- **A sentence the census could not reach is now three sentences.** The dash and cap bars
+  read `[^`]{20,400}` — a character class, so it stops at the first inner backtick. A field
+  whose `${…}` hole contains another field therefore entered the corpus only as its pieces,
+  never as the line a person reads. Measured 18:04:38 MEZ with the census's own gates:
+  **8 delivered sentences joined the corpus** (4 surface, 4 servant), and one of them —
+  the older-key note in Settings — was **a single 24-word sentence**. It is now three
+  sentences ("The settings API will not hand it over. Nothing was carried across, and
+  nothing was deleted. Enter the key once to seal it."), each under the 14-word cap, with
+  every fact it carried still standing. `scripts/pruefe-asar-inhalt.cjs` requires the two
+  new endings and forbids the old 24-word run-on; counted in the installed 3.2.189 at
+  18:12:30 MEZ the new chains are 0 and the old one is 1.
+- **The cap is measured per sentence, not per field.** Applying it per field flagged three
+  candidates; two of them were ordinary paragraphs with several short sentences
+  (`src/core/store.ts:1981` → 15 and 14 words, `OnboardingWizard.tsx:292` → 4 and 11). The
+  unit was wrong, so two product texts would have been rewritten to satisfy a bar that
+  never applied to them. `satzStuecke()` splits a field at its sentence ends, and the census
+  prints the longest sentence it found.
+- **A blind class now names itself.** `scripts/verstaendlichkeit.mjs` prints
+  `davon aus gelochten Feldern … 4 Fläche, 0 Werkzeug, 4 Diener` and lists every holed
+  field whose longest sentence crosses the cap, so a sentence that only this cut learned to
+  read stays under a bar instead of falling back out of sight.
+
+## [3.2.189]
+
+### Fixed
+
+- **Fourteen shipped sentences said " - " where the house writes a dash.** The dash bar
+  reported "0 sentences with a bare hyphen" while a raw sweep of the same three layers found
+  13 string literals carrying " - " (measured 15:05:41 MEZ; surface 8, tool 2, servant 3).
+  The bar was not wrong about its corpus — its corpus was too small: a double-quoted branch
+  inside a template (`server/router/search.ts:43`) never becomes a candidate, and a branch
+  that *opens* with " - " is rejected by the sentence-shape gate as well. Four of those
+  strings sit in the graph's own head line (" - the store did not answer, this picture is
+  only the page the list brought"), two are agent-facing claim rejections, six are list and
+  paging hints; widening the sweep's left edge to a closing interpolation (`up`} - got`)
+  surfaced four more, all in `server/router/memories.ts`.
+- **The bar got a second eye, with its own denominator.** `strichInLiteraln` / `roheStrichFunde`
+  read literals instead of candidates and say what they looked at: the census now prints
+  `Literalueberlauf: 3 Literale mit " - ", 0 davon nackter Bindestrich`, and the three that
+  remain are arithmetic (`length - 1`), a CSS measure (`calc(100% - 2 * …)`) and a YAML list
+  marker — each one a case in `tests/punkt7-fachwort-traegt-grund.test.ts`, so the noise rule
+  can rot visibly instead of silently. Measured after the fix: 0 findings, 68 cases green
+  (16:19:22 MEZ).
+- **The wording stays ASCII on purpose.** The graph head strings carry a comment that the
+  object checker walks the bundle latin1-read, so an em dash there is not findable as a
+  marker; the fix therefore uses a semicolon, which satisfies the dash rule without touching
+  the checker. Twelve old forms are now banned in `scripts/pruefe-asar-inhalt.cjs` — each one
+  counted 1 to 2 times in the installed 3.2.188 at 16:18:31 MEZ, so each ban has teeth. A
+  thirteenth candidate ("whole base`} - ") counted 0 and was dropped: a ban that can never
+  fire is decoration.
+
+## [3.2.188]
+
+### Fixed
+
+- **The delivery equation now reads the bundle's pieces, not its own flattening.** 3.2.187
+  claimed the five leftovers "split a plural suffix in the bundle, which is no contiguous
+  chain". That was wrong, and the shipped window disproves it: the graph legend shows
+  "120 claims not drawn — its term is only a note title" while the equation called the same
+  sentence undelivered. Measured 15:31:15 and 15:31:28 MEZ against the installed 3.2.187, the
+  bundle holds `${r(M)} claim${M===1 ? "" : "s"} not drawn — its term is only a note title` —
+  the piece before the plural and the piece after it are both there, verbatim and in order.
+  The equation compared the *folded* word "claims", which exists nowhere in the bytes: my own
+  flattening had glued shut the very seam the compiler left. The sentence's raw template is
+  now what gets split, so a plural junction is a junction again. Measured 15:52:19 MEZ: the
+  equation drops **0 surface, 5 tool, 0 servant** sentences (was 4 / 5 / 1). The five tool
+  sentences are genuinely not shipped — four from `src/core/chatgpt-import.ts`, which the
+  bundle does not carry, and one licence message from `src/core/lizenz.ts`; both checked at
+  position -1 in 49 197 041 bytes at 15:32:46 MEZ.
+- **A bar that cannot see success is not a measuring tool.** The suite's equation bar read the
+  residual *list*, and the list is not printed when a layer has nothing left — so the first
+  clean run failed with "999 surface sentences rejected". The bar now parses the summary line.
+  Its limits are the measured numbers (0 / 5 / 0), not a round dozen, so a new undelivered
+  sentence is a finding instead of slack.
+- Word counting keeps the plural fold: `${n} claim${n === 1 ? "" : "s"} not drawn …` still
+  counts as eleven words, so no sentence crosses the length cap over a letter no human reads.
+
+## [3.2.187]
+
+### Changed
+
+- **A sentence the bundle splits is still the sentence it ships.** The delivery equation
+  compared a whole flattened sentence against the bundle's bytes, so anything built from
+  pieces — `zahl(a) + " notes left out \u2014 … keeps the first " + zahl(b)` — counted as
+  "not delivered". Measured 14:37:45 MEZ on the installed 3.2.186: **145 of 498** surface
+  sentences, 14 tool, 28 servant. The equation now reads the pieces **in order** (an
+  out-of-order or invented wording still fails, and both are cases in
+  `tests/punkt7-fachwort-traegt-grund.test.ts`). Measured 14:51:39 MEZ: the drop is
+  **4 / 5 / 1**. Named reasons for the rest: four tool sentences live in
+  `src/core/chatgpt-import.ts`, which is not shipped, and five split a plural suffix in the
+  bundle (`"claim" + (n === 1 ? "" : "s") + " not drawn"`), which is no contiguous chain.
+  (The last clause is wrong and 3.2.188 corrects it: the two pieces *are* contiguous in the
+  bundle — it was the folded word that never was.)
+- **A number is a word; a plural letter is not.** Flattening `${…}` to a bare `N` glued it
+  to the neighbour — "came through${n}" became "came throughN", one word instead of two, and
+  `${n === 1 ? "" : "s"}` became a whole extra word. Measured 14:38:24 MEZ: 79 of 189 surface
+  chains were affected, and one 14-word tooltip crossed the cap because of the plural alone.
+  Interpolations now become their own word, punctuation stays attached to them, and a plural
+  suffix is folded into the word it belongs to.
+- **One code line left the corpus.** `MAX_BUCKET) continue; for (let i = 0; i` had been counted
+  as a human sentence since the statement-position pattern arrived; the code-sign gate now
+  knows `for (`, `return (` and `continue;`. Measured 14:51:08 MEZ: surface 496 -> 495
+  sentences, no legitimate "if (" sentence was lost (counted: 0 in the corpus).
+
+## [3.2.186]
+
+### Changed
+
+- **The sentence bars finally read the sentences that live in a backtick.** A wording sitting in
+  statement position — `return `"…"`, a ternary branch, an argument — matched none of the eight
+  patterns. Counted 13:46:32 MEZ: **130** delivered human sentences in the surface, 11 in the
+  tool layer, 28 in the servant. The naming bar had seen this form since 3.2.185; the four
+  sentence bars had not. The new pattern admits a wording only if four alphabetic words follow
+  each other, which is a shape no Tailwind chain writes and every sentence has (bite:
+  `flex items-center justify-center gap-2 rounded-lg` stays out).
+  Corpus after the change: surface **498** sentences (was 374), tool 49 (was 38), servant 90
+  (was 62).
+- **Eleven of those sentences were real defects, and the bars turned red before I fixed them**
+  (13:47:24 MEZ): seven named a technical thing without a reason or an action, four used a bare
+  hyphen where the house writes a thought dash. Now: "the picture places notes by meaning, and
+  keeps the first 2 000" instead of "the map holds 2 000 vectors"; "notes with no meaning-place
+  yet, parked at the rim"; "What the picture starts with"; "tools your AI apps use (protocol …
+  at …)" instead of "tools for AI apps (MCP …)"; "is not a database at all — N bytes is not a
+  whole number of pages"; the excerpt answer says links and picture, not edges and graph; and
+  five answers now carry the dash the rest of the product uses.
+  At 13:54:41 MEZ every bar holds again: cap 86.7 %, edge 0 of 66, label 0 of 469, naming 0 of
+  2 983, dash 0, bolt 0 of 498 / 0 of 49 / 0 of 90.
+- **One fix has no bytes in the object, and that is said rather than hidden**:
+  `src/core/chatgpt-import.ts` is not shipped — measured 0 occurrences of its sentence in the
+  installed 3.2.185 (13:57:49 MEZ), so no marker or ban guards it.
+- **My own dash broke the server, and the suite caught it.** Replacing a hyphen with the house
+  dash in `x-kepta-hinweis` produced `TypeError: Invalid character in header content` and 14 red
+  test files (14:05:57 MEZ). The constraint was written two lines above the sentence I edited:
+  *"Nur ASCII — der Wert geht in einen Kopf."* A header cannot carry U+2014, so the two list
+  hints now use a colon, and a new case in `tests/server.test.ts` asserts that every
+  `x-kepta-hinweis` value is pure ASCII on both the paged and the `alle=1` read. The naming
+  lesson: a bar over the product's language must not push a value into a place that cannot hold
+  it — the bar was right about the hyphen, and wrong about where that sentence lives.
+
+## [3.2.185]
+
+### Changed
+
+- **One thing, one name: `node` left the surface.** The store's own word for what you write is
+  *note*, and the word for a mark in the picture is *dot*. Measured in the tree at 6.11.2026
+  12:43:17 MEZ, after the sentences below became visible: four sentences and four labels still
+  said `node(s)` — the command `New node`, the chat button `Save as a node`, the shortcut-sheet
+  line `New knowledge node`, the panel heading `Nodes`, the rail title `Node colours`, the
+  screen-reader name `Node colour channel`, the legend `A letter in a node is its type`, and
+  sentences about "painted nodes". They now read `New note`, `Save as a note`, `New note`,
+  `Kinds in the store`, `Dot colours`, `Dot colour`, `A letter in a dot…`. The schema panel also
+  stopped double-counting: it said `3 notes · 7 nodes`, where the 7 was notes *plus* concepts, so
+  the middle number is now what it is — `3 notes · 4 concepts`.
+- **The census had a blind spot, and it was hiding real defects.** Sentences written as JSX
+  templates (`{`The chips read the ${n} notes on this page…`}`) were rejected twice: no pattern
+  matched the position, and the language gate threw out any string containing `${` as a
+  "format specifier". Measured 12:38:50 MEZ: 25 candidates dropped. Two of them ship and are
+  demanded by the content gate (`Share of painted nodes per group`, `No node of the core is
+  inside this picture`). With the forms collected and interpolations flattened to a number, the
+  surface corpus went **349 → 372 sentences** — and three bars that had said HALTET turned red:
+  `URTEIL RAND` (2 tooltips over the 14-word cap), `URTEIL STRICH` (1 bare hyphen), and
+  `URTEIL RIEGEL` (4 sentences naming `nodes` with no reason and no action). All seven are fixed
+  in this release; the bars hold again (12:50:41 MEZ: RAND 0 of 66, STRICH 0, RIEGEL 0 of 372).
+- **A new bar for the naming law — and the first version of it was blind.** `URTEIL DOPPELNAMEN`
+  may find zero places that call a thing by its second name. Its first list was sentences plus
+  labels in the surface layer, and at 12:54:00 MEZ it reported HALTET (0 of 761) while fifteen
+  delivered wordings still said `node`. Counted 12:05–12:08 MEZ: no pattern looked at a wording
+  sitting in statement position (`return \`…\``, a ternary branch) — 76 of them in surface and
+  servant alone; the bar read only the surface, though the servant answers through the door (90
+  wordings) and `src/mcp-server.ts` belonged to no layer at all; and one bare `=` threw out
+  exactly one sentence — the graph legend `Size = connections` — which was the sentence breaking
+  the rule. The bar now gathers **wordings, not sentences**: every string in every delivered
+  layer, comments stripped, prompt files excluded, and a template's own content opened a second
+  time (a backtick was swallowing the fallback title `'Node'` inside itself, measured 13:20:30
+  MEZ). Denominator **2 983 wordings**, floor 2 500, findings **0**. The fifteen wordings are
+  fixed in this release: `Node size` → `Dot size` (the same slider whose own hint already said
+  dot), `drawn as nodes` → `drawn as dots`, `too few core nodes` / `no core node` → dots,
+  `Drag: a node stays where you drop it` → a dot, `New assistant node` → note, the untitled
+  fallback `'Node'` → `'Untitled'` (the house form already used in five other places), and seven
+  answers the server sends through the door (`active nodes` → `active notes`, `Node not found` →
+  `Note not found`, `conflicting node ids` → note ids, `pages of N nodes` → notes, `nodes taken
+  over` → notes, `trashed nodes` → notes). Open and named: `Node not found` still sits eight
+  times in the delivered bytes where our source writes three — the rest is pdf.js, and a ban we
+  do not own always strikes falsely; `Saves a knowledge node` is fixed at the source, and the
+  second copy belongs to the bundle, which the lead builds at the end of the wave.
+
+## [3.2.184]
+
+### Changed
+
+- **The graph's three view buttons are named by what they do, not by the method behind them.**
+  The rail read `Force | Tree | Semantic`, the empty-map panel said `Semantic map`, and the
+  search toggle said `Semantic search` while the banner below it said `Semantic index`. Measured
+  in the delivered 3.2.183 at 6.11.2026 12:15:16 MEZ: `Semantic map` sits twice in `app.asar`,
+  `Force view` once, `Dendrogram ` once, `Semantic index is still filling` once. The names are
+  now **Claims / Tree / Meaning**, defined once in `src/lib/ansichten.ts`, and each button's
+  tooltip starts with its own name ("Claims view — the links as your notes claim them; meaning
+  only on request"). The search toggle and the filling banner use the same word as the view, so
+  one thing has one name. `src/lib/uiText.ts` lost a key nothing read.
+- **A fourth label shape, and the class it belongs to.** The label scan of 3.2.183 looked at JSX
+  text, short attributes and data tuples; a button word passed as the last call argument
+  (`segment(on, title, click, "Force")`) was still invisible. Measured 12:04:01 MEZ: that shape
+  holds 16 labels, of which 2 name a method. `URTEIL ETIKETT` now covers it, and its forbidden
+  list grew from the retrieval family to the layout family (`semantic`, `dendrogram`, `force`).
+  Before the cut: 4 of 472 labels named a method (12:05:55 MEZ). After: 0 of 469 (12:16:40 MEZ).
+- **A self-caught instrument regression, with its own floor.** Composing the tooltip at runtime
+  (`${name} view — ${rest}`) dropped three sentences out of the census corpus — the denominator
+  went 349 → 346 while every bar still said HALTET. The descriptions are single literals again,
+  the corpus is back at 349, and `tests/punkt7-fachwort-traegt-grund.test.ts` now holds a floor
+  for the surface denominator (measured 349, floor 348; proven by raising it to 400, which
+  failed at 12:17:15 MEZ).
+
+## [3.2.183]
+
+### Changed
+
+- **A label on the surface stopped naming an algorithm.** Every note card ended its row with
+  `Found via bm25 #2`, and the chat's source badges said the same. Measured in the delivered
+  3.2.182 at 6.11.2026 11:26:06 MEZ: `bm25 #`, `vector #` and `graph #` each sit twice in
+  `app.asar` (note card and chat), and the real window shows the chip on every result
+  (`audit-2026-10-09/feldzug/belege-0611/fenster-183-vor/spuren-nur-bm25.png`). A chip has no
+  room for a reason, so it may not carry a method name. The three tracks are now named once,
+  in `src/lib/spuren.ts` — **Words / Meaning / Graph** — and the card, the chat and Settings
+  read that source. Settings' section heading `Retrieval tracks` became `Search tracks`, and
+  the depth slider's label and screen-reader name dropped `(top-k)`; its tooltip already
+  explains what depth does.
+- **Why the census had never seen this.** Its patterns start at 20 characters, because they
+  measure sentences; a seven-character chip falls through both the cap and the jargon bar.
+  `scripts/verstaendlichkeit.mjs` now has a third layer: `URTEIL ETIKETT` scans visible
+  labels of 1–24 characters (JSX text, short attributes, and the `label:`/tuple forms that
+  hold them) and allows **zero** of them to name a retrieval method. Measured 11:35:04 MEZ at
+  the tree: 9 of 384 labels did. Counter-probe at 11:40:21 MEZ: re-adding one chip literal
+  makes the census report `FAELLT (1 von 428)` and exit 1; after the revert it is
+  `HALTET (0 von 427)`.
+- **Reported, not hidden:** 28 further labels still carry a domain word (`mcp-config.json`,
+  `Search the index`, `New node`), and two name a method class this bar does not cover —
+  `Semantic search` (Dashboard) and `Semantic map` (graph panel). The graph's three view
+  names are a set (`Force | Tree | Semantic`); swapping one word alone would leave a leftover
+  instead of a name, so that trio is its own cut. The census prints both numbers every run.
+
+## [3.2.182]
+
+### Changed
+
+- **The cross-language number on the status surface now names its own denominator.** The
+  Ollama branch said "for English questions over German notes it found 4 of 15" — true,
+  and sourced (`docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt`: "Gemessen sind
+  4 von 15 treffern (26,7 %)"), but 15 of *what* was left to the reader, and the fraction
+  had no percentage. It now reads **"it found 4 of 15 cross-language pairs (27 %)"**.
+  Measured in the real window at 6.11.2026 10:29:39 MEZ before the change; the number
+  itself is unchanged because nothing was re-run — this cut only makes an existing
+  measurement checkable, it does not refresh it.
+
+### Added
+
+- Two guards in `tests/doku-zahlen.test.ts`, because three of the four numbers on this
+  surface branch were already tied to their evidence and the fourth was not:
+  `die Flaeche nennt den Sprachuebergriff mit seinem Nenner, seiner Zahl und dem Beleg
+  dahinter` (treffer, pairs and the rounded percentage all read out of the evidence file,
+  with a bite control that runs the old bare form through the same pattern and must miss
+  it), and `die Baseline ohne Vektoren heisst auf der Flaeche, was sie im Beleg ist`
+  (the "51 % for naive substring search" line is now tied to the v1 leg of the
+  three-leg run — 51.1 % rounds to 51). Red first at 10:35:35 MEZ (`expected null not to
+  be null` — the surface did not yet carry the pair noun), green after the text change.
+- The content gate carries the new wording as a marker and the old bare form as a ban, so
+  the delivered object is the one that says it.
+
+## [3.2.181]
+
+### Changed
+
+- **Sixteen hover titles now fit the cap that governs them.** The census counted them at
+  15 to 32 words (`Settings.tsx:699`, `Settings.tsx:1283`, seven in `Dashboard.tsx`,
+  `MemoryCard.tsx:96`, two in `Chat.tsx`, four in `KnowledgeGraph.tsx`); the 14-word cap
+  and the 80 % bar stayed exactly where they were, and the texts moved instead. Measured
+  on the tree at 6.11.2026 10:08:59 MEZ: **53 of 53** title/placeholder sentences now carry
+  the cap (was 36 of 52), the surface corpus is **304 of 349 = 87.1 %** against its 80 %
+  bar — 24 sentences of margin where 3.2.180's own tool measured 8 (287 of 348 at
+  06:53:24 MEZ). The share that had been 1 sentence of margin before P98's counter fix is
+  not quoted here, because that number described a counter that was wrong.
+- **Two shortenings gave something up on purpose, and it is named here.** The vector-index
+  title no longer explains the mechanism ("until every text chunk carries its vector") and
+  says what the user can feel instead: word search still works, meaning search may miss
+  notes. The retrieval-position title no longer spells out `BM25`, which is engine jargon
+  on a person's screen.
+- **One tooltip was corrected while it was being shortened, not just trimmed.** The old
+  line promised "`null` means that track did not see it", but the card never paints the
+  word `null` for an absent track — it paints no chip at all (`MemoryCard.tsx:98-100`,
+  three `!== null` guards). The new line describes what the surface actually shows:
+  "Absent means unseen".
+
+### Added
+
+- The census reads `aria-label` as its own kind (`vorleser`) instead of folding it into the
+  hover margin, because a spoken name is not a hovering box: the graph's 26-word keyboard
+  tour is a narration that loses nothing by being read in full. Reported with the other
+  kinds, exempted from the hover bar and the reason printed.
+- A fourth verdict, `URTEIL RAND`: **no** title or placeholder may stand over the cap —
+  absolute, not a share, because a hover is one breath and is dismissed by moving the
+  pointer. Two bite controls in `tests/punkt7-fachwort-traegt-grund.test.ts`: a fabricated
+  15-word title must be caught, and a 40-word `aria-label` must not be. Red first at
+  10:06:12 MEZ (16 titles named with file and text), green at 10:08:59 MEZ.
+- The content gate gained six markers of the new wordings and bans for five of the old
+  ones, so a shortened sentence cannot survive as a second text. Counter-probe against the
+  installed 3.2.180 with the corrected set (10:21:42 MEZ): every new marker **0**, the old
+  wordings **1, 1, 1, 1, 2**. A first marker candidate ("every saved note only patches it")
+  was thrown away before landing because it already counted 3 in the old object — a marker
+  that is true before the change proves nothing. And the gate itself caught a second
+  mistake: one *pre-existing* marker pinned the old tooltip by a shorter fragment
+  ("Semantic search looks for the meaning"), which my own dependent sweep missed because I
+  had searched the longer wording — a sweep in one direction is not a sweep. The build ran
+  into it at 10:20:06 MEZ (`INHALT_EXIT=1`, abort before the swap), the marker was turned to
+  the new wording and the old fragment banned, and the chain was re-run.
+- One sentence lived in two files (`Dashboard.tsx` and `Chat.tsx` said the same thing about
+  the index being built once); the census dedupes by text, so shortening one copy revealed
+  the other and the surface denominator went 348 → 349. Kept as a fact, not smoothed away.
+
+## [3.2.180]
+
+### Changed
+
+- **Six sentences that a person reads now carry the house dash instead of a bare hyphen**
+  (`A local program on this machine — no key needed.`, `… more below — keep scrolling`,
+  `No node of the core is inside this picture — …`, `Nothing claimed yet — write the first
+  one below, …`, and two refusal lines in the memory router). This was not typography: the
+  census splits sentences at ` - `, so the two router lines counted as four. Measured on
+  the delivered object at 6.11.2026 05:44:44 MEZ: the servant corpus is **51 sentences**,
+  where 3.2.179 said 53 (measured 05:31:59 MEZ), while the surface corpus stays at **348**
+  and the share under the 14-word cap stays at **80.5 %** against its 80 % bar.
+  A reading taken at 05:32:32 MEZ said 346 and 80.3 % — that was the tree ahead of its own
+  object (the swap had not happened yet), and it is withdrawn here rather than kept as a
+  result: a census only testifies to the stand it shares with the bytes it reads.
+
+### Added
+
+- The census gained a third verdict, `URTEIL STRICH`: no counted sentence may use a bare
+  hyphen where the house dash belongs, across all three layers, with a bite control that
+  runs the *old* form through the same arithmetic and must see it hit. Red first at
+  05:31:59 MEZ (4 sentences named with file and text), green at 05:32:32 MEZ.
+- The content gate now proves the same change from both sides at the delivered object: the
+  sentence tails must be present, and the six hyphen forms must be gone. A marker cannot
+  carry a non-ASCII character here (the gate reads latin1 and would count a permanent zero),
+  which is why the proof is two-sided rather than one string — the two server lines are the
+  exception, since esbuild writes their dash as an ASCII escape that can be counted
+  directly.
+## [3.2.179]
+
+### Added
+
+- **A target you can hit, measured at the pointer.** `--treff` (44 px) and the `treff`
+  utility add a transparent child box around a control that carries no word, so the drawing
+  stays exactly as approved while the area that answers the pointer grows. Measured
+  6.11.2026 05:09:55 MEZ against the delivered object at 1440 x 900: of the 76 points set
+  22 px from the centre of the seven icon-only controls, **0 answered as the control's own
+  before and **76 of 76 do after**.
+  Corrected 6.11.2026 06:25:04 MEZ: the first version of this line said 38 of 76, "the left
+  and top sides" — that was my probe standing on the boundary of the 44 px box (22,0 px from
+  the centre), where painting order decides and coverage is not what is being asked. Measured
+  at 21,9 px, inside the box, all 76 points answer as the control's own at 1440 px and all 48
+  at 390 px; the bar is absolute again and the exception drawer is gone.
+- The touch-target census walks **all seven views** instead of three, and asks the pointer
+  rather than the box (`document.elementFromPoint`). Measured 05:13:56 MEZ: **181 targets,
+  0 under the 24 px WCAG 2.5.8 AA minimum**. The 44 px mark stays a report for controls that
+  carry a word (160 of 181 = 88.4 %), because a bar there would move half the surface.
+- A second pointer check on the same run: no target may lose its own centre to a neighbour.
+  Baseline before the change, measured 05:01:29 MEZ: **0 of 158**. After it: still 0.
+
+### Changed
+
+- Seven icon-only seats call `treff`: the sidebar's setup and focus-mode buttons, the chat's
+  clear and send buttons, the graph's zoom in and zoom out (with 8 px more air between that
+  pair, since one extension would otherwise cover the other), and the dashboard's trash.
+- The 44 px bar is a regression bar over a named drawer: 7 controls at 1440 px and 6 at
+  390 px still miss it (measured 05:13:56 and 05:13:39 MEZ — the narrow window shows
+  `Show sidebar` and `Leave focus mode` where the wide one shows the setup and focus
+  buttons). A control that newly fails stops the run; a control that heals has to be struck
+  from the list before the run goes green again.
+
+## [3.2.178]
+
+### Added
+
+- **A danger colour, measured rather than borrowed.** The contract had `--warn` (amber) and
+  `--ok` (green) but no danger, so the one seat that needed it reached into the framework:
+  `border-red-500/40` on the clear-chat hover. Computed 6.11.2026 03:09:38 MEZ that is
+  **1.57:1** against the light panel and **1.65:1** against the dark one — and even undiluted
+  it only reaches 2.74:1. The bar for a control boundary is 3:1 (WCAG 1.4.11). The contract
+  now names it: `--gefahr` is `oklch(0.50 0.19 25)` in the light theme (#b71824 — 3.67:1
+  against the table, 4.82:1 against the panel) and `oklch(0.63 0.19 24)` in the dark one
+  (#e54c4d — 5.25:1 and 3.99:1), registered as `--color-gefahr` so `border-gefahr` is a real
+  class. The light step in the dark theme is chosen on purpose: a dark boundary on a
+  near-black table disappears.
+- `tests/gefahr-traegt-drei-zu-eins.test.ts` reads the token values out of `src/index.css` and
+  computes the four ratios itself; its bite control runs the *old* form through the same
+  arithmetic and must see it fail, and it checks the conversion against three hex values the
+  CSS itself documents (#070708, #252526, #fafaf8).
+
+### Changed
+
+- The clear-chat hover calls `hover:!border-gefahr`. The open list in
+  `tests/leitern-in-den-bausteinen.test.ts` — the one that P87 kept printed instead of
+  tolerating silently — is now empty, and still counted and printed.
+
+## [3.2.177]
+
+### Changed
+
+- **Every class a building block calls must now have a rule in the shipped CSS.** Measured
+  6.11.2026 03:29:51 MEZ against the delivered 3.2.176: 455 class words called by the
+  components against 1 537 rules in the shipped CSS, and three found nothing — `prose` and
+  `prose-sm` (Chat.tsx:1052) plus the marker `group/code` (Chat.tsx:1110). The marker is a
+  relative-name flag that never owns a rule, so the new check counts and prints markers
+  instead of swallowing them. The other two were leftovers of a typography plugin that was
+  never registered: the answer is painted by `.chat-prose` (src/index.css:664), so the two
+  names are gone and the rendering is unchanged.
+- The check runs inside the content gate (`scripts/pruefe-klassen-im-objekt.cjs`, called from
+  `scripts/pruefe-asar-inhalt.cjs`), so a class without a rule stops a landing rather than
+  waiting for someone to look.
+
+## [3.2.176]
+
+### Changed
+
+- **Colour comes from the contract, not from the framework.** Measured 6.11.2026 02:16:47 MEZ:
+  18 seats in 6 building blocks painted a Tailwind palette colour (bg-white 11, bg-zinc-800 4,
+  text-white 1, text-zinc-900 1, text-zinc-100 1). Knobs and slider thumbs now call
+  `bg-knopf`/`text-knopf`, the selected tab calls `bg-blatt`, and the app root no longer
+  overrides the ink that `body` already sets from `--text-1`. Two names are registered in the
+  theme (`--color-knopf`, `--color-blatt`) rather than patched at 18 places, and the dark-mode
+  fork disappears with the palette: the same element, one name, both themes.
+- **The framework's class scanner is pinned to the product's own sources.** Automatic detection
+  had been reading `tests/*.ts` (including its own bite probes), three stale build folders
+  (`dist-p1`, `dist-p2`, `dist-pf1`) and a measurement dataset under `tools/longmemeval`. The
+  shipped CSS therefore carried rules that no building block calls — measured 02:19:25 MEZ in
+  the built CSS: four dead colour rules from quotations plus the size steps from the probes.
+  After pinning: 82 986 B instead of 88 649 B, 39 rules gone, and none of them referenced by
+  `src` any more (checked name by name against the components).
+
+### Fixed
+
+- **One seat stays outside the contract, and says so.** Chat's clear-button hover still uses
+  the framework's red, because the contract has no danger colour and inventing one needs a
+  contrast measurement, not a guess. The guard counts that open list and prints it
+  (`tests/leitern-in-den-bausteinen.test.ts`): a second entry fails the run, and closing this
+  one means changing an assertion on purpose.
+
+## [3.2.175]
+
+### Changed
+
+- **The comprehensibility census names which layer it actually gates.** Measured 6.11.2026
+  01:16:40 MEZ at the delivered 3.2.173: the tool layer printed "18 (72.0 %) — Latte 80 %"
+  even though `URTEIL KAPPE` measures only the surface, and the server layer printed the same
+  line next to 82.3 %. A threshold shown beside a number nobody measured invents a rule — and
+  the number it invents always fails. The surface line keeps its "Latte 80 %"; the tool and
+  server lines now read "Bericht, keine Latte (URTEIL KAPPE misst nur die Fläche)".
+- The same header no longer claims the numbers are "im ausgelieferten Objekt" when the run was
+  asked for the tree with `--nur quelltext` (found at 01:50:03 MEZ while writing the test).
+
+No product sentence changed in this release: the census is a measuring instrument and is not
+part of the shipped bundle — measured 01:50:57 MEZ, "URTEIL KAPPE" appears 0 times in the
+installed `app.asar`. What ships is the guard that holds the instrument honest
+(`tests/punkt7-fachwort-traegt-grund.test.ts`, 13 cases).
+
+## [3.2.174]
+
+### Changed
+
+- **Every size and line-height in the components names the ladder now, not the framework.**
+  Measured 6.11.2026 01:13:19 MEZ: 262 seats called `text-xs` (127), `text-sm` (129) or
+  `text-base` (6) in 18 building blocks, and 40 more called a line-height the framework owns
+  (`leading-relaxed` 33, `leading-snug` 3, `leading-none` 2, `leading-[1.75]` 2 — the last two
+  counted at 01:22:31 MEZ). They call `fs-2 lh-dicht`, `fs-4 lh-lesbar` and `fs-5 lh-lesbar`
+  now, and the four line-masses of the contract. Rounding happens at the token, not at the
+  row: 1.75 becomes 1.65, 1.375 becomes 1.24, 1.625 becomes 1.65. Where a seat had already
+  chosen a line-height on purpose, that choice won and the seat only gained its size — 25 of
+  them. `lh-lesbar`, `lh-prosa` and `lh-marke` are utilities now, which is what 3.2.173
+  promised: they arrive with their callers, not before them.
+- Two guards hold it: no building block may name a framework size or a framework line-height,
+  and both counters have bite controls (`tests/leitern-in-den-bausteinen.test.ts`).
+
+### Fixed
+
+- **A `//` comment in CSS is not a comment.** The design warden read two phantom classes —
+  `test` and `ts` — out of the line after one and reported dead style (01:23:27 MEZ, ROT
+  "Klassenregeln ohne Baustein: 2"). The note is a `/* */` block now.
+
+## [3.2.173]
+
+### Fixed
+
+- **A sentence with two full stops, found by looking at the picture and guarded on the painted
+  layer.** The density row of the graph's More menu read "…busiest notes first, as many as
+  fit.." (seen in `fenster-172-390/erklaerungen-menue.png`, 6.11.2026 00:56:24 MEZ): the switch
+  appended a period to a stage description that already carries one. At the source both forms
+  look like a template, so no counter could have seen it -- the new guard therefore lives in the
+  window cycle, which reads what is actually painted, and it names the row it catches (red at
+  00:58:58 MEZ before the fix).
+
+### Added
+
+- **The 20 px step is callable, and one seat stopped borrowing Tailwind's name for it.** The
+  contract has `--fs-6: 20px` and had no `@utility fs-6`; the surface's single `text-xl` seat
+  (`DossierView.tsx:232`) therefore carried Tailwind's own leading (1.556), a value the contract
+  does not know. It is now `fs-6 lh-dicht`, and `text-xl` joined the forbidden size names in
+  `tests/leitern-in-den-bausteinen.test.ts` -- with a bite control that still catches the old
+  name. The remaining 262 seats that name Tailwind's sizes are the next cut.
+- **`@utility lh-dicht` exists because a seat calls it.** The other two leading steps
+  (`lh-lesbar`, `lh-prosa`) were set in the same edit and the design warden refused them:
+  "Klassenregeln ohne Baustein (toter Stil) 2: lh-lesbar lh-prosa" (00:00:16 MEZ, Exit 1). They
+  come back with the sweep that gives them callers -- the contract's own rule, applied to my own
+  addition rather than exempted for it.
+
+## [3.2.172]
+
+
+### Added
+
+- **The server is now a measured layer of language, because its words reach the surface.** Five
+  places copy an answer body into what a person or an agent reads: `Settings.tsx:340` and `:379`,
+  `Chat.tsx:680` (`tuerSatz(json.error, …)`), `store.ts:327` and `:489`. The census had never
+  opened `server/`. Measured 6.11.2026 00:30:54 MEZ: 62 candidate sentences, 5 of them naming a
+  technical term with neither a reason nor a task, 82,3 % under the 14-word cap. Four were
+  rewritten into short sentences that say what happened and what follows -- "No note or saved
+  version with that id, so nothing was restored.", "Batching is gone from MCP 2026-07-28, send one request at a time.", "The request carried no text, so there was nothing to embed.", "This backup
+  holds more than 5000 notes, so nothing was imported." The fifth was a false alarm the fence
+  itself caused (below). The census prints and gates all three layers now: surface, tools, server.
+
+### Fixed
+
+- **A reason is a clause, not a word.** The fence only recognised a fixed list of connectives, so
+  "a mention says no more than that two terms appeared together" -- a plain definition of the
+  jargon it was accused of hiding -- counted as unexplained. Adding the bare verbs
+  (`says|means|shows|tells`) fixed that sentence but broke the measure: the surface's
+  reason-share jumped from 27 to 69 of 348 in one edit (00:33:33 MEZ), because "the panel shows
+  entities" is not an explanation. The rule now requires the definition *clause* -- a
+  says/means/shows/tells verb followed by a "that" phrase -- and the measured count is back to an
+  honest 31 of 352, with the bite control still catching a bare term list.
+
+## [3.2.171]
+
+### Fixed
+
+- **The second silent control in the graph's More menu, found by the same cycle at the narrow
+  width.** 3.2.170 gave `datum` its line; the 390 px pass then named the next one: at a phone
+  width the time slider moves into the menu, where the explanation switch had no case for it, so
+  the row showed a control and said nothing (measured 6.11.2026 00:19:31 MEZ: 17 rows, one
+  silent). It now reads "Scrub time: left is the oldest note, right is today, applied on
+  release." -- 13 words, inside the cap, and it says the part a person only learns by being
+  surprised: the picture does not move while you drag, it moves when you let go.
+
+## [3.2.170]
+
+### Added
+
+- **The graph's More menu is now measured, and it answers for every control.** No cycle of
+  `scripts/pruefe-einstellungen-im-fenster.mjs` had ever opened that menu: it carries thirteen
+  controls at 1440 px and seventeen at 390 px, and each one owes the reader a line of text (the
+  house moved these explanations out of `title` attributes in 3.2.142). Measured 6.11.2026 00:07:23 MEZ in
+  a real window: 13 rows, one of them silent -- `datum`, the as-of date field, fell through the
+  explanation switch to `default: return ""` while its two time-axis neighbours explained
+  themselves. It now reads "The day the picture is read from, so later notes stay out." (12
+  words, inside the census cap). The new cycle `erklaerungen` checks the button's own number
+  against the rows it opens, names any row without an explanation, and reports clipped text --
+  at both widths.
+
+### Fixed
+
+- **The probe that found it was itself wrong first, and is documented as such.** A global
+  `.hud-label` read counted the rail's short words ("Now", "102 %", "Fit", "Export") and one
+  icon-only span with no text, so it reported 31 labels with one "empty" (6.11.2026 00:04:37 MEZ) and, at
+  the tag-filter row, read the chip list instead of the sentence -- "All tagssaat". The row is
+  now addressed by its own `data-testid` and the explanation by `:scope > .hud-label`, which is
+  the markup the component actually writes (`KnowledgeGraph.tsx:6305`).
+
+## [3.2.169]
+
+### Changed
+
+- **The jargon fence now sees eleven sentences it had been blind to.** Its guard against source
+  fragments threw out any string carrying `{`, `}`, `;` or `=` — which is right for
+  `semantic=fact, episodic=event` and wrong for prose. Measured 5.11.2026 22:40 MEZ in
+  `src/core`: seven tool sentences were invisible, three of them the plain instructions an agent
+  reads before it decides what to send (`memory_search`, `memory_save`, the `beziehungen` field).
+  The guard now splits the signals: `=>`, `if(`, `for(`, `foo(` still mean code, while `{};=`
+  only disqualify a string that never looked like a sentence. Shape is the capital letter at the
+  start — measured 23:25 MEZ against "Graph depth 1-4, default 2; use 1 for a quick lookup",
+  which we ship without a full stop and which the stricter test had wrongly rejected.
+- **What became visible was not all good.** Two tool sentences named a term without a reason
+  (the fence caught them the moment it could see them), and nine surface sentences stood over the
+  14-word cap. All eleven are rewritten, so the census reads 0 findings in both groups and the
+  surface holds its 80 % cap with the sentences it actually shows: 350 candidates measured at the
+  source (was 335), 281 under the cap = 80,3 %. The two rewritten descriptions now say what the
+  three tracks are for ("words (BM25), meaning (vectors), links (the graph), so one question
+  finds the exact phrase and the same idea in other words") and what a wiki link becomes ("links
+  you can follow, so a name you write joins the graph on its own").
+- **The suite holds the new numbers as floors:** 38 tool sentences must still be counted (was
+  33), and the surface cap must stay at or above 80 %. A fence that quietly measures less is not
+  a better result, which is the lesson 3.2.167 taught and this cut makes unfalsifiable.
+
+### Fixed
+
+- **The census verdict no longer decides a test's exit.** The import-silence case starts the
+  census as its positive control; the census exits 1 when a latte falls, and the case read that
+  as a broken tool. It now checks what the tool *says*, not whether the product passes — proven
+  against the installed 3.2.168, where the cap legitimately falls to 79,8 % until the new
+  sentences ship.
+
+## [3.2.168]
+
+### Fixed
+
+- **A sentence the fence cannot see cannot be guarded.** The depth guidance landed in 3.2.167
+  written as "Graph depth 1-4, default 2; use 1 for a quick lookup" -- and the semicolon put it
+  outside the census: the probe discards any candidate carrying a code character (`{`, `}`, `=`,
+  `;`, `=>`, `foo(`) so that source fragments never count as user language. Measured 5.11.2026
+  22:39 MEZ: the tool set read 32 candidates instead of the 33 measured at 21:05, and the fence
+  went on reporting "0 findings" over a set that had quietly shrunk. The wording now reads
+  "Graph depth 1-4, default 2, and use 1 for a quick lookup", which the probe sees. Two new
+  cases hold it: the sentence must be a candidate, and the tool denominator must not fall below
+  33 -- a floor, not a decoration, because a smaller field is a worse measurement, not a better
+  result.
+- **Importing the census no longer runs it.** `scripts/verstaendlichkeit.mjs` ended in a bare
+  `haupt()`, so every import executed the full census: the suite read the delivered 49 200 915-byte
+  object and printed some seventy lines into the run, twice over, on a machine that may not even
+  have that object. The census now runs only when the file is started directly, proven both ways
+  by a test that requires the import to stay silent and the direct start to speak.
+- **Seven tool sentences are still hidden from the fence, and they are named.** Measured 22:40 MEZ
+  in `src/core`: two carry braces (a wiki-link note and a field list), four carry `=` (the
+  knowledge-type table, two "true = ..." notices, one mode notice), and one is prose killed only
+  by a semicolon -- "Hybrid retrieval (BM25 + vectors + knowledge graph) over K3PTA memory…",
+  the most jargon-dense string an agent reads. That is the next cut: the code-character guard has
+  to tell a fragment of code from a comma-spliced sentence, and until it does, the tool layer's
+  zero findings is a claim over a partly sighted set.
+
+## [3.2.167]
+
+### Changed
+
+- **The words an agent reads as its instructions obey the same rule as the words a person
+  reads.** Punkt 7 holds that a technical term must come with its reason or the task it points
+  to; the fence measured the surface only, so the tool layer was ungoverned territory -- and its
+  reader is a model that guesses. Measured 5.11.2026 21:05 MEZ against the delivered 3.2.166:
+  three of the thirty-three tool sentences named a term with neither (`memory_graph` said
+  "capped." and "Graph depth 1-4, default 2"; the embedding failure said "Embedding count does
+  not match"). All three now carry the reason and, where there is a next step, the step:
+  "capped so answers stay small", "default 2; use 1 for a quick lookup", "the model answered
+  fewer vectors than lines, so retry or rebuild the index". A fourth suite case runs the same
+  probe over the tool set, so the rule can no longer be kept on the surface and broken at the
+  door. The census verdict now names both groups instead of only the surface, and no longer
+  quotes an old measurement moment as if it were this run's.
+
+## [3.2.166]
+
+### Changed
+
+- **The surface no longer leans on a weight that half of its machines do not have.** Measured
+  5.11.2026 20:43 MEZ: 77 seats in 19 components called `font-medium` -- 500, which macOS
+  renders as a real step and Windows (static Segoe UI) collapses onto 400. The same product
+  therefore carried two hierarchies. All 77 now call `font-semibold` (600), the ladder's
+  `--fw-halbfest`, and the warden's weight register is cleared: what remains is 400, 600 and
+  700 only. Measured in the window at 1440 and 390 px before and after (see the landing note),
+  because this one changes the picture rather than the name.
+- **The design contract keeps its paid-off debts as history.** `design/DESIGN.md` listed five
+  warden registers; two are now settled (`schrift:größen-fremd` in 3.2.164,
+  `schrift:gewichte-fremd` in 3.2.166) and the contract says so with the measured numbers
+  instead of silently dropping the lines. The rules stay in force -- they simply have no
+  exception left.
+
+### Fixed
+
+- **A registry floor that punished paying off debt.** `tests/design-vertrag.test.ts` demanded
+  more than three register entries, a number that was really "the probe still works". After
+  two debts were paid the count fell to three and the test went red on progress. It now
+  checks the shape: the two structural registers must be found, which still fails loudly when
+  the pattern or the file breaks.
+
+## [3.2.165]
+
+### Changed
+
+- **A half-finished import now says which file was never read.** Measured 5.11.2026 20:25:08
+  MEZ in the real window: dropping two files and throwing on the second printed "Import
+  stopped after 1 of 1 writes. What is saved stays in your notes." -- the count of writes was
+  honest, and it hid that a second file existed at all. The sentence now names it: "Import
+  stopped after 1 of 1 writes. 1 file left unread. What is saved stays in your notes." The
+  clause only appears when a file was actually left unread, so an import that dies during a
+  write does not claim a missing file.
+- **The window probe grew a second throw.** Until now the `importwurf` cycle made every file
+  read fail, so only the zero branch of the receipt was ever seen in the delivered object and
+  the counted branch lived in jsdom alone. It now throws on the second file (counted branch,
+  store 34 to 35 through the door) and on the first file (zero branch) in the same run.
+
+### Fixed
+
+- **The window probe no longer runs the last cycles against its own dead server.** Cycles P
+  and Q take the capsule server away on purpose -- that is what they test -- but `importwurf`
+  and `gruppethema` ran after them and every door read came back empty. Measured twice
+  (19:00 and 20:11 MEZ) as "Gegenlauf ohne Gegenstand"; the boundary probe showed the control
+  request /api/health failing at the network layer too, so it was the server, not the route.
+  The server is started again before those cycles, and a door that still refuses to answer is
+  now a failure rather than a silence.
+## [3.2.164]
+
+### Changed
+
+- **The type ladder is now named by the components, not enforced from outside.** Measured
+  5.11.2026 19:24:27 MEZ against the committed tree (`git grep` at HEAD, the 3.2.163 bytes):
+  248 seats written as `text-[Npx]` across 17 components, 14 different values, 65 of them on
+  half pixels -- while `src/index.css` held eight whole-pixel steps and the warden reported no
+  arbitrary value there. Since 18.10 three unlayered
+  rules in `index.css` forced those back to the ladder at render time, so the picture was right
+  while the source still lied. Now every seat calls a step (`fs-1` to `fs-5`, registered with
+  `@utility`), the three enforcement rules are gone (an unlayered rule nobody needs is forbidden
+  by design/DESIGN.md section 10), and `tests/leitern-in-den-bausteinen.test.ts` holds the count
+  at zero -- four cases, including a bite control that catches a half step and a token form that
+  passes.
+- **Two weights left the arbitrary band.** `Dashboard.tsx:2101` wrote 560 and `KeptaMark.tsx:25`
+  wrote 740; a non-variable font renders neither, so they now sit on 600 and 700. What remains
+  named in the warden's debt register is `font-medium` (500) at 77 seats: on Windows it collapses
+  to 400 and halves the hierarchy. Moving those is its own cut with its own image street, because
+  it changes the weight of 77 places rather than the name of a class.
+- **The warden learned `@utility`.** Measured the same minute: with the new steps in place it
+  reported five naked callers and three orphans -- it only knew `.name {` rules, so a Tailwind v4
+  utility looked like a caller without a rule and a ladder step looked like dead style. Both
+  readings were wrong about the same eight lines.
+
+## [3.2.163]
+
+### Changed
+
+- **Eight sentences on the surface stopped asserting and started explaining.** Measured
+  5.11.2026 18:35:37 MEZ against the delivered 3.2.162: the understandability census kept two
+  ladders, and its second one sat on its own stop -- 8 findings against a maximum of 8, so it
+  could no longer lose. The real number sat under it: 16 of 333 surface sentences named a
+  reason or a consequence. Now the eight jargon sentences say what they mean (the endpoint row
+  says where your questions go and what changing it moves, the fit button says every note is on
+  the screen, the semantic switch says similar notes sit together, the similarity switch says
+  to check first, the Ollama row says to start it, the sidebar point says to open it, the
+  shortcut row says Open, and the npm line says nothing is built by hand). The bolt maximum was
+  pulled from 8 to 0 -- measured 18:41 MEZ at the source, and the rule now runs inside the suite
+  (tests/punkt7-fachwort-traegt-grund.test.ts, three cases including a bite control), because a
+  number in a script calls nobody when a line breaks it.
+- **The census no longer reads build comments as user text.** Three of the eleven source-level
+  findings were quoted from code comments (Dashboard.tsx:595, TodayView.tsx:173, Chat.tsx:152);
+  no person reads those on the surface, so comments are stripped before candidates are sought.
+  Shortening three of my own sentences back under the 14-word cap was needed to keep the first
+  ladder honest (79,7 % -> 80,6 %); the cap itself was not moved.
+
+## [3.2.162]
+
+### Added
+
+- **The list can group by topic, and the topic-less get a named drawer.** Measured 5.11.
+  15:38:17 to 15:38:59 MEZ against his own store, read through the delivered object's own
+  door (`127.0.0.1:55600`, PID 48641, ports held by `lsof`; aggregate counts only -- no note
+  content, no write, and `~/.kepta/kepta.db` was not opened): of 21 064 notes the topic axis
+  divides into four drawers between 7,90 % and 48,38 % (events 8 663 / 48,38 %, projects
+  3 985 / 22,25 %, links 3 197 / 17,85 %, guides 1 415 / 7,90 %), with people 340 (1,90 %)
+  and tasks 308 (1,72 %) below the band, and 3 156 notes (14,98 %) carrying no topic at all.
+  The carrier axis only halves the store (files 10 759 / 51,08 %, daten 10 211 / 48,48 %), and
+  tags are dust on his corpus (measured 30.10.: 95,17 % of his notes carry no word, biggest
+  drawer 0,35 % at median 1). Decided, because: grouping follows the axis that actually
+  divides, the carrier stays a filter, and the topic-less is a named group instead of a
+  remainder that sinks into the first drawer.
+- The grouping keys come from `themenFaecher` in `src/lib/graphHierarchy.ts`, which mirrors
+  the door's own rule (`server/router/memories.ts:299` counts a note in EVERY topic it
+  carries). Grouping by the first topic alone would have left two numbers for one word --
+  the sidebar axis count and the group header -- with an unexplained difference. Four cases
+  in `tests/lib/themen-faecher.test.ts`: every topic becomes its own key, no topic is lost,
+  no key is duplicated, and an empty note still lands in the named drawer.
+- Default for a fresh profile is "By topic". A saved choice always wins: a stand somebody
+  made is not moved by a wave.
+
+### Changed
+
+- The window checker drives the new control in a real viewport (`gruppethema`): the button
+  must carry its visible name and remember its state, heads must be painted, and the
+  "No topic yet" drawer must appear exactly when the door reports a number for it -- a
+  ladder that fails in both directions.
+
+## [3.2.161]
+
+### Fixed
+
+- **The import receipt counts, instead of sending the user to the console.** Measured 5.11.
+  15:13:16 MEZ on the delivered 3.2.160: the object carried "The reason is in the developer
+  console" twice -- `Dashboard.tsx:1242` (import drop path) and `SystemStatus.tsx:181` (the
+  model-answer test). The ban on that wording is the house's own since 3.2.155, and two
+  component tests already refuse it (`tests/components/SystemStatus.test.tsx:363`,
+  `tests/components/EnterpriseViews.test.tsx:573`) -- yet the object kept it, because the
+  object checker's forbidden list held only the lowercase form while the surface writes
+  sentences with a capital. The import path now names its own counting: with nothing saved
+  "Import did not run. No note was written.", with a throw in the middle of the stack
+  "Import stopped after N of M writes. What is saved stays in your notes."; the thrower's
+  wording stays with the operator (`console.error`). `SystemStatus` keeps `absage()`, which
+  appends the door's reason and never points at a console.
+- A case for the counted branch: two files dropped in ONE event (two events would clear the
+  first receipt), the door answering with `data.memory` as `store.ts:338` demands, and the
+  second read throwing. It failed first as `expected ... to match /Import stopped after/i`
+  (measured 15:15 MEZ) -- the first version of the case asked the door for a body without
+  `memory`, so `gelungen` stayed 0 and the surface told the truth about a different branch.
+
+### Changed
+
+- **The object checker now reads every forbidden wording in both starting cases.** The hole
+  is measured, not assumed: the same line, capitalised, passed the gate at 15:03:19 MEZ with
+  `INHALT_EXIT=0` while the object carried it twice. Each forbidden pattern is counted as
+  written and with a capital first letter, and the line names which form hit.
+- One padded clock in my own comment corrected: `scripts/pruefe-asar-inhalt.cjs:908` claimed
+  "12:57:5x MEZ" for a count whose seconds were never measured. It now says the minute and
+  names the missing second.
+
+## [3.2.160]
+
+### Removed
+
+- **Eighteen dead rules left the stylesheet.** `design/DESIGN.md` section 10 forbids "a rule in
+  CSS that nobody calls" -- and the file itself carried eighteen of them (measured 5.11.
+  14:39:18 MEZ: `scripts/design-wache.mjs` named `ambient-glow app-ambient badge-type glass
+  grid-bg hud-card hud-scan ikone ikone-1 ikone-2 ikone-3 ikone-4 inset label label-caps
+  stat-tile tap-min text-gradient`). Three independent methods found no caller: a token census
+  over every `className` word list in `src` (0 exact callers for all eighteen), a scan of
+  `class=` strings across `src`, `index.html`, `scripts` and `tests` (0 hits), and a scan of
+  `querySelector`/`classList` selector strings (0 hits). Fifteen rule blocks and six alias
+  entries in shared selector lists went -- `#root, .app-ambient` keeps `#root`, the five
+  `.card, .hud-card` selectors keep `.card`, and `.inset, .hud-inset` keeps `.hud-inset`, which
+  twelve components call. `src/index.css` went from 69 659 to 67 612 bytes (2047 B). The four
+  `--icon-stufe-*` tokens went with the `.ikone-*` rules that were their only readers, so the
+  cut does not leave four orphan tokens behind.
+- The reason for keeping them was the wache's own: "nothing is deleted while the wave runs,
+  E2/E3 may have uncommitted callers". Measured 5.11.: the tree was clean at `104cf2e`, so a
+  caller that is not in the committed tree cannot exist in the shipped object either. Decided,
+  because a contract nobody pulls is dead weight, not a promise.
+
+### Changed
+
+- **The tap-size line of the design wache now measures what exists.** It read `.tap` and
+  `.tap-min` and expected 28 px default with a 20 px floor; `.tap-min` was one of the eighteen
+  dead rules and never had a caller, so the 20 px floor was never carried by that class. The
+  floor is carried by two living places -- `--icon-min` lifts every `aria-hidden` symbol to
+  14 px at render, and the window census hits 113 targets with none under 20 px
+  (`scripts/pruefe-einstellungen-im-fenster.mjs`, cycle `tastmass`, measured 14:36:59 MEZ). The
+  line now reads `.tap` and `.tap-reihum` and requires all three of their measurements at 28 px.
+- **The orphan sonde's bite no longer hangs on the file's content.** `tests/design-wache.test.ts`
+  held the word-scheme to "at least 16 orphans" and demanded that `glass`, `inset`, `ikone`
+  and `label` appear in the live list -- a control that turns into a standstill the moment the
+  dead rules are gone. The sonde is now a pure module (`scripts/helfer/klassen-sonde.mjs`) and
+  the case feeds it planted bait: four orphans that an `includes()` scan would have waved
+  through, one naked caller (`fehl-stein`), five Tailwind forms that must not be mistaken for
+  missing building blocks, and the escape rule that stops the phantom class `text-` (18.10.).
+  The live file must answer "keine".
+
+## [3.2.159]
+
+### Fixed
+
+- **A hierarchy label no longer runs off the edge of the graph.** Measured 5.11. 14:16:51 MEZ on
+  the delivered 3.2.158 at 390 x 844: the outermost pixel column of the picture carried ink at
+  "rechts", while the surface named a cut only at "links". Read from the saved image itself
+  (716 x 1248 device pixels): three runs of 2 to 3 pixels in height around y 255-267, colours
+  142,141,138 and 164,163,157 -- text grey, so a word, not a disc. The skeleton path painted its
+  `mitteX` without the edge rule that the content path applies a few lines below it (the rule
+  itself is not new: measured 18.10. on 3.2.21, four of 35 titles were cut by the border). The
+  rule now lives once, in `titelKante`, and knows the difference between a centred label and a
+  left-aligned one -- for the skeleton path the END is what must stay inside, not the middle, and
+  the old clamp would have let 50 pixels of a 100-pixel name through the edge. Five cases in
+  `tests/graph-titel-kante.test.ts` bite in both directions. No new sentence reaches the surface,
+  so this landing carries no object marker: the proof is the window run, named as a deviation
+  rather than a number invented for the gate.
+
+### Changed
+
+- **The second edge ladder of the window checker asked the wrong body.** It demanded ink in
+  pixel row zero of every edge the surface reports as cut. Measured: the surface paints that
+  marker one CSS row inside (`KnowledgeGraph.tsx:4865-4868`), so at 2x device zoom columns 0 and
+  1 are always ground -- the ladder failed a truthful report twice, at 13:58:33 and 14:01:26 MEZ,
+  while the same run wrote "33 of 34 unfolded notes are in this picture" and painted the marker.
+  It now asks the number that carries the word's reason: a reported edge needs at least one note
+  outside the picture, and notes outside need a reported edge (`scripts/helfer/kanten-urteil.mjs`,
+  five cases including both directions). A silent balance line is a named branch -- "the frame
+  holds everything" -- not a missing reading. The first direction (border ink must be reported)
+  stays, and it is the one that found the label above.
+
+## [3.2.158]
+
+### Added
+
+- **`design/DESIGN.md` — the surface now has a contract, not only measurements.** The file did
+  not exist (measured 13:38 MEZ: no `kepta-app/design/` folder), while its rules were already
+  being measured in `scripts/design-wache.mjs`, `scripts/pruefe-einstellungen-im-fenster.mjs`,
+  `scripts/legende-hoehe.mjs` and `tests/absage-statt-ausnahmewort.test.ts`. Eleven sections
+  state what holds: one thing one word, a number names its denominator and its moment, the
+  ladder and its contrast floors (2,26:1 at `--text-3`, 6,70-6,80 painted legend pixels, the
+  4,45 edge), the two-channel rule (measured ΔL 0,0009), the 20 px target floor (113 targets,
+  0 under it), steps instead of one-offs, the 25 % fold budget, what the graph may paint, the
+  origin rule for every error path, and the four questions before any sign-off.
+- **A guard that couples the contract to its instruments** (`tests/design-vertrag.test.ts`,
+  four cases): every rule seat the wache counts must be named in the contract, every
+  instrument the contract cites must exist, and the number of dead CSS rules in the contract
+  must be the number the wache holds.
+
+### Tests
+
+One case ran red at 13:41 MEZ for the right reason (`schrift:gewichte-fremd` was measured by
+the wache but named by nobody); the other three were green on first run. Deviation from
+test-first, named here: the contract file was written before its guard, so the case "the file
+exists" was never watched failing — the absence was measured instead (no folder at 13:38 MEZ).
+Suite: 3511 cases in 330 files.
+
+## [3.2.157]## [3.2.157]
+
+### Fixed
+
+- **The local-ranking chip names the reason it fell back.** One sentence covered three
+  different events: the index never answered, the index answered and refused (HTTP 500), and
+  the index answered with a body that carried no list (`{}`, or an HTML error page at 200,
+  which threw while parsing and landed in the same "Server unerreichbar" catch as a dead
+  transport). The chip now has three branches — "did not answer", "refused (HTTP 500)",
+  "answered without a list" — and the search call asks the status before the body.
+  `Chat.tsx:546`, `Chat.tsx:890`.
+
+### Tests
+
+Four cases in `tests/components/Chat.test.tsx`: three red at 12:52 MEZ for the intended reason
+(`/tmp/red-p66.json`), one control that keeps the true silence named as silence. Two assertions
+of mine were written against wording I then chose differently; they were aligned to the decided
+surface copy, not loosened — the guard in each case stays "this is not called silence".
+Suite: 3507 cases in 329 files, verdict run green.
+
+## [3.2.156]## [3.2.156]
+
+### Fixed
+
+- **A missing number is no longer blamed on the grouping it followed.** The reclassify preview
+  refreshed the axis counts *inside its own try*: a 200 answer with an unreadable body threw
+  while parsing, and the surface said "The grouping did not run. Nothing was re-sorted." —
+  about a preview that had already arrived (`Settings.tsx:1160`). The count refresh now has its
+  own guard and lands in its own line ("The two-row counts did not arrive — only the change
+  count is known."), which the surface has had since P4-14.
+- **A refused connect names its reason.** `ConnectApps.tsx:38` read the body before the status,
+  so an HTML error page threw into a catch whose only sentence was "Connecting failed — please
+  try again." A door that answered 500 looked like a dead transport. The status is asked first,
+  the body read forgivingly: the door's own sentence when it wrote one, otherwise
+  "Connecting failed — HTTP 500."; the catch is left for a real silence.
+- **Checked, not broken:** `Dashboard.tsx:774` (the grouping counts) has no status guard either,
+  but its absence is *used* honestly — the label at `Dashboard.tsx:1984` switches to "counting
+  the N loaded" / "in the search index" instead of claiming the whole store. No cut there.
+  `ActivityView.tsx:167`, `ai.ts:283`, `PrivacyShield.tsx:44` turned out to guard after the
+  read in a way that cannot lose an answer; read, no case, no change.
+
+### Tests
+
+Four cases (two red first at 12:39-12:41 MEZ, `/tmp/red-p65.json`; two controls green in both
+states). One of my own assertions was wrong while writing them: it expected the refusal to keep
+the old bare sentence — corrected by reading the existing case at
+`EnterpriseViews.test.tsx:421` instead of changing it. Suite: 3503 cases in 329 files.
+
+### No object marker, named as a deviation
+
+3.2.156 adds no new ASCII string literal to the bundle: the only new sentence carries a real em
+dash, and the content gate breaks on a non-ASCII marker. The landing is therefore held by its
+behaviour cases, not by a marker — the house exception for "a body without a word in the object"
+(27.10.), written down here rather than quietly skipped.
+
+## [3.2.155]## [3.2.155]
+
+### Fixed
+
+- **The trash counter tells "not read" apart from "read: nothing deleted".** Its handler asked
+  the body before the status and then collapsed every failure into a number: a refused
+  `GET /api/storage-info` answered 500, `data.trashed` was missing, and the button was set to
+  `0` — a door that refused looked like an empty trash. A thrown parse landed in
+  `catch { /* ignore */ }`, so a value read earlier could keep standing there as if current.
+  The counter is now `number | null` (`null` = not read), the status is asked first, the body is
+  read forgivingly, and the button carries the reason in its own words: the door's sentence when
+  it wrote one ("… (storage busy)"), its number when it wrote none ("… (HTTP 502)"), and never
+  the wording of the runtime or the browser.
+
+### Tests
+
+Four cases in `tests/components/Dashboard.test.tsx`: two red first at 12:26 MEZ for the right
+reason (the title stayed the fixed one), two controls green in both states — a read 3 still
+shows 3, a read 0 keeps the plain title (a read empty trash is not a failure). One assertion of
+mine was wrong before the fix and is corrected in the same commit: it demanded the number while
+the door had written a sentence, and the house rule of `absage` puts the *sentence* in the
+parenthesis. Suite: 3499 cases in 329 files, verdict run green with EXIT 0.
+
+## [3.2.154]## [3.2.154]
+
+### Fixed
+
+- **An answered door with an unreadable body is not a reasonless failure.** The third census over
+  the body reads (`await x.json()` before `if (!x.ok)`) found six places that asked the body
+  first: `SystemStatus.tsx:177` (the connection test), `Dashboard.tsx:1264` (clip a page),
+  `DossierView.tsx:132`, `PraxisSync.tsx:69` (create a bundle), `PrivacyShield.tsx:64` (a
+  switch), `Settings.tsx:507` (load the model list). A proxy's HTML error page or a truncated
+  stream threw while parsing JSON, *before* the status was consulted, so the surface kept its
+  fixed sentence and the door's own number was lost — "answered 502" and "nobody answered"
+  looked the same. Each site now asks the status first, reads the body forgivingly, and says in
+  plain words when a 200 arrives without readable text.
+- **A switch no longer writes `undefined` into a boolean.** `PrivacyShield.tsx:68` copied
+  `d.chat`/`d.apps` straight from the reply; a reply missing one of those fields made the
+  switch look switched off, which nobody had switched. A field the door does not name now keeps
+  the value on the screen, and the state stays honest.
+
+### Tests
+
+Seven cases in six files, all run red first at 10:58-11:04 MEZ (`/tmp/red-p63.json`,
+`/tmp/red-p63-zwei.json`) for the intended reason — the sentence on screen, the number missing.
+Four of them failed at first for the *wrong* reason (a wrong prop, a stub that broke the read
+before the write, a missing button, a sentence I had not read); each harness was corrected and
+re-run red before any production line changed. Suite: 3495 cases in 329 files, verdict run green.
+
+## [3.2.153]## [3.2.153]
+
+### Fixed
+
+- **An answered door is not silence.** Four places threw a bare `Error("HTTP " + status)` into a
+  catch whose sentence was written for *no answer at all*, so the number was dropped and the
+  surface claimed a state it did not have: `Settings.tsx:411` (health), `Settings.tsx:421` (the
+  tool list), `ActivityView.tsx:216` (audit CSV export), `MemoryPreview.tsx:113` (restore a
+  stand). They throw `ApiFehler` — our own type for our own answer — and the sentences now name
+  what is missing ("did not arrive", "did not run") instead of denying a reply. The export line
+  no longer sends the reader to the developer console for a number the door wrote itself.
+- **The health reason was a state no surface painted.** `healthError` decided a colour and the
+  single word "offline"; the sentence built for it was never rendered. It is a line now
+  (`data-testid="settings-health-grund"`), so 503 and "nobody answered" are two different things
+  on the screen, and a reason that exists is a reason a person can read.
+
+### Tests
+
+Eight cases in three files, run red first at 09:39:53-09:40:44 MEZ (3 red in the settings file,
+4 red in the other two; `/tmp/red-p61.json`), green at 09:46 after the cut. Two of them are
+controls that stay green on both sides — they are what stops the cure from inventing a number for
+a silent door or letting a browser's wording through. Suite: 3488 cases in 329 files, verdict run
+green with EXIT 0.
+
+### Also
+
+`README.md` names 3488 (badge, prose, command comment); the content gate carries the two new
+markers and forbids both replaced wordings, counted against the installed 3.2.152 at 09:46:35 MEZ.
+
+## [3.2.152]
+
+### Fixed
+
+- **Where a refusal reaches the window, only our own signature may speak.** The house rule since
+  3.2.130 (`src/lib/absage.ts`: a fixed sentence for the surface, the reason for the operator) was
+  enforced by one helper while five other places handed the wording of whatever threw to the user:
+  `Settings.tsx:477` and `Settings.tsx:933` printed `did not answer (Failed to fetch)` — and could
+  print `did not answer (QuotaExceededError: … /Users/a/.kepta/kepta.db)`, the exact shape that was
+  photographed in the window at 820 px and named the defect; `store.ts:150` and `store.ts:216`
+  remembered `err.message` and Dashboard paints both (`Dashboard.tsx:115/117`, `Dashboard.tsx:692`),
+  so a browser's `TypeError` and V8's `Unexpected token < in JSON…` became sentences about our door;
+  `store.ts:359` let any text in the answer field `error` through without the form check that
+  `api.ts:42` (`tuerSatz`) has held since 3.2.128. All five now go through the origin edge:
+  `flaechenGrund(e)` returns the door's own sentence or nothing, `antwortKlausel(e)` picks between
+  "refused it (HTTP 413)" and "did not answer", and a foreign wording is written to the console
+  instead of the surface. The distinction P4-15/P4-16 decided (two cases, two words) is unchanged —
+  the four cases that hold it were re-run, not rewritten.
+- **`Dashboard.tsx:692` no longer grants a stranger passage.** It read the remembered reason and
+  wrapped it in `new ApiFehler(grund)` — the one type the filter trusts. That inverted the rule:
+  any wording the store had kept would have passed as our own signature. The stored value is
+  already filtered at its source now, so the line only adds the parentheses.
+- **The settings mirror says what it is.** `ai.ts:507` threw a bare `Error("HTTP 413")`, which is
+  our form but not our type; the origin edge had to special-case the wording to keep the number
+  visible. It throws `ApiFehler(…, status)` instead, so the helper never reads an exception's text
+  and the guard's ban on that stays absolute.
+- **One German word off an English surface.** `Fehlerschirm.tsx:21` labelled a message-less render
+  failure "unbekannte Ursache"; it says "no message" and still names the component (its agreed
+  purpose since 15.10. stays: it names the failure instead of showing a grey window).
+
+### Guards
+
+- `tests/absage-statt-ausnahmewort.test.ts`: the last entry in its exemption list was `Settings.tsx`
+  with its two sites, and the list asked to be emptied when they were healed ("die Regel kann weg").
+  It is empty now, the list itself is a tripwire, the probe's self-check no longer leans on a live
+  violation (it tests its pattern against the shape the code used to write, plus the two healed
+  call sites), and the scan covers `src/lib/*.ts` as well as the components — the two witnesses in
+  `store.ts` reach the surface and were out of view. 7 cases became 9.
+- New: `tests/lib/store-herkunft.test.ts` (8 cases), `Settings.einstell-empfang.test.tsx` +4
+  (P4-17), `Fehlerschirm.test.tsx` +1; the guard `tests/absage-statt-ausnahmewort.test.ts` went
+  from 7 to 9 cases. 15 cases in all: **9 ran red at 23:26 MEZ** and green at 23:38, the other 6
+  are controls that were written to stay green on both sides (they are what stops the cure from
+  blanking a reason that is allowed, or from swapping one word for another).
+
+### Berichtigung
+
+The commit message of `89c6b3d` names "Zwölf Faelle erst rot". False — the run at 23:26:03 MEZ
+reported `9 failed | 28 passed`; thirteen cases were new outside this guard file, four of them
+controls. The number that belongs to the run is in this section, not in that subject line, and
+the object was built after the correction.
+
+### Found, not fixed
+
+Four more places throw the bare `Error("HTTP " + status)` into a `catch` that then calls `absage`
+with a sentence written for silence — `Settings.tsx:411` ("The health check did not answer"),
+`Settings.tsx:421`, `ActivityView.tsx:216`, `MemoryPreview.tsx:113`. There the door *did* answer, and
+its number is dropped: the surface claims silence. Turning them into `ApiFehler` would put
+"(HTTP 503)" behind a sentence that denies an answer, so it needs the sentences reworded first —
+a separate cut, named here so it is not sold as done.
+
+## [3.2.151]
+
+### Fixed
+
+- **A finished network backfill no longer paints a stripe that reads as "still working".**
+  The branch is read from the 3.2.150 source: `KnowledgeGraph.tsx:6373` gave the **finished**
+  backfill with additions the same full-width class as a running one (`zeile` non-empty ->
+  `absolute left-0 right-0 top-0 h-[3px]`), and a stripe without a number can only mean "it
+  is still working". `nachzugStreifen` now decides the width alone: while the door works the
+  stripe follows the counter (at least one percent, so a start is visible), a refusal keeps
+  the full width because it is a state and not a progress, and a finished run gets **no
+  stripe** — the result sentence stays in the status text and the button title, where a
+  result belongs. Cases: four, written first and seen red (4 failed at 22:14:42 MEZ), green
+  at 22:18:18 MEZ; the file's 181 cases pass, including the two #53 cases that already refuse
+  a full counter as a filling message. Delivered-state check (3.2.151, 22:34:42 MEZ):
+  `nachzug-info` sits in `sr-only` with a 1x1 rectangle over a resting 3 000-note field.
+- **Behauptung zurueckgenommen, weil gemessen:** the first version of this entry claimed the
+  accent band across the top of `/tmp/graph-3000-150.png` (22:05:28 MEZ) *was* that stripe.
+  It is not. Reading the canvas' own bitmap at the four edges (22:59:31 MEZ, the receipt now
+  lives in `scripts/fps-laeufer.mjs` as `Kantenstapel`) gives `255,136,115,191` at the top
+  edge and `1,1,0,0` — transparent — at the left, right and bottom. The top band is the
+  **painted readability-floor edge** (`graphLayout.ts:980`, the transition task #25 shipped),
+  not the backfill stripe, and the element stack there is only the canvas. The fix above
+  stands on the source and on its four cases; the picture is withdrawn as its evidence.
+
+## [3.2.150]
+
+### Fixed
+
+- **The suite's test listener now binds IPv4 loopback, so a foreign local process can no
+  longer answer a test's own request.** Cause 9 struck again after it was thought closed: a
+  full run at 21:22:58 MEZ failed `tests/server.test.ts > POST ohne Titel und Inhalt` with
+  `expected 401 to be 400`, while the same bytes ran green at 21:26:17 MEZ and the file alone
+  ran green at 21:25:55 MEZ. This app contains **no** 401 site (`git grep 401 -- server src`
+  returns nothing), so the answer did not come from the server the test had built. Measured
+  on this machine (`/tmp/v4v6-race.mjs`, now also two cases in
+  `tests/helfer/horchen.test.ts`): an IPv4 listener on `127.0.0.1:45991` and a dual-stack
+  listener on `:::45991` can hold the same port **at the same time**, and the request to
+  `127.0.0.1` was answered by the IPv4 holder. Supertest always connects to
+  `http://127.0.0.1:<port>` (`node_modules/supertest/lib/test.js:69`) while the harness bound
+  `listen(0)` without a host — so every one of the 403 `request(app)` sites in 34 test files
+  was exposed, and the earlier healing (one listener per app, ports no longer churning) never
+  addressed the family at all.
+- **The binding happens before the test, because Supertest reads the address inside its
+  constructor.** A bind with a host only reports its address after the `listening` event, so
+  `tests/helfer/hoerer.ts` now keeps a reserve of eight already-bound IPv4 listeners per test
+  process (`tests/setup.horchen.ts` fills it before each file and before each case) and hands
+  one to each app; the address Supertest reads is then available in the same tick. If the
+  reserve ever runs out, the file **fails with its own name** instead of silently falling back
+  to the dual stack: one file did exactly that during this work
+  (`tests/server-fehler-wortlaut.test.ts`, three apps inside a single case, lines 29-41), which
+  is why the reserve is eight and not two.
+- Cases: 3 461 (report written 21:57:16 MEZ), two more than before — `IPv4-Loopback statt
+  Doppelstapel` and the counter-probe that a foreign IPv4 listener must be refused the port
+  our own listener holds. Both were written first and seen red (2 failed | 5 passed at
+  21:47:26 MEZ) before the harness changed.
+
+## [3.2.149]
+
+### Documented, at the delivered object
+
+- **The delivered picture is pair-free, and the README now says it with five runs behind
+  it.** Measured 20:49-20:59 MEZ on the installed 3.2.148, each run rebuilding its own bundle
+  and printing `fassung: 3.2.148` before counting anything: **0 intersecting pairs at 400 notes
+  (418 discs), 0 at 1 500 (528 discs) and 0 at 3 000 in three separate runs (621, 646 and 625
+  discs, deepest cut 0 world units each)** — `docs/belege/tag-0411/fps-3000-148-2049.log.txt`,
+  `docs/belege/tag-0411/fps-3000-148-2052.log.txt`, `docs/belege/tag-0411/fps-3000-148-2054.log.txt`,
+  `docs/belege/tag-0411/fps-400-148-2057.log.txt`, `docs/belege/tag-0411/fps-1500-148-2059.log.txt`.
+  The pass is visible in the same lines: the rest phase computed in 27 of 27, 39 of 39 and 42 of
+  42 frames at a median of 8.0-8.3 ms, where the cached-build runs computed in 6-18 of 70-71
+  frames at 0.1 ms. No product code changed in this version; it carries the corrected sentences.
+
+### Instrument
+
+- `scripts/fps-laeufer.mjs` no longer drags at one fixed spot and hopes. It walks the eight
+  largest painted discs and keeps the first attempt in which the surface actually worked,
+  printing which candidate hit. Measured 4.11.: in three of five runs the old single attempt
+  moved nothing (`knotenZiehen`: 0 working frames), which made the only browser witness for
+  "a dragged node stays separated" a non-attack. The millisecond phases stay unpublished as
+  verdicts — the machine was not quiet at the end of these runs (max/median 2.7-3.3 against
+  its own 1.8 ceiling), and geometry and time are two different measurements.
+
+### Confirmed on 3.2.149 (measured after this version landed)
+
+- The rebuilt instrument ran three times on the installed 3.2.149. Run 1 (21:09:31 MEZ):
+  625 discs, **0 intersecting pairs**, and the drag hit for the first time — "Kandidat 1 von 8
+  getroffen", 99 working frames. Run 2 (21:15:59 MEZ) is kept as a witness to its own
+  failure: the new post-drag reading counted the *whole drag* instead of one frame, its disc
+  union grew across 99 frames and the pair test threw
+  `RangeError: Set maximum size exceeded`; the run ended with exit 1 and refused to report a
+  number. Run 3 (21:19:10 MEZ), after waiting for rest the same way the pre-drag phase does
+  and then collecting a single frame: 637 discs and **0 pairs** before the drag, 645 discs and
+  **0 pairs** after it, the field standing again 7.2 s after release — which is the browser
+  proof that the surface keeps a dragged note where it was put, and that the rest-collision
+  pass reaches the node the user moved.
+
+## [3.2.148]
+
+### Fixed
+
+- **The rest-collision pass gets three seconds, not one.** 3.2.147 armed the pass for a
+  field that arrives already at rest; this version only raises how long it may keep working.
+  The number is measured, not rounded: on the bytes this instrument rebuilt (see
+  Instrument below) the resting picture at 3 000 notes still held one intersecting pair —
+  two concept hubs, r 26 + 26, centre distance 49 against the required 52 — while the rest
+  phase computed in 6 of 71 frames at a 0.1 ms median. A pair that sits in the painted
+  field sits in the nodes themselves (hubs are drawn with `n.r`), and a pass that sees it
+  must push it; so no pass was left when the field came to rest again: its budget had run
+  out *before* the last settling. 180 frames are three seconds at 60 Hz, and the pass stops
+  as soon as it moves nothing, which a healthy field does after one frame.
+
+### Corrected — and this is the heavier entry of the two
+
+- **Four evening runs measured the wrong bytes, and two sentences in the 3.2.146 and
+  3.2.147 notes rest on them.** `scripts/fps-laeufer.mjs` treated `/tmp/kepta-fps/bundle`
+  as reuse: it built its own bundle only `if existsSync server.cjs`. The bundle on disk was
+  from 16:06 MEZ — the build before the rest-collision pass existed. Every run after that
+  (19:38, 19:54, 20:14, 20:36 MEZ) started *those* bytes and reported them as the delivered
+  3.2.146 and 3.2.147. What was actually shown is therefore this: the pair stood at
+  identical image points in 3.2.145, 3.2.146 and 3.2.147 because it was *one and the same
+  build*, not because a shipped pass failed to fire. `docs/graph-kosten.md` now says so in
+  its own words, and the claims that survive the mistake are the ones that never needed
+  those bytes: the arming hole is read from the source (the pass was armed only inside
+  `if (bewegt)`, one layer below the trap A7-09 documents in the same file), it is covered
+  by a case written before the fix (red 20:22:09 MEZ, green 20:23:24 MEZ), and the surface
+  does name a missing concept leg in a sentence the old pattern truncated.
+
+### Instrument
+
+- `scripts/fps-laeufer.mjs` builds its bundle on **every** run, prints
+  `fassung: <version> (der Baum, aus dem gebaut wurde: <version>)` before it counts
+  anything, and aborts with exit 2 when the running server names a different version than
+  the tree it was built from. The reuse it replaced was three lines and cost an evening of
+  evidence.
+
+## [3.2.147]
+
+### Fixed
+
+- **The rest-collision pass now arms for a field that arrives already at rest.** 3.2.146
+  armed it inside `if (bewegt)` — the frame where motion stops. A field built outside the
+  render loop (a network backfill hands over finished positions) never enters that branch,
+  so it was never at rest *and* moving in the same frame, and the pass never ran. Measured
+  on the delivered 3.2.146 at 3 000 notes (`scripts/fps-laeufer.mjs`, 20:14:55 MEZ,
+  `docs/belege/tag-0411/fps-3000-mit-kopf-und-farbe-2014.log.txt`): the rest phase computed in
+  only **18 of 70 frames, median 0.1 ms** — a collision pass over 3 027 nodes costs several
+  milliseconds per frame — and the pair stood at the *same* image points as in 3.2.145
+  (648 discs, 1 pair, r 26 + 26, distance 41, cut 11). This is the same trap A7-09 documents
+  one layer up in the same file: the promise belongs to the *rest event*, not to motion.
+- **Both discs of that pair are concept hubs, painted as real simulation nodes.** The
+  instrument now records the colour each disc is painted with, and the pair came back
+  `#acacac` on both sides — `--type-neutral-hex`, the role the surface uses for scaffold
+  nodes (root, type, entity; `KnowledgeGraph.tsx:4255`). Hubs are drawn with `n.r`, the same
+  radius the solver reads, so they are nodes and not decoration; `pinned` is born `false`
+  (`graphLayout.ts:506`) and this run dragged nothing (`knotenZiehen`: 0 working frames).
+  The two remaining excuses from 3.2.146 — "it is a ring" and "both hubs are held still" —
+  are measured out, not argued away.
+
+### Instrument
+
+- `scripts/fps-laeufer.mjs` prints the surface's **whole** head line and refuses a run whose
+  concept leg never decided itself: a field reporting 0 concepts *without* the surface's own
+  reason ("the entity links did not arrive") now aborts with exit 1 instead of lending its
+  geometry to a document. This closes the open question from 3.2.146: the two runs that
+  looked like two worlds (`6 concepts of 3,027 · 2,379 links` against `0 concepts · 0 links`)
+  were one world and one truncated pattern — the door itself answers in 46 ms at the first
+  grab, with 500 concepts and 2 000 edges out of a base of 3 027 / 29 375
+  (`Mappe: scripts/graph-begriffskurve.mjs`, 20:09:12 MEZ). The run's quoted base counts now
+  come from the last settled reading, not the first grab.
+
+**What this version does not claim:** that the delivered picture is pair-free. That is the
+next measurement on the landed bytes, and `docs/graph-kosten.md` keeps saying "proven in the
+case, not yet in the picture" until the browser agrees.
+
+## [3.2.146]
+
+### Fixed
+
+- **A settled field now finishes the collision it started.** The surface stops computing
+  when `isSettled` says the nodes have stopped moving — but `isSettled` measures *motion*,
+  not the constraint. Measured in the delivered app at 3 000 notes (`scripts/fps-laeufer.mjs`,
+  19:38 MEZ, `docs/belege/tag-0411/fps-3000-1938.log.txt`): with 707 painted discs exactly
+  **one pair still intersected** — two concept hubs, r 26 + 26, centre distance 41 against the
+  required 52, cut 11 world units deep — and because no frame ran the solver any more, that
+  pair was frozen as the resting state. The same field in the layout test shows the moment
+  precisely: at step 308, where the surface would stop, `1 pair, deepest cut 2.2`, the same
+  hub pair `__ent:b25/__ent:b26`.
+  The fix is a bounded follow-up pass: when the field reaches rest, the collision runs once
+  per frame while it still improves something, up to 60 frames, and stops the moment it
+  reports no correction. Nothing else about cooling, forces or the readability floor moved.
+  **Re-measured at 3 000 notes on the delivered bytes: still one pair.** The sweep is in the
+  shipped code and the layout test proves the mechanism (step 308: 1 pair; after follow-up
+  passes: 0), but the browser did not clear — `docs/belege/tag-0411/fps-3000-nach-146.log.txt`
+  (19:54 MEZ): 693 discs, 1 pair, r 26 + 26, distance 47, cut 5 world units. Two more things
+  came out of that run, and both are open, not smoothed: the same fixture reported
+  `0 concepts · 0 links` where the 19:38 run reported `6 concepts of 3,027 · 2,379 links`, and
+  the instrument's own third attempt refused to judge at all (`MASCHINE NICHT RUHIG`,
+  max/median 2.36 over its 1.8 ceiling). So this version ships a proven mechanism whose
+  browser effect is **not yet shown**, and the sentence in `docs/graph-kosten.md` says exactly
+  that.
+  The instrument grew three honesty checks in the same sweep (`23cf484`, and this change):
+  it prints the intersecting pair with its coordinates and radii, it waits for the surface to
+  say the same thing twice before quoting its counts, and an empty disc collection is now a
+  refusal (`KEIN GEGENSTAND`, exit 1) instead of a green "0 pairs".
+
+## [3.2.145]
+
+### Fixed
+
+- **The Fit button no longer claims a loss that the picture does not show.** Measured at the
+  delivered 3.2.144, 390 x 844 with 150 sown notes: the readability floor decided the size, so
+  the title read "held at the readability floor, so some notes stay outside; the line at the
+  edge counts them" — while the balance line stayed silent, the prober reported `Kanten
+  beruehrt: keine`, and every one of the 150 notes was inside the frame. One surface, two
+  claims at the same time: the same class as the chat header that says "Ready" while it says
+  "No AI connected".
+  The title hung on the *camera decision*; it now hangs on the same arithmetic that silences
+  the balance line (`gesamt - imStrengeNoten`), so the sentence and the number cannot disagree.
+  New wording when the frame holds everything: "Fit — held at the readability floor, and all
+  150 notes are in the picture". When notes really do stay outside, the old sentence stands,
+  including the way out. Guarded by a new case in `tests/lib/gemeinschaften-bild.test.ts`
+  (seen red first: `expected ... not to match /stay outside/`), plus the counter-probes for
+  `aussen = 6`, no count, and the floor not deciding.
+  The window prober names the silent branch instead of printing `null von null` and moving on.
+
+## [3.2.144]
+
+### Improved
+
+- **The surface now says the plain word.** A counter over every sentence the shipped app
+  shows a person (`scripts/verstaendlichkeit.mjs`, measured against the installed
+  `app.asar`, not the source tree) found **324 human sentences**, of which **25 named a
+  technical thing without a reason and without a task**. Those 25 are now rewritten:
+  "Your endpoint is not answering" is "The model program is not answering"; "This file was
+  imported in chunks" is "This file came in as separate pieces"; "Group all chunks under
+  their source file or link" is "Group every piece under the file or link it came from";
+  "To the knowledge index / Show every node" is "All your notes / Show every note you have";
+  "Tools the local server advertises over MCP" is "Tools a connected program can call here";
+  "How many hits the index shows" is "How many results to show"; the graph's longest
+  tooltips lost their jargon and their length ("Forces — how hard the field gathers, repels
+  and spaces itself, and how big the nodes are. The picture keeps its place while it
+  settles." became "Forces — how hard the picture pulls notes together and apart. It keeps
+  its place while settling.").
+  Names stay names: the view is still Graph, the field is still API endpoint, the button is
+  still "Fit the whole graph into view" (four delivered cases hold that title). What changed
+  is only the language that *explains*.
+  The counter itself was corrected twice before it was trusted: the first reading opened the
+  bundle as latin1, so every sentence containing a real em-dash (three bytes in UTF-8) was
+  invisible to it — 167 sentences and 91.0 % instead of 324 and 79.9 %; and its task-word
+  list did not know "hover" or "arrow-key", so it sold good sentences as findings. Both
+  corrections are in the script's comments with their numbers.
+  Guarded by `scripts/pruefe-asar-inhalt.cjs`: the four new wordings must appear, the four
+  old ones must count zero — and the gate earned its keep on this change: the first build
+  reported `FEHLT 0  is painted in the first group` and stopped before any swap, because the
+  language pass had replaced a sentence that an older marker pinned. The marker moved, the old
+  chain joined the forbidden list, and the rebuilt object measured 0 for the old wording.
+  Measured again at the delivered object (15:43 door read, 15:45 census): jargon sentences
+  60 -> 40 of 324, and sentences naming a technical thing without a reason and without a task
+  **25 -> 8**. The counter now holds that eight as a ratchet (`FACH_OHNE_GRUND_MAX`), because
+  one sentence moves the length share by 0.3 % while this count is what a language change
+  actually reports.
+
+## [3.2.143]
+
+### Fixed
+
+- **The folded legend no longer covers a quarter of your picture on a phone.** Measured in a
+  real viewport at 390 x 844 with 30 notes and concepts: the closed legend covered **28.5 %**
+  of the canvas (a box 334 x 191 px) against the house bar of 25 %, and the legend's first row
+  alone took **99 of those 191 pixels** — five wrapped lines. The cause was not the button
+  beside the numbers, and the first try (stacking them under each other below `sm`) was
+  measured and rejected: the box grew to 210 px / 31.3 %, because the button keeps its own
+  44 px touch floor and the lines add instead of sharing.
+  What actually took the space was a *second sentence* living in the always-visible head row:
+  after "65 links — none of these 65 lines carries a word you wrote" it went on to explain
+  what an unlabelled line means and how to put a word on one. The number and its finding stay
+  in the head row (that row is never folded, and two delivered cases hold it there); the
+  advice now sits in its own row **behind the fold**, where the legend's state rows already
+  live. Opening the legend shows every word again.
+  Measured after the split: **21.1 %** at 390 x 844, **20.5 %** at 820, **10.8 %** at 1440.
+  Guarded by two new cases in `tests/components/graph-handwort-zeile.test.tsx` (9 in the
+  file): the advice row must carry the fold holder, the head row must no longer contain it,
+  and both rows must appear and disappear on the same condition as the finding itself.
+
+## [3.2.142]
+
+### Fixed
+
+- **A finished embedding batch no longer forces the next search to re-read the whole store.**
+  The vector track could already patch a note that was just saved. It could not patch a note
+  that was just *embedded*: the background queue writes the vector onto the chunk, which
+  raises a second counter, and the rule said "if that counter moved, build everything again".
+  Measured on a 40,000-note store with the batch waited for (so the search really runs after
+  it): **87 ms with 54.98 ms in the vector segment, and 245 ms with 38.92 ms** — the build
+  counter rose once per batch, and the cost scales with the number of chunks in the store,
+  not with the batch. On a fully embedded store the same read is measured
+  **1 321.99 ms for 64,164 chunks** (25.10.), which is the size of a real library: this stall
+  was seconds, once per batch, in the middle of a search.
+  The track now patches the vectors this process wrote and **checks its own work with a
+  number**: after the patch it must hold exactly as many rows for the query model as the
+  database counts through the index (`store.vektorZeilen`). If the numbers agree, nothing
+  happened outside this process and the patch is complete. If they disagree — another program
+  wrote or deleted vectors — the full build stands, as it must. Measured on the same store
+  with the same instrument: **43 ms with 11.72 ms in the vector segment, and 43 ms with
+  16.91 ms**, the build counter staying at its single cold start and both batches counted as
+  patches. The two counter-cases are in the suite: a foreign vector write and a foreign vector
+  delete both still rebuild, and the rebuild must leave the row count equal to the database's.
+  The same read now uses the index (`WHERE embedding_hat = 1`) instead of scanning every chunk
+  row for a non-null blob.
+
+## [3.2.141]
+
+### Fixed
+
+- **The Fit button no longer shows fewer notes than the picture already showed.** Measured
+  in a real phone-width viewport (390 x 628) on a settled 34-note field: the view on arrival
+  held **33 of 34** notes, pressing Fit held **32**, and the ink clipped at the canvas edges
+  rose from 18 to 50 pixels. The scale was not the cause — both cameras use the same scale,
+  because the readability floor sets it. The centre was. Every other camera on this surface
+  (arrival, tree view, the two track buttons) centres on the region where names are actually
+  drawn; only Fit centred on the middle of the whole world's box. That is right when the
+  world fits, and simply the emptier place when it cannot.
+  Fit keeps its promise where it can: if the whole graph fits at a readable scale, it frames
+  the whole world exactly as before. If the readability floor holds the scale — which the
+  button already says in its own tooltip — it centres on the densest region instead, and
+  shows no fewer notes than were visible before the click.
+  Guarded by `tests/components/graph-fit-390-keine-verlust.test.tsx` (2 cases, with a bite
+  check: the case aborts rather than passing when a run does not hit the floor condition —
+  the same fixture measured 30 before the click and 29 after it, before this fix).
+
+## [3.2.140]
+
+### Fixed
+
+- **Saving a note no longer makes the next search wait.** Measured on a capsule of 40,000
+  notes (40,008 entity names, 360,000 edges, 160,000 note-links, counted in that same
+  capsule), the first search after a save took **157 ms**, and **129 ms** of that was a
+  single job that has nothing to do with the question: rebuilding the ranked list of every
+  entity name in the store, so the search could check whether the question happens to name
+  one of them. That list is 40,008 names long, and the ranking adds up all 360,000 edges and
+  160,000 note-links each time it is built — measured at the same capsule: 63.90 ms warm,
+  123.41 ms cold. Because every save raises the data counter the list is cached under, the
+  wait came back after each save, forever, and the window sat there while it was counted.
+  The search now asks the other way round: instead of walking the list of all names, it
+  takes the pieces the question itself offers — its words, word runs up to four words (the
+  longest name the extractor can produce, `begiffe.ts:33`) and the parts inside each word —
+  and looks those up in the name index. Measured at the same store: **0.20 ms for 400
+  pieces, 2.22 ms for 4,000**. The cost now grows with the length of the question, not with
+  the size of the store.
+  Same door, same store, same query, vector leg running in both runs: **157 ms became
+  31 ms**, **193 ms became 34 ms**; the `vektor` segment went from 134.74 ms to 5.82 ms.
+  Re-run against the installed 3.2.140 package with the same probe: 33 ms and 39 ms
+  (`vektor=5.79`, `vektor=6.21`).
+  A name is also found now when it sits outside the old top-4000 ranking, so this leg can
+  fire more often and never less. One form is no longer asked, and it is a form no name can
+  have: a name that starts inside one word of the question and ends inside the next.
+  Guarded by `tests/p6-begriffsbein-ohne-namensvorrat.test.ts` (8 cases), which fails if the
+  search touches the ranking again — measured 3450 cases in 327 files.
+
+## [3.2.139]
+
+### Changed
+
+- **Every label now explains itself, in the app.** A census of the words the window
+  actually shows (measured in a real viewport, screen by screen, with the assistant closed
+  and a hit-test on each block) found 18 technical word families on the surface — semantic,
+  embedding, vector, sync, dossier, activity, inbox, encrypted, endpoint, audit and eight
+  more. Ten were explained somewhere on the same screen; eight were left for the person to
+  guess: *semantic*, *embedding*, *entity*, *sync*, *dossier*, *activity*, *endpoint*,
+  *audit*. All of them are explained now, and the rule the census uses is strict: a
+  sentence counts as an explanation only if it names the word itself and is longer than
+  eight words. "A written brief on one subject" does not explain *Dossier*; "A Dossier is a
+  written brief on one subject, built from the notes you saved" does. One family left the
+  surface altogether, which is the better kind of explanation: the Graph search track no
+  longer says "Mentions of knowledge entities" at all.
+  What changed: the seven navigation items each carry a sentence naming their own word; the
+  Live and Audit log tabs do the same; the semantic-search switch, the sync dot, the API
+  endpoint field, the HTTP Endpoints heading and the Ollama/embeddings row explain the term
+  they use; the Graph search track says "Follows the people, projects and systems your notes
+  name together" instead of "Mentions of knowledge entities".
+  Why this is a bar and not a mood: the comparable wording of five other products was
+  collected from their official pages and shipped language files. Obsidian lists about 15
+  terms a newcomer must be taught (vault, property, frontmatter, hotkey …) and explains them
+  in a help-site glossary — 0 verified inside the app. Capacities (~14) and Anytype (~15)
+  likewise put their glossary in the docs. SiYuan (~11) explains about 3 in-app, Notion
+  (~13) about 2. What could not be verified anywhere: live in-app tooltips behind a login.
+  Three cases in `tests/components/etikette-nennen-ihre-erklaerung.test.tsx` hold the
+  carriers (every navigation button and both activity tabs must carry a sentence that names
+  their own word); the guard was shown to lose: with one tooltip removed, two of the three
+  cases failed by name.
+
+## [3.2.138]
+
+### Fixed
+
+- **Two key probes say when they could not look.** The app keeps its AI key sealed in an
+  envelope, and on start two questions come up: can this envelope be opened with this
+  installation's key, and does the door already hold a sealed copy (which decides whether the
+  working copy may leave the surface storage)? Both answered "no" in three different
+  situations, and only one of them is a fact about the person's data:
+  - envelope: the stored value carries no envelope marker, this installation has no sealing
+    key, the key did not fit the envelope (AES-GCM refuses)
+  - sealing probe: the door refused (with its number), the door was unreachable
+  Behaviour is unchanged and stays on the safe side — the app falls back to its defaults, and
+  a plaintext key is never taken out of the session when the question could not be asked.
+  What is new is the reason in the developer console, so "no key" and "could not check" are no
+  longer the same sentence. Fifth site group in the #31 census, same class as the chat header
+  (#43), the old-key probe (3.2.135), the restore path (3.2.136) and the list refusal (3.2.137).
+  Seven cases new in two files: `tests/lib/umschlag-nennt-seinen-grund.test.ts` (a genuinely
+  sealed foreign envelope, a value without the envelope marker, and two controls — nothing
+  stored, and the local marker — both silent) and
+  `tests/lib/versiegelung-sonde-nennt-ihren-ausfall.test.ts` (refused door with its number,
+  unreachable door, and the control — a clean answer that found nothing stays silent).
+  Red before the fix: the four failure cases wrote nothing to the console; the three controls
+  were already green.
+
+## [3.2.137]
+
+### Fixed
+
+- **The list's refusal now names the number it left out.** When the notes route answers 400
+  or above, the list shows a block: "The server did not answer", a sentence, and *Try again*.
+  The sentence was there twice (heading and body) and the reason was nowhere — measured in
+  the real window at 390x844, with only the notes route failing on purpose: the body read
+  "Your notes did not load. Nothing was changed." and nothing more. Two causes, both ours:
+  the store threw a plain `Error`, which the refusal helper does not consider safe to put on
+  screen, and the surface then wrote its own sentence over the reason the subscriber had
+  carried. The store now throws the house's own `ApiFehler` with the status, and both writers
+  on the surface compose the same line, so the body reads
+  "Your notes did not load. Nothing was changed. (HTTP 500)".
+  Measured after the fix at 1440x900, 1024x768, 820x1180 and 390x844: the block is present,
+  its centre point is hit-testable (nothing lies over it, the assistant is closed), and it
+  overflows neither axis.
+  Five cases new: `tests/lib/store-liste-nennt-die-zahl.test.ts` (refusal carries its number,
+  also without a body, and the control — a healthy answer invents no reason) and
+  `tests/components/listen-absage-nennt-den-grund.test.tsx` (the block shows sentence *and*
+  number; the control shows no block at all). Red before the fix: the block's text contained
+  no number, and the thrown error was a bare `Error`.
+  This also settles the open question in the campaign paper: the refusal *does* appear in the
+  window — the earlier run measured it behind the still-open assistant, which is why it
+  seemed missing.
+
+## [3.2.136]
+
+### Fixed
+
+- **Restoring your own AI connection now says what stood in the way.** On start the app reads
+  the mirrored connection back from the door. Three outcomes used to collapse into one silent
+  fallback to the defaults: the door was unreachable, the door refused (any status), and the
+  mirror was there but unreadable. In the last case the surface then said "nothing selected"
+  about someone who *had* selected something — a statement about a person's own data, built
+  out of an outage. The fallback stays (the app must work without the door); the reason now
+  goes to the developer console, with the status number where there was one. Fourth site in
+  the #31 census, same class as the chat header (#43) and the old-key probe (3.2.135).
+  Four cases in `tests/lib/spiegel-nennt-seinen-ausfall.test.ts`: unreadable mirror, refused
+  door with its number, unreachable door, and the control — a clean answer with no mirror stays
+  silent. Red before the fix: the three failure cases wrote nothing to the console at all,
+  while the control was already green.
+
+## [3.2.135]
+
+### Fixed
+
+- **The check for an old plaintext key says when it could not ask.** `altFund`
+  (`src/lib/ai.ts:450-471`) answered both a silent door and a door that sent a non-contract
+  body (an HTML error page from something in front of it) with "no old key found" — one of
+  the two answers an operator can act on, the other only a missing question. The result for
+  the surface is unchanged (`null`); the difference is now in the developer console, with the
+  status number when there was one. Found as the third site in the #31 census, the second
+  where an outage turns into a statement about the user's data (the first was the chat header
+  in #43).
+  Three cases in `tests/lib/schluessel-sonde-nennt-ihren-ausfall.test.ts`: refused connection,
+  HTML body, and the control — a clean answer with nothing stored stays silent.
+
+## [3.2.134]
+
+### Fixed
+
+- **Two of the app's own settings no longer vanish unread.** A corrupt stored provider
+  configuration made the app say "no provider chosen" — true on its face, wrong about you:
+  you had chosen one, the value just could not be read. A corrupt stored profile restarted
+  the wizard with no trace of why. Both still fall back exactly as before; each now names
+  itself in the developer console (`src/lib/ai.ts:391`, `src/lib/profile.ts:95`), so the
+  difference between "nobody chose" and "we could not read it" survives. Found by the census
+  behind #31: 40 silent catches in `src/`, and these were the ones a user could be misled by.
+  Three cases in `tests/lib/eigne-einstellungen-nennen-ihren-grund.test.ts`, one of them the
+  control that must stay silent when nothing was stored at all.
+
+## [3.2.133]
+
+### Fixed
+
+- **The note preview no longer swallows a refused copy.** "Copy text" in a note's preview
+  asked the clipboard and, when the window refused, did nothing at all: no mark, no message,
+  no way to tell "copied" from "not copied". The case in
+  `tests/components/MemoryPreview.test.tsx` asked for exactly that silence ("bleibt ruhig")
+  and only checked that the button was still on screen — so it could not lose. It now asks for
+  the same sentence the chat has used since 3.2.129 ("Copying failed — the window did not get
+  the clipboard.") and forbids the success mark in the same breath.
+- **A profile that did not reach the prompt says so.** Building the profile line for a chat
+  request ran inside `catch {}`; when it failed, answers quietly stopped using your profile and
+  nothing recorded why. The reason now goes to the developer console (Punkt 4, Fehler-Feger #31).
+
+## [3.2.132]
+
+### Performance
+
+- **A saved note no longer throws the whole vector track away.** Measured at the door on
+  40 000 notes (`audit-2026-10-09/feldzug/P51-LESE-TUER-40000-0311.md`, 2026-11-03 18:47 and
+  19:12 MEZ): the search route's `vektor` line cost **188,00 ms** on the first request and
+  **8,85 / 9,35 ms** once the track stood — and the track was thrown away by *every* write,
+  because it was held to one counter that rises on each one. At 64 164 chunks the same build
+  cost 1 321,99 ms. Now a reported note-change re-reads only that note's chunks
+  (`chunksFuerMemories`, `src/core/store.ts:1168`) and re-flattens the track in memory
+  (`src/core/engine.ts:303-395`); the full build stays for the case that really needs it —
+  when vectors themselves appear or vanish. For that the store counts a third number
+  (`embed_generation`), raised only by writes that touch an embedding, so an ordinary note with
+  its embedding-free chunks no longer forces a rebuild.
+  `vektorSpurSteht().veraltet` now means "a full build is coming", which stops the idle runner
+  from rebuilding after a plain save; the door's `x-kepta-teilzeiten` and `/api/health` keep
+  their meaning and gain `deltapatches`.
+
+### Tests
+
+- `tests/p6-vektorspur-delta.test.ts` (new, 3 cases): one write must not build again, a write
+  to an embedding must build again, and the note saved in between must still be found — the
+  speed-up is only real if the vector that just appeared is in the track.
+- `tests/p6-vektorvorwaermung-leerstand.test.ts` asked for the old behaviour in two cases
+  ("ein Schreibfall wirft die Spur, und die naechste Suche zahlt erneut"); they now name the
+  new line between a note (patch) and a vector (build). The boot-warmth guard they carry is
+  unchanged.
+
+## [3.2.131]
+
+### Fixed
+
+- **Twenty-five more places stopped printing the exception on the surface.** 3.2.130 fixed one
+  of them; this cut fixes the class it counted: 27 lines in 12 files under `src/components/`
+  took `e.message` and put it straight into a state the user reads. Every one of them now calls
+  `absage(sentence, error)` (`src/lib/absage.ts`): the surface gets a sentence naming **what**
+  did not happen and **what it means for your notes**, the reason goes to the developer console.
+  A sentence written by K3PTA's own door is kept — it appears in brackets after the fixed
+  sentence, e.g. `The dossier did not arrive. (Tell K3PTA who or what the dossier is about.)` —
+  and only if it passes a shape check (`tuerSatz`, `src/lib/api.ts`): one line, at most 160
+  characters, no path. "Chat Rate-Limit: max 20/min" is information; "/Users/a/.kepta/kepta.db"
+  is not, and a body from a listener without our signature (`x-kepta-marke`, 3.2.128) never
+  becomes an app sentence.
+  Two sites deliberately kept their wording: `Settings.tsx` separates "the server refused it
+  (HTTP 503)" from "it did not answer" on purpose (P4-15/P4-16), and the guard names them with
+  that reason and refuses the allowance if the separation is gone.
+  Found while widening the probe: the first pattern (`instanceof Error ? e.message`) missed the
+  shape `setFehler(String(err))` and a response body field written into a state
+  (`ConnectApps.tsx` showed `d.message ?? d.error` raw). The guard now counts both shapes too.
+- **The marker check gained its other half.** `scripts/pruefe-asar-inhalt.cjs` only ever
+  demanded that a new sentence be present; "the old sentence is gone" was a claim in a comment.
+  It now carries a `verboten` list, and three superseded wordings are on it
+  (`That did not work`, `The switch could not be saved`, `Today could not be loaded` — counted
+  2, 1, 1 in the installed 3.2.130 at 2026-11-03 18:22 MEZ). A landing that reintroduces one of
+  them fails the build step instead of the reading step.
+
+### Changed
+
+- Today's view no longer prefixes "Today could not be loaded —" to whatever the error said; the
+  state itself carries the whole sentence, so the line reads as one thought at any width.
+
+## [3.2.130]
+
+### Fixed
+
+- **An import failure no longer prints the exception on the button.** Found by the new
+  window probe (`scripts/pfade-im-fenster.mjs`, run 2026-11-03 17:36–17:44 MEZ): when reading
+  a file threw,
+  the drop zone's own label became the exception's message — in the test,
+  `QuotaExceededError: the quota has been exceeded — /Users/a/.kepta/kepta.db`, path
+  included. The app has had a rule against this since P4-2310 (c): a fixed sentence goes to
+  the surface, the reason stays with the operator (`server/app.ts` does exactly that for
+  HTTP errors). The import path now logs the error and shows "Import did not run — K3PTA
+  stopped while reading or saving these files. The reason is in the developer console, not
+  on this button."
+  The case in `tests/components/quittung-ohne-beweis.test.tsx` was red before the fix — with
+  the fix taken back out, the raw message with its path appeared in the rendered surface,
+  which is the picture this cut is about. Counted with
+  `grep -rnE 'instanceof Error \? [a-zA-Z]+\.message' src/components/*.tsx`: 27 lines in 12
+  files hand an exception's wording to a state. Two of them are decided and stay (Settings
+  puts the reason in brackets inside a fixed sentence, because "the server refused" and "the
+  server did not answer" are different cases); the other 25 — ActivityView, Chat, Dashboard,
+  DossierView, MachineScan, OnboardingWizard, PraxisSync, PrivacyShield, RecoveryKey,
+  Settings, SystemStatus, TodayView — need one shared refusal helper and a guard that keeps
+  new sites from appearing. That is the open follow-up, not settled here.
+- **The window probe for the two new refusals.** `scripts/pfade-im-fenster.mjs` opens the
+  delivered window in a real viewport at 1440/1024/820/390 px, induces both new sentences
+  honestly (a front proxy fails `/api/scan/policy` and `/api/memory`, and
+  `Storage.prototype.setItem` is made to throw), and measures clipping, overlap with the
+  next block and side overflow, with a screenshot of each. Results: the scan refusal 3 lines
+  at 1440/1024/820 and 4 at 390, the wizard refusal 4/4/5/4 lines, 0 clipped elements and no
+  side overflow anywhere. Two probe bugs were fixed on the way, and both were probe bugs, not
+  product bugs: CDP's `Network.setBlockedURLs` did not block this same-origin call at all
+  (measured: HTTP 200 with the pattern set), and the overlap check compared the wrong
+  neighbour — the parent's next block, which is the dialog's pinned footer — so it reported
+  an overlap that the picture showed as a clear gap.
+
+## [3.2.129]
+
+### Fixed
+
+- **Three silent paths now say what they know.** From the self-audit of 2026-11-02
+  (`P4-UEBRIGE-VIER`), the three that are words rather than a contract change:
+  - **Copy in the chat blamed a browser that does not exist.** The refusal read "your
+    browser did not allow access to the clipboard" — in an app with no browser, whose own
+    content policy explicitly permits writing to the clipboard (guarded since October by
+    `tests/electron-haertung.test.ts`). It now reads "Copying failed — the window did not
+    get the clipboard.", which is the only cause this window can observe. The test that
+    covered this path clicked the button *inside an `if`*: when the button moved, the case
+    stayed green without ever seeing a message. That guard is gone, and the case now fails
+    if there is no copy button to click.
+  - **The scan dialog hid its rules without a reason.** Fetching the rule set had three
+    quiet exits — a non-OK answer, an answer that doesn't read as rules, and no answer at
+    all — and all three left the dialog standing there as if nothing was missing. Each now
+    names its own cause on the spot where the rules would be ("The scan rules did not
+    arrive — the store answered 500.", "…did not read as rules…", "…did not answer."), and
+    the scan stays usable either way, because the guards that cannot be switched off are in
+    the server, not in this panel.
+  - **The wizard forgot your scan decision when saving failed.** `catch { /* ignore */ }`
+    on the one switch that says whether K3PTA may look through your computer: if storage
+    refused, the app silently dropped the decision and the next start asked again, as if
+    never answered. The choice is now written *and read back*; if it did not stick, the
+    step says so — "Your scan choice will not be kept — this computer blocked saving it.
+    It still stands for this session; the next start will ask again." — and the rest of the
+    run continues, because the decision is still held in this session.
+
+  Deliberately *not* in this cut: the fourth path from that paper — a team section that
+  vanishes whether the store said "no team", said nothing, or answered 500. That is a
+  three-valued state and a sidebar contract change, so it gets its own landing.
+  Four new cases in `tests/components/fehlerpfade-nennen-ihre-ursache.test.tsx` (two of
+  them for the wizard: the blocked write and the read-back that proves the line is not
+  printed when the choice did stick), all red before the fix.
+
+## [3.2.128]
+
+### Fixed
+
+- **Every answer from the door signs itself, so a foreign listener can't pass as ours.** A full
+  suite run reported one failure — `POST /api/scan/preview` came back `401` with the body
+  `auth required`. That string is nowhere in this repository (`server/`, `src/`, `tests/`), in
+  any dependency, or in the enterprise tree; this app's own refusal reads "This request needs
+  a key. Nothing was changed." The file passes 20 of 20 on its own, and no proxy is set in the
+  environment. So something foreign answered a request aimed at the test's own door — the same
+  family as the known flake cause 9 (a listener bound without a host answers on `::`). The
+  danger is not the red run: it is the *green* one, where a stranger's answer satisfies a bare
+  status check. The door now sets `x-kepta-marke: kepta/<version>` on every response, mounted
+  before the this-machine-only fence so refusals carry it too, and
+  `tests/helfer/eigene-antwort.ts` refuses to treat an unsigned answer as ours; the two
+  directory-scope cases that flaked now go through it. Four new cases in
+  `tests/server-marke.test.ts` — including the counter-probe (an answer without the header must
+  be rejected) and a source check that the signature is mounted *before* the fence, because a
+  marker added after it would leave exactly the 401/403 answers unsigned. Deliberately *not*
+  changed: no route logic, no status code, no body — this is a signature on answers that
+  already existed, and the flake itself stays open as a question about the machine, not settled
+  by a header.
+
+## [3.2.127]
+
+### Fixed
+
+- **One Ollama, one address.** The app read the embedding service from three places with two
+  names, and they did not agree: the engine's embedder used `KEPTA_OLLAMA_URL`
+  (`src/core/embeddings.ts`, `ollamaBaseUrl`), the model list used
+  `KEPTA_OLLAMA_URL || OLLAMA_HOST`, and the embed route — the one the status panel asks —
+  used only `OLLAMA_HOST` (`server/router/chat.ts`, `mountChat`). Setting one knob therefore produced a panel that could say
+  "Ollama answers on this computer" while the embedding run talked to a different address, and
+  the two defaults were not even the same host (`127.0.0.1` against `localhost`). There is now
+  one resolver, `ollamaBaseUrl()`, that honours `KEPTA_OLLAMA_URL` first and `OLLAMA_HOST` as
+  the borrowed second name, and `einbettModell()` does the same for the model name; the routes
+  call them instead of reading the environment themselves. Found while measuring 3.2.126: the
+  first version of the window probe could not reach the "no Ollama" branch at all, because it
+  turned one knob while the panel asked through the other — the probe was wrong before the
+  product was asked. Second finding in the same line: when the chosen provider is an Ollama,
+  the model list fetched `/api/tags` from the *environment* address rather than from the base
+  address the user set and had just answered `/v1/models`, so an Ollama on another machine was
+  listed from the wrong host; the tags call now uses that same base. Three new cases in
+  `tests/server.test.ts` (route honours the core's knob, the alias still works, the core's name
+  wins) and five in `tests/embeddings.test.ts` — two of the first three were red before the
+  fix, and the alias case was green before and stays green, so nothing was quietly dropped.
+
+## [3.2.126]
+
+### Changed
+
+- **A sentence about languages now carries its measurement.** Two lines of the interface sold
+  the vector leg as cross-lingual — Settings said "Semantic similarity across languages", the
+  status panel said "with vectors it is stronger across languages too". Neither had ever been
+  measured. It is now, with `npm run eval:sprache`: 15 question pairs taken straight from the
+  shipped test corpus (same answers, only the language of the question moved — English
+  question, German notes), each leg scored in both languages, plus the vector leg on its own so
+  a fusion problem cannot hide as a model problem. English questions reach **26.7 %** Hit@1
+  with the default embedder, against **60.0 %** for the same questions in German
+  (`docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt`); without vectors it is 13.3 %,
+  so vectors double the reach and leave it at one question in four. The multilingual model this
+  repository's README had been recommending to German notes since September does not solve it
+  either — **20.0 %** cross-lingual, and on the German vector leg alone 46.7 %
+  (`docs/belege/tag-0311/sprachuebergriff-bge-m3-1406.log.txt`) where the default embedder
+  reaches 73.3 % (`docs/belege/tag-0311/sprachuebergriff-nomic-1406.log.txt`) — so switching
+  the default is not a gain, and it would still mean re-embedding every stored note. Settings now reads
+  "Meaning, not only the exact words" and the panel names its numbers instead of promising.
+  The README's September caveat was corrected in the same pass, because it recommended the very
+  model this run measured as no better. What is deliberately *not* changed: the retrieval code,
+  the default model and every ranking weight — this is a claim brought down to its measurement,
+  not a search rewritten. A new guard (`tests/components/flaeche-sprach-behauptung.test.ts`)
+  refuses any interface line that talks about language without naming its number, and reads the
+  two runs above from the repository.
+
+### Fixed
+
+- **The eval measured a weaker system than the one that ships.** Since the corpus builder was
+  shared with the ablation, `scripts/eval.ts` had quietly kept building its own store — no
+  entities, fewer supersessions, and no vectors at all, while the engine turns the vector leg on
+  by default and drops it silently when nothing is embedded
+  (`src/core/engine.ts:395-396`). One word, two systems, and the figure on the status panel came
+  from the weaker one. Both tools now build the corpus from one file
+  (`scripts/eval-store.ts`), which also had to learn to anchor the corpus clock: it left the
+  timestamps unset, so the store used `Date.now()` and the recency boost drifted with the
+  calendar — the same commit could report two numbers. Three legs are measured now, and the
+  third is the delivered one: 62.2 % / 51.1 % / 0.559 for the naive search, 81.1 % / 71.1 % /
+  0.758 for the engine without vectors, **91.1 % / 75.6 % / 0.812** with them
+  (`docs/belege/tag-0311/eval-drei-beine-1352.log.txt`). The first two legs are byte-identical
+  to the run of 2026-10-13, so the coupling moved nothing but the third leg, and the 76 % the
+  ablation had reported for full fusion since October is now confirmed by a second tool. Each
+  output also breaks its mean down per question type, which shows what the single number hid:
+  paraphrased questions stay at 30 % Hit@1 even with vectors (their recall doubles, 30 % →
+  60 %), and the vector leg says *why* it was skipped when no embedder answers, instead of
+  quietly reporting two legs as the whole system. Two new guards hold the coupling
+  (`tests/eval-metrik.test.ts`, six cases now): neither tool may build a store itself, and the
+  shared builder must name its time anchor.
+- **A measurement script could carry dead code and still print a number.** Three imports left
+  over in `scripts/ablation.ts` after the corpus moved out (`tmpdir`, `path`, `fs`) were the
+  symptom, not the disease: `no-unused-vars` is a warning repo-wide, so a half-finished change
+  in a measuring tool never stopped anything. For `scripts/**/*.ts(x)` it is now an error, with
+  the dead names gone and the rule's bite verified against a throwaway file — `npm run lint`
+  exits 0 on the shipped code and reports `error 'tmpdir' is defined but never used` on a
+  planted one.
+
+## [3.2.125]
+
+### Fixed
+
+- **A custom endpoint gets an honest header.** "Custom endpoint (OpenAI-compatible)" advertises
+  vLLM, Jan and GPT4All — but the chat decided its connection from a probe of exactly two fixed
+  ports (Ollama 11434, LM Studio 1234), so every other no-key endpoint was reported as
+  "No AI connected" *while the same address was answering through the app's own door and the
+  question went out anyway*. Measured on the delivered object with a local OpenAI-compatible
+  endpoint: the header denied the connection while the model list from that very address was
+  already on screen. The check now asks the address you set, over the same route that lists
+  models afterwards. A refusal also names its cause instead of shrugging: "Your endpoint is not
+  answering — start it, or check its address under Settings.", "Your endpoint answered, but did
+  not send a model list.", "This endpoint needs a key — add it under Settings." Deliberately
+  *not* changed: Ollama and LM Studio keep their existing one-click detection, and a provider
+  with a key is judged exactly as before.
+
+## [3.2.124]
+
+### Fixed
+
+- **The window can no longer reach out without being asked, and a picture in an answer can't
+  report that you read it.** Measured on the shipped bundle: all 92 network call sites in the
+  window go to K3PTA's own door on this computer, and the provider calls fall in the app's own
+  server — so the content policy still *permitted* eight cloud origins that no window code ever
+  touches. Those are gone: `connect-src` is now `'self'` plus this machine. And `img-src` allowed
+  a bare `https:` — which meant an answer containing `![x](https://example/p.gif?i=…)` fetched
+  that address the moment it rendered, telling a third party that you just read the note, silently.
+  Now the picture is withheld and *said*: "Remote image not loaded — K3PTA keeps this window
+  local.", with the host named and one way out, "Open in browser", which is your order and never
+  our fetch. Second finding in the same line: the markdown library empties `data:` addresses, so an
+  embedded base64 picture rendered as `<img src="">` — and an empty source makes Chromium download
+  the whole page again. The app now re-admits `data:image/` for png, jpeg, gif, webp and avif, so
+  embedded pictures paint and nothing paints without a source. Deliberately *not* changed: the note
+  list, cards and preview — they render no images at all (0 `<img>` in the interface source,
+  0 `new Image()` in the shipped bundle), so there was nothing to loosen there.
+
+## [3.2.123]
+
+### Fixed
+
+- **A refusal no longer looks like an empty shelf.** The sync journal asked `/api/sync/journal`,
+  dropped any non-2xx on the floor, and its list stayed empty — so the panel asserted "Nothing
+  recorded yet — the journal fills with the first bundle that goes out or comes in", a claim
+  about your history derived from a door that never answered. The note preview had the mirror
+  problem: the "Read by AI apps" row only renders when there is something to show, so a refused
+  audit log and an honest "nobody has read this note" looked identical — and the second one is
+  the privacy answer you came for. Same for "Earlier stands". Now the journal says "The journal
+  did not answer — it was asked and the store said 509."; the preview says "No AI app has read
+  this note." when the log answered with none, and "Who has read this note — the audit log did
+  not answer (it said 503)." when it did not. Deliberately *not* changed: the agents dot on the
+  Activity item (`Dashboard.tsx:818`) — a missing green dot states nothing, and inventing a
+  sentence for it would be noise in the sidebar.
+
+## [3.2.122]
+
+### Fixed
+
+- **Three settings that looked saved when they were refused.** Unticking ".pdf" in the
+  computer scan sent a PUT to `/api/scan/config` with no status check, and its rejection fell
+  into `catch { /* not saved — the default stays */ }`: the button stayed unticked on screen
+  while the old list still governed the scan. On the AI tab, a refused model list was
+  `catch { /* silent */ }` — an empty dropdown that read like "this provider has no models",
+  although a `role="alert"` channel has existed there for months. The dossier's suggestion
+  chips dropped a non-2xx into `catch(() => undefined)` and showed nothing, no reason. They
+  now name what happened: "Your choice did not stick — the scan answered 409.", "Models could
+  not be loaded — rate limited.", "Suggestions did not arrive — the store answered 503."
+
+## [3.2.121]
+
+### Fixed
+
+- **Two surfaces changed their source without saying so.** The chat asks the search engine
+  first and, when that call fails, keeps ranking locally — the comment at `Chat.tsx:477` has
+  said "ehrlicher Fallback" for weeks, but the screen never mentioned it: the answer looked
+  identical, and the reader held a local ordering for the semantic search. A chip now says
+  "Local ranking — the search index did not answer" and only appears when the engine really
+  stayed out. The graph asked `/api/graph` for its entity links and dropped every failure
+  silently (`KnowledgeGraph.tsx:1962`, no status, no branch): the picture thinned out while
+  its own header still promised connections "through tags, similarity and knowledge entities".
+  The header now adds "the entity links did not arrive, so this picture draws tags and
+  similarity only" — and stays quiet when they do arrive.
+- **The chat's own prompt taught the model the wrong word.** It asked the model to "cite the
+  id of every node you use", announced "(No nodes are loaded right now)" and counted
+  "Context — N nodes", while every surface around it counts notes since 3.2.117. A prompt is
+  not painted, so no screenshot could ever have caught this: the case reads the body of the
+  request the chat actually sends.
+
+## [3.2.120]
+
+### Fixed
+
+- **Four failure paths that had no reason.** "Load more" in the audit log read the body before
+  asking the status and had no `catch` at all: a 500 left the button standing there as if it had
+  done nothing, and the rejection went unhandled. The seal check ("Check integrity") had
+  `try/finally` without `catch`, so a failing check kept whatever result was on screen before it.
+  Both now say what happened: "More entries did not arrive — the log answered 500." / "The seal
+  check did not run — the log answered 503." The day view parsed the body *before* the status, so
+  an HTML error page (a proxy, a 502) reached the user as "Unexpected token '<' … is not valid
+  JSON"; it now names the status. And the inbox chip, which answered `if (!r.ok) return;` into an
+  empty `catch`, had been saying "Inbox…" forever — a store that stopped answering looked like a
+  folder still loading. It now has three states like the door gained in 3.2.111, and the third one
+  reads "No answer from the inbox".
+
+## [3.2.119]
+
+### Fixed
+
+- **Three receipts that reported success they had not earned.** The import loop counted every
+  write it *attempted*: `saveMemory` swallows each rejection and returns `null`
+  (`src/lib/store.ts:324-335`), the return value was thrown away, and five refused writes still
+  painted "Imported 5 nodes from 1 file." in the green box. The inbox scan never asked `r.ok`, so
+  an error body with JSON became "Inbox: undefined files scanned, undefined nodes imported" —
+  also green. The setup wizard counted only `r.ok` and then wrote "0 notes created for you" into
+  the same green box before closing itself. Now the import says "Nothing was saved — the store
+  refused all 2 writes." when nothing went through, "1 of 2 notes saved — 1 refused." when only
+  part did, and keeps the green line for a complete run; the scan names the status it got
+  ("Inbox scan failed — the store answered 429.") or says the answer carried no counts; the
+  wizard refuses to close on zero and says so in the failure colour. This is the same class as
+  the backup button that sold 100 of 21,066 notes as "Backup created" on 14.10.
+- **Four more lines that counted notes but said nodes**, found by the same sweep: the short-backup
+  warning, the backup button's own count, the local-server status dot ("online · 21,064 nodes")
+  and the API table's "One page of 100 nodes". A node on the graph is still a node.
+
+## [3.2.118]
+
+### Changed
+
+- **Three lines that claimed more than they had measured.** Reading the painted text of the
+  delivered 3.2.117 (seven views, 451 lines, 12:28:56Z) left three sentences in the same class as
+  the 3.2.116 findings: the chat's context strip counted "**5 nodes** in the prompt" one line above
+  its own "5 **notes** in play"; the MCP box in Settings was titled "Your **brain** for Claude
+  Desktop and Cursor"; and the Ollama row said "Ollama reachable — **vector search active**" while
+  the row two below it said "0 % of their text is searchable by meaning". Reachability is not use,
+  and one stored thing cannot be two words in one surface. The chip now says "notes in the prompt",
+  the box "Connect Claude Desktop and Cursor", and the Ollama row states only what it probed —
+  "Ollama answers on this computer — the Knowledge base row below counts how many of your notes
+  have a vector."
+- **The same sweep over the whole class, not just the three finds.** `grep -rni brain src` named
+  thirteen places, nine of them painted text: the two cache chips ("Brain warming up…", "Brain
+  warm — answer in … ms") became "Warming the search index…" / "Search index warm — answer in … ms",
+  the shortcut sheet's "Agents use the same brain over MCP — watch the activity live in
+  the index" became "Agents read and write the same notes over MCP — watch them live in Activity",
+  the auto-learn receipt became "Auto-learn is on — a chat can leave a note behind", the settings
+  card "One brain for every AI" became "One set of notes for every AI app" (with "the same local
+  store" replaced by "the same notes, kept in one file on this computer"), the wizard's "Create my
+  brain — 12 notes" became "Save these 12 notes", and the editor's group label "Memory type"
+  became "Type of this note". Two of those lines only appear in a state (the index warming during
+  the first search), so they are held by twelve new markers on the delivered bundle rather than by
+  a screenshot.
+
+## [3.2.117]
+
+### Changed
+
+- **The status panel counts notes, not nodes.** On the delivered build the sidebar said "30 notes"
+  while two cells further down the same screen said "30 nodes in the brain", and the settings
+  status panel titled itself "Brain (SQLite + engine) — 30 nodes". One reader, no project context:
+  "'30 nodes in the brain' — the notes? 'nodes' is graph language." The badge now reads "30 notes
+  stored", the panel row "The database on this computer — 412 notes · file: … · 8 tools for AI apps
+  (MCP 2026-07-28 at /mcp)", and the coverage line says what the percentage lets you do: "412 notes
+  on this computer · 75 % of their text is searchable by meaning" instead of "embedding coverage
+  75 %". "Encrypted on this disk" replaces "Encryption at rest", which needed a translation before
+  it meant anything. What stays: a node on the **graph** is still a node — it is the drawn picture,
+  not the stored thing, and that is the line the vocabulary draws rather than erases.
+
+## [3.2.116]
+
+### Fixed
+
+- **Two screens stopped claiming a second thing.** Both first-time readers, independently, pointed
+  at the same pair of words. The Chat screen showed "No AI connected" at the top and "Ready" in the
+  middle of the same window — one reader wrote: "Which is true?" The cause is narrow: that heading
+  was drawn whenever the *message list* was empty, so the word meant "no conversation yet" while
+  every reader takes it as "the model is reachable". It now says "No questions yet", which can only
+  be read as the state it reports. The same class sat on the knowledge strip: when nothing was
+  duplicated, a chip read "Clean", and both readers stopped there ("could delete; the word does not
+  say what", "sounds mildly dangerous with no description"). It is a status, not a button — the
+  neighbouring branch already reads "N duplicates · Review" — so it now says "No duplicates", and
+  the four suggestion pills gained the sentence they lacked: they put the question in the box, and
+  nothing is sent until you press Enter.
+- **A test that could not fail, found on the way.** The check for the removed word was written as
+  `/\bReady\b/` over `container.textContent`, which glues neighbouring elements together
+  ("…Out ~—ReadyAsk something…"), so the word boundary never matched — the case was green while the
+  word was still on screen. The probe now reads leaf nodes and joins them, and the same case is red
+  against the previous bytes.
+
+## [3.2.115]
+
+### Changed
+
+- **The last name for the whole collection is gone: "in the store" now reads "in all".** The
+  previous release fixed *entry*, *memory node* and *the whole store*; the census of painted text
+  found one more synonym pair still in use — the graph header ("100 notes of 14,702 in the store"),
+  its legend ("6 concepts of 36 in the store"), the claims clause, and the list footer's "More in
+  the store — fetch the next 200". They now say "… of 14,702 in all" and "More of your notes". The
+  distinction is deliberate, not a leftover: *the store did not answer* stays, because there the
+  word names the service on this computer, not the pile of your notes. The vocabulary guard gained
+  the phrase, and the window prober's `saetze` cycle now checks all five banned forms against the
+  **painted** text of the delivered object — an absence the content-marker list cannot express
+  (it only counts occurrences of what must be present), so the proof runs where the words are.
+
+## [3.2.114]
+
+### Changed
+
+- **The surface now uses one word for one thing.** Two first-time readers, given only the text
+  captured from the running window (451 lines across seven screens) and no other file, both
+  returned the same complaint independently: the stored item had six names — *entry*, *entries*,
+  *note*, *node*, *memory node*, *piece* — and the whole collection had six more: *the index*, *the
+  whole store*, *the store*, *knowledge base*, *your memory*, *the brain*. A user who does not know
+  what their own saved thing is called cannot look for it. The vocabulary is now fixed: **note** for
+  one stored item, **your notes** for everything saved, **search index** for the structure behind it
+  — about twenty sentences across Knowledge, the sidebar, Chat, the editor, Settings, the graph
+  header and the sync panel. Two carve-outs are named, not silently kept: an audit log has
+  *entries* (a log does), and on the graph a *node* is the drawn picture, not the stored thing.
+  A new guard holds this at the **rendered** text of each surface, not at the source — a grep over
+  `src/` would also flag `Object.entries` and miss a sentence two components build together.
+
+### Fixed
+
+- **Today's span no longer reads "in the last a day".** The previous release replaced a doubled
+  direction ("since less than a minute ago") and introduced its own grammar fault at the single
+  unit. The span helper now returns the bare noun, so the sentence is "in the last minute / hour /
+  3 days". Caught by reading the rendered text of the app, not the diff.
+
+## [3.2.113]
+
+### Changed
+
+- **Three sentences stopped talking like the code.** This is the first release where the surface
+  was read by people who had never seen it: the text of all seven screens was captured from the
+  running window (451 lines, 30 notes loaded) and given to two independent first-time readers with
+  no project knowledge and the same six questions. Both, separately, returned the same three
+  sentences. Today's subtitle read "what happened since less than a minute ago" — a sentence that
+  names its direction twice, because the duration helper already carries "ago". The knowledge
+  strip read "Embeddings: 0/60 embedded" next to "0 of 60 pieces done" and a tooltip saying
+  "chunks": one thing, three words, and no reader could tell whether 60 counted their 30 notes.
+  And the auto-learn setting explained itself as "The switch lives in localStorage
+  ki_gehirn_autolearn … saves title/tags/summary as a new node" — one reader's note: "reads like a
+  note to a programmer", and the app calls the thing a *note* everywhere else. The subtitle now
+  names the span in one grammatical piece ("in the last 3 hours"), the embedding counts use one
+  word ("pieces") and say whose pieces they are ("of your 30 notes"), and the switch says what it
+  does: a key point read in the background and saved as a new note you can edit or delete, with a
+  notification either way. The setting still lives under the same storage key — a counter-probe
+  holds that, because renaming it would silently lose every existing installation's choice.
+
+## [3.2.112]
+
+### Changed
+
+- **One state, one seat: the chat header draws its dot from the same class as the index row.**
+  The quiet connection state existed twice — as a hand-written inline style in the chat header
+  (`background: var(--text-3); box-shadow: none`) and, since the previous release, as
+  `.status-dot-leise` next to the store's status line. Two drawings of one state is how #8 and #94
+  got their words apart in the first place; this is the same defect in colour. The header now calls
+  the class, and a counter-probe refuses any inline painting of the quiet state at either site — a
+  hand-written copy that comes back fails the run.
+
+## [3.2.111]
+
+### Fixed
+
+- **The status line now says what its own door answered.** The index row promised "In sync"
+  whatever happened: the sentence was attached to nothing, so when the local store stopped
+  answering, the window kept its green dot and its promise and gave no reason at all. Measured in
+  the real window (prober cycle `tuerfort`, on the delivered 3.2.109, 2026-11-02): the process is
+  removed and the screen still reads "In sync". A non-2xx answer and a thrown fetch now both
+  record refusal, an unanswered first attempt reads as "Asking the store", and the dot goes quiet
+  — the house's third ink step, not a new colour invented for the occasion. The health poll now
+  runs on its own five-second timer instead of only while an embedding is missing, because a door
+  can die after the window was built. Three cases hold the three states, and the prober holds the
+  path a suite cannot reach: it kills its own child on its own port and reads the screen.
+
+## [3.2.110]
+
+### Added
+
+- **The graph now marks the edge where it cuts a note off.** At 1 500 notes in a 1 440 x 900
+  window the top edge carried clipped circles in every run measured on the delivered 3.2.109
+  (22.0 % and 30.8 % of its length — the same build, two layouts of the same fixture). The camera
+  does not crop on purpose: it crops where the picture would otherwise stop being a picture,
+  because the readability floor overrules fitting everything. What was missing is the
+  transition — a half circle reads as a whole one. Each edge that lets a node run past the frame
+  now carries a three-pixel mark, one row inside (the first pixel of an image is its ground, and
+  a band on row zero would swap the ground and call the whole picture ink). The mark is computed
+  from the same set the balance line counts, so the sentence "1 222 of 1 500 unfolded notes are
+  in this picture" and the edge in the picture can never come from two different tallies.
+  Six cases hold the rule and the painting, one of them by zooming in until nodes cross an edge
+  and requiring a band exactly where the line reports one.
+
+## [3.2.109]
+
+### Changed
+
+- **When a filter comes back empty, the number now describes the filter you actually set.**
+  Picking a form and a theme together ("Events inside Files") is the filter the list applies —
+  and the sentence underneath named a number only for one form alone or one theme alone, staying
+  silent for the combination. It now reads the cross table the store already returns, so
+  "Events in Files" says how many the store holds in that cell. Measured against a real store of
+  21 064 notes: the theme "Events" holds 8 663 in total, but only 15 of them are in the 92 notes
+  typed by hand — the combination is the only choice that can show something useful there, and it
+  used to show nothing. Two themes at once stay without a number on purpose: that is a union, and
+  adding table rows would count a note twice. Eleven cases hold both halves — eight for the rule
+  (cell, sum over rows, edge, silence, an older store without the table) and three for the wiring
+  through the real surface.
+
+## [3.2.108]
+
+### Added
+
+- **The grouping door can now say which kind of note fills a theme.** `GET /api/memories/gruppen`
+  already answered two edge lists — how many notes per form, how many per theme — and two edges
+  cannot show where a number comes from. It now also answers the cross table
+  (`themenNachTraeger`, plus `ohneThemaNachTraeger`), same pass, same cost, still no note content
+  leaving the door. Why this exists: after "Projects" stopped swallowing two thirds of a real
+  store (3.2.107, measured 64.6 % → 18.9 %), "Events" still holds 41.1 % and its rule is a date
+  pattern. In a typed note a date is an appointment; in a scanned JSON file a date is a field.
+  Whether those 41 % are the same misunderstanding is now a number the door can answer, not a
+  guess from the outside. Six cases hold the table: every row sums to its form, every column to
+  its theme, and the same six dates split three-and-three across prose and data — a door that only
+  copied its edge list cannot produce that.
+
+## [3.2.107]
+
+### Changed
+
+- **"Projects" no longer swallows two thirds of the store.** Measured against the real knowledge
+  base in the delivered 3.2.106 (`GET /api/memories/gruppen`, 01:59, two runs, identical): 13 600
+  of 21 064 notes carried the theme word `projects` — **64.6 %**, over the house bar for any axis
+  (no cell above 60 %). The cause was in the rule, not in the notes: seven of its fourteen words
+  were names of this product or generic build words (`kepta`, `k3pta`, `repo`, `release`,
+  `feature`, `theme`, `sprint`), and 95 % of the store is scanned out of repositories — a JSON file
+  with a `theme` key is a file, not a matter. Those seven left the rule. What still marks a
+  project is what names one: a project, a client, a firm, an order, the two named products, a shop
+  — every one of them covered by a keeper case in the new test, so the rule got narrower, not
+  deaf. The tooltip now says "a client, a case, a shop"; it no longer promises a word the rule
+  does not read.
+
+## [3.2.106]
+
+### Fixed
+
+- **Every corner the components ask for is now a house step.** The corner scale lived twice: the
+  design system kept five steps (3 / 4 / 7 / 12 / 14 px) and Tailwind shipped its own (4 / 6 / 8 /
+  12 / 16 px), and 247 call sites reached for Tailwind's names. Measured in a real window (31.10.,
+  against the delivered 3.2.104) the result was 12 corner values outside the ladder at 137 places —
+  the two largest sitters 30 places each at 6 px and at 8 px, next to the house step of 7 px.
+  The scale is drawn once, in the theme block: `md` and `lg` both take the control step (they are
+  only ever called on buttons, chips and plaquettes, where 6 against 8 was a guess and not a step),
+  `2xl` takes the panel step, and `sm` and `xl` are tied to their tokens so a package update cannot
+  move an edge in secret. A new test reads Tailwind's own table out of the installed package and
+  refuses any corner class that resolves off the ladder — including bracket values like
+  `rounded-[5px]` — so a fourteenth value cannot be introduced by typing a class name.
+- **A note asking for its own relations no longer walks the whole relation table.** The edge
+  lookup ran without an index on `relations(memory_id)`; at a store of 5 500 notes one import
+  batch measured 2 509 ms before the index and 990 ms after, 11 946 → 29 856 notes per minute,
+  confirmed by a second run. The title lookup of the same path got its own index for the same
+  reason, and the write path now reports its partial times (read, insert, index, link, total)
+  in both the response header and the body — where those marks previously overwrote each
+  other instead of adding up.
+
+## [3.2.105]
+
+### Fixed
+
+- **Closing the legend closes it at every width.** The fold rule lived inside a
+  `max-width: 820px` condition, so on a desktop window "Hide legend" handed back 6.5 points of the
+  picture and stayed 7 points over the house cap of 25 %. Measured in a real window (1 440 x 900,
+  1 500 notes, own capsule): open 38.6 %, closed 32.1 % before; closed 24.4 % after, in two runs.
+  One line stays when the card is closed — the balance of the crop ("1 250 of 1 500 unfolded notes
+  are in this picture") — because it is the only sentence saying the view is a slice; the gesture
+  hint folds instead.
+- **"Fit" no longer crops more than the view you arrived at.** Where the readability floor holds
+  (the button says so in its own title), Fit centred on the bounding box while the first view
+  centres on the densest painted region. Same window, same store, canvas byte-stable before both
+  exports: ink on the four frame edges went 557 -> 519 and 559 -> 503 across the click, where
+  before the fix it went 544 -> 596. The tree keeps its whole-world anchor.
+- **The exported picture has a ground.** The canvas is transparent wherever the panel paints its own
+  background, so the saved PNG carried `0, 0, 0, 0` in its first row and any viewer put a page
+  behind it. The export now composites the canvas over `--bg-panel-solid` first. Measured on the
+  exported bytes: first pixel opaque, ground `#38383a`.
+
+## [3.2.104]
+
+### Added
+
+- **The graph can hand out its own picture.** A button named "Export" sits on the zoom rail next to
+  "Fit" and writes the canvas out as `k3pta-graph-<date>.png` — the graph's own pixels, without the
+  tool strip around it. Four cases in `tests/components/graph-bild-export.test.tsx`, all four red
+  before the surface existed; the canvas stand-in in `tests/helfer/canvas.ts` now answers
+  `toDataURL` (and can refuse, the way a tainted canvas does in a real browser), so the download is
+  checked for carrying *this* canvas's size rather than any size.
+
+### Fixed
+
+- **Control radii are one family now.** The colour strip on every note card drew a 2 px corner —
+  on a 4 px wide bar that is a capsule, so it is named one (`999`, same picture, no off-scale
+  value). The two sidebar rows (sections and tags) drew 8 px and 6 px while every button beside
+  them draws the house step `--r-btn` (7 px); both now name that step. Measured in a real window
+  before and after: the census of painted corners over six surfaces at a filled base counted
+  377 corners off the scale, of which these three names held 240.
+- **The two mirrors of a setting now say which one answers first.** `settings.json` rows are read
+  before the first render (`src/main.tsx:11`), the `ui_prefs` blob later (`Dashboard.tsx:210`), and
+  each only fills what is still missing. That ordering was a fact about the code that no file
+  stated; it is stated where one of the two lives.
+
+## [3.2.103]
+
+### Fixed
+
+- **The settings tab you left open stays open across a restart — and its key now carries the
+  house prefix.** 3.2.101 introduced a stored key named `ki_gehirn_einstellungen_tab`, after the
+  old workspace prefix. The prefix rule mirrors both families into the encrypted store, so nothing
+  was broken; the name was just the one tell that the settings layer grew out of a differently
+  named project. It is now `kepta_einstellungen_tab`, and the value is carried over: the first
+  read on a machine that stored the old name moves the value up, deletes the old key from
+  localStorage *and* from the mirrored row, so the next start cannot fetch it back. A junk value
+  under the old name is discarded rather than migrated; a value already set under the new name
+  wins. Eighteen cases in `tests/components/settings-tab-gedechtnis.test.tsx`, nine of which fail
+  with the carry-over switched off.
+- **Nine literal border radii are on the scale now.** `.kbd`, `.row-quiet`, `.row-stamp`,
+  `.apple-seg-btn` already held a step value (4/4/3/7 px) without naming it; the two slider tracks
+  are capsules (`999px`), which is what 2 px rendered as anyway at 2 px height. Three moved a
+  real pixel: the date field in the graph panel 8 → 7 px so it reads as the button family beside
+  it, the loading bars 6 → 7 px onto the control step, and the segmented control's shell 10 →
+  12 px, which is its own geometry (7 px button + 4 px padding + 1 px border). The design guard
+  lost its tolerance entry: a tenth hand-written radius now turns it red, verified by injecting
+  `border-radius: 5px` and watching the count go 0 → 1 → red.
+
+## [3.2.102]
+
+### Fixed
+
+- **"Results shown" now caps the list, not just the request.** The control said "Showing at most
+  5 hits" while the list stood at sixteen. Measured in a real window on a seeded base (30 notes,
+  query "Fristenkontrolle", own capsule, 31.10. 11:28): step 5 → 16 rows, step 10 → 16, step 20 →
+  20, step 50 → 30. The request stays deep on purpose — the engine is asked for at least the
+  search depth, so ranking keeps its candidates — but what stands in the list is now the number
+  the control names, and the line under it says where the rest went: "5 of 16 matches · show all".
+  Clicking that lifts the cap and moves the control to its last step.
+- The status strip next to it now names both numbers when they differ: "16 of 30 hits" instead of
+  "16 hits". The strip's old number was true about the batch the engine returned and misleading
+  about the base — the line under the list already said "5 of 30 matches".
+- The cap applies to the ranked (semantic) branch only. Without semantic search there is no
+  server total, so there would be no way back from a cap — hiding notes behind a control with no
+  exit is worse than the mismatch it fixes. A case holds that boundary.
+
+### Measured
+
+- Six cases, three of them red before the change; bite tests: cap removed drops **3 of 6**, the two-number strip removed drops **1 of 6**. The stub that fed these cases was itself corrected first — it had been telling the surface `total = results.length`, which the door never does.
+  Neighbours: 8 Dashboard/search files, **108 cases, 0 red**. `tsc --noEmit` exit 0.
+
+## [3.2.101]
+
+### Fixed
+
+- **Settings remember which panel you were in.** The tab strip (AI & data / MCP · API /
+  Device Sync) kept its choice only in memory: leave the screen and come back and it sat on
+  "AI & data" again, as if nothing had been set. The panel now lives under
+  `ki_gehirn_einstellungen_tab`, which the app's own prefix rule mirrors into the encrypted
+  settings store — the same way text size survives a restart. A value that is not one of the
+  three panels (an old edit, a hand-typed key, a broken write) falls back to the first panel and
+  never opens one that does not exist.
+- **The three panel buttons name their own state.** The chosen panel was told only by colour
+  (`text-1` against `text-2`), so a magnifier, a read-aloud, or a keyboard user could not tell
+  which of the three was open. They now carry `aria-pressed`, and a case holds that the pressed
+  button is the one whose panel is showing.
+
+### Measured
+
+- Nine cases, five of them red before the change; two bite tests: taking the write out drops
+  **5 of 9**, taking `aria-pressed` out drops **3 of 9**. Restored byte-identical after each.
+- Full run: **3 220 tests, 285 files, 0 failing**; the doc guard confirms the README names this
+  number and this stand.
+
+## [3.2.100]
+
+### Added
+
+- **An agent can state a claim, not only a note.** `memory_save` grew the field
+  `beziehungen`: a list of `{quelle, ziel, wort}` — who makes the claim, the word that says
+  what is claimed, whom it is about. This is the same contract the surface already used, in the
+  same three states: leave the field out and the claims on the note stay exactly as they are,
+  send `[]` and they are all removed, send a list and that list stands (the kernel caps a note at
+  20). The answer now names `behauptungen` — what stands after the write, not what was sent,
+  because a cap that silences six claims and says nothing makes the agent believe it wrote
+  twenty.
+- **Why this was the blocker, not a nicety.** The claim has had a door for the human since
+  3.2.97, and no door for Claude or Cursor. Measured at his real store on 29.10.: of the 1 468
+  relations inside the graph window, **zero** carried a word a hand had chosen — every edge said
+  `mentions` or `co-mentions`, which is the system talking to itself. The product sold to agents
+  is a memory they write into; if only a hand can put a word on an edge, the graph stays mute in
+  every agent setup, and the header that reports concept coverage then tells an agent base it is
+  right to be mute. One claim on a note that carried no concept leaves two concepts on it: the
+  coverage path now has a second writer besides typing.
+- **One contract, two doors.** The reading and the refusal wording moved out of the REST route
+  into `src/core/behauptungen.ts`, which both `POST /api/memories` and the agent path use. Two
+  descriptions of one field is how two doors end up disagreeing about the same draft; a case
+  holds that both doors answer the same invalid claim with the same sentence.
+- **A refusal writes nothing.** A bad word is caught before the note exists, at both doors —
+  the same rule the surface already obeyed. An agent that names `mentions` as its claim word gets
+  400/`isError` with the reason and no half-saved note in the base.
+
+## [3.2.99]
+
+### Fixed
+
+- **A field name spelled with a double f.** The cluster door answered with
+  `notizenOhneBegiff`. The value was right — 20 048 of 21 066 notes carry no concept — but the key
+  was wrong, and a key is what a consumer codes against. Renamed to `notizenOhneBegriff` before
+  any surface binds to it; later this becomes a breaking change instead of a typo.
+- Found while accepting 3.2.98 at the delivered object, not in the paper: the shipped
+  `app.asar` contained the misspelled key once and the correct one zero times. Five comments in
+  two other test files carry the same misspelling; they are left alone here because they belong to
+  another slice's files, and they are named so nobody has to rediscover them.
+
+## [3.2.98]
+
+### Added
+
+- **`GET /api/graph/haufen` — cluster sizes over the whole base, not over a window.** The graph
+  door answers 500 concepts and 2 000 edges (`src/core/store.ts:42`), so a cluster computed from it
+  could never say how big the clusters are — only how the window fills. This route feeds every
+  active note and every concept to the same Louvain kernel the surface already uses (same weights:
+  a mention 1, an assertion 2) and answers with a distribution: notes per cluster, how many
+  clusters, the largest bin as a percent of the base, the median, and the population under every
+  number (notes, concepts, edges, mentions, computed nodes). No note, no identifier and no concept
+  word leaves it — a case holds that, and a case holds the histogram against the population so a
+  silent drop cannot pass as a share.
+- **The lid, and the way to cheat it.** The verdict is measured against the house's own lid
+  (`REGAL_DECKEL_PROZENT = 10`). Measured 13:12:48 UTC at a base shaped like his (1 016 notes
+  carrying a concept, 19 984 carrying none): the largest cluster held 4 notes = **0.02 %**, the lid
+  was met — and the median cluster held **1**. Passing the lid by being dust is not a division, so
+  the door now says so in its own reason: *"the lid is met as dust, not as a division"*. Cost at
+  that shape was 20 ms, and 107 ms over a worst-case 43 400-node base; the answer is cached against
+  the data generation, so opening it twice computes once.
+
+## [3.2.97]
+
+### Changed
+
+- **JSON is data, and the junk drawer says its own name.** Two baskets were lying at his real
+  store: `Code` held 9 978 notes of which **9 860 (98.8 %) were `.json`** — locale files, exports,
+  configs, nothing that runs — and `Files` swallowed every extension the two lists didn't know,
+  which is not a kind of knowledge but a remainder. There are now five carriers: `Notes`, `Files`,
+  `Code` (programs and sources), `Data` (settings, exports, tables — read, not run) and `Other`
+  (no known form). `Other` is deliberately a visible basket: its count is the honest measure of how
+  well the extension lists actually work, and a basket that quietly absorbs the unknown hides its
+  own gap.
+- **A side effect that is the point:** the rule "code never gets a topic word" used to silence
+  almost ten thousand notes, because they were filed as code. It now bites only real programs.
+  A case holds both halves — a `.ts` file with all six topic signals still gets none, a `.json`
+  file with a person in it gets `People`.
+- **Surface vocabulary:** nine words in two rows became eleven. The guard that keeps the rows
+  honest (`tests/kategorien-wache.test.ts`) now counts five carriers plus six topics, still as a
+  hard number, because a count derived from the same table it protects can never fail.
+
+## [3.2.96]
+
+### Fixed
+
+- **The house's own image street can take pictures again, and it can fail again.** Two separate
+  defects in `scripts/screenshots.mjs`, both found while verifying something else:
+  1. **It was blind at image three of twelve.** It found the fit control with
+     `button[title^="Fit the whole graph"]` — a prefix match against a sentence. Since 3.2.79 that
+     sentence is a decision, not a name: when the readability floor bites, the same button says
+     `Fit — held at the readability floor, so some notes stay outside; …`. In the demo store the
+     floor bites, so the street walked past a control standing in front of it. Reproduced twice
+     (21:23 and 00:32), one `Error:` line each time. The button now carries
+     `data-testid="graph-fit"` and the street grabs that handle; the title stays what it was
+     meant to be — an explanation. Guard: `tests/components/graph-einpass-marke.test.tsx`, seen
+     red at 00:37:02, green at 00:38:27.
+  2. **A broken run reported success.** The catch set `process.exitCode = 1` and the `finally`
+     called `app.quit()`, which throws that number away: measured with a ten-line probe at
+     00:35:51 — error printed, exit **0**. It now calls `app.exit(gefallen)`. Both sides proved
+     on the real script: an intact run writes all twelve images and exits 0 (00:41:08), and the
+     same script with one unreachable handle exits **1** naming what it could not find (00:54:35).
+     The counter-probe ran from a copy inside `scripts/`, and the copy is gone (removed 00:54,
+     existence test failed).
+
+- **Why this was first among the error fixes:** without a working image street, no later step in
+  this wave can carry the picture proof the house now requires — every acceptance after this one
+  depends on it.
+
+## [3.2.95]
+
+### Fixed
+
+- **A single basket no longer claims to be an answer.** The share added in 3.2.94 was checked in a
+  real window at 23:51, and the picture caught the defect: the demo store fills one carrier, so the
+  row read `74 Notes 100.0 %`. One hundred percent of a set that contains nothing else is the same
+  figure wearing a second coat — the same reason the row already refuses to paint an empty basket as
+  jewellery. A carrier row now shows no share below two filled baskets, and at the other edge it
+  says `>99.9 %` rather than rounding a near-total to `100 %`, exactly as it says `< 0.1 %` rather
+  than rounding a small one down to `0 %`. Neither edge is allowed to invent a basket that is not
+  there: `100 %` claims a lone carrier, `0 %` dismisses a carrier holding a note.
+- **A witness that does not look at the accused place indicts the wrong one.** The first version of
+  both cases searched the whole surface for `100 %` and failed against the settings row
+  `Text size 100 %` — the product was right and the probe was wrong (seen 23:56:15, two cases red).
+  The assertions now read the carrier cell alone.
+
+## [3.2.94]
+
+### Changed
+
+- **Each carrier figure now says how small it is.** The index strip counted `92 Notes · 10,996
+  Files · 9,978 Code` and stopped there. Those are Damian's real store — 92 + 10 996 + 9 978 =
+  21 066, the number the door itself reported at 15:51:39 today — and the one thing that row can
+  tell a person about their own knowledge is the ratio: **0.4 % was typed here, 99.6 % came in**.
+  An amount alone does not say that; "92" looks like any other figure on the strip. The share now
+  sits beside each amount, and its base is the set the caption already names (`the whole store`),
+  so the total is not printed twice in one strip. A basket under a tenth of a percent reads
+  `< 0.1 %`, never a rounded `0 %` — a basket holding one note is not an empty one, and "0 %"
+  dismisses what the person is looking for.
+- **New information does not get a tone under the bar.** The share is painted on `--text-3`, which
+  the token file measures at **4.65:1** (`src/index.css:299`), and not on the `opacity-70` tone the
+  label beside it uses — that tone is on record at 3.45:1 against the panel, below the house bar,
+  in `src/index.css:609`. Matching the neighbour would have made the newest fact the least readable
+  one; the old label stays as it is and is booked as design debt, not copied.
+- **Guard:** `tests/components/dashboard-achsenwort.test.tsx` gained two cases that run on his
+  figures, not on a convenient 100/30/20 — a fixture whose numbers cannot express the disease is
+  not a case. Seen red first (23:33:09, `kein Anteil an der Zeile: in what form · the whole
+  store`), then green (23:38:16, 77 passed, and the design guard exits 0 on the new token).
+
+## [3.2.93]
+
+### Changed
+
+- **Each grouping row now asks the question its own numbers answer.** Damian's screenshot at
+  20:39 showed the list's index strip reading `92 Notes · 10,996 Files · 9,978 Code` under the
+  words `where it came from · the whole store`. Those three figures sum to 21 066 — the whole
+  store, measured at this app's own door at 15:51:39 — and they count *carriers* (a note typed
+  here, a document from a folder, a program), which is not where anything came from. Where a
+  note came from is a different axis this app already has (`Written in K3PTA` / `From a file` /
+  `From this computer`, `src/lib/graphHerkunft.ts:47`) and which the graph colours by
+  (`KnowledgeGraph.tsx:5619`). One word, two axes: the reader had to guess. The carrier row got
+  its own words — `In what form` above the chips, `in what form · the whole store` under the
+  figures, lead word `Form` — and the provenance axis kept `came from`, which was always its
+  only honest use. All three questions are now named once, in code: `TRAEGER_FRAGE`,
+  `THEMA_FRAGE` (`src/lib/graphHierarchy.ts:116-135`) and `HERKUNFT_FRAGE`
+  (`src/lib/graphHerkunft.ts:62`), and `tests/components/dashboard-achsenwort.test.tsx` refuses
+  two axes sharing a word. The settings heading `Sort knowledge by kind` became `Sort knowledge
+  by form and what it is about`, because the pass behind it writes carrier and topic, never the
+  four knowledge types.
+- **Why this is first and not a polish.** A market census of 17 products written today
+  (`audit-2026-10-09/feldzug/belege-2910/markt/MARKT-FUNKTIONEN-GRUPPIERUNG-2910.md`, Abschnitt
+  B and E1) found no library that names its first grouping axis with a word belonging to
+  another: Capacities shows object types on its type page, Tana its Supertags, Obsidian its
+  folders. The same census measured our own grouping at the real store and found the deeper
+  problem this change does not pretend to fix: 99,56 % of the notes carry one carrier mark and
+  57,69 % (12 153) have no subject at all (`src/lib/graphHierarchy.ts:210-216`, `:644-645`),
+  while the app's own shelf already refuses any basket above `REGAL_DECKEL_PROZENT = 10`
+  (`src/lib/graphHierarchy.ts:650`). Naming the axes correctly is the floor; grouping that
+  actually divides a person's knowledge is the next piece of work.
+
+## [3.2.92]
+
+### Changed
+
+- **The graph now says why its lines carry no meaning.** Measured 15:21:53 against the running
+  instance (`/api/graph?limit=500`, HTTP 200 in 65 ms): **1 468 relations in the body, 1 468 of
+  them a word the store gives itself** (776 co-mentions, 692 mentions), **none a word a hand
+  wrote**. The number comes out of the door's body, not out of an assumption — that was the
+  condition before any build. The header line now names it: *none of these 5 lines carries a word
+  you wrote; a line without one says only that two things belong together.* It falls silent the
+  moment one line does carry a hand's word, and it stays beside the 3.2.88 sentence about the
+  zoom floor rather than replacing it — two causes, two sentences.
+
+### Fixed
+
+- **A word you wrote could be silenced by a mention.** Edges are merged per pair, and the merge
+  kept the first word it saw: if the mention arrived before the claim, the pair's label stayed
+  `mentions`, `kantenEtikett` refused it as a system word, and nothing was painted — the claim
+  existed and the picture lied. Found by the release case of the new test (red 15:27:18: the
+  header claimed wordlessness while a hand had written *betreut*), fixed by rank rather than by
+  order (graphLayout.ts:397): a hand word now takes a label away from a system word, and a system
+  word still labels the pair when nothing else stands over it. Green 15:32:38, seven cases.
+
+## [3.2.91]
+
+### Changed
+
+- **The claims row is inside the first look on a laptop window.** 3.2.90 was accepted at 14:30:10
+  in the shipped object and one width fell: at 1024 x 768 the block's head stood above the fold
+  while its three inputs sat past it — field top 701, bottom 887, fold at 767 — so **120 px of
+  scrolling** lay between a hand and its first word. Two items above it carried that cost, both
+  read in the same run: the four memory types wrapped into two rows at that width (143 px), and
+  the content box asked for a 240 px minimum whatever the window. The types now sit in one row
+  from 1024 px up; the content minimum drops to 150 px only when the window is 800 px tall or
+  shorter and keeps 240 px above that. The bar did not move: 1440 x 900 and 1024 x 768 both still
+  demand the whole field without a scroll, and the phone keeps its 44 px floors. Measured before
+  the change, same probe: 1440 pass, 1024 fall, 820 pass, 390 pass with the row after 303 px.
+
+## [3.2.90]
+
+### Changed
+
+- **The claims field now stands where a hand decides.** Measured 13:50 in the shipped 3.2.89 (own
+  capsule, 1440 x 900, nothing scrolled): the block began at y 894 while the fold of the editor
+  ends at 899 — five pixels of a 202 px block in view, and its three inputs at 959-997, past the
+  edge. The field existed and nothing in it was reachable. At 390 px it began at 960 against a
+  fold at 843: 117 px of scrolling before its first word. The cause was the order, not the field —
+  Tags (83 px) and Private (62 px), plus their two gaps, stood above it. Both now stand below it,
+  and **Claims on this note** sits directly under *Content*. Two jsdom cases count the row order in
+  the document: before the move they read `ITPB` and named the missing step, now `IBTP`. The help
+  line under the three inputs is one sentence shorter, so it fits one line at wide widths —
+  arithmetic on the measured heights left the two-line block 4 px past the fold even after the
+  move, and a sentence that hangs by four pixels is a layout problem dressed as copy. Measured in
+  the built package at 14:10 (own capsule, its own health door answering 3.2.90, nothing scrolled):
+  the block runs 701-887 inside a fold at 899, its three inputs 766-804 and *Add claim* 812-850 —
+  the whole field in the first screen at 1440 x 900, against 5 px before the move. At 390 px its
+  head line and counter are in the first screen (743-1146 against a fold at 843, where 960 had
+  shown nothing of it); the whole block cannot fit at phone height while the note body keeps its
+  240 px. Finger targets are untouched and measured in the same run — 44 px for all three inputs
+  and *Add claim* at 390 px width, 38 px on a wide window where the house floor (#44) is 36 px.
+
+## [3.2.89]
+
+### Added
+
+- **You can now say what two terms actually claim.** The graph has drawn the type of a claim on
+  its line for a long time, and since 3.2.88 it names the zoom it waits for. Measured 08:19 on
+  a real 21,066-note store: 1,468 relations, **1,468 of them words the system gives itself**
+  (`co-mentions` 776, `mentions` 692) and **zero** claims with a word from a person - not because
+  the surface hides them, but because no path in the app could write one: the per-note setter
+  only ever wrote `mentions`/`co-mentions`, the alias half of a wiki link was cut off before the
+  word, and none of the 17 route files could write a relation at all. The note editor now has a
+  **Claims on this note** block - who, does what, whom - that reads what already stands
+  (`GET /api/memories/:id/behauptungen`), lets you remove a line, and saves the whole set with
+  the note. A claim that uses a word the graph reserves for mentions is refused before anything
+  is written, and the refusal says what to type instead. Terms you name are added to the note,
+  so a line never hangs between two ends that nothing carries. A note saved *without* the field
+  keeps its claims - an agent saving the same text must not erase what a hand wrote.
+
+## [3.2.88]
+
+### Fixed
+
+- **The picture now names the floor under its edge words.** The graph has painted the type of a
+  claim on its line for a long time (`kantenEtikett`), but only above 90 % zoom - and no sentence
+  anywhere said so. Measured 07:57 in the shipped 3.2.87: the head line counts the links, the
+  legend counts what the door left out, and a field at 40 % shows a hundred lines with not one
+  meaning attached and no hint that coming closer is the answer. The house already names its zoom
+  floors this way ("+7,457 similar - hidden until 55 % zoom"); this closes the second one. The
+  clause and the painter now ask one function (`kantentextFrei`, `KnowledgeGraph.tsx:1031`), so
+  text and picture cannot drift apart, and the sentence stays silent when nothing is held back:
+  no claim line in the field, or a density stage that steps the words back on purpose - that one
+  explains itself at its own button. Six cases, the pair that releases the clause measured on the
+  real head line (the sentence appears below the floor and disappears above it), and the guard
+  proven by switching the floor test off - two cases go red, not zero.
+
+## [3.2.87]
+
+### Fixed
+
+- **The excerpt now counts what never reaches a window.** `ausriss.kantenVerworfen` could not
+  be anything but 0 for this window: the core's edge slice (`src/core/store.ts:1443-1451`)
+  already reads only pairs whose both ends sit inside the same concept slice, and the route
+  filters against exactly that set. Measured 07:12 on a 2,120-edge base: 349 edges shown,
+  "the door dropped 0 edges" - while 1,771 never arrive. A field that always reports 0 for the
+  case it is read as proof of is not a clean bill, it is a blind spot. New: `kantenAusserhalb`
+  (and the same for concepts), named in the door's own hint so the number cannot hide behind
+  the sentence. Two stale comments were brought to today's state: the 1,593-of-2,000 figure is
+  marked as a measurement from *before* the closed slice, and a pointer that landed on a
+  closing bracket now names the filter line.
+
+## [3.2.86]
+
+### Fixed
+
+- **The window now shows in the head line, not only behind the folded legend.** Measured on
+  the shipped 3.2.85 at 05:55: the long sentence about the door's window lives in the legend's
+  row family, and the legend is closed when a large picture opens (`aria-expanded=false`, read
+  in the same run) - an answer about the picture that appears only after a click is half an
+  answer when the picture starts too small. The head carries a short form without numbers, in
+  both views; the loading clause that already lived there now applies to the tree as well,
+  which is what it always should have.
+## [3.2.85]
+
+### Fixed
+
+- **The graph's depth step now changes the picture.** Measured on the shipped 3.2.84 at 05:28:
+  four calls - `depth=1|2|3|4` - answer byte-identically (470,506 B, 500 concepts, 2,000
+  claims), because `depth` lived only in the entity branch of the store while the whole-base
+  path grew over edges unbounded until the cap of 500. The surface shows the step with the
+  words "How many steps the picture asks the door for around each concept", so the control was
+  a decoration. Decided: wire it, do not remove it - Obsidian's graph carries the same 1-4
+  step. The growth loop now honours the step, and the door clamps it with the **same**
+  constants as the core instead of a second copy. On a fixture built so that the chain can
+  only arrive by hops, the four steps reach 2, 3, 4 and 5 chain members - a case that had to
+  be rebuilt twice before it could actually fail, and both wrong builds are named in the test.
+  What does not change: the window still fills to exactly 500 at every step.
+
+## [3.2.84]
+
+### Fixed
+
+- **The picture names the window it is drawn from.** Measured on the shipped 3.2.83 with a
+  21,000-note base at 05:28: the door holds 500 concepts and 2,000 claims out of 42,700 concepts
+  and 150,600 claims (`begrenzt true`), the excerpt costs 186 ms of ~220 ms and 470 KB of body -
+  and the surface never read the field it was answering with. What a person saw instead was
+  "1,104 of 21,000 unfolded notes are in this picture": true as a count, wrong as an
+  expectation, because nothing a zoom can do brings in what the window left out. The line now
+  says both ratios, in the same row family as the two above it, and stays away when an older
+  door reports no excerpt at all rather than guessing a window.
+- **Side finding of the same trace, not yet built:** depths 1, 2, 3 and 4 answer byte-identically
+  (470,506 B, 500 concepts, 2,000 claims). `depth` lives only in the entity branch
+  (`src/core/store.ts:1358-1370`) and the surface never asks with `entity=`, so the depth control
+  in the More panel moves nothing. Decided: wire it, do not delete it - Obsidian's graph has the
+  same 1-4 step control.
+
+## [3.2.83]
+
+### Fixed
+
+- **The head of the graph line says when the store is still coming.** Measured on the shipped
+  3.2.82 with a 21,000-note base at 04:46: for the first seconds the head read "2 notes of
+  21,000 in the store - 2 concepts of 42,700 in the store - 4 links", and it stayed there -
+  quiet only after 32 s. The door answered stably meanwhile (500 concepts, 1,422 edges, every
+  reading of a 40 s trace identical), so the two was the page the window carried while the
+  aisle's own whole-base request was still in flight. Every number there was true; what was
+  missing was one word about its state, and without it a person reads two notes as their
+  memory. The head now distinguishes three states: arriving, refused (with the reason, not a
+  store count), and settled - the last one says nothing at all.
+
+## [3.2.82]
+
+### Fixed
+
+- **The frame line stops reporting lost notes.** Measured on a 3,000-note base at 03:09 (motion
+  off, 90-step zoom trace): Fit frames 272 of 3,000 at 93 %, the best is 684 at 30 %, then it
+  falls - 344 at 6 %, 21 at 3 % - and below that the field gathers into one core marker. In
+  that band the line read "21 of 3,000 unfolded notes are in this picture", which sounds like
+  the base lost 2,979 notes. Nothing was lost: below a size the painter deliberately gathers
+  the base into a single core instead of drawing tens of thousands of sub-pixel discs, and the
+  count only ever covers individually drawn nodes. The line now says what is on screen:
+  "…are drawn as nodes - the rest sits in one core marker, zoom in to read them". The three
+  earlier sentences moved into one pure function so all four branches have a case, including
+  the silent one.
+
+## [3.2.81]
+
+### Fixed
+
+- **The empty frame line names its real cause.** Measured in the delivered build at 02:36
+  (90-step zoom trace, 144 notes in six families): Fit shows 111 of 144 at 93 %, the line
+  goes silent between 30 % and 6 % - everything is inside, the good case - and from 3 % down
+  it reads "no unfolded notes are in this picture - the tree is taller than its frame, pan to
+  read it" while no tree was on screen. The real reason lives in the painter: below a size
+  the field gathers the base into one core marker instead of drawing tens of thousands of
+  dust points (the same guard that fixed the "black field with dust" case). A wrong cause
+  sends people the wrong way - panning when they should zoom in. The sentence is now a pure
+  function of the view and the marker: the tree says the tree, the core says the core,
+  otherwise "pan to find them".
+
+## [3.2.80]
+
+### Changed
+
+- **The Fit control names the way out.** The readability floor stays - a whole base
+  squeezed into one frame is the "black field with dust" case measured on 18.10. - but it
+  stays a default, not a wall: the manual zoom scale is free down to 0.02 (`zoomAt`,
+  graphLayout.ts:1628) and the per-node floor keeps every disc at least a screen pixel, so
+  anyone who wants the whole world can zoom out and see it. The sentence on the button now
+  says both what happened and what to do: the edge line already counts what stays outside,
+  and the title adds "zooming out shows them all". A word that names a limit without
+  showing the exit is half an answer.
+
+## [3.2.79]
+
+### Fixed
+
+- **The Fit button says what it actually did.** The field camera is clamped to a
+  readability floor (`k = max(fit.k, floor)`), so when the floor wins the picture cannot
+  show everything - measured on the delivered build at 00:10:05Z: 120 of 144 notes in the
+  picture, the sixth cluster outside the frame. The control still promised "Fit the whole
+  graph into view". The floor stays (without it a 400-leaf tree becomes a hairline and a
+  25,000-note field becomes sub-pixel dust), but the word now comes from one pure function:
+  everything fits -> the old sentence; the floor decided -> "Fit - held at the readability
+  floor, so some notes stay outside; the line at the edge counts them". The count of what
+  stays outside was already on the edge of the picture. Four fixture lookups that matched the
+  old exact title now match its first word - in jsdom the floor always decides, measured:
+  four cases fell with "the fit control is missing" - and the title case holds both allowed
+  sentences.
+
+## [3.2.78]
+
+### Fixed
+
+- **Each panel gets its own pool of cluster tones.** Measured on 3.2.76 at 23:12:57Z: brass
+  held 1.96:1 against the light paper and berry 2.94:1 against the dark panel. The picker
+  already checked 3:1 against a background - but there was only one pool, so whichever
+  background was passed, one of the eight tones was unusable on it. Decision: two pools, one
+  per panel, selection rule unchanged. The dark pool is the group palette with berry lifted to
+  a rose that holds 4.14:1 (0.065 away from the old berry, 0.155 to its nearest neighbour).
+  The light pool is deliberately not the dark pool dimmed - that was tried and failed,
+  because the brand hue families sit too close on paper (moss against brass 0.074, green
+  against moss 0.056) and six clusters need 0.15. It is chosen by maximum-minimum distance
+  on that panel: closest pair 0.161 across eight, 0.198 across the first six, every tone
+  between 3.05 and 5.2 against the paper. Brand words stay where they are brand words - the
+  type register, the chrome, the scene sheets. With no background named the group palette is
+  still used, so group colours do not move. Three cases added: every tone of each pool holds
+  3:1 on its own panel; with a named panel the six chosen tones hold 3:1 and no pair sits
+  under 0.15; with none, the group pool is used.
+
+## [3.2.77]
+
+### Fixed
+
+- **Cluster tones are chosen against the panel they sit on.** The tone picker accepts a
+  background and checks 3:1 contrast, but the surface never passed one, so that check was a
+  no-op and selection ran on distance alone. Found while accepting the community channel in
+  the light theme (canvas-buffer read 22:56:37Z on 3.2.76): six tones read as discs, yet
+  teal holds 2.18:1 and brass 1.96:1 against the light paper. The surface now resolves the
+  panel token by painting it into a one-pixel canvas and reading the byte back - oklch is
+  never guessed - and reads it again on the next frame, because the theme provider sets its
+  class in its own effect and child effects run first. Measured on six three-node clubs:
+  without a ground the picker takes teal, brass and berry (two tones under 3:1 on light, one
+  on dark); with a ground it is one tone on light - brass, since only five of the eight
+  palette tones clear 3:1 against paper, so six clusters cannot all be served - and none on
+  dark. The test asserts the count, not the colour names, so it can lose.
+
+## [3.2.76]
+
+### Fixed
+
+- **Colour by community paints communities again.** The switch set its state, its line
+  named six clusters over 156 drawn nodes, and the canvas painted none of the six tones:
+  measured on the delivered build, every type tone dropped to 0 pixels while neutral rose
+  from 14,159 to 24,057. Two places, harmless each, dead between them. The edge set built
+  its population from concept ids only, while a mention is a (note, concept) pair - so
+  every note fell out silently and the line named half the picture as its denominator. And
+  concept spheres are drawn in a second pass that asked the type table, not the channel
+  table, for their colour - the one pass that carries cluster keys was the one that never
+  looked them up. The population is now the drawn field (notes and concepts, the same pair
+  that feeds the simulation) and the concept pass asks the channel table first, then the
+  role colour as before, then neutral. Acceptance is a pixel test on the canvas buffer, not
+  a DOM state: at least six tones with their own area and a minimum side of 8 px.
+
+## [3.2.75]
+
+### Fixed
+
+- **A node keeps its colour under the highlight.** Every sphere is drawn with a white
+  sheen at its top-left; that sheen was 0.72 in the light theme and 0.5 in the dark one,
+  which mixes the fill almost away: measured on the six cluster tones, the closest pair
+  fell from a perceptual distance of 0.166 to 0.044 at 0.72 and 0.081 at 0.5 - the tones
+  were still different, only nobody could see it. Both themes now sit at 0.34, which holds
+  0.105, and the shape of the sphere is unchanged. The scene sheet used for the social
+  images follows the same token, checked by the design watch.
+
+## [3.2.74]
+
+### Fixed
+
+- **Cluster colours are now chosen by how the eye tells them apart.** The first version
+  picked tones by luminance contrast, which is the wrong axis for a set of clusters: six
+  tones came out with their closest pair at 0.110 perceptual distance - green and teal,
+  nearly the same colour, just brighter and darker versions of each other. Selection now
+  maximises distance in OKLab (hue and saturation first, lightness last): the same six
+  clusters come out at 0.166 minimum distance, 51 % wider apart, and every tone still holds
+  at least 3:1 against the dark panel (measured minimum 4.55). A background can be passed
+  for the light theme; it is not passed yet, because the panel token is written in oklch and
+  the contrast helper reads hex - wiring that up without converting would silently switch
+  the floor off, which is the same mistake the design probe made this morning.
+
+## [3.2.73]
+
+### Added
+
+- **Each cluster is named by what holds it together.** A community is hard to trust when it
+  is only a colour, so the line beside the switch now says what the largest cluster is named
+  after: its best-connected member that carries a name - "named after its best-connected
+  member: <title>". No model is asked and no key is needed, and the rule can be checked by
+  hand on the picture: the same edges the colours use decide the name, and where two members
+  tie, the earlier one in the store wins. GraphRAG gets a written summary per community from
+  a model; free of charge and free of guessing, this is the version that is verifiable.
+
+## [3.2.72]
+
+### Fixed
+
+- **The community switch no longer refuses on an empty population.** Measured on the shipped
+  3.2.71 in an isolated capsule (144 notes in six families, 23:08:49): the picture drew
+  concepts, and concepts carry no type - so the type legend paints nothing there. The gate
+  compared clusters against types, got "coverage 100 %" out of a population of zero typed
+  nodes, and hid the switch. A zero that comes from a missing denominator is not a finding
+  about the world: where the types paint nothing, clusters cannot be a repaint of them, and
+  the switch now appears, naming what it measured. A cluster set that really does mirror the
+  types is still refused, and so is a single cluster.
+
+## [3.2.71]
+
+### Added
+
+- **Colour by community - clusters nobody defined.** The market pass over sixteen graph
+  surfaces (October 27) left exactly one gap standing after the recount: clusters that are
+  not typed in by hand. This is that layer. It reads the picture you are looking at - the
+  nodes drawn right now and the lines between them, a claim weighing twice a mention - and
+  groups it with modularity (Louvain, deterministic: the same store gives the same clusters
+  every time, no dice, no dependency). A new switch in the legend, **colour by community**,
+  appears only when the clusters actually say something the types do not: if every cluster
+  is one type, the switch stays away rather than repainting the type legend, and the line
+  beside it names its population - "N communities over M drawn nodes - largest X%", with the
+  nodes left unpainted counted when there are more clusters than colours. Eight tones come
+  from the group palette, chosen for distance to each other, not in order.
+
+## [3.2.70]
+
+### Changed
+
+- **The layout now walks on one base.** The design census - 28 runs over seven surfaces, two
+  widths, both themes, on the shipped 3.2.69 - counted 531 distances that broke the four-pixel
+  base, and 397 of them sat on a single surface: the knowledge list. They were not five hundred
+  decisions but ten rules: the card (`gap 10`, `padding 16/16/14`), its type banner (`gap 6`),
+  its quiet chips (`padding 2/7`), its meta row (`gap 10`, `padding-top 10`), the tag lines
+  (`gap 5`, `gap 3`), the title's bottom margin (3 px), the index cells (`gap 2`, `padding-left
+  22`, `gap 6` inside the value) and the chip class (`padding 2/8`). All of them are on the base
+  now, plus 326 spacing shortcuts across twenty files, rounded up so nothing crowds together.
+  The same instrument counts 18 instances left over 28 runs, and both kinds have a reason to
+  stay: a keyboard hint keeps its one-pixel padding, because there it is the ink's hairline
+  under a key cap and not a step; the time slider keeps 14 pixels of block padding, because a
+  16-pixel control plus twice 14 is the 44-pixel touch floor the house rule asks for. Nothing
+  moved out of its window: side overflow, clipped elements and undersized targets measured
+  zero across all twenty-eight runs, before and after.
+
+## [3.2.69]
+
+### Fixed
+
+- **The filling notice follows the queue instead of freezing.** Measured on the shipped 3.2.68
+  in an isolated capsule: after a 250-note import the line above the results read "0 of 500
+  pieces done" at 21:52:28, and at 21:56:18 - by then every one of the 500 chunks had its
+  vector - it still read "0 of 500". The status strip fetches health when it mounts and again
+  after something is saved in the surface, so a queue working in the background never reached
+  it. A notice that claims "not finished" after everything finished is a wrong answer, not a
+  missing one. While any piece is missing, the surface now asks again every three seconds, and
+  the asking stops by itself when the last vector lands.
+
+## [3.2.68]
+
+### Changed
+
+- **Distances walk on one base again.** The design census - 28 runs over seven surfaces, two  widths, both themes, on the shipped 3.2.67 - found the layout breaking its own four-pixel
+  base in fifteen distances across eleven containers, and they gathered in four families: the
+  sidebar (row gap 10, side padding 10, row padding 7, row stack 2), the segmented control
+  (gap 2, padding 3, button padding 5), the suggestion pill (7 over 14) and the index strip
+  (column gap 22). All fifteen are on the base now. Control heights did not move: the
+  touch floor is a rule of its own (36 px on the desk, 44 from phone width), not a padding, so
+  a smaller padding cannot shrink a target. One distance stays off the base on purpose: a
+  `kbd` keeps its 1-pixel padding, because there it is the ink's hairline under a key cap, not
+  a step in the layout.
+- **A filling vector index says so where you search.** After a large import the embedding queue
+  works in the background - measured on the shipped 3.2.67 at 3,000 notes: 256 of 6,000 chunks
+  after 120 seconds, about 2.1 chunks a second, so the index is only complete after some 47
+  minutes. Until then a semantic search finds less than the store holds, and nothing said so.
+  The line above the results now names both numbers and what they mean. It appears only while
+  the queue runs, and stays away when every chunk has its vector - or when there are none.
+
+## [3.2.67]
+
+### Changed
+
+- **The concept count names the store it comes from.** The graph's head row said "0 concepts"
+  while the store held 120 of them - and a bare zero reads as "there are none", not "the picture
+  draws none". Measured on a fresh import: every concept there is the title echo of its single
+  note, so the net admits nothing. The row now reads "0 concepts of 120 in the store" whenever
+  the drawn count is smaller than the store's - the same sentence the note count on the same row
+  has carried since October 16. It sits in the always-visible head row on purpose: the first
+  draft lived in the balance prose, which the phone layout hides below 440 pixels, so the phone
+  kept the bare zero while the desk had the answer.
+- **The embedding chip on the knowledge surface names its total.** With a model working, the
+  chip read "Embeddings: nomic-embed-text 256" while the store held 1,200 chunks - a count
+  without its whole, shown exactly while the queue is still filling (measured: 256 of 1,200
+  after 122 seconds, about 2.1 chunks a second). It now reads
+  "nomic-embed-text 256 of 1,200 chunks". The branch that shows "256/1,200 embedded" - the one
+  that runs when no model is reported - is unchanged.
+- **A closed legend on a phone now costs a quarter of the picture, not a third.** Measured on
+  the built 3.2.67 (own capsule, 600 notes, 390 x 844): the closed card was 209,5 of 628
+  picture pixels - 33,4 per cent, and 41,7 per cent on the real store. What it kept showing
+  were the lines about *this view*: how much of it is inside the frame, how much is unnamed and
+  why. Those four lines now fold behind the flap with everything else that explains a section,
+  and they come back with one tap - while the counts, the type colours and the two link kinds,
+  which explain the marks themselves, stay whatever the flap does. The handle's own words say
+  what is behind it.
+- **The "more below" counter counts rows, which is what the eye sees.** Measured on the shipped
+  3.2.66 at 900 x 560 (own capsule, 16:02:19): the panel carries two columns from 820 px, and
+  the bar read "8 more below" while **four** rows stood under the edge - it had been counting
+  controls, not lines. At phone width the two agree, which is why the overstatement went
+  unseen. Measured on the same build at 15:50:57 to 15:51:10: turning 390 into 1024 left the bar
+  reading "11" while the rows already counted 1 below the edge, and 400 ms later it read nothing
+  at all; the reverse showed "no bar" where 13 rows sat below the edge, then "11". The number
+  was wrong for two or three frames - which is what a person dragging a window watches - so the
+  resize now orders the measurement for the next frame, and the panel reports every change of
+  its own box.
+
+## [3.2.66]
+
+### Fixed
+
+- **A number that had fled the legend now flees again when the legend grows.** The big count of
+  the core moves out of the way of the legend card, but the move happened only when the picture was
+  drawn next - and opening the legend does not draw the picture. Measured on the shipped 3.2.65 at
+  390 x 844 and 3 per cent zoom: the number stayed at the same pixel in both states while the card
+  grew from 193 to 299 pixels and covered it by 35 pixels from above. The card's own size now
+  orders the next pass, so the number re-takes its place the moment the space changes - by the
+  flap, by the shelf arriving, or by a line that wraps later.
+- **The handle stopped pretending to set its own size.** It carried a 44-pixel minimum that the
+  house rule for control size overrides at desk width: measured 44 pixels at 390 and 36 pixels at
+  1440 with the class on it. The floor is one rule for every control (36 pixels on the desk, 44
+  from phone width), and the handle is a real button, so the rule reaches it. Its test now checks
+  that instead of checking a dead class.
+
+## [3.2.65]
+
+### Changed
+
+- **The legend can close, and on a phone it starts closed.** At 390 pixels wide the card took
+  288 of the picture's 628 pixels - 45.8 per cent, measured on the shipped app - and the largest
+  single line in it explained a group axis that holds nothing. It now has a named control beside
+  the count: one tap closes the group row and the shelf, one tap brings them back, and the choice
+  is remembered. What stays visible is what the card is for - the counts, the type colours, the
+  lines that say what is missing from the picture - so closing never hides an answer. Wide windows
+  keep the legend open; a narrow one starts closed until the person decides otherwise.
+
+## [3.2.64]
+
+### Fixed
+
+- **The core count now steps around the legend instead of disappearing behind it.** At phone
+  width the legend card is tall - measured on the shipped app at 390 x 844 it takes 275 pixels
+  of the picture - and the count that replaces an invisible core fell behind it: drawn, whole,
+  and not visible to anyone, because the card is opaque. The number already knew how to move
+  one line up or down; a line is 15 pixels, and 15 pixels do not clear 275. It now also tries
+  the edge of what blocks it - first above the card, then below - while still holding its four
+  pixels from every edge of the picture. The field says which of the three states it is in:
+  `frei` where it belongs, `gewichen` one place over, `eng` when nothing was free and it was
+  drawn anyway. Measured before the change: the number at x 4, y 325 behind a card that starts
+  at y 303. After: above the card, four pixels clear, and named.
+
+## [3.2.63]
+
+### Fixed
+
+- **The core count is no longer cut off at the edge of the picture.** When almost every note is
+  outside the frame, the field replaces the core with a single point and one number - how many
+  notes it will not draw. That number sat dead-centre over its point, and the point is allowed to
+  sit against any edge: measured on the shipped app, a point six pixels from the left edge put
+  2.9 pixels of the number outside the picture, and 16 of its 62 lit pixels - 25.8% of the digits -
+  were simply gone. Seven pixels from the right edge: 2.1 pixels cut. The number is now pulled back
+  into the picture first, and where a panel sits in the way it takes the next free position, four
+  pixels clear of every edge; the point stays exactly where it was, because it is the anchor and
+  not the answer. And because the count is drawn before any title, it now claims its cells in the
+  label grid before the first word can claim them, so no title falls on top of it. If nothing is
+  free, the number is still drawn - a count that silently disappears costs more than a count that
+  sits close to something - and the field says which of the two it is.
+
+## [3.2.62]
+
+### Added
+
+- **The stand view in the preview can now put a version back, not only show it.** Reading an
+  earlier stand answered "what was written before", and "Back to current" closed the view -
+  there was no way to make that older text current again without leaving the preview and typing
+  it by hand. The banner next to an opened stand now carries a named control,
+  **"Restore this stand"**, and one click opens a question instead of writing:
+  "Make this version current? The text it replaces stays in the history as an earlier stand."
+  Only the second, named button writes, and it goes through the same door the app already
+  answers on (`POST /api/memories/:id/stande/:standId/restore`), so the replaced text is
+  itself kept as a stand before the new one takes its place. Cancel writes nothing and leaves
+  the stand view open.
+- **Failure leaves the note alone.** If the door does not answer 200, the shown text stays, the
+  stand list stays, and the warning says plainly "Restore failed. Nothing was changed." - no
+  half-written note, no silent success.
+
+### Fixed
+
+- **The core marker says why it is off.** The number beside the core counted what is inside the
+  picture, not what the concept holds - and below eight visible nodes it simply disappeared, with no
+  word and no state to explain the silence. It now names its reason: when most of the core is out of
+  view, the legend reads "The core is mostly outside this picture - N of its nodes are in view, and
+  8 are needed to count it as one"; when nothing of it is in view, it says so without inventing a
+  count. Above the zoom where a marker was never the mechanism, it stays quiet, because nothing was
+  switched off there.
+- **Nothing hangs over the edge at large text on a phone.** Four controls still reached past the
+  right window edge at 390 px and 130 % (+56.2, +56.2, +49.2 and +9.9 px, measured on the shipped
+  build), because five nested boxes spent 164 of the 213 available pixels on their own padding and a
+  URL refused to shrink. The boxes now give their child a real width on both axes, the URL breaks
+  where a URL may break, and the switch moves to its own line below 640 px rather than being pushed
+  out of sight - and no `overflow-hidden` hides what was not fixed.
+- **The line under a thin graph stops at an edge, not mid-word.** Under the rows of unconnected
+  notes the picture prints its own explanation ("N notes connect to nothing in this picture ·
+  page 1 of 4 · 96 painted at this zoom · 288 counted, not painted"). It was painted as one
+  unbroken line: measured in a 390-pixel window its last bright column stood at x 364 while the
+  legend panel ends at x 358, so the words ran behind an opaque panel and stopped in the middle of
+  one. The picture now asks the panel and the canvas where their edges are, breaks the sentence at
+  word boundaries, keeps four pixels clear of every edge, and lifts the whole block above the panel
+  when the panel is in the way. Nothing is taken away: every number the sentence carries stays in
+  the picture, and the canvas records how many lines it used.
+
+## [3.2.61]
+
+### Added
+
+- **The colour control now says what arrives in the picture, not only what its rule promises.**
+  Switching "colour by group" on reported a state (`aria-pressed`) and a heading about axes, while
+  the field could still be carrying one group's colour even though the model knows two: a pressed
+  button describes a rule, not a result. Next to the control the graph now reads
+  **"N of M groups arrive in this picture"**, and the number comes from the paint pass itself -
+  a group only arrives when one of its nodes is actually painted and stands with its full extent
+  inside the frame, so a group that merely holds members in the base counts as zero and a field
+  scrolled past its own edge reports the drop. The line stays silent while the colour channel is
+  off, because "nothing arrived" would be an answer to a question nobody asked. The control also
+  carries its own name (`colour by group`) instead of borrowing an axis question, so a pointer and
+  a screen reader both land on the same word. Four cases hold this together
+  (`tests/components/KnowledgeGraph.farbgruppe-ankunft.test.tsx`): the name is on the surface and
+  the click hits it, state and arrival are reported in the same breath, a group that paints
+  nothing is not counted, and the number follows the frame rather than the node count. Free, no
+  key, no upgrade panel - the same rule the rest of the app keeps.
+
+## [3.2.60]
+
+### Fixed
+
+- **Bigger text no longer pushes the sheet sideways past the screen.** The text-size control scales
+  the document with `zoom` on the body, while the app root sized itself to the viewport (`w-screen`
+  = 100vw). Chromium scales 100vw along with `zoom`, so the sheet asked for exactly
+  `innerWidth * stufe`: in the real window on 26.10.2026 (11:27:56-11:28:05 MESZ, campaign paper
+  `p4-107-ueberlauf-2610.md`) `documentElement.scrollWidth` read 1656 px at 115 % and 1872 px at
+  130 % inside a 1440 px window, and 448 px and 507 px inside a 390 px one - 216 px and 432 px of
+  sideways overflow at the wide window, 58 px and 117 px at the phone width, with a horizontal
+  scrollbar and content that walked out of reach. Two changes: the root now follows the body
+  (`w-full`), and any level above 100 % gives the body the counter-width `calc(100% / stufe)`, so
+  the letters keep their new size while the text wraps instead of running over. Back at 100 % both
+  styles are cleared again, which is also the control case. Four cases hold this
+  (`tests/components/Settings-textgroesse-ohne-ueberlauf.test.tsx`): the counter-width at 115 % and
+  130 %, the 100 % control that removes zoom and width, and a source guard that the root carries no
+  viewport width any more. jsdom has no layout, so those cases prove the styles and not the pixels -
+  the bar "0 px sideways overflow at 100, 115 and 130 %, each at 1440 px and 390 px" is measured on
+  the delivered object. Free, no key, no upgrade panel - the same rule the rest of the app keeps.
+
+## [3.2.59]
+
+### Added
+
+- **The first semantic search no longer pays for the vector track.** Building that track over a
+  real knowledge base costs **1 462,26 ms** and **1 493,81 ms** at two genuine cold starts
+  (measured 25.10.2026 on the app's own capsule: 3.2.57, 20 066 notes, 64 164 sections at 768
+  dimensions, with **+475,0 MiB** and **+477,8 MiB** resident memory), while the door itself starts
+  listening in **0,568 s** and **0,654 s**. So the build does not hang on boot and it does not hang
+  on the first search either: the app now watches its own quiet - no answer still in flight and the
+  last one at least **1 500 ms** old - and builds the track inside that silence, again after every
+  write that throws it away, but never in the middle of a write storm. A warm-up that fails stops
+  the runner and says so out loud; the first search then pays exactly what it pays today.
+  `GET /api/health` carries a new `vektorSpur` object (`vorwaermungen`, `suchbauten`, `zeilen`), so
+  the number a person in front of the screen pays for - `suchbauten` - is visible and should stay
+  near zero. Free, no key, no upgrade panel - the same rule the rest of the app keeps.
+  - **Measured limit, same day.** On the running desktop the counter still reads
+    `vorwaermungen 0` (26.10.2026 12:11:39 and 12:11:59 MESZ, door 55462), and the reason is
+    measured, not guessed: the window holds `/api/activity` open as an event stream, and the
+    counter treats any answer that has not finished as work in progress - so a window that is on
+    screen never reaches its own quiet. Proof on the same built bundle: 12 s of silence in an
+    isolated capsule gives `vorwaermungen 1`, the same run with one open stream held for 10 s
+    gives `0` (12:12:57 MESZ). The counts are honest either way, and until that one rule is
+    widened the first search still pays exactly what it paid before.
+
+## [3.2.58]
+
+### Added
+
+- **A saved version can be stepped back to.** `restoreStand` exists on the store and behind the same
+  door as the version list: reading a past version, then restoring it writes the old text back and
+  records the current text as a new version first, so nothing is lost by going back. Measured on the
+  delivered store: **p95 0,096 ms** against the 1 ms bar, and **200 of 200** restores raise `total` by
+  exactly one while every older version id stays readable. Free, no key, no upgrade panel - the same
+  rule the version list already keeps.
+
+### Fixed
+
+- **One list decides who counts as this machine.** `src/lib/lokalhost.ts` is now the only place that
+  names the loopback addresses, and both former lists (`herkunft.ts`, `richtlinien.ts`) delegate to it.
+  The crack was measured before the fix, not claimed: `http://127.0.0.2/` and a bare `127.0.0.2` were
+  refused by one list and accepted by the other - **2 of 6** cases red on the committed head. This
+  changes who is treated as this machine, so both security papers had to stay green.
+- **The collected-marker label no longer hangs over the top edge.** The paint path asks a pure rule
+  (`markeKippt`) on the **unrounded** y of the dot and puts the number **under** the dot when there is
+  not enough room above it; the stored rectangle carries `kippt` and `dotYGenau`, so a reader of the
+  rectangle sees the same decision the painter made. Rounding only in the rectangle was the band where
+  the two disagreed.
+- **The text-size slider has a case that holds its wire.** Turning the slider sets CSS `zoom` on
+  `document.body`; removing the call that applies it made the new case fail **at the effect**
+  (`expected '' to be '1.15'`), not at the label. jsdom has no layout, so the pixel bar stays a
+  window measurement - this case guards the connection, nothing more.
+
+## [3.2.57]
+
+### Added
+
+- **The search says which part of the engine took the time.** 3.2.56 named four marks around the
+  engine (`vorarbeit`, `engine`, `rueckmeldung`, `formen`), and the first boot of a fresh version read
+  **1 763,27 ms** in `engine` while the next five searches in the same minute read **61,37 to 110,80
+  ms** - so the penalty had a place, not a cause. The engine now measures its own three working steps
+  and hands them to the same two carriers: **`wortlese`** (reading the words of this store),
+  **`einbettung`** (embedding the one fresh query word) and **`vektor`** (the vector walk after it),
+  plus the engine's own `gesamt`. Header `x-kepta-teilzeiten` and body `teilzeiten` still name
+  identical numbers, because rounding happens after the merge, not before. Which of the three legs
+  carries a slow search is now something a caller reads from the answer it already has, instead of
+  something a report has to infer from the difference between two routes.
+
+## [3.2.56]
+
+### Added
+
+- **Searching now says where its time went.** Both search routes answer with
+  `x-kepta-teilzeiten` - the same header the list and the health endpoint already keep - and repeat
+  the identical numbers in the body as `teilzeiten`. The marks are `vorarbeit` (parse and wash the
+  request), `engine` (the retrieval itself), `rueckmeldung` (telling the surface a search happened,
+  POST route only) and `formen` (shaping the answer), with `gesamt` last. This exists because five
+  boots at five versions measured first observed searches between **589,65 ms and 3 523,25 ms** while
+  health answered `gesamt` between **10,88 and 11,55 ms** in the same second - and not one of those
+  twenty searches carried a number that could hold the penalty. Without it, "version X costs Y" is
+  not decidable, not even with two boots of the same version. A reading door that does no work of its
+  own (`GET /api/mcp/tools`) still carries no such header, and a case holds that on purpose.
+
+## [3.2.55]
+
+### Fixed
+
+- **The core's number is no longer hidden behind the legend.** When the graph collapses its centre
+  into one marker, that number stood to the right of its dot - and at phone width the legend card
+  rises into exactly that strip, so the one readable figure in the whole picture arrived cut off.
+  The number now sits above its dot, centred on it. Measured at the shipped object (21 066 notes,
+  3 % zoom, 390 x 844): the box the number occupies now carries ink (63 bright sample points), the
+  box the old position used carries none (0 - it lies under the card, where the dot itself is dark
+  too). Nothing about the marker's meaning changed: one place, one readable value.
+- **A marker that stopped painting stops claiming a position.** The canvas now carries the
+  rectangle it drew (`kernMarke`) so any check can measure the mark against what covers it instead
+  of guessing - and above the zoom threshold, where no mark is drawn, that rectangle is removed
+  rather than left behind as a stale witness.
+
+## [3.2.54]
+
+### Fixed
+
+- **Searching is no longer charged as chatting.** `POST /api/search` and
+  `GET /api/memories/search` shared the chat limiter - **20 requests per minute** - so an agent or a
+  surface that walked the results got `429` refusals that looked like fast, empty searches. Search now
+  has its own cap, and the cap is named in the response (`X-Kepta-Suche-Kappe: <n>;w=60`) so a run can
+  tell a search from a refusal instead of averaging it in. The chat route keeps its 20/min, and a case
+  holds that on purpose.
+
+### Added
+
+- **The search door pages like the list.** `offset` is accepted on both search routes, and the answer
+  carries `offset`, `begrenzt` and a `hinweis` that says what follows - the same contract the memory
+  list and the stand list already keep. Measured on the shipped door: 21 066 notes, and a note beyond
+  the first 500 hits is now reachable; past the end you get zero hits and an honest `total`, not an
+  error.
+
+## [3.2.53]
+
+### Added
+
+- **The overview now shows how much of it is one group.** A thin band runs across the top of the
+  canvas, one segment per group that actually paints, each segment as wide as that group's share of
+  the painted nodes and in its colour, with the group named in `title` and `aria-label`. At the
+  shipped object this says out loud what no colour or letter could: **20 974 of 21 024 painted nodes
+  (99,8 %) belong to one group** - visible without zooming, without the legend, without guessing.
+  A group that paints nothing gets no segment, and the band carries `pointer-events: none`, so it
+  never eats a drag or a click (hit-tested at the band's middle and right edge: both return the
+  canvas). It sits in the free strip above the picture, not under the legend.
+
+### Fixed
+
+- **A guard for the phone legend.** The rule that gives a group name its full width at 390 px now has
+  the case that was promised with it: the classes are required at the row and on the name, and the
+  fix is proven to bite - the case is green at this head and red at the one before it.
+- **One unused import removed** in the stand-list case file.
+
+## [3.2.52]
+
+### Fixed
+
+- **A group's name is no longer cut off on a phone.** At 390 px the legend row showed `#…` instead of
+  `#json` - the name box was 21 px wide while its text needed 31 px, with `overflow: hidden` and
+  `nowrap` on it. The colour dot and the three numbers were readable, the group they described was
+  not, so a reader had to guess which tone meant what. The name now keeps its full width and the row
+  wraps under it; measured after the change all twelve names are whole at 390 x 844 (`#machine-scan`
+  86/86, `#zeitregler-test` 88/88, `#json` 31/31, none cut). The list keeps its height cap and its
+  scroll path (max-height 320 px, scrollHeight 832 against clientHeight 320), and at 1440 x 900
+  nothing moves - the row measures 1076 x 44 before and after, because the rule lives in a
+  max-width-440 block.
+
+## [3.2.51]
+
+### Fixed
+
+- **A refusal says why.** The streaming chat route used to forward whatever text the provider or
+  the operating system produced - an unreachable local endpoint answered "fetch failed" in the
+  chat, which is an exception name, not a sentence. It now sends one product sentence plus a named
+  reason (`anbieter-lehnt-ab`, `anbieter-nicht-erreichbar`) and the upstream text stays in the log,
+  where an operator can read it. The non-streaming route already did this; the stream was the last
+  place that did not.
+- **A blocked send is visible.** With no key set, the explanation existed but sat below the fold
+  (measured at 1280 x 840: the alert box started at y 721 of an 840 px window while the scroll box
+  ended at 721) - pressing Send looked like nothing had happened. The alert now sticks to the bottom
+  of the message area, so it is in the picture at every window height.
+- **The chat header and the door agree.** Pointing a key-requiring provider at a local address made
+  the header read "No AI connected" while the same request went out and was accepted. The header
+  now uses the same local-address rule as the door, and a local endpoint reads
+  "Local endpoint - this address needs no key." in both places - the fourth and last site that kept
+  its own copy of the rule.
+
+### Added
+
+- **Five cases that hold the three fixes**, one of them a control: a far endpoint without a key must
+  still read as disconnected. The existing stream test was tightened, not relaxed - it used to
+  demand the provider's own words and now demands the reason code and forbids those words.
+
+## [3.2.50]
+
+### Performance
+
+- **A search no longer reads every candidate.** The full-text term check ran over each FTS
+  candidate (up to 10 000 per query at a large topK); it now runs only over the hits that are
+  actually returned, and the counter `suchPfadZaehler.volltextScans` in `src/core/engine.ts`
+  makes that countable. The response itself is unchanged: matched terms still travel with each hit.
+
+### Added
+
+- **A note shows the text it had before.** The preview now lists the stands of a note
+  (`GET /api/memories/:id/stande`), one click opens the full earlier text, "Back to current"
+  returns, and the current text is never touched by opening a stand. A note without stands says
+  so instead of showing an empty box. Free tier, no key.
+
+### Changed
+
+- **Every group gets its own letter.** `md` carried the same M as `machine-scan` and `toml` the
+  same T as `txt`; letters are now assigned uniquely across all groups, and the guard checks
+  uniqueness over the whole set instead of only inside a shared tone.
+- **The group legend names a number.** Each tone shows how many nodes are actually painted in it,
+  so `json` - whose notes all carry an earlier mark too - reads 0 instead of promising a berry no
+  node wears.
+- **The details fold grids instead of columning.** `columns-2` at 820 px and up pushed the last
+  rows past the right edge (measured at 1024 x 768: rows at x 988 to 1 317 against a fold that
+  ends at 985, with no scroll path). A two-column grid keeps the flow vertical, where the
+  "more below" hint can reach it.
+- **One rule for "local".** Settings no longer keeps its own regex for a local address; it calls
+  the same `istLokaleAdresse` the door and the chat use, so the three readings cannot drift.
+
+## [3.2.49]
+
+### Added
+
+- **An edited note keeps the text it had before.** `updateMemory` used to overwrite in place, so
+  "go back" had nothing to go back to and every stand route answered 404. A real text change now
+  stores the previous line in `memory_stande` inside the same transaction, and
+  `GET /api/memories/:id/stande` serves it as a page: newest first, cap 200, `begrenzt` and
+  `hinweis` named, header `x-kepta-begrenzt`. Free tier, no key, no flag. Tag-only, type-only and
+  identical-text edits write no stand, and nothing pretends a history that predates this release.
+
+### Fixed
+
+- **A local model endpoint is no longer refused for want of a key.** The door asked
+  `istLokaleAdresse(baseUrl)` while the area asked `needsKey && !apiKey`, so LM Studio on
+  `127.0.0.1:1234/v1` was blocked in the window while the door would have answered it. Both now
+  read the same rule, and the status line says "Local endpoint - this address needs no key."
+  instead of claiming "No key yet".
+- **The details fold covers its own bottom edge.** The hint bar stopped 8 px above the fold, which
+  left a strip where a clipped control showed through, and at the scroll stop it flickered back on
+  while the last row was already fully visible. The fold padding, the bar's negative margin and the
+  measured edge (now `bottom - 1`) are corrected; the four criteria hold at 390 px.
+- **At or below 5 percent zoom the graph core is one marker, not a blue mass.** The marker carries
+  the counted number, the canvas and the list read the same stand, ghost and dimmed nodes stay
+  batched, and at least one square always stays visible far out. Above 5 percent the painting path
+  is untouched.
+
+## [3.2.48]
+
+### Fixed
+
+- **An error answer never repeats a foreign sentence.** When a library threw with
+  `expose` set, its raw message was copied into the `error` field of the response and shown
+  in the app. Each status class now answers with our own sentence (400, 401, 403, 404, 409,
+  429), each ending in "Nothing was changed."; `expose` stays the switch, foreign wording is
+  gone. Body: `server/app.ts`, guarded by `tests/server-fehler-wortlaut.test.ts`.
+
+### Changed
+
+- **Group colors are chosen once the load is known.** The color assignment now runs inside
+  the single grouping call instead of a second count, so `md`, `json` and `txt` each get a
+  free tone from the tones actually in use, and removing a group no longer repaints the
+  others. Bodies: `src/lib/gruppen.ts`, `src/components/KnowledgeGraph.tsx`.
+- **The details fold announces what hangs below the edge.** On a phone-width screen the
+  list that does not fit now ends with a sticky "N more below - keep scrolling" line that
+  counts the rows under the edge, cannot be clicked through, and disappears at the scroll
+  stop; the Close control stays free. Body: `src/components/KnowledgeGraph.tsx`.
+
+## [3.2.47]
+
+### Changed
+
+- **The fit control now wears its word.** The third zoom control was an icon whose name lived only
+  in `title`; it now carries the visible word `Fit` beside the symbol, the title stays the full
+  sentence, and the button keeps its 36/44 px target. At 390 px the word holds in one line with no
+  overflow; the zoom percentage stays hidden below 768 px by the existing `hidden md:inline-block`
+  class (a separate body, not this one). Body: `src/components/KnowledgeGraph.tsx`, one render test.
+
+## [3.2.46]
+
+### Fixed
+
+- **A masked key row is reported, never silently deleted.** The boot still carried a fallback that
+  only accepted a string from `ai_settings`, while the door has returned `{gesetzt, ende}` since
+  A3-09 — the line could never be true, and the mirror deleted the row unread. The dead fallback is
+  gone; `altFund` now carries `form: "maske" | "klartext"`, so every old row is a find that stays in
+  place and is reported (a store whose door still returns the row unmasked is reported, not
+  migrated), and the session cache that hid a later find is removed. Body: `src/lib/ai.ts`,
+  `src/components/Settings.tsx`, five delivered cases adjusted with their reason, one new case.
+- **The three doors name their reason.** `server/router/chat.ts` (500), `recovery-key.ts`
+  (403/404/500) and `importe.ts` (400) returned a raw `error` sentence; they now carry `grund`, and
+  the surface reads it. The global handler keeps `expose`; the foreign-exception wording at
+  `server/app.ts:116` is reported, not changed. Body: three routers, one new case.
+- Red first: both new cases red at the plain head, green with the bodies; neighborhood 205/205;
+  `tsc` and `eslint` exit 0. The suite adds two cases.
+
+## [3.2.45]
+
+### Changed
+
+- **The settings sentence about third-party code now fits one breath.** The line under "One brain
+  for every AI" had grown to 280 characters, 53 words and a 43-word breath; it now measures 197
+  characters, 36 words and a 24-word breath, and it no longer says "plugin store". The two words the
+  guard `kein-fremdcode-lader` requires ("third-party code" and "managed") stay, the README sentence
+  is untouched, and the object marker moved from the old sentence to `the same program on a personal
+  and a managed machine`. Body: `src/lib/uiText.ts`, one new test file (three cases),
+  `scripts/pruefe-asar-inhalt.cjs`; red at 280 (2 of 7), green at 197 (7 of 7), the guard 4/0.
+
+## [3.2.44]
+
+### Fixed
+
+- **The AI key no longer sits in browser storage from the first second.** `GET /api/settings` had
+  been masked to `{gesetzt, ende}` for secret-shaped names (A3-09), but the surface still asked the
+  door for the plaintext key while booting and wrote it unmasked into `localStorage` — so the
+  encryption promise held on disk and not in the renderer. The reader now consumes the masked shape
+  it was given, `legeFest` and `saveAISettings` no longer put the key into browser storage, and the
+  value survives a restart for the human who typed it. Both sides are measured in one run: the
+  field stays filled and reloads, and a raw HTTP request plus a raw grab of
+  `Default/Local Storage` in the profile find no plaintext. Body: `src/lib/ai.ts`,
+  `src/components/Settings.tsx`, three test files, seven cases (five red at the plain head
+  `f5b1039`, 7/7 green on the laid bytes).
+- **The legend's cap now reads the same number as the foot that lifts it.** At the delivered 3.2.42
+  the legend capped itself at `1.5rem` while its foot lifts `3.25rem`, so at phone width its top
+  edge crossed the canvas edge — measured 28 px at 440 px and below. `src/index.css` now carries
+  one custom property `--panel-fuss` (`.graph-legende { bottom: var(--panel-fuss) }`, `3.25rem` in
+  the 440 px block), `KAPPE_PANEL` subtracts that variable instead of its own guess, and the basket
+  list at 390 x 844 shows **320 of 320 px** where 3.2.40 showed **103 of 320 px**. Open and named by
+  the measurement: the panel's content at 390 px is still 1 051 px inside 522 px, so the crossing is
+  reduced, not gone. Body: `src/index.css`, `src/lib/kappe.ts`, `src/components/KnowledgeGraph.tsx`,
+  two test files; the landed legend case stays green and `design-wache.mjs` reports 269 measurements
+  with 0 under the bar.
+
+
+## [3.2.43]
+
+### Fixed
+
+- **The free stage says out loud why it has nothing to unlock.** K3PTA loads no third-party code, so
+  there is nothing to approve, nothing to buy and nothing an organisation could switch off for you.
+  That was a silence, and a market reads a silence as a hidden lock: hand P3's parity matrix counted
+  the words of that shape in the installed reference product (`file-recovery`, `version history`,
+  `snapshot`, `restore`) and the same words **0** times in our surface and at our door. Settings now
+  answers in one sentence, in the window, under the license block:
+  `data-testid="settings-keine-fremderweiterungen"`, one key
+  `settings.keineFremderweiterungen` in `src/lib/uiText.ts`, no new text twin, and the same argument
+  written into the README bullet "No plugin store, and that is not a lock". Four cases in one new
+  file guard the shape of the absence: the key carries the sentence, the surface shows it under its
+  own identifier, the documentation says why it is not a lock, and four identifiers that would load a
+  foreign extension stand 0 times in the source
+  (`tests/lib/kein-fremdcode-lader.test.ts`, 60 lines). Suite: 2901 of 2901 cases green, 221 files,
+  measured 13:12:12 to 13:14:37 MESZ (`test-results/vitest.json`), lint 0 errors.
+
+### Offen, gemessen, nicht erledigt
+
+The sentence sits at `var(--text-3)` with no opacity change. The token guard is green token against
+token (269 measurements, 0 under the threshold, 12:45:19 MESZ, measured by the Leitung in its own
+pit), but P2's street measures in the browser: a pixel witness for this single line is still owed.
+`#17`, `#59` and the small-zoom sibling from 3.2.42 stay open and unchanged.
+
+## [3.2.42]
+
+### Fixed
+
+- **The gang stopped turning into a blue area when you zoom out; it says what it stopped
+  painting.** Its rows sit `GANG_ABSTAND` = 26 world units apart, while the ink floor is 3 screen
+  pixels per dot — from `k` ≈ 0.115 (0.154 with the grid check below) the points lie closer than
+  they are drawn, and a field of thousands reads as one surface. The floor was built so a 25 000
+  note store does not dissolve into dust, so the cure is not to remove it but to **paint thinner**:
+  every *n*-th member of the row survives as a regular sub-grid (`spalte % faktor`,
+  `zeile % faktor` — no shuffling), the factor comes from the surface's own floor and its own row
+  distance, and **both numbers stand in the picture**: `96 painted at this zoom · 288 counted, not
+  painted`, on the canvas and in the `gang-info` node. Below the point where a gang page is narrower
+  than 24 screen pixels the surface paints **nothing** and says the count instead
+  (`too tight to paint at this zoom · 384 counted, not painted`) — a smear is not an overview.
+  Measured by hand P1 against the shipped code in its own cases: at `k = 0.1` the painted count is
+  312, 304 of them alone, largest blob 2 (`belege-2310/p1-masse-hoehe-treu-113018/`, cases green
+  11:55:01 and 11:59:38 MESZ, 202 neighbour cases 11:57:55 MESZ). The ink floor itself is
+  unchanged, and the number the sentence shows is replayed from the same row sequence the paint pass
+  walks, so it cannot drift from the ink.
+
+### Offen, gemessen, nicht erledigt
+
+`#17` and `#59` stay open with P1's capacity table: one character costs 6.805 px at the font the
+surface itself sets, an ellipsis 10.012 px, a row at 100 % zoom carries **2** characters and at
+65 % only **1**, so a full title needs **618 %** zoom (745 % with an ellipsis) — below 46 % the row
+holds none at all. And `#102`'s sibling remains: at very small zoom the whole *page* of the gang is
+still a colour field, because 32 columns × 26 units is under 24 px — which is exactly the case this
+body now names in words instead of painting. Five cases in one new file:
+`tests/components/KnowledgeGraph.kleinzoom-flaeche.test.tsx`.
+
+## [3.2.41]
+
+### Fixed
+
+- **The shelf answered the same question with three different numbers.** Its basket list capped
+  itself at `320px`, its group list at `200px`, and the legend at `calc(100% - 1.5rem)` — three
+  heights for one problem, and the group list that caps sits inside a panel that also caps.
+  Measured in the shipped object at 3.2.40 with twelve real groups and the fullest basket open
+  (hand P5, 11:17–11:29 MESZ, `belege-2310/p5-klasse-2310/`): the open basket holds **1 042 px** of
+  content behind its 320 px cap, of which **191 px (60 %)** are inside the panel at 1024 x 768 and
+  **103 px (32 %)** at 390 x 844 — the rest lies under the panel's edge, and the group band at 390 px
+  sits entirely outside it at y **989..1435** in a panel that shows to y 768. The legend tells the
+  same story at its own size: the box holds **710 / 584 / 604 px** at 1440, 1024 and 390 px while
+  twelve real rows need **816 / 955 / 1159 px**. One module now computes the cap for the class:
+  `kappeListe()` gives `min(320px, 45vh)` — a percentage cap resolves to `none` on an auto-height
+  parent, which is exactly when the list is longest, so the number is viewport-absolute — and both
+  shelf lists and the legend read it. An opened basket now scrolls itself into view
+  (`scrollIntoView({ block: "nearest" })` on open), so what a click summons is where the eye already
+  is. Seven cases in two new files; the legend's three landed cases stay green.
+- **One guard read its own number wrong and would have called the new cap a defect.**
+  `tests/components/GraphRegal.korb-ist-treffbar.test.tsx:93` took `parseInt(style.maxHeight)`,
+  which gives `320` for `320px` and `NaN` for `min(320px, 45vh)`; it now reads the first number of
+  the value. The intent survives and can still lose: no cap, or a cap of zero, is red. Moved by the
+  landing hand, not silently — the run that found it was red at 11:59:02 MESZ (1 failed of 32)
+  before the guard was corrected.
+
+### Offen, und nicht als erledigt verkauft
+
+The double scroll is not abolished: reading all fifty rows still means scrolling the list and then
+the panel (1 042 px of content against a 768 px window at 1024). Whether fifty note lines belong in
+an overlay that sits on the picture at all is a decision about the surface, not about its edge. The
+twelve groups also draw from five colours (`#d4b23f` carries four of them), and the tree view paints
+nothing while `einpassFlaeche()` leaves it 160 of 608 pixels — both measured, both untouched by this
+body, both named in `p5-klasse-2310.md` and `p5-hoehe-2310.md`.
+
+## [3.2.40]
+
+### Fixed
+
+- **The graph legend can no longer grow out of the window.** It is anchored at the bottom and had no
+  height bound at all (`max-height`: 0 hits in `src/index.css`), so its content grew upward past the
+  top edge. Measured in the shipped object before this line: at **390 px the axis switch sits entirely
+  above the visible area** (y = -60, bottom edge -16) and at **1024 x 768 the legend stands 65 px out
+  of the window** — a reader on a phone cannot see or reach the axis the surface promises. The legend
+  now carries a height cap, scrolls, and accepts the pointer; the counter-guard from 3.2.34 that
+  forbade pointer events on that panel was **moved on purpose**, with pan and zoom re-measured in the
+  window rather than asserted. Same class as the footer panel in 3.2.39 and the basket list of 21.10.
+
+- **The settings surface stops handing out an address nobody chose.** `src/lib/ai.ts` filled the work
+  default with `p.baseUrl`, so the field showed a cloud address while the door rejects every provider
+  that was not explicitly selected (`grund=kein-anbieter`), and the chat had to be told the same thing
+  twice. The default is empty now, and a provider chosen by a human gets its address through
+  `selectProvider` — measured by three new files (`tests/lib/werksstandard-ohne-wolke.test.ts`,
+  `tests/components/settings-werksstandard-ohne-wolke.test.tsx`,
+  `tests/server-modelle-antworten-mit-grund.test.ts`) plus the moved expectations in
+  `tests/lib/ai.test.ts`.
+
+
+## [3.2.39]
+
+### Fixed
+
+- **The panel that opens over the footer stopped hiding its own tail.** Its height was capped at 55 %
+  of the window, so on a phone the fold fell into the middle of the list: measured in the shipped
+  object at 390 px before this line, **382 of 1 576 px** of content sit under the edge and the three
+  items that carry the picture sit **258.1 / 347.1 / 436.1 px** out of view. The panel is bound to the
+  footer now (`bottom-2`, `max-h-[calc(100%-56px)]`) and reads two columns from 820 px up. Measured in
+  the object at 1440, 1024 and 820 px the content fits whole; **at 390 px two of those three items
+  still lie 89 px and 178 px under the edge** — this line heals the class, not every margin, and the
+  remainder stays on the list. The 49-image Zensur behind these numbers is Punkt 2's own run, shot in
+  the built object, not re-shot here.
+
+- **The first search is no longer the lag.** `registriereDelta` deliberately leaves an already-filled
+  database alone, so the price was paid by the first query a person typed: measured on Punkt 6's own
+  capsule doors, **20 000 notes — first request 801.60 ms against 382.61 ms warm** (22:39:01 MESZ),
+  **120 000 notes — 12 778.12 ms against 2 844.09 ms** (17:46:41 MESZ, on 3.2.35). The index is built
+  before the first request now, and the build answers with the number of active notes it took in. The
+  generation trigger stays as the safety net, so nothing about correctness moved. 3 cases in one new
+  file: `tests/p6-suchcache-beim-start.test.ts` (the suite went from 2 866 to 2 869 executed cases across
+  213 files; six runs were measured on the night of 22./23.10. — the first at 23:13:52 MESZ red on the
+  document guard alone, then green at 23:17:51, 23:21:28, 23:34:18, 00:55:42 and 00:58:08 MESZ, 0 red,
+  the last two on the packaging bytes this release carries. `CHANGELOG.md` is not a packaging input —
+  the delivery chain names `src index.html vite.config.ts electron.js package.json package-lock.json public
+  assets` — so citing these times cannot date the object they describe). **Still open, named rather
+  than glossed:** the *after* picture of the first request on a large base is not measured yet — the
+  before-values above are the measured half.
+
+## [3.2.38]
+
+### Added
+
+- **The shelf and the aisle answer one question, in one set of words.** Before this, the shelf head
+  said `grouped by your tags · 197 of 21,066 notes carry a group you made` while the aisle named the
+  same three axes in its own vocabulary, so a reader could not tell that the two surfaces are about
+  the same thing — and a band that held nothing showed a bare zero, which is decoration, not
+  information. One producer writes the sentence now: `achsenSatz(achsen, gruppen)`
+  (`src/lib/gruppen.ts:211`) reads the axis table `ACHSEN` (`:238`) and the plain-word picker
+  `achseFuerMenschen` (`:280`), and both surfaces call it — `what you work on · who it is about ·
+  people`. An empty band says in one word why it is empty (`no note carries it yet`), every control
+  says something different in each of its two states, a band carries its own id and its target
+  accepts the mouse, and the number in the shelf is the number in the aisle because both read one
+  run. 19 cases in four files: `tests/lib/gruppen-achse.test.ts` (4),
+  `tests/components/GraphRegal.achse.test.tsx` (5), `tests/components/KnowledgeGraph.achse.test.tsx`
+  (4), `tests/components/KnowledgeGraph.farbgruppe.test.tsx` (6, one anchor moved with the sentence).
+
+
+## [3.2.37]
+
+### Fixed
+
+- **The index strip no longer shows empty shelves, and no longer says one number twice.**
+  `Dashboard.tsx` painted all three carriers of the store side by side whatever they held, and put
+  the same total under them again: measured on the delivered 3.2.36, a reader with 150 notes and
+  nothing else saw `150 Notes  0 Files  0 Code` and, one line down,
+  `where it came from · in the 150 stored` — two of three figures said nothing, and the third was
+  already standing one cell further left as the hero number. A carrier with zero pieces is now not
+  drawn, a store with nothing in any carrier says `nothing here yet`, and the line names the set it
+  counted (`the whole store`, or `counting the N loaded` while the door has not answered) instead of
+  repeating its size. One new case counts the zeros away and checks that `150` appears once in the
+  strip; the two cases that carried #77 keep their meaning — the strip speaks for the store, the
+  chips for the page — only their waiting anchor moved.
+
+- **A trap in our own contrast guard, found by falling into it.** While doing the above, the token
+  colours were moved into a table whose field was called `farbe`. The suite went red on
+  `tests/design-wache.test.ts` — not because a colour got worse, but because
+  `scripts/design-wache.mjs` collects the colours that appear as text by matching the word
+  `color:` in the source, so a renamed field makes three tokens invisible and the measured lines
+  fell from 22 to 16. The values themselves were fine (`keine Schrift unter 4,50`), which is exactly
+  how a silent gap behaves. The field is called `color` again, the guard is back at 22 lines, and
+  the reason is written above the table so the next refactor does not repeat it.
+
+## [3.2.36]
+
+### Added
+
+- **You can set how thick the links are (G-76).** The graph bar gained a `graph-verbindungsdicke`
+  slider — 1 to 3 in half steps, default 1, held in `kepta_graph_verbindungsdicke`, and any value
+  outside the range is rejected rather than clamped into a lie. The multiplier is read at both
+  places that draw a link, the same way the arrow direction is read, and the new item carries its
+  own measured width in the bar-fit table (`BREITE_PX_GELIED`) and ranks behind
+  *only-with-connections*, so it cannot silently push another control out of the bar. Before this
+  version the id existed nowhere: measured 22.10. at 17:51:24 against the installed 3.2.35 object
+  (`/Applications/K3PTA.app/Contents/Resources/app.asar`, `graph-DsSvdhHM.js`, 187 732 B),
+  `graph-verbindungsdicke` counts 0 and the counter-marker `markerEnd` counts 0. Six cases, one of
+  which reads the painted stroke width out of the canvas call log instead of out of a label, and
+  one walks the More panel at telephone width. To keep the measurement honest the cases switch
+  motion off first (`kepta_graph_bewegung = "0"`) and compare one finished frame against the next,
+  because two frames of the same settling picture do not paint the same number of links.
+
+- **Tag groups now colour the graph, not just the shelf (G-72).** Until this version a group was
+  something the time shelf knew: `src/lib/gruppen.ts` (270 lines) holds the model and reads its
+  census from `markenHaeufigkeit` (`src/lib/gruppen.ts:21`) — the same count the shelf and the
+  sidebar already use — and nothing in the picture consulted it. The control now sits in the graph
+  bar under its own id (`KnowledgeGraph.tsx:5392`, `data-testid="graph-farbgruppe"`), keeps its
+  state in `kepta_tag_gruppen` (`src/lib/gruppen.ts:26`) and `kepta_graph_farbkanal`
+  (`KnowledgeGraph.tsx:100`), and paints the group colour onto the nodes. Two of the twenty cases
+  are the reason this was worth building: one reads the node colour out of the canvas call log
+  rather than out of a word, and one asserts **the same number in both surfaces in the same run**
+  — a head that says 1 018 while the shelf says 966 is exactly the failure this guards. The graph
+  does not recompute groups; a case fails if it starts to (`rechnet die Gruppe kein zweites Mal`).
+  Empty state is stated, not hidden: a group that matches nothing says so and keeps its row.
+
+- **The surface shows the reason the door gave (#67, shown half).** `server/helfer/upstream.ts` and
+  the two chat routes answer `400` with a `grund` (`kein-anbieter`, `kein-schluessel`) since 3.2.35,
+  but the area still answered with its own guesswork: measured red before this body — Settings ran
+  `0 gruen / 3 rot` at 17:11:46 with `expected 'SettingsAI connection...' not to contain 'No local
+  models found. Start Ollama'`, i.e. it suggested Ollama where the door had said *no provider
+  chosen*. `src/lib/tuergrund.ts` (40 lines) is now the single translation from `grund` to a
+  sentence with a way out, used by `Chat.tsx:13` and `Settings.tsx:5`. Thirteen cases, including a
+  mutation probe: with `grundText` forced to null, the door/table run loses 1 of 7, chat 2 of 3,
+  settings 3 of 3. **What this does not do:** the surface still prefills a cloud address
+  (`src/lib/ai.ts:20`, `:350`–`:351` with `apiKey: ''`, passed on at `Settings.tsx:308`) — the
+  address itself is untouched, only the answer it produces is now honest.
+
+## [3.2.35]
+
+### Added
+
+- **Three controls the picture itself obeys: motion, tag filter, only-with-connections.** Before
+  this version the installed object carried none of them — measured 22.10. at 16:53:19 on
+  `/Applications/K3PTA.app` 3.2.34 with `scripts/pruefe-appknoepf.mjs --objekt --vorher`, the graph
+  chunk (`graph-D36kvDbS.js`, 184 189 B) answers `data-testid "graph-bewegung"` 0,
+  `"graph-tag-filter"` 0, `"graph-nur-mit-verbindungen"` 0. Each now holds its own state under
+  `kepta_graph_bewegung` / `kepta_graph_tag_filter` / `kepta_graph_nur_mit_verbindungen` and says
+  what it does to the surface:
+  - *Motion* stops the frame loop, and the proof is the loop, not a word: the case counts frames
+    by their `clearRect` calls in one span before and after one click: the state lives in
+    `KnowledgeGraph.tsx:1053` and gates the motion step at `KnowledgeGraph.tsx:3791`, and
+    `tests/components/KnowledgeGraph.bewegung-tag-verbindungen.test.tsx` counts the frames.
+  - *Tag filter* draws its options from `markenHaeufigkeit` — the same source the sidebar already
+    uses — so the two surfaces can never offer different tags, and the head number moves with the
+    filter. When a tag hits nothing the area says so in `graph-tag-leer` and names the tag,
+    instead of showing a small population and letting it look like a small vault.
+  - *Only-with-connections* takes the stand-alone notes out of the drawn set and reports how many
+    it hid in `graph-versteckt-allein` (`data-anzahl`), so an empty-looking picture explains
+    itself.
+  Eleven cases cover all three, and one of them walks the click path at 362 px, where the control
+  bar cannot carry the three and the More panel has to lead them.
+
+### Fixed
+
+- **A chat request no longer reaches an address nobody chose.** `server/helfer/upstream.ts:68`
+  used to answer an unnamed `baseUrl` with a guess — `https://api.openai.com/v1`, or
+  `https://api.anthropic.com` for the other protocol — so a body without a provider could still
+  open a socket to a cloud host, and with no key it left the machine keyless. Both `/api/chat` and
+  `/api/chat/stream` now refuse before the socket: `400` with a `grund` the surface can paint
+  (`kein-anbieter`, `kein-schluessel`), and the helper keeps its own throw as a second layer so a
+  future caller cannot fall back into guessing. Five cases in
+  `tests/server-chat-wand-ruft-keinen-ungewaehlten-anbieter.test.ts`. Two older privacy cases in
+  `tests/enterprise-api.test.ts` now name a key for their stubbed cloud provider: they test what
+  the shield does on the way out, not the address, and the wall is exactly what they used to
+  borrow from the fallback. No expectation was removed — and the surface prefill (#67) is a
+  separate open point, not claimed here.
+
+## [3.2.34]
+
+### Fixed
+
+- **The baskets on the time axis take a click now.** They shipped in 3.2.33 inside the graph
+  legend, and the legend refuses pointers on purpose — `KnowledgeGraph.tsx:5019` puts
+  `pointer-events-none` on it so that dragging the map never grabs the panel — which meant every
+  basket inherited `pointer-events: none` and a click passed straight through to the picture
+  underneath. Measured on the delivered 3.2.33 (21.10., own profile, own CDP ports, console empty
+  throughout): `document.elementFromPoint` at the centre of each of the six baskets answers
+  `graph-canvas`, never the button, while the same handler called from inside opens the list at
+  once — one basket open, one list, fifty pieces. So the control was dead at its edge, not in its
+  function. Each basket and its list now declare `pointerEvents: "auto"` for themselves; the whole
+  panel deliberately stays transparent to the mouse, and a case guards exactly that, so pan and
+  zoom under the shelf cannot die by a fix that reaches too wide. The list is also capped at
+  320 px with a scroll of its own, because it grows upward out of a legend pinned to the bottom
+  edge: uncapped, it pushed its own close button out of the window (centre y 628 → -417 at 1440 px,
+  436 → -609 at 390 px). Three cases in
+  `tests/components/GraphRegal.korb-ist-treffbar.test.tsx`, two of them red against `7907189`
+  before the body ran; jsdom knows no cascade, so those cases read the property on the node
+  itself, and the coordinate click is proven in a real window at four widths.
+
+## [3.2.33]
+
+### Added
+
+- **The baskets on the time axis open, and an empty basket stays on the shelf.** Until this
+  version `baueRegal()` (`src/lib/graphHierarchy.ts:849`) dropped every `WANN_KOERBE` value with
+  zero notes and handed each remaining basket a number only, so the shelf could answer "how much
+  did I write two weeks ago" but never "show me", and a reader who had written nothing that day
+  could not see the day at all. Each basket now carries its own pieces (`stuecke`, newest first,
+  capped at `REGAL_SEITEN_LAENGE` = 50, `src/lib/graphHierarchy.ts:832`) together with `uebrig`,
+  the count the page does not show, so a list names its own remainder instead of swallowing it.
+  `src/components/GraphRegal.tsx` turns every basket into a 44 px control that opens that list on
+  the first click and closes it on the second, one basket at a time; bands 1 and 2 stay plain
+  text at their 14 px line height, and the old guard case now counts buttons and the 44 px
+  minimum instead of forbidding any click area, so nobody can make a second band clickable in
+  silence (`tests/components/GraphRegal.test.tsx:81`). Four cases cover the click, the empty
+  answer and the counted remainder in `tests/components/GraphRegal.korb-klick.test.tsx`.
+
+## [3.2.32]
+
+### Fixed
+
+- **The chat asks its harbours only when the switch has been asked, and a click can order
+  the search.** Until this version every mount of `src/components/Chat.tsx` ran
+  `detectLocalAIs()` (`src/lib/profile.ts:124`) *before* it looked at which provider is
+  chosen, so a machine on the factory default (`src/lib/ai.ts:17-22` — `openai`,
+  `needsKey: true`) knocked on both harbour ports anyway, `localhost:11434` (`profile.ts:127`)
+  and `localhost:1234` (`profile.ts:128`), with a 1200 ms timeout each (`:133`). The console
+  filled with `net::ERR_CONNECTION_REFUSED` for addresses nobody had ordered, the answer was
+  thrown away one screen later, and the reload through the app's own door (`profile.ts:151`)
+  hung behind a request that ran without asking. The probe now sits behind the switch: a key
+  provider sets `localReachable = null` and returns, a local provider is still asked for its
+  own reach. And the scan that used to be a side-effect of building the panel is now an order
+  the surface issues — `sucheLokaleKI()` on a button the user sees ("Look for a local model",
+  its own `suchLaeuft` state, the same class string as the two buttons it stands beside) — so
+  the list runs when a click is behind it and not while the panel is assembled. Its Sparkles
+  icon is `w-3.5 h-3.5`, exactly 14 px: this is the third throw of the body, the first two
+  wrote `w-2.5` (10 px) and were pulled back at the design watch, which measures the class in
+  the source (`src/index.css:227` `--icon-min: 14px`), not the pixel the renderer lifts it to.
+- `tests/components/Chat-hafen-frage-folgt-dem-schalter.test.tsx` holds it in four cases: a
+  key provider without a key mounts with no harbour touched and nothing remote, a local
+  provider is probed for its own reach (11434 seen), a key provider plus one click is the
+  only way the list runs, and the wall bites a forbidden remote call — it must both reject
+  and see it, otherwise its silence is worthless.
+
+### Still open, and not claimed here
+
+- The button is measured in the source and counted in the delivered object, not seen in a
+  real window: no picture of "Look for a local model" came out of this round, and the row it
+  joins carries `min-h-6` (24 px) against the surface-wide tap debt of 44 px.
+
+## [3.2.31]
+
+### Added
+
+- **A basket on the "when" axis names its pieces.** Until this version the shelf only
+  ever counted: a basket said 30 and never said which thirty. `stueckeAusKoerb()` in
+  `src/lib/graphHierarchy.ts` turns one basket into a list — newest first, at most 50
+  pieces, **and the remainder is counted instead of swallowed**. A list that shows 30
+  and stays quiet about what stands behind it tells the same lie as a band that only
+  knows numbers. Pieces that carry no date stay at the back, in the order of the stock,
+  because `sort` is stable and that order must not shuffle itself. The function reuses
+  the axis and the edges the band already draws (`wannKoerb`), so it needs no second
+  pass over the stock and no new door route. `tests/lib/regal-koerb.test.ts` holds it in
+  one case: the two-to-four-weeks basket returns its pieces newest-first, the sum over
+  every basket equals the stock, and 60 pieces under a cap of 50 report 10 remaining. A
+  trap run that removes the sort line fails on a deep-equal, so the case hangs on the
+  order and not on the wording.
+- **Still open, and not claimed here:** this is a pure function with a test, not a
+  click. Nothing in the surface opens a basket yet, and the shelf rows stay 14 px under
+  the house tap target of 44 px.
+
+## [3.2.30]
+
+### Fixed
+
+- **The models route names its reason and never dials a stranger it was not told.**
+  With no provider set, `POST /api/models` fell back to
+  `https://api.openai.com/v1` (`server/router/chat.ts:157` at 3.2.29) — on a machine
+  that had never named that provider, so the door guessed and reached api.openai.com
+  over the outbound. Measured on the running door: `POST {}` answered **500** in
+  0,313517 s with `{"error":"Missing bearer authentication in header"}` (the guess,
+  answered by the real service) and `POST localhost:1234/v1` answered **500** with
+  `fetch failed` — a number with no information in it. The route now answers
+  **400 `grund: "kein-anbieter"`** before any fetch, **502
+  `grund: "anbieter-nicht-erreichbar"`** with the address and the `cause.code` when a
+  provider that *was* configured stays silent, and **405** with `Allow: POST` and
+  `grund: "nur-post"` to a GET. A provider's own rejection keeps its committed **500**
+  (`tests/server.test.ts:883`) — the number a delivered case asks for stays, only the
+  reason beside it is new. `tests/server-models-grund.test.ts` (four cases) holds it:
+  the first case checks the outbound attempt before anything else, and the second
+  orders `https://api.openai.com/v1` explicitly and requires the fetch hood to *see*
+  the attempt while the door still answers 502 — so the guard cannot pass by accident.
+  A trap run on unhealed bytes fails with `kein einziger ausgehender Versuch: expected
+  [ 'https://api.openai.com/v1/models' ] to deeply equal []`.
+- **Still open in the same task, and not fixed here:** the boot ping in
+  `src/components/Chat.tsx:112-130` runs `detectLocalAIs()` on mount with no switch,
+  and `src/lib/profile.ts:127-128` probes `localhost:11434/api/tags` and
+  `localhost:1234/v1/models` straight from the window. That half needs a click in the
+  real window to be proven, so it stays task #60 rather than a claim in this section.
+
+## [3.2.29]
+
+### Fixed
+
+- **The onboarding profile is mirrored exactly once.** `saveProfile()` already posts
+  the profile to `/api/profile` (`src/lib/profile.ts:105`), and the wizard posted the
+  same body a second time right after calling it — two POSTs of one body into one merge
+  route, with `updatedAt` set twice and no field exchanged in between. The wizard now
+  waits for the mirror instead of writing it again
+  (`src/components/OnboardingWizard.tsx:104`), and `saveProfile` returns it, so a caller
+  that wants the answer can hold it. Guarded by
+  `tests/kein-doppelter-profispiegel.test.ts` (two cases), which names the missing second
+  POST in the wizard and the returned mirror in the store.
+- **The brand guard follows the route, not the file.** It read
+  `src/components/OnboardingWizard.tsx` and required the literal `/api/profile` there, so
+  the move above broke it even though the route was intact and doing the same work one
+  file over. It now reads the route at its owner (`src/lib/profile.ts`) and, on top of
+  that, requires both the `saveProfile` import and its call in the wizard
+  (`tests/components/OnboardingWizard.test.tsx:379`, `:389-390`) - so the check holds the
+  behaviour and not the accident of where a string sat. A trap run proves it: with the
+  mirror fetch replaced by an immediate resolved promise, the guard fails. The case count
+  of that file is unchanged (25 before, 25 after; 414 lines became 423).
+
+Suite 20.10. 20:46:14 MESZ: 2 781 cases, 2 781 passed, 0 failed, 195 files.
+
+## [3.2.28]
+
+### Fixed
+
+- **The graph's loading edge now says when it is done.** The progress loop
+  returned one step before painting, so the second-to-last message stayed on
+  screen; it now paints the final state and then leaves
+  (`src/components/KnowledgeGraph.tsx:1380`). And a counter that has reached
+  its total no longer renders the fill message that never ends: it names the
+  reason instead — `Finishing the network — all 1 500 notes read, the last
+  links are still being written`. The reason lives in the door, which raises
+  `seen` to the capped total before it clears `running`
+  (`server/router/nachzug.ts:131` before `:137`). Two cases in
+  `tests/components/KnowledgeGraph.render.test.tsx` hold both branches; the
+  finished-run message is untouched.
+
+## [3.2.27]
+
+### Fixed
+
+- **The list no longer stops at the first hundred notes.** `doRefresh` asked
+  `/api/memories` without parameters, so the door answered with its default page of
+  100 and the surface never asked again — of 21 066 notes, a hundred were reachable.
+  Scrolling to the end now fetches the next page through one path shared by the scroll
+  observer and the keyboard-reachable button (`mehrAnholen()` in `src/lib/store.ts`,
+  `holeNaechsteSeite()` in `src/components/Dashboard.tsx`), the page size is the door's
+  own cap of 200 rather than an invented number, and the merge matches on `id` because
+  an offset moves when something is written between two pages. A page that brings
+  nothing new while the door reports more is named a dead end until the next success,
+  and the reason of a failed fetch is handed on (`seitenFehler()`) instead of swallowed.
+  Guarded by `tests/lib/store-seiten.test.ts` (eight cases) and
+  `tests/components/dashboard-seiten-wache.test.ts` (five cases), red before.
+- **The trash can no longer look like an empty bin when it is broken.** Its fetch
+  caught and ignored every failure, so a broken trash and an empty one painted the same
+  sentence; the footer now names the reason, and a reported cap is shown as a page, not
+  as the whole basket.
+- **The graph depth has a control.** 3.2.26 gave the stored `kepta_graph_depth` marker
+  a reader; it still had no writer. The rail now carries four steps — the four the door
+  knows (`server/router/system.ts:62-64` clamps 1..4 and defaults to 2) — and the button
+  writes through the same helper that reads, so one clamp and one default exist. State
+  follows the clamped value, never the requested one: what the door rejects never lands
+  in the URL. Guarded by
+  `tests/components/KnowledgeGraph.graph-tiefe-steuerung.test.tsx` (four cases). The
+  measurement in a real window is still owed and is deliberately not claimed here.
+
+## [3.2.26]
+
+### Fixed
+
+- **A knowledge base that cannot be read is no longer shown as an empty start.** The
+  store kept swallowing every door failure ("never rejects"), so the list's error
+  line — which exists, with a Try-again button — could never be painted, and a
+  broken base looked exactly like no notes at all. The store now keeps the last
+  content *and* reports the failure; both halves are one case in
+  `tests/lib/store.test.ts`. Three fire-and-forget re-syncs
+  (`src/lib/store.ts:235/253/289`) that would otherwise have thrown past their
+  callers now catch. Found as three silent rejections behind a green test list.
+- **The graph's depth now follows the door's own rule.** The surface asked a fixed
+  `depth=2`; a stored value of 0 was clamped to the default 2, while the door
+  clamps 0 to 1 (`server/router/system.ts:73-74`). One rule in both places: only a
+  non-number falls back to the default. Guarded by
+  `tests/components/KnowledgeGraph.graph-tiefe.test.tsx`, five cases, red before.
+  A visible control is deliberately **not** part of this change — `setzeGraphTiefe`
+  is ready for it, but the surface it belongs to is a separate slice.
+
+## [3.2.25]
+
+### Fixed
+
+- **At phone width the legend no longer sits on top of the pager.** The legend box and
+  the pager both hung on the same bottom edge, so at 390 px the legend covered the
+  arrows you need to move through the graph. The legend now lifts above the pager
+  (`.graph-legende { bottom: 3.25rem }`, a class, not a magic offset) and stays inside
+  the picture's width.
+- **The shelf answers "what did I write two weeks ago".** The band list grouped only by
+  kind and origin, so time was nowhere. It now carries a third band set in human words —
+  today, this week, 1–2 weeks ago, 2–4 weeks ago, older, no date — with its own tray, so
+  undated notes are not hidden under "older".
+
+### Added
+
+- **The reading routes now say where their time goes.** `server/helfer/zeitnahme.ts`
+  splits each read into parts and answers them in `x-kepta-teilzeiten` headers on the
+  health, memory-list and graph routes. Without it every latency number at the door was
+  a total with no explanation — which is why an earlier index win could not be proven
+  against the running door.
+
+## [3.2.24]
+
+### Fixed
+
+- **A knowledge base that cannot be read is no longer reported as empty.** The
+  settings endpoint caught any failure of the store and answered `200 {}`, which
+  looks exactly like a base with nothing in it — so a lost change carried no trace of
+  which side failed (seen on the full run 18.10. 15:35:55, which lost the theme and
+  could not name the reason). A dead connection now answers `500` with the reason in
+  the log, and an actually empty base still answers `200 {}`. Guarded by
+  `tests/server.test.ts:423`, red before the fix.
+- **The status line in Settings tells silence and refusal apart.** A change that
+  never reached the local server used to read „Not saved — the local server refused
+  it", which blames a door that was never asked: `spiegle` only raises `HTTP <status>`
+  when something answered, and a transport failure arrives as a `TypeError`. The two
+  cases now get two sentences („did not answer" / „refused it"), the same separation
+  the extraction line already made. Guarded by
+  `tests/components/Settings.einstell-empfang.test.tsx:350`, red before the fix.
+- **The graph's pull-progress is an edge, not a panel over the picture.** The
+  in-progress notice used to sit in a box at the top-left of the canvas and covered
+  part of the drawing while it was on screen. It is now a 3 px accent line along the
+  top edge (`KnowledgeGraph.tsx`), still a live region: the words stay in the
+  accessibility tree, and the line carries them as `title` and `aria-label`.
+- **Two reads that walked the whole table now walk an index.** The graph's per-term
+  lookup of mentioning notes filtered `memory_entities` by `entity_id`, which the
+  primary key (starting with `memory_id`) cannot serve — a full scan per term, and the
+  graph asks for about 500 of them per request. `idx_memory_entities_entity` covers it.
+  And the embedding coverage count tested `embedding IS NOT NULL`, which forces SQLite
+  to open every chunk row — every 3 KB blob page, every decryption — for a number.
+  `chunks` now carries a generated column `embedding_hat` that derives exactly that
+  test (`CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END`, VIRTUAL), and
+  `idx_chunks_hat_model` serves both counts from it, including the group-by, without a
+  sort. The definition stays the vector itself: counting the model column instead was
+  measured wrong on purpose (17:50 on a sandbox copy — 1 001 vectors, 1 000 with a
+  model, one legacy row that has a vector and no model), and one case in
+  `tests/store.test.ts` now holds that line. Both changes are created with
+  `IF NOT EXISTS`/`ALTER … catch` in the schema that runs on every open, so an existing
+  knowledge base gets them on the first start of this version.
+- **The graph's term-coverage count reads an index instead of the table.** Per term the
+  graph asks which notes mention it; the count filtered `memories` by `deleted_at` and
+  then opened the table to reach the id. `idx_memories_deleted_id (deleted_at, id)`
+  covers it. Measured on a sandbox copy built from the literal DDL (21 066 live notes,
+  502 trashed, 2 756 terms, 3 054 mentions): **189,42 ms and 206,46 ms → 2,51 ms and
+  2,29 ms** (two runs at 20:55 and 20:57, five starts each), plan `USING INDEX` →
+  `USING COVERING INDEX`, and the counted number stays 1 018 covered notes. Creating it
+  cost 596 ms / 235 ms and +0,4 MiB; write cost rose 0,0011–0,0058 ms per note, small
+  and not stable between runs, about 0,02–0,12 s over a whole base.
+- **One receipt lifetime instead of two numbers.** The copy buttons in the chat and in
+  the note editor carried their own timeout literals; they now share `QUITTUNG_MS`, so
+  the saved-confirmation cannot live longer in one place than in another.
+- **Controls say what they are.** Eleven controls across the command palette, the note
+  editor, the preview, the import screens, the wizard and the recovery panel had no
+  accessible name; they now carry `aria-label` or a real `<label for>` paired with the
+  field's `id`.
+- **The shelf names its view.** The graph's shelf line said only how many notes it held;
+  with the view name appended it says whether that is the field or the tree.
+
+### Performance
+
+- `/api/health` measured 2.25 s median (n=10, 19.10., 3.2.23, port 64433) for 842
+  bytes, against 4.4 ms for the note list in the same run; the coverage count above
+  is the reason. The number after this release is measured at the door, not promised
+  here.
+
+## [3.2.23]
+
+### Fixed
+
+- **The first look at the graph fills the canvas instead of framing its empty
+  middle, and no longer cuts its own names.** The camera centred on the middle of
+  the bounding box of *every* node; in a knowledge base whose groups have drifted
+  apart that middle is empty space, so the picture showed names stuck in one
+  corner with two of them sliced by the right edge (measured 18.10. on 1 500
+  notes: 35 names, all upper-right, „Forschung Datensatz…" cut off). The field
+  now anchors on `dichtesteWeltMitte()` (`src/lib/graphLayout.ts`) — the window
+  that holds the most content at the blend the readability floor allows — and the
+  blend itself is untouched at 93,08 %, still guarded by
+  `KnowledgeGraph.erster-blick.test.tsx`. Measured on the **built** bundle
+  (`vite build --outDir dist-p1build`, chunk `graph-Bvm1XJKd.js`, own server,
+  seed 64 381, 1 500 notes, four settled polls): **37 / 28 / 14 names** at
+  1440 / 820 / 390 px and **zero titles over the canvas edge** at all three,
+  nearest title exactly 11 px from the edge against the 11 px the surface keeps
+  (`TITEL_KANTEN_PX = ETIKETT_PX`). A label that cannot fit even centred is now
+  refused with its own reason — „wider than the picture itself", the eighth
+  reason of the title budget — rather than painted in halves.
+- **„Fit the whole graph into view" shows the whole graph again.** The anchor
+  above had been threaded through `fitView` too, so the button centred on the
+  densest window while its own title promises everything (`:2390`). Four
+  gang-title cases had been riding on the old accident — the world-box middle
+  happened to sit inside the nameless aisle rows — and went red once the camera
+  stopped parking there (176/180). They now drive to the aisle with the control a
+  person uses, the same button, and nothing was softened: **180 / 180** in
+  `KnowledgeGraph.render.test.tsx` and `KnowledgeGraph.titelbreite.test.tsx`.
+- **The first-glance case reads the picture, not only the receipt line.** The
+  surface deliberately says nothing when its picture names everything it holds
+  (`titelEtat()` returns the empty message, `:3493`), and the case parsed that
+  silence as a number — `NaN > 0`. It now counts the painted titles as its first
+  witness and only checks the line's number when the line speaks. Falsifiable on
+  the same run: switch the field's readability floor off and the case goes red
+  with the thing named — „Blende 10,9 % — das stehende Bild trägt keinen einzigen
+  Notiztitel (0 Texte in diesem Rahmen)".
+
+### Known, measured, not fixed
+
+- **Phone width cannot satisfy „emptiness ≤ painted" against the whole canvas.**
+  At 360 × 544 CSS pixels the legend panel is **314 px tall**, and the surface
+  frames its camera in `einpassFlaeche` — the canvas minus that panel, 230 px.
+  Against the full canvas the measure reads emptiness 292,5 px against painted
+  237,4 px with the centre outside the painted band; against the rectangle the
+  surface itself computes, the same picture reads 14 px against 237,4 px with the
+  centre inside. Two candidate rules were built and measured here and both were
+  rejected on numbers, not on taste: aiming the camera at the previously painted
+  titles is a contraction inward (14 names → 9 at 390 px), and spreading the
+  title budget across the queue instead of taking the first `budget` candidates
+  lifted the band only 237,4 → 240,5 px while costing two names at 820 px
+  (28 → 26). The remaining lever is the legend's own height at narrow widths.
+
+## [3.2.22]
+
+### Fixed
+
+- **A colour you pick for a knowledge type can no longer out-shine the type
+  ladder.** The picked tone lands in a token that other surfaces read as *text*
+  in the same breath — index numbers, the card edge, the legend word — so one
+  drag of a colour slider could set body copy below the house's own 4,5:1, and a
+  tone that an older build had already stored kept doing it quietly on every
+  start. `tintetauglich()` (`src/components/KnowledgeGraph.tsx:554`) now admits a
+  choice only when it holds 4,5:1 as text on both papers of the dark theme
+  (#070708 table, #38383a sheet), and the same filter runs over what
+  `localStorage` already carries. Computed with the source's own formula:
+  `#ff3366` reads 5,68:1 on the table but **3,30:1** on the sheet and is refused,
+  `#ffee66` reads 16,95:1 and 9,86:1 and is kept. Three cases in
+  `tests/components/KnowledgeGraph.render.test.tsx` (group „Farben und Groesse"):
+  one keeps a ladder-holding pick, one refuses a ladder-breaking pick (nothing
+  painted, nothing stored), one ignores a tone an older build saved. Both gates
+  are falsifiable on their own — switch the pick gate off and the refusal case
+  goes red; switch the mount filter off and the legacy case goes red.
+- **One receipt lifetime for every persistent confirmation.** Six surfaces carried
+  six numbers for the same gesture: 2 000 ms (connection), 6 000 ms (backup),
+  1 800 ms twice (auto-learn, extraction model), 2 000 ms (copy in Settings),
+  1 600 ms („Copied") and 2 400 ms („Copying failed") in the system status, plus
+  four in the dashboard's import and clipboard lines. `QUITTUNG_MS = 6_000`
+  (`src/lib/quittung.ts`) is now the only one, and every timer clears the state
+  it set rather than any state (`setCopied((c) => (c === marke ? null : c))`), so
+  a second click cannot be erased by the first click's timer.
+- **A copy button says what it copied.** Thirteen copy buttons over six call
+  sites announced bare „Copied" — a person who hears that still does not know
+  what is on the clipboard. Each press now carries its object
+  (`kopierZiel(id)` in `src/components/Settings.tsx`): *the server URL*,
+  *the curl command for /api/memories*, *the Claude config path for Windows*,
+  *mcp.json for Cursor and Zed*, *the three curl test commands*. An unknown
+  marker names its own id instead of saying nothing, and the failure path keeps
+  the same object with the error prefix.
+- **Fields that had no reader have one.** `Provider` sat above its `<select>` as
+  a `hud-label` with no binding; it is now `htmlFor="ai-anbieter"` with the id on
+  the control, and the same for the fields that were wrapped or aria-labelled
+  only by accident. Zensus, not eye: the settings surface reports every field with
+  its reader and its kind (`label[for]` / `aria-label` / `aria-labelledby` /
+  wrapper), measured in the installed object at four widths.
+- **Half-pixel font sizes are lifted onto the ladder where they are painted.**
+  The surfaces write their sizes as arbitrary values (`text-[12.5px]` 41 times,
+  `text-[11.5px]` 11, `text-[10px]` 12, `text-[10.5px]` 7, `text-[13.5px]` 3,
+  `text-[15px]` 4, `text-[17px]` 3, `text-[9px]` 2, `text-[8.5px]` 1 — 83 carriers
+  counted in `src/**/*.tsx`, measured 12-22 text positions per view on half
+  pixels in the window). Nine rules outside the Tailwind layers
+  (`src/index.css:806-808`) snap those nine values to `--fs-1 / --fs-3 / --fs-5`,
+  which is the *edge* and not the cure: the clean fix stays the patch at the
+  surfaces themselves. Same stroke: the sidebar's two hard-coded overlay whites
+  (0,1 and 0,09) became `--side-auswahl-heben` and `--side-marke-auswahl`, and
+  `.btn-ghost:disabled` got the 0,45 step its two siblings already had — measured
+  in the window at 3,29:1 declared against 3,30:1 painted on the import button.
+- **A waiting skeleton is now lighter than the surface it waits on.** The card
+  skeleton carried `--bg-inset` (L\* 1,93) on a `--bg-panel` card (L\* 23,74):
+  **1,68:1**, a black hole instead of a waiting mark, and its shimmer peak
+  (`--bg-inset-strong`, L\* 14,73) was darker than the card it was supposed to
+  run over. Both are edge steps of the same ladder now (`--kante-dekor`,
+  `--kante-stark`), which sit on the right side in both themes.
+- **The tree reads its store in two bands before anyone climbs it.** New
+  `src/components/GraphRegal.tsx` over the dendrogram: band one says *where* a
+  piece came from (Notes / Files / Code), band two says *what it is about*, and
+  the hole the reading leaves stands there instead of being silent. Reason is
+  measured, not stylistic: at the real store (21 066 notes, 18.10.) the tree's own
+  second level put **18 993 pieces = 90,16 %** into one compartment named
+  `#machine-scan`, so the first picture was a bracket around the whole shop.
+  Deliberately **no click target** — a row in this panel is 14 px and the house
+  line for anything a hand hits is 44 px, so a filtering row would be a control
+  under the line; the grip on a compartment is the next stroke with its own row
+  height. Six cases in `tests/components/GraphRegal.test.tsx` (rendered in Node,
+  no browser), including an empty store that must throw neither a picture nor a
+  number.
+- **The design gate stopped lying about itself**, three times, all under a red
+  case rather than by eye: (a) the dead-style census cut class names at a CSS
+  escape, so the new ladder rules `.text-\[8\.5px\]` registered a compartment
+  called `text-` that no surface can name as a bare word — a phantom nineteenth
+  orphan, healed in `scripts/design-wache.mjs` by skipping a token that a
+  backslash follows; (b) `schuld()` overwrote the register's seat count with its
+  own measurement and printed it as the threshold, so every tolerated line
+  reported its own height as its limit — a gate that cannot lose; it now keeps
+  the register and files the measurement under `gemessen`; (c) the orphan
+  register still wrote „20 rules … a 21st makes it red" while seating 18. The
+  register prose goes with the number now. Proved falsifiable the other way too:
+  a deliberately dead rule added to `src/index.css` lifts the census to 19 and
+  turns the line red again.
+- **`regal-woher-fach` is no longer a claim without a rule.** The shelf called a
+  class that no stylesheet in the house defined; it now owns
+  `min-width: 1px` (`src/index.css:988`), which is what the component had
+  already promised in its own comment: a compartment under one pixel stays a
+  stroke instead of vanishing while the line under it still names it.
+
+### What this costs, said plainly
+
+The shelf answers a question and is not the way to the answer: it has no grip,
+and its second band shows eight compartments of a store with thousands. The
+ladder rules in CSS are a guard rail, not the surfaces moving onto the ladder —
+83 arbitrary values are still written in the components and still snap upward at
+paint time. And a refused colour refuses without saying why: the slider returns
+to the register tone, which reads as a stuck control to a person who just wanted
+magenta.
+
+### Testing
+
+**2 731 cases in 186 files, 0 red** (`npm test`, judged only from
+`test-results/vitest.json`, 955 854 B, written 2026-10-18 22:46 MESZ),
+`npm run lint` at **0 errors, 53 warnings** — the same 53 the previous state
+counted, none of them new. `scripts/doku-check.mjs` names the number and the
+stamp, and `README.md` carries it at its three carriers (badge, prose, command
+comment). Two full runs failed on *time* cases before the clean one, and the
+house's own rest guard said what it was: 14 `node` processes over the tolerated
+5, a 3 000-note layout that hit its hard 60 s cap, and a tree case that waits a
+fixed 500 ms and then measures row distance (11,2 px instead of ≥ 13 px). Those
+are the graph slice's cases and were left untouched here; under load
+`doku-check` refuses the verdict („Zeitfälle unter fremder Last sind kein
+Befund"), and the clean run is the one this section quotes.
+
+### Not in this release, said plainly
+
+- **The load-error surface still cannot fire.** `Dashboard.tsx:378` catches a
+  rejection of `refreshMemories()` and paints „The server did not answer" with a
+  Try-again button — but `src/lib/store.ts:106` promises *rejected NIE*: a door
+  that answers 500 is swallowed, the stale cache is kept, and the view shows the
+  empty start again. The fix belongs in the store, not in the surface; the
+  prepared measurement (a CDP `Fetch` door forced to 500 in the installed object)
+  will say whether it holds.
+- **The ladder the colour gate demands is not held by the house's own tone.**
+  `--type-semantic` of the dark theme is #2d4964 — 2,16:1 on the table and
+  1,25:1 on the sheet by the same formula, and `Dashboard.tsx:1706` reads that
+  token as text. A user pick is refused for it; the register is not.
+- The gate reads the two papers of the *dark* theme only. A bright tone that is
+  correct there is unreadable on the light theme's paper, because the chosen
+  value is written inline on the document element and survives a theme switch.
+- The graph camera and the field's first picture are another slice's work;
+  nothing here touches `feldTransform` or the centring.
+- The shelf's compartments are not clickable, and the 44 px line is met by not
+  being a control rather than by building one.
+
+## [3.2.21]
+
+### Fixed
+
+- **The graph's first look now has to stay readable.** The field's camera fitted
+  the whole store into the frame, and on a large store that fit is the picture:
+  measured in the installed 3.2.20 on an invented 1 500-note store (own encrypted
+  home, own key, no account), the surface opened at **26 %** zoom at 1440 px and
+  named **10 of 1 134** notes in the picture; at 820 px (**18 %**) and 390 px
+  (**6 %**) it named **0**, and the only words on screen were concept labels,
+  which are not notes. On the real store the same measurement read **0 of 729**
+  at 4 % zoom. Both gates had already said why — „384 in rows too tight for a
+  title", „750 too small for a name at this zoom" — the camera just ignored them.
+  The fit now has a floor, and the floor is the surface's own row threshold
+  (`TITEL_REIHE_PX = ETIKETT_PX × 2,2` = 24,2 px, one constant, both consumers),
+  so the camera may show less but never less readable — the twin of what the tree
+  view has done since `fitBaumAnsicht`. Zooming out by hand stays free: the floor
+  sits in the fit, not in the zoom control. Cases:
+  `tests/components/KnowledgeGraph.erster-blick.test.tsx` (three cases — the row
+  distance read out of the painted frame rather than the rounded percentage
+  display, at least one note named at the surface's own start view, and the tree
+  keeping its own readability line). Two of the three were **red before** the
+  change on untouched `48a22b4`.
+- **The frame line counts what is inside, not what is painted near the edge.** A
+  note now counts as in view by its painted radius, where before the count
+  accepted a centre point while the sprite could hang over the edge — the state
+  A7-08 has reported since it was found. The disclosure the floor depends on is
+  this line: what lies outside the frame is named there instead of quietly
+  disappearing from the user's head.
+- **A small window keeps its budget number when it has nothing to complain
+  about.** The budget only ever left the picture as a grievance („over the N names
+  this picture allows"), and a grievance needs something to have fallen over the
+  edge — with the floor in place, a half-size window names everything it holds,
+  the sentence goes silent, and the number went with it. The budget the paint pass
+  had already computed now sits on the line as `data-etat`; no visible word
+  changed, and the complaint stays as the second channel. Case:
+  `tests/components/KnowledgeGraph.etat-leinwand.test.tsx` — red between the two
+  changes (measured: „bei einer halben Leinwand meldet die Flaeche keinen Etat:
+  9 of 17 notes in this picture carry a title"), green with this one.
+
+### What this costs, said plainly
+
+The first picture holds **fewer** notes than the old fit crammed in, and says so:
+at 1440 px the frame line states how many of the store's unfolded notes stand
+inside it, and the balance line states its own parts (named, nameless, and each
+reason with its number). Showability in the window is the measure; coverage is
+diagnosis.
+
+### Testing
+
+Three new cases, red before and green after, and 2 721 cases in 185 files through
+the full run of this state (`npm test`, `test-results/vitest.json`), with
+`npm run lint` at 0 errors. Proof pictures of the first look at 1440/820/390 px
+are taken from the installed object in an isolated home, not from a build folder.
+
+### Not in this release, said plainly
+
+- **The budget prices 26 characters while the rows paint 3.** `kapazitaet` computes
+  with the stage's cut, the row path cuts to `min(stage, gangGrenze)`, and at the
+  floored zoom that limit is 3 characters — so the half-size window's 875 raster
+  cells could hold ~218 names while the budget caps at 39. Measured by hand, not
+  shipped: it changes the visible number of names, so it needs its own stroke with
+  its own pictures.
+- **The shelf is still not drawn**, and the concept window is still capped at 500
+  of 2 756 terms. Both named, both open.
+- **x64 packages, the `release/mac` folder and `SHA256SUMS`** remain release care
+  (#22) — installable here is not the same as deliverable there.
+
+## [3.2.20]
+
+### Fixed
+
+- **Every changed settings row now has a place that receives its receipt.** The
+  save path set four values (provider, endpoint, key, models) but only two rows
+  painted a confirmation, so changing just the key or just the model left the
+  green line away while the whole answer sat in a button label that faded after
+  6 s. Measured as `P4-01`, two cases.
+- **"Saved" waits for the database now.** The mirror into the encrypted store was
+  a fire-and-forget throw whose status was never checked, while the surface
+  already claimed "the change is on this computer". That claim is exactly what
+  browser storage cannot guarantee: it hangs on the random port origin, so a
+  refused mirror (`413` full state, `429` write edge, `500`) lost the connection
+  over the next restart after the row had said it was saved. The mirror is now
+  awaited, its status checked, and a refusal paints at the row that changed while
+  the button stays on "Save". Measured as `P4-02` against a `413`.
+- **Disconnecting the AI reports when it did not land.** Same class one line away
+  (`src/lib/ai.ts`): a refused disconnect left the old connection in place after
+  the restart, so "disconnected" was a surface illusion.
+- **Not knowing is called not knowing.** The policy fetch turned every transport
+  failure into "nothing here", which the surface rendered as "Personal install —
+  every setting on this page is yours" before the door had answered, and again on
+  a `429` that carries a JSON body. Three states now: unknown with its reason,
+  waiting without a claim, and managed-with-no-rules, which used to print the
+  heading "Active policies:" above a list with no children. Measured as `P4-04`,
+  three cases.
+- **A refused re-sort says so and keeps its picture.** Both calls had
+  `try … finally` without a `catch`, so a refusal stopped the spinner, left the
+  before-picture standing and printed no line — whether anything had been sorted
+  was unanswerable. Measured as `P4-05` with a `429`.
+- **The reason the section promises is now shown.** The text says "…and sorts it —
+  and tells you why" while the only consumer of the reasons the route returns was
+  a server test. Three examples with their reason now appear under the number, and
+  the `after` field that was set and never read is gone. Measured as `P4-06`.
+- **Auto-learn on without a model warns at the switch.** The runner returned
+  silently when no model was set, so the switch stayed green under "the brain
+  extends itself" and never learned anything. Measured as `P4-07`.
+- **A backup is counted against the door's own number.** The export counted only
+  the response body and ignored `x-kepta-total` / `x-kepta-begrenzt` in the same
+  answer's headers, so a short page could be sold as a full backup — the failure
+  class of 14.10., when 100 of 21 066 notes were reported as the whole store.
+  A short answer now reads "Backup short — N of M nodes" and writes no file.
+  Measured as `P4-08` against 2 of 21 066 with `begrenzt=1`.
+- **All six copy buttons say when the clipboard refuses.** Three of six swallowed
+  the failure and showed the empty copy icon again, so a click looked like a copy.
+  Measured as `P4-09`.
+- **The endpoint table states its own measure.** `GET /api/memories` was
+  advertised as "All nodes" while without `alle=1` it returns a page of 100, and
+  the row beside it called a three-track hybrid search "Full-text search".
+- **An empty store gets its own sentence.** "0 imported files checked — everything
+  reads fine, nothing to repair" was a verdict over files that are not there.
+  Measured as `P4-10`/`P4-11`.
+- **The extraction model behaves like the rest of the page.** Its blur saved
+  unconditionally, painted "Saved" before any answer, and had no refusal path: an
+  unchanged blur now paints nothing, a refused mirror warns at the field, and the
+  ok-receipt appears only after the mirror answered. Measured as `P4-12`, three
+  cases.
+- **A model list that nobody answers no longer stays green.** The local-model
+  auto-poll left `models` untouched on failure, so a green line kept standing over
+  a service that had gone quiet. Measured as `P4-13`.
+- **The policy answer does not outlive the door's death.** A transport that throws
+  now reads as unknown instead of "No organization policies". Measured as `P4-14`.
+- **The knowledge tree splits by what separates, not by what comes first.** Its
+  second level grouped by the first tag, and the computer scan prepends
+  `machine-scan` to everything, so one bin held **18 993 of 21 066 notes =
+  90,16 %** — what looked like an outline was a bracket around the whole shop.
+  Grouping now takes the most separating tag: the largest bin is **8 179 =
+  38,83 %** on the same inventory. One existing case was re-based on the new rule;
+  the 21 new cases were measured **20 red** before the change and **66 green**
+  with the 45 existing after it.
+- **New: a shelf that reads the store in two bands.** `baueRegal` asks where a
+  piece came from and what it is about, names the whole inventory in 16 rows with
+  a count and a share each, keeps the *first* words at 390 px (those are the
+  distinguishing ones), and returns its own quality together with its own gaps —
+  12 153 pieces with no subject, 122 with no readable path, 3 with no tag. Computed
+  and tested; the surface does not draw it yet.
+
+Eighteen settings cases and twenty-one shelf cases came with this release. The run
+that carries it measures **2718** cases over **184** files, and the README is held
+to that number by `tests/doku-zahlen.test.ts` rather than by memory.
+
+### Not in this release, said plainly
+
+- **His first look at the graph is unchanged.** At the blend the fit gives him, the
+  surface still paints almost no names (measured 18.10.: 2 of 729 at 1440 px,
+  0 at 820 px). That is the point he set first, it is being measured now, and no
+  wording here should read as if this release answered it.
+- **The shelf is not on the screen yet.** The two area patches bend
+  `src/components/KnowledgeGraph.tsx`, which is the file the graph work is open in;
+  they are queued behind it so one surface is never changed by two points at once.
+- **The settings audit has eleven more findings** (G-1 … G-11) outside this patch
+  set — among them four different lifetimes for one confirmation, seven controls
+  without a programmatic name, and a green "API key stored" for a provider that
+  needs no key.
+- **x64 packages, the `release/mac` folder and `SHA256SUMS`** remain release care
+  (#22); this build is for the machine it was made on.
+
+## [3.2.19]
+
+### Fixed
+
+- **A row now decides how much of its own title it can carry.** The density stage
+  „Few" cut every title at 26 characters regardless of zoom, while a second gate
+  threw any row title wider than its row (`GANG_ABSTAND × zoom`, in image pixels).
+  Measured on the real inventory in a real Chromium (1 000 of his 21 066 titles,
+  `600 11px ui-sans-serif, system-ui`): a 26-character title is **145,27 px** at the
+  median, 175,94 px at its widest, one character of the surface's own probe is
+  **6,805 px**, the ellipsis alone is 10,01 px — and a row at 100 % zoom is 26 px
+  wide. So the width gate threw everything, and the height gate above it
+  (`26·k ≥ 24,2`, i.e. 93,08 %) never opened in a view the fit can reach (the cap is
+  400 %). **There was no built-in look in which both gates were open.** The limit is
+  now derived — `gangKuerzungZeichen()` in `src/lib/graphLayout.ts`, fed by two
+  widths the surface measures itself in the type it is about to paint — and the
+  label cache is keyed by that limit, so a zoom can no longer be served a title an
+  earlier zoom built. Case: `tests/components/KnowledgeGraph.titelbreite.test.tsx`
+  (four derived cases on invented sizes, two window cases). Before the fix the
+  surface reported „67 a title wider than its row"; after it, that reason is gone and
+  the widest painted row title stays inside its row at 100 % and at 300 %. Held
+  against mutation: ignoring the zoom turns both window cases red again.
+- **The number of names comes out of the window, not out of a constant.**
+  `MAX_LABELS = 140` was a set number; the surface decides names on a coverage
+  raster in screen coordinates (cell = font height + 3 = 14 px). Measured on his
+  canvas at 1440×900 — **1130×740** CSS px, 12 px shorter than the 3.2.10 geometry
+  this figure came from — that is 80 × 52 = 4 160 cells, and a title of 145,27 px
+  occupies 22 of them: **189 names fit his picture**, not 140. Once the row stops
+  throwing titles, 140 becomes the real edge, which is exactly where the market is
+  ahead (SiYuan counts `max(32, floor(w·h/2400))` from its window). `budget` is gone
+  from the density stages — „All" is now the only setting without a budget, marked
+  `grenzenlos` — and the raster cell height and the budget are the same number, so
+  the budget cannot compute against a grid the surface does not use. Cases:
+  `tests/components/KnowledgeGraph.etat-leinwand.test.tsx`, including a guard that
+  `MAX_LABELS` no longer appears in the surface and a run over two canvases where
+  half the window must yield a smaller number.
+- **Four older cases stopped leaning on a coincidental zoom.** They had asserted
+  what happens at a low zoom while only *happening to* sit at a low zoom because the
+  fit dropped them there. They now drive the camera with the same control a person
+  uses (`rausZoomen`, the row's own Zoom-out button) and say so in the case. A7-08's
+  frame check measures the node's **centre** rather than a sprite's top edge, and
+  states the rule that replaced plain containment: what leaves the frame has to be
+  counted by the surface, not merely absent.
+
+### Not in this release, said plainly
+
+- **The force field still has no readability floor.** The tree refuses to zoom
+  itself below legibility (`fitBaumAnsicht` / `zeilenKMin`); the field takes
+  `fitView` down to 2 %. A floor was built and measured this session — it holds the
+  field at 93,08 %, and its own case went from „the field starts at 16 %, a row
+  measures 4,16 px" to green — and it was taken out again before the commit. Reason,
+  measured: at the floored zoom A7-08's picture overflows its 140-px frame **and**
+  the surface does not name the notes standing outside, so the disclosure the floor
+  depends on is not yet true. The floor ships with that fix, not without it. Commit
+  `6b621a6` named „Boden im Feld"; `einpassMitBoden` stands 0 times in the tree —
+  this entry is the correction, not that line.
+- First-view proof pictures for both fixes at 1440/820/390 px are taken from the
+  installed object, not from a build folder.
+
+## [3.2.18]
+
+### Fixed
+
+- **No control is smaller than the finger that aims at it.** Measured in the delivered
+  object 3.2.17 (CDP, own port block, four widths, seven views, hit-test filter): one
+  control under 24 px, and every control under 44 px. The 20 px element is the URL field
+  in the import bar (`Dashboard.tsx`), not the search field at the top — that one already
+  stands 38 px high. One rule now carries the floor: the token `--ziel-boden` at 36 px on
+  the desk, 44 px from 440 px down, applied to `button, a[href], summary, select,
+  [role="button"], [role="tab"], input` and the row of every switch. The blind 1×1 fields
+  behind the switch captions and the real checkboxes and radio buttons are excluded by
+  name — their row grows, not their box. Guard: `tests/zielgroesse.test.ts` reads the rule
+  out of `src/index.css` (jsdom knows no layout measures) and was red before the rule
+  existed (4/4, 16:01:37); it bites on three mutations — a narrowed selector list, a phone
+  floor under the desk floor, the floor set in more than one rule.
+- **The floor holds in both directions.** The first window run of that rule showed why
+  height alone is not a target: buttons stood 36 and 44 px *tall* but 30–42 px *wide*
+  („Clear chat 30×36", „Focus mode 36×44", „Scan 39×44", „Send 40×44"). The edge is the
+  shorter side, so the same rule now sets `min-width` too — written as a failing case
+  first („0 Stellen setzen die Breite"). Measured again over four widths: 390 px went from
+  70 controls under 44 px to **0**, 1440 px from 19 under 36 px to **0**.
+- **The chat header stops cutting its own button off.** At 820 px „Clear chat" sat at
+  793,41 inside a container ending at 809 — 14 px clipped, already in 3.2.17, and 20 px
+  once the button grew to 36 px wide. The header now wraps its action group
+  (`flex-wrap gap-y-2`); measured again: 36×36 at 624,93 with **0 px clipped by any
+  ancestor**.
+- **The status panel no longer denies while it is still asking.** `GET /api/health` needs
+  2,5 s standing alone (three runs: 2,55 / 2,50 / 2,61) and needed 20,1 s in an open
+  window under its own load. Until now an answer that had not arrived counted as an
+  answer that said no, so the panel read „Server unreachable", „The knowledge base file
+  is not encrypted" and „0 nodes" while the same door reported ok true, key true and
+  21 066 nodes — three denials of the truth, in a panel a person reads on its own word.
+  The panel now distinguishes *asking*, *answered*, *did not answer*: a pending line
+  names itself as unknown and shows no repair instruction, and a real failure is said in
+  human words instead of „Start the app with npm run dev". Same class, third line: Ollama
+  was „Unreachable" before its probe had replied. Cases: red first at 16:00:06 (2 failed),
+  green at 16:00:49 (28/28).
+- **The title gate judges the true node size.** The node radius is lifted to
+  `MIN_KNOTEN_PX` (1,5 px) so a tiny node stays visible; the gate compared *that* lifted
+  value against its own threshold, so it could never reject — only rounding did. It now
+  compares the unlifted measure. Case: `tests/components/KnowledgeGraph.pforte.test.tsx`
+  places the picture on the half-open „Many" gate, where the two versions part by a
+  factor of two, and states its arithmetic on both sides. Mutation: with the lifted value
+  the case goes red and the surface says „22 crowded out by a name already there" where
+  it must say „too small for a name at this zoom".
+
+### Known
+
+- The four-width sweep above ran against **this frontend bundle served locally**
+  (`vite build --outDir`, the door's API proxied), not against the packaged app — the
+  package was not built, because the machine held 8,4 Gi free against the 9,85 Gi the
+  build needs. The numbers are the surface's, the packaging is still to be proven.
+- The title gate has its case and its mutation, but no window proof yet: the graph view
+  did not mount in that run (60 s waited, no canvas, while `/api/health` took 37,7 s and
+  the machine reported a one-minute load of 72,60 on ten cores).
+- `/api/health` answering in 2,5 s is its own finding: the panel is honest about waiting,
+  but the wait is the reason the lie was readable for so long. Counting chunks and
+  memories over 21 066 notes is the named cost; no query plan was changed here.
+
+## [3.2.17]
+
+### Fixed
+
+- **A closed sidebar can be opened again in every view.** The control lived only in
+  the memories header, inside a container that is `hidden` outside that view — so it
+  was in the document but had no hit area, and the settings view has no header at all.
+  Choosing a view at 390 px closed the drawer (the #27 fix) and left no way back: six
+  of seven views were a dead end. The control now sits in the shared frame whenever the
+  drawer is closed and the view brings no header of its own; memories keeps its header
+  copy, so exactly one is ever reachable. Cases: one per view (today, chat, graph,
+  dossier, activity, settings), each asserting the precondition, the count of *hittable*
+  controls, and the click that reopens. Mutation: with the strip disabled all six fail
+  with "0 hittable open controls (1 in the document)".
+
+### Known
+
+- The reopen path is verified in jsdom only. A presentation change needs a browser
+  look at 390 px and — because the strip now also applies at wide widths in manual
+  focus mode — at 1440 px, with two images whose sha256 differ.
+- One action, two names: the drawer's control is labelled „Focus mode" while its
+  title says „Hide sidebar".
+
+## [3.2.16]
+
+### Fixed
+
+- **A save that changed nothing no longer congratulates you.** `ortZuletzt` opened
+  with `"anbieter"`, so pressing Save on a pristine form painted a green receipt
+  under a provider nobody had touched — and all four earlier cases stayed green
+  because every one of them typed first. The ref now starts at `null`, and the
+  place resets to `null` after painting, so a second click without a new change
+  paints nothing. Witness: red at 19:12:52 (`expected [ 'anbieter' ] to deeply
+  equal []`), green at 19:13:39 (42/42), and the mutation re-run by the
+  lead at 19:21:33 reproduced the same red line for line.
+- **The receipt arrives at the row you edited.** Sections carry `data-abschnitt`
+  (connection / models / backup) and the message carries `data-quittung`, and the
+  case asserts containment — `meldung.closest('[data-abschnitt]')` must be
+  `'verbindung'` while the models section stays empty — not mere presence
+  somewhere in the document. The four persistent receipts now live 6 000 ms and
+  are proven at both ends (standing at 5 999 ms, gone at 6 001); the clipboard
+  confirmation stays at 2 000 ms because it confirms an instant act rather than a
+  save.
+- **At phone width the sidebar was eating the Save click.** At 390 px the drawer
+  covers 256 of the 390 px (`Sidebar.tsx:72` sets `w-64`; the strongest
+  brightness step in the before-image sits at x = 255), so the click at
+  190,422 landed on `DIV.seiten-kante-oben`, `dirty` was never set, nothing was
+  stored and nothing was said. Choosing a view while the window is narrow now
+  returns the drawer, and the same click lands on `BUTTON.btn-primary`.
+  Red at 18:24:24 (`expected 'sidebar-glass …' to match /w-0/`), green at
+  18:28:30.
+
+### Known
+
+- One action still carries two names: the drawer's control is labelled
+  „Focus mode" while its title says „Hide sidebar", and the drawer still covers
+  the page when it was opened without choosing a view.
+- A package older than the commit it should contain cannot contain it — the
+  release chain asks about version and encryption, not about content, and that
+  is how 3.2.15 shipped without these two fixes for an hour.
+
+## [3.2.15]
+
+### Fixed
+
+- **The door stopped bending its own coverage number.** `server/router/system.ts`
+  produced `covered = Math.min(notes, coveredFromEntities())` while both queries
+  filter the same set (`store.ts:483` vs `:1287-1294`), so the clamp could never
+  fire — and `tests/server-nachzug.test.ts:195` asserted exactly that relation,
+  which made a green witness that could never go red. The count is now taken
+  unbent and anything exceeding the base is stated in a `widerspruch` field,
+  because a sentence carries the message, not a percentage above 100. Red with
+  the clamp squeezing 21 down to 14, green after, mutation (clamp back) turns the
+  new case red.
+- **The status row no longer reports a fact it has not read yet.** It called
+  `loadAISettings()` synchronously in the render line and claimed „No key yet —
+  chat stays silent until you add one" plus an amber fix instruction for 174 ms
+  after a start, while the key was there (measured: lie at +196 ms, truth at
+  +370 ms). Unknown is now a third face: a loader, no tick, no cross, and no
+  instruction before hydration answers.
+- **The promised Ollama probe was an empty `if`.** `src/lib/profile.ts:136-143`
+  polled `/api/health` after two direct pings and then held only comment lines, so
+  the surface said „Ollama — not found" where the server could see the model list.
+  The follow-up now goes through our own door (`POST /api/models`,
+  `{protocol:'openai', baseUrl:<target>/v1}`); no address leaves the machine, and a
+  refused follow-up makes nothing available.
+- **A second save no longer loses its own receipt.** One timer took the
+  confirmation away from the next save; it is now a ref, cleared before each new
+  timer and on unmount. All four receipts that persist something live 6 000 ms
+  (one constant) — the clipboard copy keeps its 2 000 ms, because it confirms a
+  moment rather than a save.
+
+### Notes
+
+- `npm run release:beweisen -- <version>` exists now, and the checker derives the
+  app bundle from the folder instead of naming a brand: it had been looking for
+  `KEPTA.app` since the rename, which silently skipped the only test that sees a
+  native binding built for the wrong runtime.
+
+## [3.2.14]
+
+### Fixed
+
+- **The coverage line understated his network by a factor of three.** Over
+  21,066 notes the graph read „345 of 21,066 notes carry a concept — this field
+  is not a network yet", which told the owner of the base that his memory is
+  1,6 % connected. Measured against the running door (05:58, HTTP 200):
+  **1,018 of 21,066 = 4,83 %, 2,93× more**. The clause divided a *window*
+  numerator (`netz.erwahnungen`, whatever passes the 500-concept cap) by a *stock*
+  denominator (`bestandGroesse()`) — while `server/router/system.ts:106-116`
+  already computes the honest pair in the very same handler and the surface's
+  `GraphApi` type never knew the field existed. One rule now, in two positions:
+  **numerator and denominator come from the same set.** With `deckung` the door's
+  two numbers; without it only the window, phrased „345 of 1,050 notes **in this
+  picture** carry a concept" — the stock stays in the head line above, so nothing
+  on screen is lost, but a clause that cannot see the base no longer claims it.
+  Red first (three cases, one printed the old number verbatim), 180/180 after,
+  and a mutation (numerator back to the window) that turns the stock case red
+  while the window case stays green — a discriminating pair, not one case that
+  reacts to everything.
+- **The pretest guard reported success while 59 of 178 test files died.**
+  `scripts/pruefe-native.mjs --node` ran a child that did nothing but
+  `require(MODUL)` — and `better-sqlite3-multiple-ciphers` binds its native
+  binary **lazily, at `new Database()`**, so a naked require cannot see an ABI
+  conflict. The same file already knew better on the Electron side
+  (`probelauf()` opens a probe database with cipher, legacy, key, FTS5). Node now
+  does the same: an encrypted probe DB, an FTS5 insert and match, verified to
+  reach the constructor (a bad path errors), to write no plaintext, and to be
+  unreadable without the key. Proven with a **lazy-binding stub** rather than a
+  rebuilt binary — three cases, and turning `fehlerBeimLaden()` back into a bare
+  require goes red. **The incident it would have caught happened at 04:52: a
+  `build:mac` between 04:40 and 04:41 left the module on Electron ABI and a full
+  suite lost 529 of its 532 failing cases to one sentence about
+  `NODE_MODULE_VERSION 149`.**
+- **A security sentence was precise about the wrong thing.** The key field said
+  the API key is „sealed … never returned by the settings API" — true of the API
+  (`server/router/settings.ts:50-55,156-166`) and silent about
+  `src/lib/ai.ts:409-411`, which keeps a working copy in this installation's
+  local storage so the model survives a restart. The sentence now says so.
+  Nothing was retracted; it was made complete.
+- **A sold number named its corpus.** „71 % Hit@1" is now „71 % Hit@1 over the
+  58-note, 45-question test corpus that ships with K3PTA", and the doc guard
+  refuses any `N % Hit@1` claim whose surrounding text does not name the corpus
+  size — **derived from `CORPUS.length`**, the same file `scripts/eval.ts:15`
+  imports, not typed in. 71 % on 58 notes and 71 % on 2,000 notes are two
+  different claims.
+- **The tool list is proven derived, not restated.** Two cases feed the surface
+  an **invented** door (`memory_zebra/yeti/quokka`, own titles, two-sentence
+  descriptions, a `required` field) and require its order, its first sentence
+  only, and `{ q, z? }` field marks — while every hand-written string from the
+  old three-tool list must be *absent*. A second case takes a 500 from the tool
+  door and shows no name at all, only „tool list could not be read". Had any
+  text still been typed into the file, it would have survived the invented door.
+
+- **The privacy preview ignored its own switch.** The box under „Hide personal
+  data from cloud AI" promised „Try it — this is what a cloud model would see"
+  and then ran `new Schild()` unconditionally (`PrivacyShield.tsx:71-74`), while
+  the real path gates on the switch (`server/router/chat.ts:51`
+  `schild = aktiv ? new Schild() : null`). Switch off, and the preview kept
+  hiding — a privacy panel that showed the opposite of the product. It now
+  follows its switch: off means the address is printed exactly as a cloud model
+  would get it, with the sentence „The shield is off — a cloud model would see
+  this text exactly as it is." Proven both ways in one case: on → `[EMAIL-1]`,
+  click → the real address and no `Hidden:` line, click back → masked again.
+
+### Docs
+
+- Three probe traps are in `AGENTS.md` under „Hard-won rules": in jsdom
+  `import.meta.url` is an **http** URL, so `fileURLToPath` throws before any
+  assertion runs; measure a child against the panel's **content box**, not
+  `width − padding` counted twice; and a viewport shot of a section below the
+  fold returns **byte-identical** with/without images — hash the set before
+  reading it.
+- **The privacy preview ignored its own switch.** The box under „Hide personal
+  data from cloud AI" promised „Try it — this is what a cloud model would see"
+  and then ran `new Schild()` unconditionally (`PrivacyShield.tsx:71-74`), while
+  the real path gates on the switch (`server/router/chat.ts:51`
+  `schild = aktiv ? new Schild() : null`). Switch off, and the preview kept
+  hiding — a privacy panel that showed the opposite of the product. It now
+  follows its switch: off means the address is printed exactly as a cloud model
+  would get it, with the sentence „The shield is off — a cloud model would see
+  this text exactly as it is." Proven both ways in one case: on → `[EMAIL-1]`,
+  click → the real address and no `Hidden:` line, click back → masked again.
+
+
+## [3.2.13]
+
+### Fixed
+
+- **The backup button backed up a page.** „Download every memory node as a JSON
+  backup" read `getMemoriesSync()` — the store cache, filled by
+  `fetch('/api/memories')` without `alle=1`, capped at `SEITE_STD = 100`
+  (`server/helfer/api-form.ts:78`) — and reported „Backup created". On his
+  21,066-node base that is 0,47 %; on a fresh start, before anything has
+  refreshed the cache, it is **nothing at all**. The button now asks the door for
+  `?alle=1`, names the number it wrote („Backup created · 21,066 nodes"), and
+  says what failed instead of claiming success. Case red before the fix (100
+  against 250), mutation after it (drop `alle=1` → 100 again). The store already
+  knew: `seiteIstBegrenzt()` has no consumer anywhere in `src/`. **The same class
+  was recorded on 14.10. and left to sit for two days.**
+- **The MCP panel listed three of eight tools.** `src/core/mcp.ts` advertises
+  eight; the settings surface hand-set three (`memory_search`, `memory_save`,
+  `memory_list`) — so `memory_update`, `memory_delete`, `memory_graph`,
+  `memory_consolidate` and `memory_forget` were unexplainable to the person
+  wiring up their agent, on the very page that configures it, while
+  `SystemStatus.tsx` printed „8 tools" two screens away. The list is no longer
+  typed out: it is fetched from the running door at load, with its own count, its
+  own error state and its own empty state. Verified against the door itself, not
+  the source — `tools/list` over `POST /mcp` answers 200 with exactly eight.
+  The witness that should have caught this was green while checking three names
+  under a case titled „nennt die acht Werkzeuge"; it now derives its expectation
+  from `mcp.ts` and refuses to pass on fewer than eight.
+- **A sold number was a stale number.** The system panel claimed „62 % Hit@1" for
+  lexical search. That was a real measurement once (`CHANGELOG.md:1460`); today
+  two independent evaluations measure **71 %** (`docs/belege/tag-13-10/
+  eval-korpus-1413.log.txt:17`, `ablation-beine-1144.log.txt:10`). The guard that
+  was supposed to protect it accepted *any* number between 45 and 75 — a band
+  cannot kill a wrong figure, it can only tolerate one, and it would have
+  rejected a correct 76. The allowed values now come out of the evidence file
+  itself, and the guard fails loudly if the file stops naming them.
+- **One strip, two number dresses.** His own screenshot from 15.10. showed
+  „92 Notes **10996** Files **9978** Code" and, one line below, „in the
+  **21,066** stored". Five counts in the index strip now go through one helper, so
+  the thousands separator is either there for all of them or missing for all.
+  2,622 cases never saw this because the fixture counted 100/30/20/150 — below a
+  thousand, a separator is invisible. A case whose numbers cannot express the
+  defect is not a case.
+
+
+
+### Fixed
+
+- **The title budget counts the picture, not the store.** 3.2.11 put the base
+  behind the number, and his own window showed what that is worth: „2 of 21,066
+  notes carry a title · 21,064 stayed nameless: **20,337 not on this screen**,
+  384 in rows too tight for a title, 205 over the 140 names this picture allows,
+  138 crowded out by a name already there". The arithmetic closed; 96 % of the
+  sentence was a statement about the viewport, which the frame line above already
+  makes („729 of 21,066 unfolded notes are in this picture"). The etat now pools
+  on what the picture holds and says so — „2 of 729 notes in this picture carry a
+  title · 727 stayed nameless: …" — and the off-screen class is gone: a node that
+  is not in the picture is not a name the picture refused. Guards: reworded cases
+  in `tests/components/KnowledgeGraph.etat.test.ts` (7 cases; 5 red before the
+  reword) and the three closure cases in `KnowledgeGraph.f8.test.tsx`.
+- **A stage promise is now measured where the stage has a lever.** After the
+  square-root law, two long-standing cases flipped between runs on identical
+  bytes (once 2 red, once 1 red, once none): they counted the titles of the last
+  recorded frame while the field was still moving, and a painted title lands or
+  misses on a one-pixel shift. Measured the same base through the surface's own
+  line, per density — 60 notes: Few 30 against Many 29; 200: Few 27 against Many
+  48; 400: Few 12 against Many 38; 200 notes in a 620 × 420 picture: 7 against 7.
+  In a thin field both stages are raster-bound and the difference between them is
+  noise; the lever of the stage is its budget, and that binds from ~140 candidates
+  up. The case now counts the 200-note field, reads the number the surface writes
+  instead of recounting frames, and demands more than ten names of margin. A
+  `stabil()` wait (same value three times) guards the three cases that compare
+  counts across a stage switch. Beleg: `audit-2026-10-09/belege-15-10/leitung/sonde-few-gegen-many.log.txt`.
+- **Counting from the last frame was its own error.** The same probe first
+  reported 0 titles at 200 notes where the surface's own line said 63 — the
+  recorder had caught a half-painted frame. The line the picture writes is now the
+  instrument for these cases.
+
+**Offen und nicht versteckt:** in a *thin* field (60 notes in 1 000 × 700, or 200
+notes in a 620 × 420 window) „Many" names no more than „Few" — 30 against 29 and
+7 against 7. Both stages are limited by the occupancy grid there, not by their
+budget, so the density control is a word without a number at that size. Whether
+the grid should give way earlier when the user asks for more names is a shape
+decision for GF's market bar, booked as open, not answered here.
+
+## [3.2.11]
+
+### Added
+
+- **The balance now says how many nodes stayed nameless, and why.** The surface
+  already reported „21 of 400 notes carry a title" — the question a person asks
+  directly after that is about the other 379, and the picture answered nothing.
+  The paint pass now partitions them: off this screen, faded by the filter or the
+  pointer, rows too tight for a title, under the name gate, over the name budget,
+  wider than its row, crowded out by a name already there. The arithmetic closes
+  by construction — every node falls into exactly one reason on its way from the
+  base into the picture — so the sentence is a budget, not a mood. A chosen
+  „None" is not a failure and gets no reasons; a picture that names everything
+  stays silent. Measured on the guarded case: „21 of 400 notes carry a title ·
+  379 stayed nameless: 260 over the 140 names this picture allows, 119 crowded out
+  by a name already there". Guards: `tests/components/KnowledgeGraph.etat.test.ts`
+  (6 cases over all seven reason classes) and three cases in
+  `tests/components/KnowledgeGraph.f8.test.tsx` (2 of 3 red before; zeroing one
+  bucket turns the closure case red again).
+- **Node size follows a square root, capped at 26.** Degree 92 and degree 163 were
+  the same pixel value — both sat on the old cap of 18, so the biggest hub in a
+  knowledge base looked like the second-biggest and the size range existed in name
+  only. `knotenRadius` in `src/lib/graphLayout.ts` is now the single law the
+  physics and the paint pass share: `min(26, 4 + √grad · 1.6)` — 1 connection 5.6,
+  18 → 10.8, 92 → 19.4, 163 → 24.4 image points, the top two hubs 1.26× apart
+  instead of 1.10×. The bar is Obsidian's own law, `3·√(weight+1)` clamped 8…30,
+  measured 15.10. (`audit-2026-10-09/GF-OBSIDIAN-LATTE-15-10.md`): the same class,
+  not a step below. Guards: four cases in `tests/lib/graphLayout.test.ts` (red
+  before: `knotenRadius is not a function`), and the two places that had copied the
+  old formula into a test now call the law instead of restating it.
+
+### Fixed
+
+- **The 3 000-note separation case names the moment it was measured at.** With
+  larger hubs the funnel closes one step later than it did under the old cap:
+  measured on the same field, side by side — new law 60 → 1 355, 120 → 958,
+  180 → 390, 250 → 14, 310 → 1, 380 → 0; old law 60 → 1 517, 120 → 1 267,
+  180 → 619, 250 → 15, 310 → 0. The new curve is lower at every early station and
+  rests at zero; the single pair at step 310 is two hubs still sliding apart
+  (r 26 + 26, 47.4 apart against 52.0 required). The case now bounds the flight and
+  demands the funnel be closed before rest, instead of asserting a step number that
+  was calibrated to radii that no longer exist.
+
+**Not hidden:** the reason class „too small for a name at this zoom" cannot fire
+today. The paint pass floors every node at 1.5 image points
+(`MIN_KNOTEN_PX`, `src/components/KnowledgeGraph.tsx:763`) and the narrow gate
+opens at the same 1.5 — so the bucket is permanently zero while the floor holds.
+The number is kept because it is true the moment the floor moves, and the floor is
+Dichte's #102 subject, not a thing to change under a running wave.
+
+## [3.2.10]
+
+### Fixed
+
+- **The graph header counts the field, not the page the list happens to carry.**
+  His screen at 18:34 MESZ held three numbers over one picture: the header said
+  „100 of 21,066 in the store", the balance below it „21066 notes · 159 concepts ·
+  1061 links", the frame „729 of 21066 unfolded notes are in this picture". The
+  header read `memories.length` — the page the list loads — while the field has
+  carried his whole base since 3.2.8. The surface now reports its own count upward
+  (`onFeldZaehlung`) and the header uses it; one number, derived from the field.
+  The same panel also wrote one size two ways („21066 notes" above „345 of 21,066
+  notes carry a concept") — every quantity on it now carries the thousands
+  separator. Guards: `tests/components/graph-kopf-eine-zahl.test.tsx` (3 cases,
+  red before: header 100 against balance 130) and one new case in
+  `KnowledgeGraph.bestand.test.tsx` (red before: „1050 notes" against „1,050").
+- **A graph opened in a hidden window paints again when the window returns.**
+  Measured in his running app over its own debug port: window visible, canvas
+  300x150 (its HTML default), zoom 3 %, field empty — and 1940x1384 at 9 % after a
+  size change. The paint loop tested `document.hidden` once, when its effect ran,
+  with no listener and no dependency, so a graph first opened behind another window
+  never drew again in that program cycle and the camera stayed fitted to a 300x150
+  surface. The visibility of the window is now state, held by a
+  `visibilitychange` listener. Guard: `tests/components/graph-sichtbar-malt.test.tsx`
+  (3 cases; the control „hidden does not paint" stays green, removing the listener
+  turns two red).
+- **An aisle label no longer names a neighbourhood it does not belong to.**
+  Measured against his base: median title 114 px against a 26 px column split —
+  197 of 200 titles wider than their own cell. The gate compared the row *height*
+  with the column split and opened at 93 % zoom, which is exactly the band (93 % to
+  438 %) where a title spans four neighbours. An aisle title is now painted when it
+  fits its column and not otherwise; the node under the pointer keeps its full
+  title, and zooming in brings the names back. Guards: two cases in
+  `tests/components/KnowledgeGraph.render.test.tsx` (density setting „All"; red
+  before with the number „a 149 px title standing over a 27 px column split"; the
+  deep-zoom control proves short and long names still appear once they fit).
+
+## [3.2.9]
+
+### Fixed
+
+- **Clicking empty canvas no longer grabs an invisible node.** Reported 15.10.
+  18:0x: „wenn ich auf eine leere Flaeche druecke, habe ich auf einmal einen Knoten
+  bei meinem Mauszeiger, was dazu fuehrt, dass ich den Graph nicht bewegen kann."
+  The band marks everything outside the current page `versteckt`; the painter and
+  the fit honoured that, `nodeAt()` did not. The hand therefore grabbed a point the
+  picture never drew, the canvas went to `grabbing`, and panning was gone. `nodeAt`
+  now skips hidden points — the rule the time-blend already uses („was ausgeblendet
+  ist, ist nicht anfassbar"). Guard: one case in `tests/lib/graphLayout.test.ts`,
+  red before the fix.
+- **The camera no longer fits the pages it does not show.** With the whole base in
+  the field (3.2.8) the first fit ran *before* the first layout step, so `versteckt`
+  was still unset and the bounds were the start spiral of 20.000+ points — measured
+  in his own window: **3 % zoom**, a 6 px node at 0,18 px, an empty canvas. The
+  handoff now takes one step before fitting.
+
+## [3.2.8]
+
+### Fixed
+
+- **The graph now sees the whole memory, not the page the list happens to carry.**
+  The window loads one page of notes (`GET /api/memories`, 100 by default) because a
+  21.000-row list must stay light — and the graph was built from exactly that page.
+  Measured in his own window at 17:22 MESZ: the header said `19 notes of 21,066 in
+  the store` and the side rail `counts cover the 100 loaded notes`, so most of a
+  person's memory was never a candidate for the picture, no matter how the band or
+  the caps were tuned. The graph view now asks the door for the whole base once per
+  session (`GET /api/memories?alle=1`, the switch the door already had) and keeps
+  the larger set for the field; the list is untouched and still pages. Guard:
+  `tests/components/KnowledgeGraph.render.test.tsx` — a 500-note base delivered
+  through the door while the window carries 3 must still count 498 lonely notes,
+  show 384 of them and offer page 1 of 2.
+
+## [3.2.7]
+
+### Fixed
+
+- **A grey window is now a named failure with a way out.** The app had no error
+  boundary at all, so a single throw during render made React unmount the whole
+  tree: an empty window, no sentence, no button (reported 15.10. 16:24 while
+  switching a retrieval track). `src/components/Fehlerschirm.tsx` wraps the root
+  outside `StrictMode`: it names the error and the frame it came from, writes it to
+  the console so a log exists, and offers `Try this screen again`, which rebuilds
+  the children. Guards: `tests/components/Fehlerschirm.test.tsx` (two cases — the
+  panel appears with the message instead of an empty document, and the children
+  return after the retry). The three retrieval tracks were then clicked in the real
+  app against a 21.066-note base with a debug port open: no exception, page intact
+  (`tests/components/Settings.spuren.test.tsx` holds three cases for the toggles
+  themselves). What the boundary changes is the class: the next failure reports
+  itself instead of going grey.
+- **A thin base no longer drops most of itself out of the picture.** The force view
+  carried a gate: when under five percent of notes hang on a concept, it painted
+  only the covered ones and said `N notes hang under no concept and are not painted`.
+  On a real base measured at 4,83 % coverage that meant ~20.000 notes were not in
+  the image at all — which is what "my graph is very small" was. The uncovered mass
+  is now the band: it enters the field, `GANG_REIHEN_PRO_SEITE` shows 384 of them
+  per page, the pager opens the rest, and the same line names the whole count
+  (`398 notes connect to nothing in this picture · showing 384 of 398 · page 1 of
+  2`). Physics, collision, painting and fit skip the pages not shown, so a 21.000-
+  note base still draws ~1.900 points per frame. The gate stays for a small thin
+  base (under one page of uncovered notes), where a band would be noise; the two
+  density cases that named the old wording now assert the band's.
+
+## [3.2.6]
+
+### Added
+
+- **The band of unconnected notes became a page with a pager.** Its mass is not a
+  rounding problem: in the test base 800 of 1.001 notes stand without a neighbour,
+  and a real base of 21.066 notes had 1.018 of them reaching a concept (4,83 %,
+  door and probe 15.10. 15:00 MESZ) — so most of it stands without one. As a single
+  grid the band is 384-unit rows at 26 px pitch, thousands of units tall, so the
+  picture either zooms its core into a speck or the sentence lands off-screen.
+  `src/lib/graphLayout.ts` now exports `GANG_REIHEN_PRO_SEITE = 12`
+  (384 places a page), `gangPlaetzeProSeite()` and `gangSeiten()`. The layout places
+  one page, marks the rest `versteckt`, keeps counting every one of them in
+  `sim.allein`, and takes hidden points out of repulsion, collision, painting and
+  fit-to-view. The surface shows a pager (`data-testid="gang-blaetterer"`, prev and
+  next, `1 / 3`) and its screen-reader line names the whole: `N notes connect to
+  nothing in this picture · showing 384 of N · page p of s`.
+- **The band engages where the mass is the story.** The old ceiling
+  (`allein * 2 <= nodes`) switched the band off exactly when most of a base was
+  unlinked — and threw the majority back into the ring around the core. The rule is
+  now `gangGreift(allein, knoten, kernDa)`: a base without a core stays a field (the
+  two guards that say so still pass), but a mass larger than one page next to a real
+  core gets the band.
+- **The graph door states its own coverage.** `GET /api/graph` answers `deckung`
+  (notes, covered, share in percent) from `store.notizenMitBegriff()`. 2.756 concepts
+  and 2.726 edges say nothing about how much of a 21.066-note base actually hangs in
+  the net, and the door was silent about exactly that.
+
+## [3.2.5]
+
+### Added
+
+- **The graph can fill itself in, and says so while it does.** Saving a note has linked its own
+  terms since the parity commit, but the 14,701 notes the computer scan had already indexed were
+  written before that rule existed — measured through the door on a real store on 15.10.: 1,018 of
+  21,066 notes hang on a concept, 4,83 %. They are not broken, they are simply unlinked, and the
+  picture shows exactly that: a ring of lonely points around a small knot. `POST /api/graph/nachzug`
+  walks the whole store through `indexMemory` in stacks of 500 (measured 0,21-0,24 ms per note, so a
+  five-second job, not an event), `GET` reports how far it got, `POST .../cancel` stops it between
+  stacks, and a producer mark decides whether a store still needs the walk — the same stand is never
+  filled twice, and raising the mark refills it once. Before the first line is written the run takes a
+  database backup (`datenbanksicherung`, the helper that so far only ran before a replacing import) and
+  **refuses to touch the store if that backup fails**: 503, nothing written, and the surface shows the
+  reason. The graph view starts the walk when the door reports a need, reads progress as a line over
+  the canvas, and reloads the network when it ends — growth you can see instead of a number in a table.
+  Guards: `tests/server-nachzug.test.ts` (seven cases: refuses and writes nothing without a backup,
+  fills the net, door agrees, idempotent on the second run, one run per mark, second call refused while
+  the first runs, cancel leaves a valid middle that a full run then finishes to the same end) and three
+  cases in `tests/components/KnowledgeGraph.render.test.tsx`. Red before the route existed: 7 of 7, and
+  2 of the surface cases. Proofs: `docs/belege/app-abnahme/nachzug-vorher-rot.log.txt`,
+  `docs/belege/app-abnahme/nachzug-tuer-gruen.log.txt`,
+  `docs/belege/app-abnahme/nachzug-flaeche-vorher-rot.log.txt`,
+  `docs/belege/app-abnahme/nachzug-flaeche-gruen.log.txt`,
+  `docs/belege/app-abnahme/nachzug-mutation-rot.log.txt`.
+
+## [3.2.4]
+
+### Fixed
+-- **The suite can no longer reach the real knowledge base at all.** A full run at 12:08 MESZ on 
+  15.10. failed one case with the body `Limit reached: 21066 active nodes, maximum is 5000` — 21,066 
+  is a person's own store, not a fixture's, so the route in that run had been served by a store 
+  pointed at `~/.kepta`. Nothing was written (the database and its WAL both carried mtimes older 
+  than the run, and the capacity gate refuses before writing), but it **read** it — and the two runs 
+  before and the one after, on identical bytes, were green: the capsule depended on which file got a 
+  process first, not on the code. Task #58 had put a capsule in every file that remembered one; this 
+  closes it a level down. `tests/setup.kapsel.ts` now runs before any test module is imported and 
+  moves `HOME` (and `USERPROFILE`) into a private empty directory, keeping the real home readable 
+  only as `KEPTA_ECHTES_HOME` so a guard can compare against it; `tests/kapsel-pflicht.test.ts` holds 
+  three cases — the home is capped before import, the data dir never resolves into the real home, 
+  and `~/.kepta` is still the default rule, just somewhere else. Red before: the guard printed 
+  `/Users/damiantodorovic/.kepta` as the resolution it was rejecting. The whole suite passes under the 
+  pin — 2,572 cases, 172 files, two green runs at 12:28:27 and 12:31:05 MESZ, exit 0 — so no test 
+  was relying on his folder to pass.
+
+ **The route table stopped implying a door that is not there.** It listed `/api/memories/:id` with no method, which reads as a documented `GET` — and `GET /api/memories/:id` answers `404`, because the only methods registered on that path are `DELETE` and `POST .../restore`. The row now names every method it lists, the section says in words that there is no single-note GET and where a note's body actually arrives (`GET /api/memories`, or a `GET /api/memories/search` hit — both carry the full `content`), and `tests/doku-plattform.test.ts` parses the table and fails if a named route is not registered on the server. Neither `kepta-core` nor the Enterprise server grew a route in this pass: all three doors already behave the same, so what was wrong here was only the sentence about them.
+
+- **The band of unconnected notes became a page, not only a picture.** Its one sentence —
+  `N notes connect to nothing in this picture` — existed only as text drawn onto the canvas, so
+  nothing outside the paint loop could read the count: not a screen reader, not a check on a real
+  store, not the row-pitch calculation the next slice needs. `src/lib/graphLayout.ts` now exports
+  `gangZeilen(alleinZahl, spalten)` (the arithmetic the paint pass was doing inline) and the surface
+  mirrors `{ allein, zeilen }` into a real element (`data-testid="gang-info"`, `role="status"`,
+  screen-reader text `N notes connect to nothing in this picture · R rows of C`). The mirror sits at
+  the layout handoff, not in the animation loop, and that was measured, not assumed: `sim.allein` is
+  set by the first simulation step, so a mirror waiting for a frame stood empty where no frame is
+  painted (`textContent ''` — zwei rote Laeufe). Held by four cases:
+  `tests/lib/graphLayout.test.ts` (0 notes = 0 rows, 176 notes = 6 rows at 32 columns) and
+  `tests/components/KnowledgeGraph.render.test.tsx` (the node carries count and rows when a band
+  exists; it claims nothing when there is no band). The picture did not move: same caption at the
+  same place, same rows — only now someone other than the eye can read it.
+
+
+## [3.2.3]
+
+### Changed
+- **The nine words now stand at every place a person reads them, and a guard counts the places.** The first pass carried them onto cards, the editor and the list; five surfaces still spoke the old four (`Settings.tsx:785`, `DossierView.tsx:231`, `dossier.ts:136`, `uiText.ts:32-34`, and the graph tree). `tests/kategorien-wache.test.ts` now enumerates the surfaces itself instead of trusting a list, and it derives the forbidden words from `TYP_LABELS` — 27 places in 10 files were pulled to the new reading, and the graph tree groups on the carrier row with the four compute kinds kept as colour, not as name. The index cell that read `50 categories` reads `50 tags`, because it counts tags and the surface now has a real category row two lines below it. `src/components/Dashboard.tsx`, `src/lib/graphHierarchy.ts`, `tests/kategorien-wache.test.ts`.
+- **A group count is a store number, not a page number.** Clicking `Notes` on a 14,702-note store used to filter the 200 loaded entries, so the chip said 92 and the list said nothing. `GET /api/memories/gruppen` (`server/router/memories.ts:230`) answers the whole store in one pass — measured here at `bestand 97, notes 82, files 9, code 6` in 1-3 ms on a fresh capsule, and 4 ms over a 14,702-note copy — and the strip reads its numbers from that route while the page keeps its own count for what is on screen. Two numbers, two names, one sentence each. `tests/server-gruppen.test.ts`, `tests/components/dashboard-bestand.test.tsx`.
+- **The rate limiter guards the door, not the window.** `server/app.ts` put the global limiter in front of *every* route, so the document and its assets spent the same budget as the API — and the surface polls by itself (`Dashboard.tsx:653` every 4 s, `:428` every 12 s). Measured in a real browser: one surface load costs 21-23 `/api` requests, and after twelve quick reloads an 820 px window showed `{"error":"Too many requests — please wait a moment."}` where the graph should have been. Non-data paths are now skipped, and the data edge moved from 180 to 600 per minute — four times what the interface spends while it works, still a hard edge against a loop. `server/helfer/limiter.ts` (`DATEN_KANTE`), `tests/server-limiter-fenster.test.ts` (4 cases, both directions: 200 window requests pass, the door and `/mcp` still refuse).
+
+### Fixed
+- **The graph stopped writing its lonely notes into each other.** Notes with no neighbour in the picture lie in rows under the core, and their titles are drawn centred on the dot: at 820 px and 46 % zoom a row is 12 image pixels tall while a title is 14 with its tag line, so the titles of one row landed in the dots of the next and across the caption that counts them. Band titles are now withheld while a row cannot hold a line — the count stays, and zooming in brings the names back — and the caption reserves its cells in the same occupancy grid the labels use. Measured before and after in the same window: `audit-2026-10-09/leitung-bilder/ausschnitt-legende-820.png` against `graph-820x1180.png`. `src/lib/graphLayout.ts` (`gangIds`), `src/components/KnowledgeGraph.tsx`.
+- **A header sentence that does not fit is gone rather than chopped.** The graph header carried "… connected through tags, similarity and knowledge entities" behind a `truncate`; at 820 px the box measured 343 px and the sentence 387, so it ended mid-word in front of the user. The box now decides: below the width the sentence needs, only the count stands. `src/components/Dashboard.tsx` (`SATZ_BREITE_MIN`, a `ResizeObserver` on the box itself, silent where no layout exists).
+- **The provider line stopped speaking in house words.** It read "No API key — the test cockpit chat cannot answer. Agents over MCP do not need one." — an internal name for our own product on a surface a stranger reads. It now says what is missing and what still works without it. `src/components/SystemStatus.tsx:180`.
+- **The text-size control now acts on the first opening.** It stored a value that nothing read until the next view change; the boot path applies it now, with the case written red first over both networks. `src/lib/settings.ts` (`wendeZoomAn` in the boot way), `tests/lib/einstellungen-boot.test.ts` (7 cases).
+- **The folder scan refuses K3PTA's own output.** A term that is word-identical to a note of this workspace was arriving as a new concept, because the walk picked up a `markdown-export-…` folder the app had itself written — 68 of the 500 terms in one graph window stood word-for-word in his own folder, one of them in a K3PTA export. The block sits at the entrance and is a signature, not a word: `Export`, `export-2026-04` and `Exports` stay real material. `src/scan/regeln.ts` (`EIGENE_AUSGABE`), `tests/scan-eigene-ausgabe.test.ts` (4 cases).
+- **Three test expectations copied a label instead of reading it.** `MachineScan.test.tsx` held the word `documents` and `KnowledgeGraph.render.test.tsx` held `F` and `Events` — every one of them broke the moment the label vocabulary moved, which is a test that punishes the very change it should follow. They now derive from `TRAEGER_LABELS`, `GLYPH_FUER_ART` and `TYP_BESCHREIBUNG`, so a label edit cannot fail a count check. `tests/components/MachineScan.test.tsx:131`, `tests/components/KnowledgeGraph.render.test.tsx:2458,2466,3304`.
+- **Suite: 2,562 cases in 171 files, 0 failing**, measured 2026-10-15 (measuring pass, then two consecutive checking passes at exit 0 with `scripts/doku-check.mjs` attesting the same number in `README.md`). Lint exits 0 with 0 errors and 50 warnings; the warnings are open, not fixed.
+
+## [3.2.2]
+
+### Changed
+- **The four knowledge types became nine words in two rows.** The old labels sorted by *origin* while every label read like *content*: measured on a real 14,702-note store, 14,610 notes (99.4 %) carry the `machine-scan` mark and 92 are typed by the person, so 91.2 % of the base sat under one label and the other three were nearly empty. Row 1 answers *where it came from* — `Notes` (92) · `Files` (8,622) · `Code` (5,988), exhaustive and non-overlapping, derived from the real source path, so no re-classification pass was needed. Row 2 answers *what it is about* — `People` · `Projects` · `Events` · `Tasks` · `Guides` · `Links` — and fires only inside `Notes` and `Files`, never inside `Code`. Baskets named `Money`, `Numbers`, `Places`, `Accounts` were measured and refused: the first three are code artefacts on a real store (2,970 `price` hits in an e-commerce locale export, 13 of them the person's own), and an `Accounts` shelf advertises credentials. `src/lib/graphHierarchy.ts:88-89`, `src/core/klassifikation.ts`, `tests/lib/gruppen.test.ts` (15 cases).
+- **An empty filter is no longer a dead end.** Clicking `Code` (or a thin theme) on a page with no match removed both chip rows from the DOM, leaving no way back, while the strip two rows above still said `2 Notes 2 Files 0 Code`. Both rows now stay reachable, the empty heading names the group and the page scope, and one click returns everything. Reproduced red first in `tests/components/Dashboard.test.tsx`, then measured in a real browser at 1440/1024/820/390 px.
+
+### Fixed
+- **The folder scan walked K3PTA's own backups, including the files that hold its configuration.** Four `…datensicherung-vor-…` folders are 7,300 of 13,616 files (53.6 %) of a first walk, and among them three of its own config files: profile.json, scan-config.json, endpoint.json — files `server/router/scan.ts:69-72` declares sensitive metadata and encrypts at rest, which the walker would have turned into readable notes for any connected agent. A folder holding a `kepta.db` is now not entered (marker, not name, so a renamed copy is still caught), and `Downloads`/`Movies`/`Pictures`/`Music` are excluded unless the person picks one as the root. Measured over his real home: 32,329 seen / 13,616 taken in 782 ms **before**, 24,738 / **6,243** in **170 ms** after, backup files 0, config notes 0. `src/scan/walker.ts:120-126`, `tests/scan/regeln.test.ts`.
+- **Key-shaped secrets are now masked before they can become a memory.** Assignments (`sk-…`, `sk-ant-…`, `ghp_…`, `xox…-`, `AKIA…`, a 64-hex run after a key-like name) collapse to family plus length, and the count per run is shown instead of a silent rewrite. The boundary is the work: over the real working folder the mask touches **15 files / 39 places and leaves 5,906 untouched**, including 111 files carrying 4,033 hex runs that are checksums, not keys; in his store, 132 of 143 hex runs sit in prose and must stay. `src/scan/maskierung.ts`, called at `server/router/scan.ts:336-341`, `tests/scan/maskierung-import.test.ts`.
+- **A test asked the product to change a file format, and following it would have emptied a real profile.** `tests/nebendateien.test.ts` expected the sidecar magic `K3PTA-NEBEN1`; the product has written `KEPTA-NEBEN1\n` since `281f5a1`, and his own `~/.kepta/profile.json` begins with exactly those bytes. `leseJsonDatei` (`src/core/nebendateien.ts:98-114`) returns `null` for an unknown magic and `server/router/settings.ts:104` turns that into `{}` — so the next save would have written an empty profile over a real one. The expectation is corrected and pinned in both directions at byte level (`:63-85`): a genuine envelope still decrypts, identical ciphertext with the new prefix yields `null`. A format on disk is not a brand word.
+- **Light-theme contrast, measured at pixels rather than at CSS values.** The level words under the graph strip read 3.45-3.49 (16 of 16 legend cases under 4.5:1); they now read **6.75-6.80** at 11 px with full coverage. The nine chips read 5.18 with `Links` at 4.36; they now read **6.65** with the weakest at 5.51 and 0 of 36 under the bar. The drawer's left edge stayed at 1.59 after its token was fixed — a 1 px `border` loses half its strength on an element under `backdrop-filter`, and two pixels of width do not help; painted as an inset line it measures **3.58 / 5.85**, and the guard now checks the line, not the token name. **17 of 63 icons in the series painted blobs; now 0**, with no cell left empty. `src/index.css` (additive: no token repurposed), `scripts/design-wache.mjs`, `tests/design-tokens.test.ts` (18 cases).
+- **Suite: 2,507 cases in 163 files, 0 failing**, measured 2026-10-14 19:36:13 UTC (measuring pass, then the checking pass at exit 0 with `scripts/doku-check.mjs` attesting the same number and date in `README.md`). Lint exits 0 with 0 errors and 50 warnings; the warnings are open, not fixed.
+
+
+
+## [Unreleased]
+
+### Fixed
+- **The eval tool sold a recall as a precision.** `npm run eval` divides the hits inside the top five by `min(5, relevant notes)` — a capped recall — and printed the line as `Precision@5`, while `scripts/ablation.ts` on the same corpus divides by 5 and prints `P@5`. Two metrics under one word, on the same 45 queries: this tool says 81.1 %, that one says 23 %. Renamed in the output and in the README line that advertised it (the core carried this correction on 12.10., the app had not pulled it). `tests/eval-metrik.test.ts` binds the printed word to the denominator of the division, with a Gegenprobe, and refuses a README that calls the eval a precision.
+- **`server.json` named an engine npm no longer sold, and the guard that said it checked the registry was a hand-written constant.** `tests/mcp-registry.test.ts` held `VEROEFFENTLICHTE_ENGINE = "3.3.0"` with a dated comment. npm moved to 3.4.0 on 13.10. (tag `v3.4.0`, Publish run 38393092031), and the case stayed green — which is exactly how a guard turns into a comment. The case now asks npm for `kepta-mcp` latest and compares; without a network it checks the two fields of the one file and prints that the outward comparison did not run, instead of pretending. `server.json` names 3.4.0 in both places, and `tests/version.test.ts` no longer freezes a number in its comment.
+- **One CHANGELOG line carried five claims and one filename, and the numbers guard read that filename as the proof of the last clause's percentages.** Split into one bullet per claim, each with its own source (13.10.). The LongMemEval series points at `tools/longmemeval/README.md` — a paper of this repository, which says in its own words what the figure counts and that the strict-binary reading is lower.
+
+### Changed
+- **Every number the README sells now cites a run that sits in this repository.** The market paragraph sold three percentages whose artefact was never here; `npm run eval` and `npm run ablation` ran again on 2026-10-13, their whole output is kept as `docs/belege/tag-13-10/`, and the paragraph is split so each line names the tool that produced its figure. Two of the three numbers previously advertised came from an earlier run that matches neither leg of the runs quoted here, and are corrected in the open rather than quietly replaced. The numbers console (`scripts/zahlen-belege.mjs`, byte-identical to the core's) exits 0 on this tree and runs as a CI step in `.github/workflows/build.yml` — a console nobody listens to guards nothing.
+- **The engine-measurement copies that lay untracked in this tree are gone.** They were core runs, no sentence here cited them (a sentence names its tree), and one carried an unredacted machine path. Laid aside in the working folder rather than deleted: `audit-2026-10-09/ablage-app-13-10/`, with its own note.
+- **Suite: 2277 cases in 144 files** (run 13.10.2026; measuring pass, then the checking pass exit 0 with `doku-check` attesting the same number in `README.md`).
+
+## [3.2.1] — 2026-10-12
+
+Why this patch exists, in one line: the released `app-3.2.0` binary was measured to contain `proxy-addr@2.0.7`, the version GitHub flags as critical, and this repository ships its dependencies inside the package — so the only way to hand over the closed version is a new build. Nothing else in the product's behaviour changed; the rest of this entry is checks that were wrong, not features.
+
+### Added
+- **A release proof chain: `scripts/release-beweisen.mjs <version> [--fern]`.** Both packaged binaries are **launched**, not inspected: each architecture runs in a throwaway home folder with its own data directory and a fresh 64-character key, and has to answer `/api/health` with this version, encryption on, and a port that really listens. Then `SHA256SUMS.txt` is re-hashed against the bytes on disk, `latest-mac.yml`'s sha512 and size against the real files, and with `--fern` the published asset is downloaded anonymously and must hash equal to the local one. The reason is tonight's two near-misses: a DMG with the Node-ABI module inside looks complete on disk — the window opens, the server never listens — and the first version of this chain proved nothing about the foreign architecture, because reading an ABI number off a binary is not running it. One of its own checks also caught a mistake I had made seconds earlier: the checksum file was generated before the manifest was finished, so it named a hash that no longer matched. Exit is 0 only when every step ran.
+- **`scripts/release-hochladen.mjs` (Arbeitsmappe, Leitungswerkzeug)** refuses to send anything while the proof chain is red, never touches a `v*` tag — those fire `publish.yml` and would push to npm — and reads the release back from GitHub afterwards to compare the asset list instead of trusting its own upload log.
+
+### Security
+- **The same two advisories, closed here too.** `proxy-addr` **2.0.7 → 2.0.8** (GHSA-jqcg-44mw-7w3h, *critical*, pulled in by `express@5.2.1`) and `source-map-js` **1.2.1 → 1.2.2** (GHSA-68fv-2mgg-jv7q, *high*, reached only through `@tailwindcss/vite`, `jsdom → css-tree` and `vitest → vite → postcss`). Found on the engine repository, where GitHub's Dependabot badge is visible; this repository has alerts disabled, so it was checked here rather than assumed clean. `npm update <paket>` only — lock diff 12 added / 13 removed lines, `package.json` and every range untouched, both target versions confirmed present in the registry before anything was written. Reachability stated instead of implied: the app's server never sets `trust proxy` (no hit outside `node_modules`), so no forwarded-header trust decision exists to spoof, and `source-map-js` does not reach the packaged app.
+- **The committed `package-lock.json` still said `3.1.5`.** Both of its version fields (top and `packages[""]`) lagged the released `3.2.0`, and that lock is what `npm ci` installs in CI and what anyone who clones this repository gets. `tests/version.test.ts` reads it now, together with `npm/package.json` — the bundle that travels with the app — while `server.json` deliberately keeps naming the **published engine version** and is guarded against npm by `tests/mcp-registry.test.ts`. Two numbers, two pairs; an equals sign between them would be the bug.
+
+### Fixed
+- **The quietness probe's own test stopped putting a verdict on a timing.** Its load case measured twice — the median with four busy loops running, four times the median without them — and demanded the first stay under the second. On this ten-core desk that held; on the CI runner's four cores the same four loops take a larger share of the scheduler, the ratio came out **4,23×** (283,26 ms against 267,96 ms), and the gate turned the release tip red on a commit that had touched nothing but one line of `index.html` (run `38182756836`, red at `c135c43`, while the same tree ran green here at 01:20). The blind spot that case was reaching for is now shown on **set numbers** instead of on the machine: one measurement with a quiet median, a running outlier and eleven node processes reads `ruhig` to a median-only rule and `nicht ruhig` to the OR-chain of three witnesses. What the live load still has to prove, and can: the probe holds its verdict back, names at least one of the three witnesses, and counts its own children above the process limit. Byte-identical with `kepta-core/tests/ruhe-sonde.test.ts`. The guard pair named in 3.2.0 still guards: `tests/platten-wache.test.ts` and `tests/ruhe-sonde.test.ts` run, and the suite stands at **142 files / 2 243 executed cases** after the change — first run 12.10.2026 01:36 as the measurement, second run 01:44 as the judgement, `node scripts/doku-check.mjs` green, case count unchanged by the fix.
+- **The number guard no longer falls over midnight.** It compared the date beside the number with the date of the run on disk, so the same tree was green at 23:50 UTC and red at 00:00 UTC — run `38185328804`, the second red X on the release tip, and the number 2 243 was never what disagreed. A stamp now carries one machine-independent bound: it may not name a day after the certified run. (The first cut also demanded „not older than the newest test file", and that one is withdrawn the same night: `actions/checkout@v4` writes every file fresh at `fetch-depth 1`, so on a runner the newest test file is always the run's own day, and an unchanged-but-correct README would have gone red at the next push — the same groundless red this commit removes. The number itself is what holds: it must be this run's number, and a new case changes it. Report-vs-suite freshness stays, where mtimes mean something — on a real machine.) Five cases in `tests/doku-zahlen.test.ts` and the rewritten case in `tests/test-bericht.test.ts` hold the edges. `scripts/test-bericht.mjs` and `tests/test-bericht.test.ts` are byte-identical with the engine repository. Count for this state: **142 files / 2 248 executed cases** (measured 12.10.2026 by `npm test`, judged by the run after it), README badge, prose line and the `npm test` comment carried along.
+
+## [3.2.0] — 2026-10-11
+
+### Changed
+- **The graph no longer lets its own discs lie.** The collision pass ran **four** times per frame; on a dense base that was not enough, and the README sold it as „never overlap" while a brute-force count over every pair found **9 pairs at rest out of 3 027 discs** at 3 000 notes and **390 in the moment of opening** (`docs/graph-kosten.md`, `tests/lib/graphLayout.test.ts`). `COLLIDE_ITERATIONEN` is now **8** (`src/lib/graphLayout.ts:168`): **0 intersecting pairs at rest at 400, at 1 500 and at 3 000 notes**, 15 while a 3 000-note field cools, closing to 0 by step 310. The cost is measured, not hoped: **+2,1 ms per physics step** at 3 000 nodes (9,7 → 11,8 ms), which is under the weight of a frame that software-rasters in 30 ms anyway and is invisible at the sizes the app actually serves. **Two sentences died with this fix and are gone from the README:** „3 000 nodes … at 60 fps" (never reproducible from this repository) and „1 500 notes inside the 16,67 ms budget" — after the fix, 1 500 notes need **17,5 ms while cooling**, 234 of 315 painted frames over budget, so the honest ceiling for 60 fps is about **400 notes**. `README.md:37` and `:143` now name the test and its command instead of a millisecond, because the runner that measured the milliseconds refused to publish them on a machine its own after-probe called unquiet.
+- **The layout's bar stopped eating the canvas, and the density ladder got real.** The header bar measured **548 px** of the graph area away at 1 440 px; it is **0** now. The density step went from 1 to 19 across the sizes the surface is used at. Measured in a real browser at 1440/1024/820/390 px (chrome-headless-shell + CDP, `getImageData`), not at the source text.
+- **The design system moved to the measured ladder, and the scene files followed.** Tokens were pulled to the released surface (`index.css` at `f07002e`), the four archive inks and the sealing wax are one step deeper, and `scripts/design-wache.mjs` grew a `szenen` section that compares the drawing scenes against `index.css` themselves — **42/50 token values equal, 4 radii by the ×2 rule, 4 scene-owned roles, 0 real deviations, 266 measurements, exit 0**. That guard is what caught a film painting its nodes from `DEFAULT_TYPE_COLORS`, a symbol that no longer exists anywhere in `src/`: the delivered pieces showed a disc colour no customer sees (`#56749a` where the app draws `#2d4964`), and the scene now reads `--type-*-hex`.
+
+### Added
+- **A disk guard that refuses to start, in both repos, byte-identical.** The machine ran at 99 % with 3,61 Gi free while a suite was writing, and Docker answered „no space left on device". `scripts/platten-wache.mjs` now measures free space **per path** (never per device, so `/` sitting on a full volume cannot mask a spare one), knows two stages — `--leicht` at 2 Gi, `--schwer` at 8 Gi — and exits **75** with the measured value, the threshold and the path it checked. An unreadable number means „kein Lauf", not „durchgelassen": the first cut read `df -k`, got `null` because macOS wraps a long device line, and let everything through. `scripts/ruhe-sonde.mjs` is its twin for CPU: median, max/median ratio and foreign core load, and a measurement taken under load is refused as a publication. Both are guarded by their own tests (`tests/platten-wache.test.ts`, `tests/ruhe-sonde.test.ts`).
+- **The app icon set and the mark.** `build/icon.icns` plus the ten `icon.iconset` tiles, `build/icon.svg`, and `public/kepta-logo.svg` wired as the window `icon` in `index.html`; `tests/components/KeptaMark.test.tsx` holds the mark to its shape. The same file briefly also carried `apple-touch-icon` pointing at that SVG — withdrawn before release, because iOS ignores an SVG in that slot and the Electron shell never reads the field. A real 180 px home-screen package would have been the one reason to rebuild the shipped `app-3.2.0`, and it was not worth the claim: the field is gone rather than the picture invented.
+
+### Fixed
+- **The four truncated terminal tools now say so.** Suite, corpus counter, help and one more reported a cut list as if it were the whole one; they answer `begrenzt` with the number left behind. Found by measuring the output width, not by reading the code.
+
+### Changed
+- **The engine pin follows npm.** The core repo published `kepta-mcp@3.2.0` on 09.10.2026 (run `37921066342`, tag `v3.2.0` = commit `6fe7955`, provenance on, MCP registry answered „Registry-Eintrag aktualisiert"), so `server.json` and the constant in `tests/mcp-registry.test.ts` now name **3.2.0** instead of 3.1.2 — the file tells a buyer which `npx kepta-mcp@…` really exists, and it may not promise one that was never published. `SECURITY-ENTERPRISE.md` also stopped naming the app as 3.1.2. The app itself and its own npm bundle travel together, and this release moves them to **3.2.0**.
+- **The test-count guards were rebuilt on the core's one source, byte-identically.** This repository's `scripts/doku-check.mjs` read whatever `test-results/vitest.json` the last `npm run test:cov` had left behind, and on 10.10. it printed "1967 Tests gelaufen, die READMEs nennen eine passende Zahl" for a report from 09.10. that knew 118 of the 131 test files then on disk, with 22 of them changed since — a guard that could not check anything and reported success. Plain `npm test` never wrote a report and never called the script, so the README was held to a source that only existed after a coverage run. `scripts/test-bericht.mjs` (same bytes in `kepta-core`) now decides what the number means: the cases a run executed, skipped ones not counted, and it refuses with a reason when the report is missing, older than the newest test file, or from a partial run. `npm test` and `npm run test:cov` both write that report and end with `node scripts/doku-check.mjs`, which additionally refuses a red run. `tests/doku-zahlen.test.ts` listens to the same module and compares exactly; the static `it(`/`test(` count survives as a floor against invented numbers, with the reason in the file (`it.each(regeln)` counts as one and runs as many, `it.skip` is invisible there while vitest lists it). Measured on this release: **142 files / 2 243 executed cases**, lint 0 errors, 50 warnings (12.10.2026 01:20, `npm run test:cov`, two runs — the first measures, the second is judged). An earlier draft of this sentence named **2 241** at 23:09 — that was the stand one run before the release, not the stand that shipped, and the release body and the README both say 2 243. A test cannot read the report of its own run, so the first `npm test` after a checkout or a suite change is the measurement and the second is the check. **CI keeps that order now:** `build.yml` gained a `Messvorlauf` step (`npm test || true`, `timeout-minutes: 8`, verdict discarded) before the `test:cov` gate, with the reason above it. The timeout question was answered by measurement, not guess, and the two durations and the core count that stood here on 12.10 are withdrawn again: their only carrier was the reporter folder, which `.gitignore` keeps out of the repository and a fresh checkout therefore does not hold, so nobody but the desk that ran them can open them — and a figure nobody can open is not a measurement, which is the rule `scripts/zahlen-belege.mjs` now applies to every other number in this file. What stays is the decision, and it is a bar in a config file rather than a figure from a log: `timeout-minutes` 8 for the measuring pre-run and 12 for the gate, both readable in `.github/workflows/build.yml`, set against the four cores of `ubuntu-latest` from a solo desk run on this machine and left alone since because the gate has never come near them. **The badge is guarded too:** `testbehauptungen()` names kind and line for every count claim (`README.md:7 Abzeichen: nennt 2164 Tests, gelaufen sind 2163`), and `dokuVergleich()` demands a measurement date beside the number — the README says `measured 2026-10-10`, and a stamp from another run fails the check.
+
+### Removed
+- **Pro is gone from the key tooling as well** (Damian, 9.10.2026: „Pro gibt es nicht mehr nirgends"). `src/core/lizenz.ts` no longer carries a single-user plan: what can be issued is `business` or `enterprise`, and `EDITIONS_LABEL` names both **K3PTA Enterprise** — the product name never appears beside the dead tier again. `signiere()` now requires the plan instead of defaulting to it, so no call site can quietly issue what nobody sells.
+- **The studio's plan picker lost the old tier and its prices.** `tools/license-studio/index.html` offers the two shapes of a K3PTA Enterprise agreement (team with seats, organization by agreement); `main.ts` maps anything unknown to `enterprise` rather than to the plan that no longer exists; `build.mjs` describes the app as issuing K3PTA Enterprise keys.
+
+### Changed
+- **A key from before the change still verifies — and is no longer called by the dead name.** The plan byte is part of the signed text, so `1` (and the older 68-byte key without a byte at all) is read as `edition: "alt"`, its signature still checked against the name the plan carried. Displayed, labelled and mailed it is K3PTA Enterprise, with the studio noting „frühere Einzel-Lizenz". Issuing `alt` is refused.
+- **The ledger keeps its old entries.** `licenses.json` on this machine holds seven keys, two of them from before the change; reading a stored `edition: "pro"` now migrates it to `"alt"` instead of dropping the row. (The first cut of this migration dropped exactly the entries it had just migrated — caught by `tests/kein-pro-tier.test.ts`, which round-trips the file.)
+- **The customer message describes the app that exists.** Since 3.1.5 there is no key field to type into, so the message no longer walks the buyer through activating: it names the contract (name, number, seats where agreed), says K3PTA runs every tool unlimited, and keeps the offline promise. Same for the worker's mail and the CLI's closing line.
+- **`scripts/generate-license.mjs`:** `--edition business|enterprise`, default `enterprise`, and a request for the old tier is refused before anything is signed. The key it prints is verified by the same code the studio uses (`tests/kein-pro-tier.test.ts` runs the script and checks the answer).
+- **`tools/lizenz-worker`:** only the team price-id issues a key. Any other price returns `ignoriert` with no key and no mail — the old fallback minted a single-user key for whatever the checkout threw at it. `CHECKLISTE.md` is marked as parked, names the two Paddle prices as dead and asks for them to be archived, because a live price that issues nothing would still charge.
+- Measured on this commit: **118 files / 1967 tests** green, lint 0 errors. No runtime path of the app changed — the app files touched here are comments — so there is no new build and no new release.
+
+### Added
+- **Two guards.** `tests/kein-pro-tier.test.ts` (13 cases): the issuable plans, the legacy keys, the ledger migration, the customer message, the CLI, and a text scan over `src/`, `server/`, `scripts/`, `tools/`, `tests/` and the root docs that fails any file naming the dead tier as a product (dated records — `CHANGELOG.md`, `docs/` — are annotated, not rewritten). `tests/lizenz-worker.test.ts` (3 cases): the worker had no test at all; it now signs a real key through the same verification the app's module performs, refuses an unknown price and rejects a bad Paddle signature.
+
+## [3.1.5] — 2026-10-09
+
+### Removed
+- **The key system and every usage limit are gone.** Damian, 9.10.2026: „bei K3PTA gibt es kein Licence Key gar nix … diese Version soll man unbegrenzt nutzen können." Concretely: `server/helfer/freemium.ts` (13 daily-limit rules answering 429 with an upgrade path, `X-KEPTA-Plan`, `X-KEPTA-Remaining`), `server/helfer/probetag.ts` and `server/helfer/planzustand.ts` (the sealed 24-hour first day, the persistent counters, the keychain and hidden-file anchors), `server/router/license.ts` (`GET`/`POST /api/license`, the licensee line in Settings, `licensePreProvisioned` in `/api/policies`), and `src/components/ProUpgrade.tsx` with the sidebar footer that read „Unlimited day · 3 h left" / „A key removes the limits" and the Dashboard toast that announced the day was over. Nothing in the app counts, meters or advertises now, and the MDM schema ignores a `license_name`/`license_key` left in an existing organization file (measured: `tests/richtlinien.test.ts`).
+- **What did NOT go, because it was protection rather than payment:** loopback-only binding, Helmet, the 1 MB body cap, the write throttle of 60/min and the chat throttle of 20/min, the 5 000-node cap, the privacy shield, the managed policies (cloud chat off / scan off / shield forced on) and the recovery key with its three doorkeepers. `/api/recovery-key` moved to its own router so the route that carried it could go; it still answers 403 to a request that is not the window, and 404 when nothing is encrypted (`tests/keine-grenzen.test.ts`, `tests/server.test.ts`).
+
+### Changed
+- **Team memory is switched on by the organization's roles file, not by a plan.** The scopes and their roles were gated on a business/enterprise edition; with no keys in the app that gate would have locked a working feature forever — a downgrade, which is exactly what this product is not allowed to do. `teamPolicy()` now keys off `managed-settings.json` alone: file present → admins/members write `team:*`, viewers read; no file → `team:*` stays shut and `/api/team` answers `team: null`. The sidebar shows the Team entry only when a file exists, and the view says so plainly instead of offering a purchase.
+- **Two operator tools keep the key machinery, detached from the app.** `src/core/lizenz.ts`, `src/core/schluessel.ts`, the revocation list, `tools/license-studio`, `tools/lizenz-worker` and `scripts/generate-license.mjs` stay where they are — they belong to K3PTA Enterprise, where keys are issued personally. No runtime path in the app reaches them any more; the module's own header now says that instead of describing Freemium.
+- **The install check and the screenshot run stopped asking for a key.** `scripts/install-app.mjs` step 7 verifies `/api/health` and compares the running version with the build; `scripts/screenshots.mjs` no longer mints a demo key before shooting.
+
+### Notes
+- Measured on this commit: **116 files / 1952 tests** green (43 cases that pinned the limits, the trial day and the upgrade panel were deleted with the behaviour, eight new cases pin the opposite), lint 0 errors, HTTP routes 59 → 58.
+- Existing installs lose nothing: the old counter fields (`plan_zustand`, `probetag_*`, `license_*`) stay in the database unread and unwritten, and no user data is deleted by this change.
+
+## [3.1.4] — 2026-10-08
+
+### Security
+- **The window can no longer fetch a webfont from a stranger.** The content policy allowed `fonts.googleapis.com` and `fonts.gstatic.com` although the app ships no webfont at all — only system fonts through CSS variables. On an app whose promise is that everything happens on this machine, an unused permission is still an open door: one added `<link>` and the first launch pulls type from Google. The hardening test fails if a font host comes back. Measured against this build's own package (`release/mac-arm64/KEPTA.app`, launched with a throwaway data dir): every socket the running app held sat on `127.0.0.1` — fourteen, counting the listener and the renderer's keep-alive connections — and none reached another address; the only peer it contacted was a model server on `127.0.0.1:11434`. An earlier note here said “exactly one socket”, which was a sampling artefact (listeners only). `/api/health` of that same run answers `version: 3.1.4`.
+
+### Changed
+- **One listener per app under test, not one per request.** Supertest turns an Express app into a fresh `http.Server` for *every* call, binds an ephemeral port and closes it right after the answer — with 118 workers that is a stream of ports handed to whoever asks next, and the suite has been answering with statuses this app cannot produce (401 where 403 belongs, 404 where 400 belongs, `ETIMEDOUT`, a 200 without the counter header). `tests/setup.horchen.ts` keeps exactly one listener per app for the whole file; `tests/helfer/horchen.test.ts` measures it, and ordinary mock servers stay untouched.
+- **Seven scan checks state the status before the body.** One of them read `byFolder.find(…)` out of whatever came back; when the answer was not the expected one, the failure read `Cannot read properties of undefined (reading 'find')` and said nothing about what had actually been sent. Each site now asserts the status first and prints the answer text beside it.
+- **The README no longer sells a tier that is gone.** It offered „K3PTA Pro“, a free „Pro day“ and „Buying Pro“ — what exists is K3PTA Core (free) and K3PTA Enterprise (by agreement, the key issued personally). The licensing section says that now, and a docs test fails on any dead-tier wording.
+- **The test canvas stopped lying about text width.** The jsdom stand-in measured every string at a fixed 6 px per character, whatever `ctx.font` said. The graph shrinks its labels with the zoom, so labels were up to four times too wide in tests and pushed neighbours out of slots the browser would have kept. It now measures with the font that is set (0.5 × size per character, 12 px as the default), which is exactly the size the label tests were calibrated at — all 154 graph render checks still pass, and `tests/helfer/canvas.test.ts` pins the proportionality.
+- **The suite stopped sharing sockets it had no right to reuse.** Node keeps the global HTTP agent on `keepAlive: true`, and `request(app)` binds a fresh ephemeral port for every call, releasing it again straight after the answer. Under 117 workers that is a stream of ports handed to whoever asks next, and the answers that came back were not the ones this app can produce: 401 where 403 belongs, 404 where 400 belongs, `ETIMEDOUT`, and a 200 without the counter header the middleware always sets. `tests/setup.http.ts` turns reuse off. Measured: without this line a four-file harness failed in 2 of 6 runs and the full suite in 2 of 3; with it (and only once it actually took effect — the first attempt set `options.keepAlive`, which the agent ignores) the last four full runs were green, 117 files / 1979 tests, as is the CI runner. The durable guard is still the rule the enterprise suite enforces: never `request(app)`, always a server that listens once per file.
+- **A speed promise that survives a busy machine.** The edge-hit check demanded “one pointer move over 12 000 links in under 4 ms“ from a single 20-move average; it fell at 5.85 ms in a parallel run while nothing about the search had changed. It now takes the median of three 60-move series and prints all three.
+- **Built is not shipped.** The README named Windows and Linux paths in the policy reader and the key-storage paragraph without saying the app leaves only for macOS. Both sentences now carry the shipping state, and the platform test fails any Windows/Linux claim that does not.
+- **The README stops promising installers that are not shipped.** The download table offered Windows files (`K3PTA-<version>-win.exe`, "take this one if unsure") and a Windows first-launch guide, while every published release carries macOS only. The table now says which platforms actually get an app, keeps the self-build route for Windows and Linux as a source build, and a test (`tests/doku-plattform.test.ts`) fails if a published-installer claim comes back.
+
+### Fixed
+- **The version bump had corrupted two dependencies in the lockfile.** Counting 3.1.2 → 3.1.3 replaced the string wherever it stood, so `bytes` and `@jridgewell/resolve-uri` ended up on versions that the public registry has never published; a clean `npm ci` (the CI's first step) died with `notarget`. Both entries now name the real published version, and `scripts/pruefe-lock.mjs` — run by `npm test` before the suite — reports every dependency whose lockfile version differs from what is installed.
+- **Two outward texts sent people to a repository that answers 404.** The README's download link and the key-mail template in both license tools pointed at `DamianTodorovic/kepta-pro-releases` — not public (measured anonymously: HTTP 404), named after a tier that no longer exists, and the mail line promised “macOS/Windows/Linux” packages while only macOS ships. All three now name the engine repository's releases, and `tests/doku-plattform.test.ts` fails on any download link that points elsewhere, including in the tools.
+- **The “run it from source” block cloned the wrong product.** In the desktop app's README it told people to `git clone DamianTodorovic/kepta-enterprise` — that is the tenant server, a different repository and a different product — and then offered `npm run dev` / `npm run electron` as if they were optional halves of another app. It clones this repository now and names the one command that starts both halves (`npm run app`). The sentence above the download table also promised “the file for your system … explained per system”, while one system gets a file; it says macOS now. `tests/doku-plattform.test.ts` fails on either wording.
+- **A release build no longer fakes a broken test suite.** Packaging rebuilds the native SQLite module for Electron; the next `npm test` then failed hundreds of tests whose visible message was a trailing `afterEach` line, not the cause. `npm test` now checks the module loads under the running Node first and, if it does not, names the one remedy instead of drowning the run.
+
+
+## [3.1.3] — 2026-10-08
+
+The knowledge graph got finished. Before this, the picture showed notes and the lines between them; it now shows **what is claimed, by whom, how much sits behind it, and whether it still holds** — and it gives you the levers to read a large base.
+
+### Added
+- **Claim direction.** Each link runs from its wide end to its narrow one: who says what about whom. Off shows plain lines.
+- **Link text, weight and card.** A line names its relation, is drawn thicker when several claims sit on the same pair, and hovering it opens who-over-whom, how often, and for how long.
+- **Validity on the edge.** A claim that has expired is drawn dashed, the same way an expired note is ringed. The time slider and the picture agree.
+- **What the picture is missing.** A badge counts the neighbours a node has but the picture could not draw; a balance line names every gap — clipped edges, hidden neighbours, self-claims, vectors left out of the semantic map. Nothing is dropped quietly.
+- **Labels are a decision, not a carpet.** Three settings (Key / All / Off), a crowding grid that keeps titles from lying on each other, and the full name under the pointer even on Off.
+- **A sign inside the node that reads without colour** — a letter for its kind, a number for what a concept carries. Colour-blind safe by construction.
+- **Groups fold, in both views.** Double-click a group in the tree and it steps behind a `×N` badge that keeps counting; the force view obeys the same state and hides only what nothing else carries.
+- **A claim about itself is not a neighbour** — it gets a loop, and a switch.
+- **The third view: Semantic.** Notes placed by the meaning of their own texts, from a deterministic projection computed on the server, so no embedding travels into the view. It says how much of the difference its two axes carry and where the notes without a vector were parked.
+- **Schema inventory.** A second look at the same payload: which kinds, concepts and claims the store actually holds. Choosing a row spotlights it in the picture.
+- **Provenance colour.** Written in K3PTA, from a file, from this computer — a second colour channel that switches itself off, with the reason, when the base has nothing to distinguish.
+- **Search counts its hits and leads you through them.** How many notes match, which one you are on; Enter jumps, Shift+Enter returns, Escape clears the word first.
+- **Forces you can set.** Center force, repel strength, link distance, node size. Turning a slider does not rebuild the world: the picture keeps its place and settles under the new forces, and one click returns the tuned defaults.
+- **Concepts are nodes in the force field too**, and an agent writing a memory is visible in the dashboard's own number.
+- **Keyboard parity**: arrow keys reach concepts, Enter opens what a click opens.
+
+### Changed
+- **A term must be more than the title of the one note carrying it.** Repeating your own filing is an echo, not knowledge, and the graph leaves it out — on a 400-note base that turned 420 "concepts" and 1 400 lines into 20 concepts and 500. The write path is unchanged; what you stored stays stored.
+- **Repulsion is weighted against the link springs, not against nothing.** The repelling force carried a stray integration factor and delivered a sixtieth of its own constant, so topics pressed together like petals and the knob moved nothing. On the same 400-note base the topics now stand apart as islands with white space between them.
+- **The tree folds itself to fit its canvas.** 400 notes are 425 rows and no screen holds that; the deepest groups now step behind a `×N` badge, the balance line says how many notes are gathered, and one click opens everything again. The old behaviour clipped rows off the canvas in silence.
+- **Fit-to-view really frames the whole graph** — including the strip the legend takes at the bottom, which used to sit on top of the lowest notes.
+- Similarity is on request, and the head line counts only what is in the picture.
+
+### Fixed
+- **A base of ~400 notes opened as a black canvas.** The spring net diverged: a concept with twenty leaves threw itself further out every frame, the world ended at 4,5e13 units and the view fitted to 2 % of an empty field. A speed limit of three rest-lengths per frame stops the fall; collision stays uncapped.
+- **A filter left the camera where it was**: the head line said eight notes while the picture showed nothing. The view now returns everything to the frame and centres it.
+- **A partial response from the file-scan preview threw the whole dialog away** (twice: the list and the status route).
+- **At phone width the graph was given an 80-pixel strip**; the shell now collapses its side rail instead.
+- The supply-chain section of the security notes named hashes, a licence and a version that did not match what is published; it now describes the artefacts that actually exist (electron-builder `latest-mac.yml` with SHA-512, BUSL-1.1 source-available engine, macOS arm64/x64 installers).
+
+### Security
+- **Private notes are no longer readable or deletable through the id paths.** An agent — or anything talking to the MCP door — can neither see nor remove a memory marked private; the check sits in front of the store, not in the UI.
+
+## [3.1.2] — 2026-10-02
+
+The app becomes publicly downloadable — and this finishes the release cut the previous commit started: `3.1.2` landed in `package.json` alone, while the version module, `server.json` and the npm package still carried 3.1.1 and `package-lock.json` had drifted to 2.13.14. Four tests were red on exactly that (`version`, `mcp-registry`, `npm-package`, `doku-zahlen`); the number is one again at every place.
+
+### Added
+- **Search section in Settings** (build package 2). Retrieval depth, the three retrieval tracks and the result count are settable in the UI and travel with every search call — no config file needed.
+- **Trace provenance per hit, measured search time, and a "brain warm" indicator** (package 2). Each hit names which leg saw it; the dashboard measures the response time itself and shows the core's delta cache as a state instead of an invisible speedup.
+- **Brain status on the dashboard** (package 2): version, node counters, encryption with its key storage, embedding model and vector counters — `/api/health` is now visible on the main surface.
+- **Today 2.0** (package 3): the time-machine slider and a consolidated truth movement — new, updated, superseded (with successor), deleted.
+- **Dossier 2.0** (package 3): contradictions resolve in the flow (newer wins, both-valid windows, editor); the resolve route grew a `window: true` option.
+- **Chat with full memory** (package 3): the engine question carries retrieval depth and track switches, hits get source-provenance badges, the answer pane shows search duration and warm state.
+- **The real K3PTA mark as app icon** — `build/icon.icns` built from the KeptaMark geometry on the Big Sur grid, replacing the generic electron.icns.
+
+### Fixed
+- **`since=0` is the time machine's "everything" window.** The briefing route no longer drops an explicit 0 onto the 24-hour default.
+- **The app's own coverage gate was red since 3.1.1.** `src/core/**` demands 100 % function coverage, and the core lift left four functions never executed: `aktiviereSuchCacheDelta` (called only from the bootstrap, which tests do not run), the unsubscribe closure of `onMemorieAenderung`, and `VerschlussteAuditDatei.flush()` together with its swallowed-error branch. Three tests cover them now, and the audit-file test awaits `flush()` instead of sleeping 120 ms and hoping. The run: 1,629 tests over 105 files, `npm run test:cov` green including `doku-check`.
+- **The documentation said things the repository does not support.** Each of these was a claim the repository itself contradicted, and each is its own line now — one line, one claim, one proof. (Getrennt am 13.10., weil die Zahlen-Wache einen Dateinamen aus dem ersten Teilsatz als Beleg fuer Prozentzahlen im letzten las.)
+  - The npm package inside this repo still claimed MIT while the core is BUSL-1.1 (package, `npm/LICENSE`, `npm/README.md` and the test that pins them moved together)
+  - the app's `LICENSE` was titled "K3PTA Enterprise" and pointed at an AGPL core
+  - the download and CI badges named `kepta-pro-releases` and `kepta-enterprise`, neither of which exists on GitHub (both 404) — they now name the public core repository, which is where the DMGs and the working CI actually are
+  - the security document still called `profile.json`, `scan-config.json` and the journals plaintext although they have carried the database key since 2.13.4
+  - and the LongMemEval runner README (`tools/longmemeval/README.md`, die Serie in ihren eigenen Worten — ein Papier dieses Repos, kein Maschinenlauf) stopped at 37,0 % (25.9.) although the 1.10. series reached 61,5 % — it now carries the whole series, the judge A/B (+11,7 pp with the engine untouched), the strict-binary 40,4 % reading and the in-sample caveat
+  - `aktiviereSuchCacheDelta`, the tier-free sidebar branding and the license number's disappearance from the UI are checked against the code, not remembered
+
+## [3.1.1] — 2026-10-01
+
+### Changed
+- **The app runs on the open core 3.1.1** (build package 1 of the app master plan). `src/core/**` was lifted from kepta-core 3.1.1: search cache keyed on a trigger-fed data generation with delta maintenance (`aktiviereSuchCacheDelta` wired at bootstrap), AND-first FTS, engine/library exports — the engine is identical with the core repository (~/kepta-core, no local forks).
+- **Branding is simply K3PTA.** The "K3PTA Pro" claims ("Licensed to …", upgrade banners, Pro pricing) left the UI; the license mechanism itself stays untouched.
+- Version parity 3.1.1 across package.json, server.json, npm package and the core version module.
+- The License Studio tools directory was restored from history (tests/license-studio*.ts had lost their subject in the copy).
+
+### Fixed
+- The encrypted sync journal and audit-file sinks (K1.-encrypted, same key as the knowledge base) exist in the app layer as documented app variants of the core classes (`VerschlusstesSyncJournal` / `VerschlussteAuditDatei`, `src/core/nebendateien.ts`) — the source-available core 3.1.x writes these files in plaintext. They are the seam an integrator wires and are covered by `tests/nebendateien.test.ts`; the app's own running audit trail is the sealed log inside the encrypted database (`src/lib/pruefprotokoll.ts`), not one of these files.
+- `saveWithIndex` keeps the app-era explicit-timestamp pass-through (LongMemEval ingest), documented as an app extension against core 3.1.1.
+- The Plan-State keychain adapter (`server/helfer/plan-schluesselbund.ts`) keeps the separate `app.kepta.plan` entries after core 3.1.x removed the target parameter from `schluesselbundFuer`.
+
+## [2.13.14] — 2026-09-26
+
+### Fixed
+- **Every preference survives the restart.** Semantic-search toggle, result slider, grouping, wizard choice, auto-learn, the adaptive profile and the scan wish all lived in the port-scoped browser storage and reverted to defaults at every start (same audit finding as the AI connection). They now mirror into the encrypted database and are rehydrated at boot — only filling keys that are missing, so fresher local choices win.
+### Security
+- **SSRF guard hardened:** multicast (224/4, ff00::/8), reserved (240/4), benchmark (198.18/15) and 192.0.0.0/24 are now blocked too, and the DNS-rebinding comment states what actually holds.
+
+## [2.13.13] — 2026-09-26
+
+### Fixed
+- **The AI connection survives the restart.** The browser storage hangs on the app's random-port origin — and the port changes at every start, so provider, model and API key were gone after every restart (audit evidence: ten orphaned origins in the app profile). Every save now mirrors into the encrypted database, and the app rehydrates from that mirror at boot when the storage is empty. Four new tests.
+
+## [2.13.12] — 2026-09-26
+
+### Fixed
+- **The `chat_cloud=deny` organization policy could be bypassed through the streaming endpoint.** The check lived only in the blocking /api/chat route — /api/chat/stream still reached api.openai.com. Both chat routes now run the same guard, and a regression test proves: stream + cloud host = 403, stream + local model = open. Found in the 26.9. line-by-line audit.
+- The license module's comment described the old lock model; it now states the freemium truth (Core, Pro day, daily limits, never locks).
+
 # Changelog
 
 All notable changes are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versioning follows [SemVer](https://semver.org/).
 
-> **Before you read the older entries:** every entry **below 3.0.0 (2026-10-01) describes a discontinued licence and app model** — a paid tier with a key, a free day, then daily limits. That is the history of this repository, not an offer, and nothing of it exists today. The current model has exactly two stages: **Core** (this repository — free, no licence key, no activation, no daily limit, no upgrade prompt) and **Enterprise** (by contract). Where an old entry names the paid tier, read it as a name that was removed.
-
-## [Unreleased]
-
-### Added
-- **The engine reads its own notes now: `src/core/begiffe.ts`, and `indexMemory` calls the producer.** Until this slice the Kern *had* `store.verknuepfeNotiz`, but exactly one caller used it — `src/core/mcp.ts`, and only with the wiki-links that caller handed over. Everything else that writes through the engine (folder, table, Claude and ChatGPT import, Obsidian vault, practice sync) indexed chunks and stopped: a note from a scan or an import arrived with no edge at all. The desktop app already read headings and wiki-links out of the note's own text (`kepta-app/src/core/begiffe.ts`), so one kernel drew a net in the DMG and a ring of loose points in the npm package a customer installs into Claude Desktop or Cursor — the divergence class we hardened twice in the app, still open here. The reading rule now sits in `src/core` as a twin file (no store, no DOM, no network, no import at all; `tests/core/boundary.test.ts` names it and says why), the producer takes the note's own terms first and the caller's names second, and `indexMemory` calls it — the one point every write path passes. `tests/graph-paritaet.test.ts` holds it on behaviour: a note without a single wiki-link gets its headings, a link inside prose counts as a term, a heading inside a code fence does not, sentence-shaped headings and section labels are refused, an empty text still keeps its title node, and saving twice adds no second edge.
-- **`scripts/probe-veroeffentlicht.mjs` — the release is proven from the registry, not from the tree.** Until today `publish.yml` ended its npm part with "npm accepted the version"; no step ever installed what a customer installs. The probe does: `npm install kepta-mcp@<version>` into a throwaway prefix, a sandbox `HOME` with its own 64-character key, then the real MCP conversation over stdio — `initialize` (server answers `kepta` `3.4.0`), `tools/list` (the eight advertised tools, counted), a `memory_save` that must return an id, a `memory_search` that must find it again, and a look at the database file it wrote inside the sandbox (`%tmt...` header, not `SQLite format 3`). It reads the bin name out of the installed `package.json` instead of guessing — the package is `kepta-mcp`, its command is `kepta`, and a probe that hardcodes either would be the bug it is looking for. Run against the live 3.4.0 on 13.10. it exits 0, and it now runs in `publish.yml` between "wait for npm spread" and the MCP Registry, so nothing is advertised that nobody has touched. One honest note from the sandbox: `usedVectors` came back `false` there (no embeddings in a throwaway home) and the lexical hit still landed — the probe checks the round-trip, not the vector leg.
+## [2.13.11] — 2026-09-25
 
 ### Changed
-- **The numbers console became a gate, and its hard list is the two surfaces again.** `scripts/zahlen-belege.mjs` — built on 12.10. after three papers sold figures their cited logs did not carry — ran on no machine: `.github/workflows/ci.yml` had no step for it, so the console was prose with a exit code. It runs in CI now (step `Zahlen-Belege`, after the suite, before the build) and it exits 0 on this tree, checked both in the working copy and in an unpacking of tracked files with no audit folder and no neighbour trees, which is what a runner sees (the route is `docs/belege/LESEFADEN.md` §Regel 6). The second half of the change is the duty list: `CHANGELOG.md` comes off `AUFPFLICHTUNGEN`, for the reason written in its source comment — the Leitung's rule of 12.10. names `README.md` and `README.de.md` and nothing else, the history of a changelog cannot be evidenced after the fact, and a console that is red for every state gets switched off rather than listened to. Measured on this desk before the change: 188 findings, 183 of them that one class, all of them in that file; the two surfaces came through with zero numbers lacking a citation, which is why they stay hard. Unchanged is the strict half of the guard — every number WITH a citation in the CHANGELOG is still opened against the artefact it names, and a dead, ambiguous or untracked path is still a finding there. Both directions are held by a case of their own now (`tests/zahlen-belege.test.ts`, which counts 24 of the tree's cases). The five findings that were real are healed where they stood: the released `118 %` is quoted against the only record that survives it, and that record is inside the repository now (`docs/belege/nacht-11-10/e2-weltdeckung-kueche-11-10.auszug.txt` — paper of second hand, labelled as one, its raw JSON lost with `/tmp`); the socket sentence no longer quotes a duration whose log macOS swept (`7,8 s` and `7 796 ms` are out, the retry ladder is named as an operating-system schedule rather than a measurement), and the single run it cites for the sibling symptom is itself in the repo now (`docs/belege/nacht-12-10/sockel-halb-1-230627.log.txt`, two machine lines cut — which and why, with bytes and sha256, in `docs/belege/REGISTER.md`); and the `45 %` of the old count guard is written as the thing it always was, a bar in that guard's own code (`Math.round(echt * 1.45)`), which needs no log because it measured nothing.
-- **A surface that is missing is now said out loud, not passed over.** The same console reads `AUFPFLICHTUNGEN` per file, and the list named `README.de.md` — a surface the engine ships and the desktop app never ordered, because its outward pages are English. Byte-identical guard, two rooms: the entry carries `optional: true` with its reason in the source, a console run prints `README.de.md fehlt (optional: …)` in every summary, and a required surface that is simply gone returns `pflicht-flaeche-fehlt` with exit 1 (`tests/zahlen-belege.test.ts`, case "sieht eine Flaechen-Datei, die fehlt"). Silent tolerance was the failure mode: a rule nobody's tree still has would have kept reporting "no findings" forever. The suite counts one more case today: 1041 in 85 files (run 13.10.2026, exit 0, `doku-check` attesting both READMEs).
+- **The sidebar no longer shows the version (Damian, 25.9.).** The card names the tier only — K3PTA Core / K3PTA Pro / K3PTA Enterprise — without the number; the version stays available in the system status and over /api/health. Reverses the sidebar part of 2.13.10.
+
+## [2.13.10] — 2026-09-25
+
+### Changed
+- **The app shows its version.** The sidebar names the tier with the version (K3PTA Core 2.13.10), and the system status lists it as the first row — previously the number existed only over MCP and /api/health.
+
+## [2.13.9] — 2026-09-24
+
+### Changed
+- **Tier naming (Damian, 24.9.): the unlicensed app is K3PTA Core** — the Pro day (24 h, every tool open) belongs to Core; **KEPTA Pro is the license key** that removes the daily limits. The sidebar shows KEPTA Core / KEPTA Pro accordingly. Same binary, one download.
+
+## [2.13.8] — 2026-09-23
 
 ### Fixed
-- **The scaffold words of a document's *form* are no longer terms in a customer's graph.** `RAHMENWORT` in `src/core/begiffe.ts` knew the changelog and README labels it was written for (`Added`, `Usage`, `License`), but the door measurement on 15.10.2026 counted **17 of the 500 term names** in a real installation that were still section furniture: `ablauf`, `bewertungen`, `gesamturteil`, `was gut funktioniert`, `befunde` from persona and dossier notes, and `documentation`, `security policy`, `how to report`, `reporting`, `reporting a vulnerability`, `supported versions`, `scope`, `not in scope`, `known limitations`, `executive summary`, `consequences`, `what to expect` from imported third-party READMEs and `SECURITY.md` files. The same measurement says where they entered: in a `mentions` edge the source side is always the note's title, and not one of the 17 ever stood on that side — all 17 came through the reading rule, which is the place this list guards. `tests/graph-geruest.test.ts` holds the 17 names verbatim (heading entrance, wiki-link entrance, and at the write path where a node would actually be created), and its controls hold the other side of the bar: `Ablauf der Frist`, `Security Review`, `Reporting tools` and `Befund der Woche` stay terms, because the comparison is exact and not a substring, and not a length cut — the 17 are 5 to 25 characters long, right across the middle of the legitimate range. Known opening, deliberately not touched here: the title node itself bypasses the list (`src/core/store.ts:976`), and so do the names a caller hands to `verknuepfeNotiz`. The suite counts six cases more on this tree: 1102 in 91 files.
-- **The suite stopped dialing whatever happened to own a port, and the guard that says so is `tests/sockel-vertrag.test.ts`.** `request(app)` listens per request: supertest wraps a function-app in `http.createServer(app)` (`node_modules/supertest/lib/test.js:36-42`) and calls `app.listen(0)` (`test.js:63`) — with no host, which on this machine binds `::` (IPv6 wildcard), measured: `listen(0) -> { address: "::", family: "IPv6", port: 55007 }`. A second process can then bind that same number explicitly v4 and answer the requests that were meant for the server under test. `scripts/nachbau-sockel.mjs` (output kept whole as `docs/belege/nacht-13-10/sockel-nachbau-1357.log.txt`, the script is in the repository so anyone can rerun it) leads the symptom on purpose: FALL 3 binds v4 after a v6-wildcard listener and the request to `http://127.0.0.1:<port>` comes back `401 text/plain` from the stranger; FALL 4 does it from a separate child process; FALL 5 shows the dense direction the heal depends on — a second explicit v4 bind on a number our listener already holds fails with `EADDRINUSE` instead of getting through; FALL 2 shows a v6-wildcard listener that arrives after our explicit v4 bind does not win the demux. This repository throws no 401 anywhere in `src/` or `server.ts` (grepped 13.10., no hits), so the two readings the suite produced — `Schreiblauf 27: 401 {}` (13.10., `tests/server-mcp-spiegel.test.ts`) and `Schreiblauf 30: 404 {}` (12.10.) — were answers from a neighbour, and the empty object is the signature: superagent leaves `res.body` empty when the answering server sends `text/plain`. `177` call sites in `14` files now share one listener per file, on `127.0.0.1`, on a number from `tests/helfer/port-vergabe.ts` inside `41000..44999` — below the ephemeral floor of this machine (`net.inet.ip.portrange.first = 49152`, read by the same script), where foreign programs come and go and nothing on this desk allocates by choice. `tests/helfer/hoerer.ts` holds it, and because files that rebuild their store per case must keep doing that, the listener takes the stack by hand-off (`gebeApp`) rather than re-listening: same routes, same keys, same expectations, one live connection instead of one new socket per request. Three guards keep it from drifting back: `request(app)` is refused in `tests/*.test.ts` with a named debt list that may only shrink (`SCHULD`, currently empty) and a Gegenprobe, the listener helper must bind `127.0.0.1` literally (source check plus Gegenprobe), and one case opens a real listener and asserts where it sits (`127.0.0.1`, IPv4, inside the window, and `PORT_BASIS + PORT_BEREICH < 49152` as arithmetic because a Linux runner cannot read the sysctl). Setup helpers no longer throw their own status away: `tests/helfer/anlage.ts` names what failed to be created — and says out loud that a `401`/`404` with an empty body is the stranger-port signature, not a privacy breach. That blind spot is how `tests/server.test.ts:481` reported `expected 200 to be 404` on the privacy floor (`src/core/mcp.ts:601`) while in fact no private note had ever been created; the same file alone with `-t` ran green three times. The listening list in `tests/helfer/port-vergabe.ts` was claimed to be guarded and was not: the hand-kept list of one file is replaced by a case that derives who listens from the suite itself (`hoererDerDatei`/`portFuerHorer` call sites) and fails in both directions — a listener missing from the list, and a list entry whose listener is gone. Found and removed while writing it: one such stale entry. Four new cases bring the tree to `1045` in `85` files (run 13.10.2026, exit 0 on the checking pass, `doku-check` attesting); the measuring pass before it named `1045` as well.
+- **The Buy button never leads into the void.** Until Paddle goes live the
+  upgrade URL falls back to `kepta.pro/upgrade`, which does not exist yet —
+  a fresh user clicking "Buy K3PTA Pro" landed on a dead address. The API
+  now reports `checkoutLive` (true only when `KEPTA_UPGRADE_URL` is set),
+  and the upgrade panel renders accordingly: with a live checkout the real
+  buy button; without it, "Get K3PTA Pro — write to Damian on LinkedIn".
+  Key activation beside it is untouched.
 
-## [3.4.0] — 2026-10-12
+## [2.13.7] — 2026-09-23
 
 ### Security
-- **Two dependency advisories closed in the lockfile, `package.json` untouched.** `proxy-addr` **2.0.7 → 2.0.8** (GHSA-jqcg-44mw-7w3h, *critical*: IP spoofing through IPv4-mapped IPv6 inside a trusted subnet, pulled in by `express@4.22.3`) and `source-map-js` **1.2.1 → 1.2.2** (GHSA-68fv-2mgg-jv7q, *high*: event-loop denial of service while parsing an indexed sourcemap, reached only through the build chain `vitest → vite → postcss` and `@vitest/coverage-v8 → magicast`). Both exist in the registry — checked before writing anything, because a blind sweep once set two dependencies on a version that was never published and `npm ci` died on `notarget`. `npm update <paket>` moved exactly the two subtrees: lock diff 12 added / 8 removed lines, no direct dependency, no range, no version in `package.json`. What the advisories do **not** mean here, said plainly instead of quietly: the core never sets `trust proxy` (`grep -rn "trust proxy" --include="*.ts" .` → no hit outside `node_modules`), so Express is never asked to derive a client IP from a forwarded header and the spoofing path has no trust decision to poison; and `source-map-js` is not part of the published bundle. They are closed anyway, because a public repository carrying a critical badge is itself a claim about the product.
-- **The lockfile's version field was a second text that nobody read, and now it is guarded.** The committed `package-lock.json` carried `"version": "3.2.0"` in both its top field and `packages[""]` while `package.json`, `server.json`, `npm/package.json` and `src/core/version.ts` all said **3.3.0** — stale since the 3.3.0 cut, noticed only because `npm update proxy-addr` happened to refresh the file. `tests/version-paritaet.test.ts` reads the two lock fields now (seven places, one case, the count where it was); the guard's first use is this exact state, so it is proven against a known-bad file and not only against a green tree.
+- **The nuke path is closed.** Deleting the database and the keychain
+  entries used to look like a fresh install and grant a second trial day.
+  The first-start anchor now lives in **two independent local proof
+  places**: the keychain entry and a hidden anchor file outside the data
+  folder (`…/Application Support/KEPTA/trial-anchor` and equivalents). The
+  two are read as a consensus — wiping one leaves the other, and forging or
+  corrupting either (garbage content, mismatched timestamps) is an anomaly
+  that forfeits the trial day. Still fully local: nothing phones home, and
+  license holders run ahead of every check. Two new attack tests cover
+  "delete everything" and "forge the anchor file".
 
-### Fixed
-- **The core separates its discs now; the gap to the app is closed.** Restated from a known limit into a fix, with both sides of every number and the same field on both sides.
-  **Before** (Stand 4 — world clamped to 1000² at every step, no separation), on the very field `tests/graf-ruhe.test.ts` builds (400 / 1 500 / 3 000 nodes at 27 concepts) run through Stand 4's own source (`git show 6ae32d3:src/core/graf-kraft.ts`, copied to `skripte/vorher/` so the comparison cannot drift): **37 / 935 / 7 134 pairs intersect** under the core's own uncapped rule `r = 6 + 2,4·√grad` and **15 / 443 / 5 236** under the surface's rule, with **36 / 221 / 818 places on the world frame**, in 65 / 311 / 745 ms; the deepest cut at the largest stock runs **98,6 world units** through a pair. Log `docs/belege/nacht-12-10/vorher-gleich-12-10.log.txt` (13:07:54). The same law had been measured a day earlier on a *different* corpus, 427 / 1 527 / 3 027 nodes (`docs/belege/nacht-12-10/welt-stufe.log.txt`, 12.10. 11:49-11:55, Zeile 1-2 / 15-16 / 29-30): **50 / 545 / 2 051** own-rule pairs in the shipped 140-tick picture (surface rule 15 / 177 / 1 005, capped 35 / 348 / 1 596) and **147 / 961 / 4 312** in a true cooling run, where **148 / 516 / 1 213 places sit against the frame**. Two fields, same law, same failure — which is why the like-for-like run exists. **How much world the discs need** is now measured rather than remembered: sum of disc areas over the world's area = **120,4 %** for Stand 4 at 3 000 nodes against **9,4 / 19,3 / 15,8 %** for this state (`skripte/weltdeckung.mts`, log `docs/belege/nacht-12-10/weltdeckung-1558.log.txt`, 15:58) — a packing pressure that can only be relieved by overlap. (The released 3.3.0 note states **118 %** — measured 11.10. on the kitchen corpus, whose raw JSON was lost with `/tmp`. What survives of that run is the audit dossier's table line, and it is now in this repository: excerpted unchanged into `docs/belege/nacht-11-10/e2-weltdeckung-kueche-11-10.auszug.txt`, a paper of second hand and not a log, carrying both the figure and the dossier's own note that the JSON is gone. The sentence stands untouched in that release's history below, and this line carries its own measured number beside it.)
-  **After** (this state, same field, solo run on a machine the probe judged ruhig — `docs/belege/nacht-12-10/ruhe-mit-anteil-1444.log.txt`, Start 14:44:20): **0 / 0 / 0 pairs at 400 / 1 500 / 3 000 nodes, counted by the core's own uncapped rule AND by the app's rule** (`tests/graf-ruhe.test.ts` prints its own pair counts, so the number and the verdict come from one channel). Geometry 57 / 424 / 1 296 ms. The picture is still a picture, and that is the second half of the same sentence: median real edge **283 / 385 / 571** world units against median random pair **427 / 572 / 817**, ratio **0,662 / 0,674 / 0,699** under the repository's own **0,8** bar — and that bar is an `expect` per size class since the review at 14:05, not only a printed number (the same bar and direction as `tests/ui/graph.test.ts:124`, which measures 0,156 on its 60-node group corpus; the densest class clears it by 0,101, so widening the world until the overlaps disappear now turns this case red instead of quieting it — and since 14:44 a **second** expectation catches what a ratio cannot: the smallest drawn disc must cover **≥ 0,3 %** of the picture's world side, measured off our own surface instead of invented (the app paints 0,932 % / 0,540 % / **0,414 %** at these same three stocks, measured off that surface and recorded in `docs/belege/nacht-12-10/flaechenanteil-1441.log.txt` — world side from `kepta-app/src/lib/graphLayout.ts:521`, radius from `src/components/KnowledgeGraph.tsx:1418` — and this state sits at 0,769 % / 0,572 % / 0,368 %). The second number was needed because the rejected world ×8 does reach 0 pairs with ratio **0,721**, *under* the 0,8 bar: world and edges grow together and the client's normalisation hides that; what it cannot hide is the disc — **0,052 %** of a 19 684-unit side, and that quotient now has a run of its own (`e2-code/nacht-12-10/skripte/kleinste-scheibe.mts`, log `docs/belege/nacht-12-10/kleinste-scheibe-2007.log.txt`, 20:07:18): one layout measures the smallest radius (10,16 WE under `scheibenRadius = 6 + 2,4·√grad`, a rule that does not see the frame) and the side (19 684), and the side is then checked against the artefact it came from (`bild-guete.json[28]`, `trennung-stufe.log:35`); the same script re-measures the delivered picture's three shares from this fresh channel and returns **0,769 / 0,572 / 0,368 %**, the same figures `docs/belege/nacht-12-10/ruhe-mit-anteil-1444.log.txt` reported. A wider clamp would have bought the zeros as a scatter — measured at **4 629** median edge, ratio **0,721** (`bild-guete.json[28]`) — and is rejected in the same table rather than in prose. `LAYOUT_VERSION` 4 → 5, because every shipped coordinate changed.
-  **What the law is now:** no re-clamping of a step (the frame was the press); the world is reported per picture as `welt.groesse` **and `welt.nullpunkt`** — since this state a place lies in `nullpunkt + [0, groesse]` on each axis and is not guaranteed to start at 0, with at least `WELT_RAD` (30 world units) of margin on **all four** edges — the side is computed from the reported origin rather than from the extent, because `ceil(extent) + 2·RAD` next to `floor(min − RAD)` leaves the top and left margin at 0-1 units, not at the ordered 30, because an append must not translate the picture (any translation moves every bit-exact anchored node: measured -232,6 for a node whose three anchored neighbours would not yield, with the world reporting `nullpunkt.x = -263`) (floor 1000, both READMEs pulled in this same change, and every consumer of the old constant listed before it moved); **two** separation passes per tick over a cell grid built from the field's own extent; then a bounded polish with no forces that runs until a pass finds no *real* intersection. The polish's exit test is the promise, not the courtesy: pushing discs apart to `r_a + r_b + 2` never terminates on a dense field, because the springs keep re-borrowing that air — measured with the old criterion, the polish burned all 200 of its passes at 1 500 and 3 000 nodes while the brute-force count said 0 pairs. Counting real intersections instead, it stops after **1 / 59 / 13** passes. What it costs, with both budgets untouched: **an answer that reads the frame is p95 ~60 ms against the ordered 120 ms** (throws 46 / 62 / 46 / 47 / 43 ms) and a cache hit 0,0-0,1 ms against 5 ms; the first calculation of a generation — now its own case, because the p95 of five throws is their maximum — is **136-138 ms at 500 nodes**, and the second and third calls of that generation demonstrably only read (`rechnungenProGeneration = 1,1,1,1,1`, an unseen parameter is the probe); the first calculation at 2 000 nodes is 353-375 ms against its 750 ms ceiling; a mutation prints **10,0 ms median against 15 ms** on this state and 77 of 77 unchanged nodes keep their place bit-exactly — the quietness probe refused the *verdict* for that case on every run after 13:06 (foreign load reached 8,37 cores on this desk), so the number is printed, not adjudicated; the last run that drew the verdict was 12:57 on the law one step before this one, at the same 10,0 ms.
-- **The quietness probe's own test stopped putting a verdict on a timing.** Its load case measured twice — the median with four busy loops running, four times the median without them — and demanded the first stay under the second. On a desk with spare cores that holds; on a CI runner's four cores the same four loops take a larger share of the scheduler, the ratio came out **4,23×** (283,26 ms against 267,96 ms) and the guard turned red on a commit that had touched nothing but a line of HTML. The blind spot that case was reaching for is now shown on **set numbers** instead of on the machine: one measurement with a quiet median, a running outlier and eleven node processes reads `ruhig` to a median-only rule and `nicht ruhig` to the OR-chain of three witnesses. What the live load still has to prove, and can: the probe holds its verdict back, names at least one of the three witnesses, and counts its own children above the process limit. Byte-identical with `kepta-app/tests/ruhe-sonde.test.ts`; there the same line turned the release tip red (run `38182756836`), here a runner had won that coin-flip once by luck and not by rule.
-- **The number guard no longer falls over midnight.** Its stamp rule read: the date beside the number must be the date of the run on disk. The same tree was therefore green at 23:50 UTC and red at 00:00 UTC (app run `38185328804`), while the number itself was never in dispute — a check that fails without anything changing is not a rule but a lottery. A stamp now carries one machine-independent bound: it may not name a day after the certified run. (The first cut here also demanded „not older than the newest test file". That one is withdrawn the same night, and the reason is on record: `actions/checkout@v4` writes every file fresh at `fetch-depth 1`, so on a runner the newest test file is *always* the run's own day, and an unchanged-but-correct README would have gone red at the next push — the same groundless red we just removed. What holds instead is the number itself: it must be this run's number, and a new case changes it. Report-vs-suite freshness is untouched, where mtimes do mean something — on a real machine.) Five cases in `tests/doku-zahlen.test.ts` and the rewritten case in `tests/test-bericht.test.ts` hold the edges: yesterday's stamp passes, the run's own day passes, a future stamp refuses, another run's number refuses, a number without a stamp refuses. `scripts/test-bericht.mjs` is byte-identical in both repositories again. Count for this state: **987** cases in 79 files.
-
-### Changed
-- **The test suite runs its files in parallel again, and the reason it could not is gone.** `vitest.config.ts` held `fileParallelism: false` since this wave because two files that start their own HTTP server got in each other's way — and the finding looked like a product bug („POST with an invalid ID → 400" answered 401, the *other* server's reply). Measured then: `tests/server.test.ts` alone 50/50 green, the whole suite in parallel 3 red, the same suite serial 982 green; 25,2 s parallel against 46,3 s serial. The cause was not order but **a written number**: `tests/server-einstellungs-maske.test.ts:17` bound port 8811, and a second run on this tree — nine people share this machine — hit it. Now every file that listens derives its port from its own name (`tests/helfer/port-vergabe.ts`: FNV-1a over the path, base 41000, span 4000, steering clear of 3000/3001/3478/3479/5173/8811/11434, i.e. below the ephemeral window and off the Leitungs-Previews), and a taken port **fails loudly instead of quietly picking another** — `portErzwingen` names the port, the file and the reading that a second run of the same tree is already listening there. Deliberately not `listen(0)`: a number that wanders between runs is not a number in this repository, and the file's previous fallback to a random port is what this removes. Two guards hold it, in the same change as the contract they now describe (`tests/port-vertrag.test.ts`, 7 cases): no test file names a port as a literal, no test file imports `server.ts` without `KEPTA_NO_AUTOSTART` (that import starts a real server on `PORT ?? 3000`, which is exactly the neighbour that answers 401), the derivation is stable, stays in its window, avoids the exceptions, and both the taken and the free path of `portErzwingen` are exercised on real sockets. Cost of the change, measured on this tree minutes apart on the same machine: **37,00 s wall parallel (vitest 36,41 s; 114,02 s of test time across files) against 81,44 s wall serial**, both exit 0 — the serial half ran with the same `--coverage` switch and wrote its report to `/tmp` so the attested report stays the parallel one, and the older 25,2/46,3 s pair stays quoted where it was measured. Measured again on the delivered state, in one window: **three parallel runs green in a row — 36,40 s, 38,93 s, 50,37 s** (19:02:42, 19:03:19, 19:03:58; each exit 0 measured separately, 1016 passed + 4 refused = 1020 in 83 files, coverage 85,78/88,04, 85,82/88,09, 85,78/88,04) against **108,21 s serial on the same tree at 19:05:29** (also green, exit 0, wall 108,92 s) — factor 2,2 to 3,0. Seven new cases brought the count to 1003 while this sentence was written, the tree then measured 1020 in 83 files, then 1024 when Scheibe W's `tests/zahlen-belege.test.ts` arrived at 18:09 with 17 cases and grew to 21 at 20:10:28 (foreign handwriting that this change does not touch), and it measures **1026 in 83 files** now (`doku-check` after the third green run of 18:57:48 UTC, the two extra cases being the proof below) — `tests/doku-zahlen.test.ts` spent the afternoon red on a stale README and twice refused to adjudicate at all ("report older than the suite"), which is the guard's second job. The READMEs carry the last measured figure, not mine. What parallelism also exposed, and what this change heals: `tests/server-mcp-spiegel.test.ts` compared two doors over two stores while trusting a process environment it had never set — `KEPTA_MAX_ACTIVE` (`server.ts:431`, read at every single create; a small value answers the next one with 429) and `KEPTA_WRITE_GATE` (a create can come back **200 without creating anything**, turned into an update or rejected). Vitest reuses fork processes across files, and four other files in this suite stub exactly those variables (`tests/server.test.ts:145,170`, `tests/import-{claude,ordner,tabelle}.test.ts`, `tests/engine.test.ts:451,471`, `tests/mcp.test.ts:326`), so which file a worker had run before decided whether this one had the framework its claim assumes. Two hits, both in a parallel run (16:04:17, 20:31), never alone, and the log said only `expected { applied: 3 } to match { applied: 2 }` — because the helper that wrote the duplicates threw every response away. Measured, not guessed: the clock is not the cause (120 runs over four millisecond patterns and 30 rounds through both doors under eight busy-loop processes, always applied = 3, candidates = 6); a cap that refuses a create is (reproduced at `KEPTA_MAX_ACTIVE=3`, which now fails at the write with `Schreiblauf 4: 429 {"error":"Limit reached: 4 active nodes, maximum is 3 …"}` instead of blaming a door three calls later). The healing is therefore: the file states the framework it needs (`vi.stubEnv` for both variables in `beforeEach`, `vi.unstubAllEnvs()` in `afterEach`), every write's status is checked before any comparison (`dubletten`), both stores' live counts are required to match (`gleicheGrundlage`) — and two new cases prove the guards bite: one sabotages a create and demands the 429 be named, one builds 4-against-3 on purpose and shows the two doors legitimately disagree (3 against 2), so the old failure signature is now a reproducible fixture rather than a rumour. What the parallel suite then found, in the same hour: a third parallel run was **red**, at 388,76 s against 101,64 s, with `load1 92,84` on ten cores (`mobileassetd` alone at 90,7 % CPU for 42 minutes) — and one of its three failures was mine, not the machine's: `expect(p95(cache)).toBeLessThan(5)` sat **before** the quietness bracket in the same file whose cold case I had moved behind it at 13:29. That is the third time in one afternoon for one class of mistake, so the class is now closed: every time-valued expectation in `tests/graf-kosten.test.ts` sits behind its own bracket, the four ordered figures (15 / 120 / 5 / 750 ms) unchanged, and the runner's patience — not a budget — went from a 20 s default to 60 s so a loaded machine cannot kill another Scheibe's 1 200-file cases mid-write. What the three green runs also say: the four timed cases refused in every one of them, because inside a ten-fork suite the in-suite probe measures 76-97 ms against the ordered 20 ms — the bracket refusing, audibly, which is the gate working, not skipping (all four stay in the 1020). The verdict for 15 ms still comes from a solo run (`12:57`, probe 6,32 ms, median 10,0 ms), and that is the channel to read before asking what the budgets cost.
-
-- **The suite no longer inherits a neighbour's limits.** Vitest runs test files in **reused fork processes** (`pool: "forks"`, `fileParallelism: true`), so a file that loosens a product setting and does not restore it hands that setting to whichever file lands in the same worker next. This was measured, not assumed: `tests/server-mcp-spiegel.test.ts` compared two doors over two stores while `KEPTA_MAX_ACTIVE` was still small from a neighbour's run — the next create is answered **429** (`server.ts:431`, read on every single write), the old helper threw the response away, and three calls later the failure appeared as a rule disagreement (`applied 3` against `applied 2`). Seven files in this suite loosen limits today (`tests/server.test.ts:145,170`, `tests/import-claude.test.ts:368`, `tests/import-ordner.test.ts:333`, `tests/import-tabelle.test.ts:257`, `tests/engine.test.ts:451,471`, `tests/mcp.test.ts:326`, `tests/server-import-ersatz.test.ts`), and two keys are read at **module import** rather than per call (`KEPTA_EMBED_MODEL`, `src/core/embeddings.ts:6`), which means a value from the operator's shell reaches every file without any file setting it. The contract now has two arms: `tests/helfer/umwelt-setup.ts` (wired as `setupFiles` in `vitest.config.ts`) puts **14 keys** on a defined basis before each file and restores the previous values after it — 13 product limits plus `KEPTA_NO_AUTOSTART`, which is a safeguard and is set, never cleared — and `tests/umwelt-vertrag.test.ts` (6 cases) holds the style: every file that loosens one of the 13 must restore it (`vi.unstubAllEnvs()`, `delete`, or a saved snapshot), the wiring must exist, the basis must apply **in both directions**, no file may delete the autostart safeguard, and every limit the core reads must be in the basis (`NODE_ENV` and `ELECTRON_RUN_AS_NODE` are named as runtime keys with a reason, not silently skipped). The guard proves it catches something: `tests/fixtures/umwelt/` holds a setter that never restores and a file that reads the key, and the case names both. Six new cases bring the tree to **1032 in 84 files**. Held three times in a row — 21:10:08 (78,96 s), 21:11:27 (83,09 s), and 21:13:28 (**80,62 s while a second full suite ran beside it**, load1 19,99 on ten cores), each exit 0 measured separately, `doku-check` attesting 1032 after every one. **A day of guards later the tree is 1039 cases in 85 files** (run 13.10.2026, 07:29 UTC, exit 0): seven cases came after that sentence was written — two for the numbers guard's own holes (a second-hand proof from outside the repository, and an empty neighbour path), five for the socket contract — and the 1032 above stays where it belongs, as the count of the three runs that earned it. What the doubled load still showed, named rather than smoothed: the **sidecar** process — not the attested run — failed once with `Schreiblauf 30: 404 {}`, a create that reached no router; five solo re-runs of that file were green, and the new write guard turned what used to be a silent 32-of-33 basis into a failure at the write. Under one suite on a saturated machine the transport of `request(app)` (an ephemeral listener per request) is the remaining open site; the fix would be one long-lived listener per case, which is a change to how those files drive the app, so it is reported rather than done here.
-- **The suite keeps half its cores free, and the reason is a socket, not a stopwatch.** Five runs today ended `ETIMEDOUT` (`tests/server.test.ts` 13:46, `tests/server-herkunftsdecke.test.ts` 15:43, `tests/server-mcp-spiegel.test.ts` 16:04, `tests/server-import-ersatz.test.ts` 18:36, `tests/graf-bilanz.test.ts` 21:08) — every one in a parallel or side-loaded run, none alone. It is not a response budget: `node_modules/supertest/lib/test.js:63` opens a **new ephemeral listener per request** (`if (!addr) this._server = app.listen(0)`), `test.js:181-186` raises `ETIMEDOUT: 'Operation timed out'` **only** for `resError.syscall === 'connect'`, superagent carries no default response timeout at all, and macOS retries a loopback `connect()` four times with a doubling backoff — `1+2+4+8 s`, a schedule of the operating system and not a measurement of this run — before giving up. What the 21:08 case itself took is not answerable from this repository: its duration was written down once, in /private/tmp/kern-340-beweis.log, and macOS sweeps that folder; the `7,8 s` and the `7 796 ms` that stood in this sentence have been removed on 13.10.2026 rather than left quoting a log no clone can open, and no rig log here carries either figure. The mechanism stands on the `node_modules` lines above, not on that duration. So the answer is the accept path of a starved process, and the knob is headroom, not patience: `vitest.config.ts` now exports `gabelDerSuite = Math.max(2, Math.floor(cpus / 2))` and sets `maxWorkers` to it (two forks on the four-core public runner). `tests/sockel-vertrag.test.ts` (5 cases) holds it — reading the **value** from the imported config rather than the prose, demanding headroom, demanding `fileParallelism: true` so this stays headroom and not a retreat to serial, and proving against a config with the line stripped. What the five following passes do **not** say, stated so nobody over-reads them: `docs/belege/nacht-12-10/sockel-rig.txt` records 23:06:27, 23:07:58, 23:09:32, 23:11:09 and 23:13:06, exit 1 in all five (a stale README count and Scheibe W's guard being rewritten mid-flight, not this), with **zero** `ETIMEDOUT` in the attested runs and zero in the two sidecar suites (`SIDECAR_EXIT=1`). Against the day's rate — 5 hits in 49 suite runs, 0,102 per run — five clean runs have probability (1 − 0,102)^5 = **0,584** even if nothing helped: these passes neither refute the old thesis nor establish the cap. Two things are established instead: the mechanism, by the lines above, and one sibling symptom the cap does not touch — `tests/herkunft.test.ts:83` answered `expected 404 to be less than 300` in **pass 1 of five** (`docs/belege/nacht-12-10/sockel-halb-1-230627.log.txt`, FAIL at line 407, the case at line 409 — the copy in this repository has its two machine-identifying lines removed, which is why they sit one lower than in the source; see the Kur note in `docs/belege/REGISTER.md`; green in passes 2-5 at 82, 253, 250 and 227 of those logs, which stay in the audit folder and are not in the repo — corrected on 12.10. 23:31 after the Leitung's recount, my first note said passes 1 and 3), a create reaching a router without that route, which is the same family as the sidecar's `Schreiblauf 30: 404 {}`; the cure there is one long-lived listener per file, which changes how those files drive the app and is therefore reported, not done. Recorded here as well, because it conditions every number after 20:39: **six busy-loop processes were mine and leaked** — `skripte/spiegel-schreibstatus.mts:88` spawns them, a `TypeError` at its line 109 killed the run before its cleanup at line 116, and PIDs 97275-97280 (parented to launchd since 20:39:25, about 92 % CPU each on a `ps` reading off this desk, not a line in either rig artefact) stayed burning through the 21:08 hit, through all five rig passes and through this entry. That makes the rig's conditions harder than the papers said at 21:1x, and it makes the earlier "the machine is loaded by others" wrong in part: some of that load was me.
-### Numbers of this state (graph separation, 12.10.)
-**81 test files / 996 cases** — the count one run collects; the timing cases were refused inside the full runs by the quietness probe or by the new admission gate (foreign load on this desk reached 8,37 cores at 13:26, and a 15-ms promise needs a machine that throws its own probe under 7,5 ms), so they are counted along but drew no verdict there. Their verdicts come from solo runs on a machine the probe called ruhig: the 500-node request, its cold first call and the 2 000-node calculation were adjudicated at **13:06** (`anfrage=46,62,46,47,43 · cache=0,1-0,0 · kalt=136,126,120,123,138 · nurGelesen=43,40,40,38,41 · 2000-Knoten=375,358,353`), and the mutation case is the reason the gate exists: it held at **10,0 ms** median (12:57, probe baseline 6,32 ms) and fell at **18,9 ms** (14:49, probe baseline 11,03/10,21 ms — a window the probe still called *ruhig*, because its own ceiling, 20 ms, is wider than the 15 ms the case promises). The case costs about 1,75× whatever the machine's baseline throw costs, so that number said as much about the neighbourhood as about the path. **Since 15:37 the gate is code, not proposal**: `tests/helfer/zeit-zusage.ts` lets a timed case adjudicate only when the probe's own throw is **at most half the ordered figure** (15 → 7,5 ms, 120 → 60 ms, 750 → 375 ms) and otherwise prints `kein Urteil — Maschine zu laut fuer diese Zusage` naming both the promise and the measured baseline — not a skip and not a moved budget, a verdict that only speaks where it may speak. Both directions are proven on **set** numbers (`tests/helfer/zeit-zusage.test.ts`, four cases), because a measured refusal would itself be a timing under load. The cache promise (5 ms) is deliberately outside the gate: 0,1 ms at a 6,3 ms baseline and 0,2 ms at a 31,4 ms baseline, i.e. invariant to the neighbourhood — gating it would only mute a claim that holds. The same sentence stands in `kepta-app/docs/graph-kosten.md` („The admission gate on a shared machine"). Logs in `audit-2026-10-09/e2-code/nacht-12-10/rohdaten/`. `npm run test:cov` green three runs in a row on the **corrected** state — **16:05:42, 16:08:02 and 16:09:30** — each: 81 files / 996 collected, 992 passed, 4 timing cases refused-and-counted, coverage 85,78-85,91 % statements / 88,04-88,20 % lines, `node scripts/doku-check.mjs` certifying **996** against both READMEs. Earlier green runs on the state one step before (15:47:12, 15:49:15, 15:50:35; and 15:42:14) are history, not this line's claim. `tsc --noEmit` 0 at 16:12. Four foreign cases flaked under shared-machine load and are green in isolation, reported rather than touched — all of them HTTP/supertest cases, which is the shape the port-sharing gap (Scheibe #26) predicts: `tests/server.test.ts` (PDF raw-byte fallback; 13:26 and 13:46, alone 4/4 at 13:29:56), `tests/graf-bilanz.test.ts` (13:41, alone 7/7 at 13:45:33), `tests/server-herkunftsdecke.test.ts` (ETIMEDOUT 15:43:45, alone 4/4 at 15:47:01) and `tests/server-mcp-spiegel.test.ts` (ETIMEDOUT 16:04:17). None of the four imports the graph code; `vitest.config.ts` already names the real fix: one port per file.
-
-## [3.3.0] — 2026-10-11
-
-### Added
-- **A second graph door that says what it cut.** `GET /api/graph/bild` answers the contract `graf-2` with `sicht`, `entitaet`, `tiefe`, `knoten`, `kanten`, `layout` and deliberately **no** `width`/`height`: positions come back in world units (`welt.groesse = 1000`), so a window size never enters a layout calculation. What it computed is not what it shows, and the answer admits it in `kuerzung` — the caps it honoured, what is left over (`uebrig`), **why** it cut (`grund`: `knoten`, `kanten`, `paarBudget`, `tiefe`, `privat`, `papierkorb`), how many private and trashed carriers were filtered (numbers, never names), which nodes and edges are orphaned, and a single `vollständig` flag. `ETag` and `If-None-Match` answer `304` without recomputing. `GET /api/graph` is unchanged, because outside agents write against its shape.
-- **Three import doors:** Claude's own memory files, a folder, and a table. A symlink inside `~/.kepta/inbox/` is **not** imported — it stays where it is and `POST /api/inbox/scan` reports it in `skipped: [{ file, reason }]`, because a link was enough to pull any readable file of yours into the memory an agent sees.
-- **Two guards, byte-identical with the app.** `scripts/platten-wache.mjs` measures free space **per path** (never per device), knows `--leicht` at 2 Gi and `--schwer` at 8 Gi, and exits **75** naming value, threshold and path; an unreadable number means „kein Start", not „durchgelassen" — the first cut read `df -k`, got `null` on a wrapped macOS device line, and let everything through. `scripts/ruhe-sonde.mjs` is its CPU twin: median, max/median ratio and foreign core load, and a measurement taken under load is refused as a publication.
-- **The API contracts are written down.** Seven were in the code and in no document — among them `mode:"replace"` needing `confirm:"replace"`, the snapshot taken before the purge, and the caps that now travel as fields instead of folklore (`LES_FENSTER` 5 000, graph 500 entities / 2 000 relations).
-
-### Changed
-- **The MCP door and the REST door share one human lock.** The write tools go through `nimmTenantWrite`, the same gate REST uses; the door has no road of its own into the engine, and a test holds that at the source. Where the tenant stands on `review` or `approve`, the answer is `pending` with an act number and **no effect**. What the catalogue does not advertise is refused rather than quietly ignored.
-- **A key no longer appears in an error message.** Found by reading our own failure output: the provider-build edge had to move, because `keyFor` was being flattened into a generic hint. Decided by Damian — **no key, no file.**
-- **`scripts/eval.ts` renamed its own metric.** What it printed as `Precision@5` divides the hits inside the top five by `min(5, relevant)` (`scripts/eval.ts:52`) — a capped **recall**, not a precision — while `scripts/ablation.ts:46` divides by 5 and prints 21 % on the same corpus. Both numbers now say which of the two they are.
-- **The route table caught up and defined itself:** 32 route paths, 35 verb-and-path pairs, measured out of `server.ts` the way `tests/doku-zahlen.test.ts` counts them, with the counting rule in the sentence so the two numbers stop being mistaken for a drift.
-- **Both READMEs corrected against what this repository measures** — a Docker install from a clean clone with the container key as `$(openssl rand -hex 32)` instead of a `<64-hex>` placeholder that copies into an install as a working command, and the language question settled in `CONTRIBUTING.md`: machine-readable text is English always, human-facing CLI output is English here, the app's German lives in the app.
-
-### Known limits, named rather than hidden
-
-- **The core's own layout does not separate discs; only the app's does.** Measured on this state with the core's **own** radius rule (`scripts/graf-bild.mjs:139`, `r = 6 + 2,4·√grad`, no cap): **99 intersecting pairs at rest at 427 nodes, 1 026 at 1 527, 7 254 at 3 027** — and at 3 027 its discs cover **118 % of its fixed 1000² world**, where the app reports 0. The healing was built and measured (separation inside the relaxation, 8 passes, a world growing with √n, `LAYOUT_VERSION` 4 → 5): it brought those numbers to **0 / 0 / 18**, and cost **47 ms** per frame where the contract leaves **2,9 ms** (`tests/graf-kosten.test.ts` holds both budgets). It was therefore **taken out of this release** rather than let the budget move. Two reasons the price is not cuttable tonight: the early exit never fires in a full build (1 120 = 140 × 8 passes; the springs create new intersections every tick), and the append path cycles at 140 ticks because the new node's neighbours are anchored and may not yield — a conflict with anchoring itself, not with the loop. **The gap stays open, it is measured, and the patch is kept** (`audit-2026-10-09/e2-code/kern-heilung-11-10/`). **Closed on 12.10.2026 by `LAYOUT_VERSION` 5** — the separation is in, its numbers are in the *3.4.0* entry above, and the history is left standing because a released note is not healed by deleting it.
-- **A relation's window travels, but the core's own write path leaves it empty.** `GET /api/graph` carries `validFrom`/`validTo` on every edge (merged from `6fe7955`, 07.10.2026: „die Kante sagt, wie lange sie gilt"), yet `addRelation` is called without a window, so both fields stand `null` for anything this engine wrote. A client drawing such a graph cannot tell an expired claim from a live one and must not pretend it can — **the shape is ready, the data is not.**
-
-### Numbers of this release
-**79 test files / 982 cases in one run** (979 passed, 3 refused by the quietness probe and counted along), `tsc --noEmit` clean, coverage gate held — measured 2026-10-12 01:29 with `npm run test:cov` and judged by the second run; `node scripts/doku-check.mjs` green on `README.md` and `README.de.md`. The line stood **977** until this hour, which was the stand of the run before the quietness probe lost its machine dependency; 982 is what the published tag executes.
+## [2.13.6] — 2026-09-23
 
 ### Security
-- **The HTTP API answers this computer only.** Requests whose `Host` header does not name this computer are refused — a website using DNS rebinding could otherwise read the notes — and so are requests from any other website that would change something: before, an ordinary web page open in the browser could write a note into the knowledge base through a form. The browser interface (`npx kepta-mcp ui`) was already protected. Local pages, AI apps over MCP and scripts work as before. Written on 17.09.2026 (`7943489`); this release is the first that carried it out, and until tonight the entry stood under a second, misplaced *Unreleased* header in the middle of the 2.x history — which sold a closed door as still open.
-- **express 4.22.3 with qs 6.16.0**: a crafted query string can no longer stall the server (GHSA-4mjr-xmp4-gh2g) or slip past the array limit (GHSA-x5fp-wj9c-mxmx).
-
-### Changed
-- **Ask in German, find English notes — and the other way round.** The query is expanded with the other language's terms before the search runs (`src/core/synonyme.ts`, wired in at `src/core/engine.ts:7`). On the eval corpus (58 notes, 45 queries) Hit@1 goes from 51.1 % to 71.1 % and the second metric from 62.2 % to 81.1 % — named `Recall@5 (capped)` here, because the same numbers stood under the label *Precision@5* in the entry that was moved, and `scripts/eval.ts` divides the hits in the top five by `min(5, relevant)` (see the rename below). Written on 17.09.2026 (`f5c7e3e`), carried out by this release, and it sat under the same stray header.
-
-
-### Changed
-- **Documentation corrected against what this repository measures.** Both READMEs now (a) build the Docker image from a clean clone and give the container key as `$(openssl rand -hex 32)` instead of a `<64-hex>` placeholder that copies into an install as a working command; (b) name `KEPTA_MAX_ACTIVE` (default **5000**, `server.ts` → `maxActiveMemories()`) where they previously wrote "unlimited", and keep that word for licence and daily limits only; (c) state one sentence about what surface exists — the core has no window, the free desktop app has one, Enterprise is by agreement — instead of four different answers, and correct the architecture line that put `src/ui/graph.ts` behind the API (`GET /api/graph` reads `store.getGraph`); (d) put the repository's own ablation numbers next to the hybrid-search claim — full text 71 % Hit@1, +graph 71 % (**+0 points**), +vectors 78 %, all three 78 %; (e) carry the vector-leg condition (`konfiguration.vektorChunks: 20000`, `tools/latenz/bench.ts` pins `min(20_000, N)`) into the latency sentence instead of leaving it in `tools/latenz/`, which now states it above its own table. `SECURITY.md` gained an **Environment variables** section — `KEPTA_HOST` (opens the unauthenticated API to a network and drops the `Host` check; reverse-proxy instead), `KEPTA_ENCRYPTION=off` (the one remaining, deliberate door to plaintext), `KEPTA_MAX_ACTIVE`, `KEPTA_DB_KEY` — plus the macOS keychain dialog that installs can hit and the address to read the key from. `docs/` gained `ENVIRONMENT.md` (every variable: default, effect, where it is read, what it can break) and `WORDS.md` (the vocabulary, including the two meanings of *key*, *restore*, *host* and *UI*, and what each metric name actually divides).
-- **The route table caught up and defined itself.** 32 route paths, 35 verb-and-path pairs, both measured out of `server.ts` the way `tests/doku-zahlen.test.ts` counts them, with the counting rule in the sentence so the two numbers stop being mistaken for a drift. `GET /api/graph/bild` is documented as the honest sibling of `GET /api/graph`: contract `graf-2`, positions in **world units** (no `width`/`height`, by design), and a `kuerzung` block that says which caps it held, what it left out, why (`knoten`, `kanten`, `paarBudget`, `tiefe`, `privat`, `papierkorb`), what is orphaned, and one `vollstaendig` flag — numbers, never names.
-- **`scripts/eval.ts` renamed its own metric.** What it printed as `Precision@5` divides the hits inside the top five by `min(5, relevant)` (`scripts/eval.ts:52`) — a capped **recall**, not a precision — while `scripts/ablation.ts:46` divides by 5 and prints 21 % on the same corpus where this script prints 81 %. The label now says `Recall@5 (capped)`, the detail column `R@5`, and the header comment names the other script so the two are never compared again. No measurement changed and no number moved: re-run after the rename, the engine still reads Hit@1 71.1 %, Recall@5 (capped) 81.1 %, MRR 0.759 against the naive baseline's 51.1 % / 62.2 % / 0.559.
-- **The seven API contracts from the hardening pass are written down** (they were in the code and in no document): `mode:"replace"` needs `confirm:"replace"` and answers `400` without it, snapshots to `<data folder>/backup/kepta-pre-replace-<timestamp>.db` before the purge and names it as `backupPath`, `dryRun:true` shows `affected` first, a payload without a usable note is refused; `?permanent=` accepts only `1|0|true|false`; `GET /api/settings` masks secret-shaped keys and `ai_settings` as `{gesetzt, ende}`; errors are JSON with `limitBytes`/`receivedBytes` and no stack; `POST /api/repair/imports` really stops at 16 KB; a symlink in `~/.kepta/inbox/` is skipped, stays in place and is reported in `skipped`. Both READMEs carry the list, `SECURITY.md` carries the backup-retention consequence.
-- **CONTRIBUTING.md settled the language question it used to leave open.** One language per surface: machine-readable text (API errors, `reason` fields, tool descriptions) is English always; human-facing CLI output is English here and the app's German lives in the app. The two places that still break the rule are named in the file instead of quietly surviving — `Passphrase fehlt` / `Bundle fehlt` in `server.ts` and the gate's `reason: "keine ähnliche Erinnerung"` in `src/core/engine.ts` — and the file now says there is no guard for German string literals yet, so nothing catches a third.
-- **Both test-count guards were rebuilt on one source — and one of them had never run.** `scripts/doku-check.mjs` read whatever `test-results/vitest.json` an earlier run had left behind: on 10.10. that was the 07.10. report, and no script in this repository called `doku-check.mjs` at all, so its header comment ("runs at the end of `npm run test:cov`") described an intention. `tests/doku-zahlen.test.ts` counted `it(`/`test(` blocks in the source — 719 at that moment — and held the READMEs to a bar set by its own code: 45 % above that static estimate (`Math.round(echt * 1.45)`, as the file stood before this entry's rewrite), which is how 476 stayed standing while a run executed 770. A tolerance is not a measurement and needs no log; the run report it read is `test-results/vitest.json`, a product of the run that comes after it. Both guards now listen to one module, `scripts/test-bericht.mjs`: it reads the JSON report of a run, compares every number in the READMEs to exactly the count of cases that ran (skipped ones not included), and refuses with a reason when the report is missing, older than the newest test file, or written by a partial run. Measured on this state: **67 files / 770 executed cases**. `npm test` and `npm run test:cov` now write that report and end with `node scripts/doku-check.mjs`, which additionally refuses a red run. The static count survives as a floor against invented numbers, with the reason written down: `it.each(regeln)` counts as one and runs as many, and an `it.skip` stays invisible to the count while vitest lists it as collected. A test cannot read the report of its own run (vitest flushes it at the end), so the first `npm test` after a checkout or a suite change is the measurement and the second is the check — CI has to keep that order. **CI keeps that order now:** `ci.yml` gained a `Messvorlauf` step (`npm test || true`, its verdict deliberately discarded) ahead of the two gates, with the reason written above it so nobody deletes it as redundant. **And the hero badge stopped being unguarded:** `scripts/test-bericht.mjs` now returns every test-count claim with its kind and line (`README.md:7 Abzeichen: nennt 2164 Tests, gelaufen sind 2163`) and demands a measurement date next to the number — the READMEs say `measured 2026-10-10` / `gemessen am 2026-10-10`, and `dokuVergleich()` fails if the date is missing or names a different run than the report. A picture in line 2 that nobody searches is now a claim with an address.
-
-### Added
-- **A product rule in the documentation: no key, no file.** Decided 10.10.2026 — when K3PTA would create a knowledge base and cannot put its key somewhere safe (no keychain, a denied approval, CI with an empty environment), the file is **not created**: non-zero exit, the message names `KEPTA_DB_KEY`, and `KEPTA_ENCRYPTION=off` stays the only deliberate door to plaintext. Existing files open as before, and the old quiet failure — placeholder key, plaintext database, exit 0 — is written down as the behaviour of builds before the change, not as the rule. `README.md`, `README.de.md`, `npm/README.md` and `SECURITY.md` all say this; `docs/ENVIRONMENT.md` gained the **CI: no key, no run** section with the three traps (an empty value is not "unset", a placeholder is a value, a logged key is a published key).
-
-## [3.2.0] — 2026-10-02
-
-The audit pass on this repository, done as fixes rather than as notes. Every item below was verified against the code first, and the ones that were claims in documentation now have a test that keeps them true.
-
-### Added
-- **`GET /api/health` reports index health.** A degraded full-text leg used to be invisible: `ftsSearch` caught every exception, logged nothing and returned `[]`, so a broken FTS index looked exactly like "no results". The store now keeps the last failure and health shows it (`fts: { ok }` / `{ ok: false, at, fehler }`) — degradation stays intentional, but it is no longer silent. Covered by `tests/core/fts-ausfall.test.ts`.
-- **Holdout slices in the LongMemEval runner**: `--offset N` besides `--limit N`, `offset` in the report JSON, and a `-offsetN` fragment in the record name so an untouched slice never overwrites the tuning run of the same day. The lever series was selected on the same 500 questions it reports on — this is the tool that lets the next number be an honest out-of-sample one.
-- **`tests/longmemeval.test.ts`** — 14 tests for the harness's pure logic (scoring, judge parsing, the verbatim fast path, question slices, the time levers, dataset loading). No Ollama, no 278 MB download. `tools/longmemeval/README.md` had claimed these tests existed for weeks; they exist now.
-- `tools/latenz/bench.ts` writes the first-query cache warmup into its JSON (`suche.warmupErsteAbfrageMs`) instead of only printing it — a citable number needs a record.
-
-### Changed
-- **The privacy floor is transport-independent.** `scope: "private"` filtered only `searchMemories`/`listMemories`. It now holds on every agent channel — stdio MCP, `POST /mcp`, and all four HTTP mirrors — because "private" is a disclosure rule toward the agent, not a permission check between local processes.
-- **Entity matching respects word boundaries.** A query mentioning `art` no longer links to *Neustart*: matches are word-bounded, names under three characters never steer the ranking, and entity names are regex-escaped before compilation (`c++` used to be a pattern, and a broken one). Re-measured afterwards: `npm run eval` is unchanged — Hit@1 71.1 %, Precision@5 81.1 % (naive substring baseline: 51.1 % / 62.2 %).
-- **One PDF extractor.** The inbox import path no longer kept its own byte-level regex next to the shared `textAusPdf()`; it calls the shared extractor and falls back to the byte scan only when that yields nothing. The import path is async throughout — no synchronous file reads on the request loop.
-- **The Python client leaves `scope` to the server** — default `local`, matching the HTTP API, instead of silently sending a scope the server would have to override.
-- **`publish.yml`: an HTTP 400 from the MCP registry is a rejection again.** The publish step previously grepped `400|bad request` and called it "already registered". Whether the version landed is now decided by asking the registry, and the rejection patterns are the duplicate ones (`already registered`, `already exists`, `409`). Simulated in `tests/workflows.test.ts` with stubbed `curl` and `mcp-publisher`.
-- **Documentation that overstated itself.** The headline benchmark number is framed as what it measures — context sufficiency judged locally, half credit for `teilweise`, 29.8 % of questions settled without a judge call — next to Zep's end-to-end answer accuracy, which is not the same metric, plus the in-sample caveat on the tuning. Coverage thresholds are labelled with the scope actually measured (`src/core/**` + `server.ts`), the route table names the two MCP mirrors the Python client depends on, the vendored registry schema no longer claims to be generated from a file that does not exist here, "quelloffen"/"open engine" became source-available with the OSI distinction stated, and the 0,74 s cache claim — which had no committed record — is out of the READMEs.
-- **Two README sentences that contradicted this repository's own records.** The latency line said "encrypted the whole time" above numbers from runs whose `konfiguration.verschluesselung` reads *aus* and whose embedder is the deterministic stub; the benchmark line said every answer is committed, while the committed rows carry only id, type, skill, verdict, context count, settling index and verbatim flag — the question and answer text comes from the pinned upstream dataset. Both sentences now state their measurement conditions, and `tests/doku-zahlen.test.ts` guards them: it re-reads every latency record, asserts the disclosure words are present and the false ones absent in both READMEs, and pins the best benchmark record's row keys. `466 → 473 tests`.
-- **A throughput number in the 3.0.0 entry that no record carries.** The cache bullet paired a recorded ingest baseline (2,530 memories/s at 100k) with a figure no committed run ever produced; the three 100k cache runs read 5,082, 5,136 and 5,268. The entry now names the two record files behind the pair, and a guard rejects any ingest number in the documentation that stands in no record.
-- **Dead weight out:** ~2,000 lines of abandoned browser-UI code, a duplicated HTML sanitizer in `server.ts`, unused imports and limiter remains.
+- **The free limits can no longer be talked out of the app.** The daily
+  counters and the trial day used to live in process memory (a restart reset
+  the counters) and as a plaintext timestamp (a rolled-back clock extended
+  the day). Both now live in a **sealed plan state**: AES-256-GCM encrypted
+  and authenticated with a dedicated keychain entry that is separate from
+  the database key and never displayed, plus a first-start anchor in the
+  keychain that survives the database. Concretely: an app restart resets
+  nothing; a clock that falls behind the highest seen time forfeits the
+  trial day; editing, forging or deleting the state is detected (the
+  authentication fails or the anchor proves an earlier install) and costs
+  the trial day — never the data, and license holders are unaffected.
+  Every attack has a failing test in `tests/probetag.test.ts`.
 
 ### Fixed
-- **A copy-paste command that 404s.** Both READMEs, the usage line the CLI prints when ChatGPT-Import is called without a path, and three source comments sent users to the importer through a package named `kepta`. That package does not exist on npm — the repository root is `private`, the published name is `kepta-mcp` — so the command broke at exactly the moment someone copied it (`npm error 404 Not Found - GET https://registry.npmjs.org/kepta`). The working spelling — `npx -y kepta-mcp` with the same arguments — is now in all nine places, and `tests/doku-zahlen.test.ts` rejects any `npx` target in the documentation and sources that a fresh machine cannot install. `473 → 474 tests`.
-- **The same name, torn in half.** A second way to break the identical command: writing the published package name across a space. One source comment here carried it (`npm/engine-entry.ts`, on the bin entry it describes), and the live v3.1.2 GitHub release notes carry it in three copy-paste commands plus the client library's package URL — every one of them pointing at a target that does not exist. The comment is fixed and the guard above learned the rule: no `kepta` name may be split by whitespace anywhere in the documentation or sources. The release text itself lives outside this repository, so it has to be corrected where it is published.
-- A look-alike character from a foreign alphabet had slipped into a command name in this file (`kepta stats`, with a Cyrillic letter where the final Latin "a" belongs) — invisible when reading, broken when copied. The copyable documentation files are now scanned for characters outside the alphabets they use.
+- The 429 limit response now carries the `X-KEPTA-Plan` header like every
+  other answer of the middleware.
 
-## [3.1.2] — 2026-10-02
-
-### Changed
-- `npx kepta-mcp ui` no longer starts a browser interface — K3PTA is headless by design and the old browser UI is not a product. The command now prints the one right way (`npx kepta-mcp setup`); the UI code dropped out of the shipped bundle entirely.
-
-## [3.1.1] — 2026-10-02
+## [2.13.5] — 2026-09-22
 
 ### Added
-- `defaultExtensions` and `PLAINTEXT_KEY` are exported from the library entry — embedders configure per-store encryption keys (this is what K3PTA Enterprise uses for per-tenant keys).
-
-## [3.1.0] — 2026-10-02
-
-### Added
-- **The npm package is embeddable**: `kepta-mcp` now exports the engine (`KeptaStore`, `searchMemories`, `saveWithIndex`, `consolidateMemories`) through a library entry — same one-dependency guarantee, the CLI/MCP binary is unchanged. This is the surface K3PTA Enterprise builds on.
-
-## [3.0.0] — 2026-10-01
-
-### Added
-- **Search cache keyed on a trigger-fed data generation** — the retrieval path no longer materializes every active memory, every chunk vector and the whole graph on each query. Trigger invalidation covers every write path (including raw SQL imports); access-statistics updates patch the cache in place instead of invalidating it. At 100,000 memories this takes search p95 from **7.16 s to 94.8 ms** (76×), and product-path ingest from 2,530 to 5,082 memories/s — the two records behind that pair are `latenz-100k-2026-09-30.json` and `latenz-100k-cache-2026-10-01.json`. Public series in [`tools/latenz/`](tools/latenz/).
-- **Precomputed vector norms** in the cached retrieval lane — the vector leg now computes a plain dot product per chunk instead of re-deriving chunk norms on every query (100k: p95 94.8 → 85.0 ms). First **1,000,000-memory record**: p95 782.8 ms on a worst-case synthetic corpus, with the remaining cost attributed to FTS bm25 ranking.
-- **AND-first FTS** — multi-term queries intersect the smallest posting list first and only fall back to the OR union when the AND is thin, merged by bm25 value. 1 M memories: search median 641.7 → **276.5 ms**; 100k median 72 → 46.6 ms. Retrieval quality byte-identical (`npm run eval`: Hit@1 51.1 % → 71.1 %, Precision@5 62.2 % → 81.1 %, naive baseline vs. engine — the script's two blocks, lexical without vectors, before and after).
-- **Delta cache maintenance** — the store notifies the retrieval cache of every memory mutation by id; the cache patches itself incrementally instead of rebuilding. With `aktiviereSuchCacheDelta(store)` wired at startup, the cache grows with the data: the post-ingest cache build at 1 M memories collapsed from **359 s to 0.74 s** (console-measured; no committed record — see tools/latenz/README.md), and writes never trigger a rebuild. The trigger generation check remains as a safety net for unmetered write paths (raw SQL, imports). Audit suite: delta-patched writes never force a rebuild, raw SQL always does.
-- **MCP tool parity over HTTP**: `POST /api/mcp/consolidate` and `POST /api/mcp/forget` mirror the `memory_consolidate` and `memory_forget` executors (29 → 31 routes). The Python client gained `consolidate()` and `forget()`, a `reference` memory type, and a parity test pinning all 8 MCP tool names to client methods — every AI in every language gets the full tool set.
-- `tools/latenz/bench.ts` — a public latency benchmark: fills the store through the product write path and measures `searchMemories()` percentiles (p50/p95/p99) at controlled memory counts, with a deterministic 768-dim stub embedder so the vector path is measured without a GPU.
-
-### Changed
-- **There are no tiers inside the memory anymore.** K3PTA is the local, encrypted memory for AI systems — free, €0, forever, unlimited: no account, no daily limits, no key. Everything that makes the memory smart lives in this free, source-available engine (BUSL-1.1 — not OSI-approved open source). Teams and organizations get **KEPTA Enterprise by request** (team memory, central policies, MDM, organisation-wide audit) — coordination is the only thing ever charged for. The proprietary desktop app and the Pro tier are discontinued.
-- All Pro/App references removed from code and docs: the MCP/CLI/demo/setup entry points no longer point to a desktop app or a Pro day; READMEs (EN/DE), npm and Python package READMEs rebuilt around the one-engine story; the old app screenshots left the repository.
-
-## [2.13.22] — 2026-09-29
-
-### Changed
-- **The license is now Business Source License 1.1 (BUSL-1.1)** — replacing AGPL-3.0-or-later. Every line stays public; production use inside your own organization on your own hardware is always allowed; **offering the engine (or a modified version) to third parties as a hosted or managed service is reserved** for a commercial license. Each version converts to AGPL-3.0-or-later four years after its release. The Python client under `python/` stays MIT.
-
-## [2.13.21] — 2026-09-26
+- **Every download comes with one free Pro day.** A fresh install runs 24
+  hours with every Pro tool, unlimited — no panel, no account, no key. The
+  first-start timestamp lives in the encrypted database (`probetag_start`),
+  so a restart is not a new day, and nothing phones home. The free plan
+  takes over afterwards exactly as before: the same features with generous
+  daily limits, never a lock. The sidebar footer shows the running day
+  ("Pro day · 21 h left"), the upgrade panel names the clock while it runs,
+  and the day's end arrives once as a plain toast — a sentence, not a wall.
 
 ### Fixed
-- **Three 2.13.4-era fixes from the app that never reached the open core (found in the 26.9. line-by-line audit):**
-  - **The keychain write no longer overwrites.** The macOS path still used `security add-generic-password -U` — the exact trigger of the 22.9. keychain disaster: a failed read (ACL, hung security) looked like "no entry", and the next write destroyed the real key, making the whole knowledge base undecryptable. Now: no `-U`, exit 45 refuses to overwrite with recovery instructions, and a second read attempt runs before anything is created.
-  - **The sync export paginates.** A blind `listMemories()` capped the "full export" at 100 notes — silently incomplete beyond that (found on 22.9.: 100 of 3,644). Now: paged at 5,000 until everything is out.
-  - **Retrieval considers up to 5,000 active memories** (was 500), matching the app — with more than 500 notes the headless engine searched a truncated set.
-- First tests for the sync export/import in this repo (pagination + full roundtrip).
+- The license-route header comment still described the pre-freemium world
+  ("locked from the first start, no trial") — it now describes what the app
+  actually does.
 
-## [2.13.20] — 2026-09-25
-
-### Changed
-- **The npm README catches up with the repository** (the published 2.13.19 tarball predated the recent docs commits): the npm page now carries the ASCII architecture diagram and matches `npm/README.md` in the repo. Code unchanged.
-
-## [2.13.19] — 2026-09-24
-
-### Changed
-- **Every entry point carries the tier story.** The stdio MCP server, the setup command and `kepta stats` now point to the desktop app the way `ui` and the demo already did: headless and unlimited here — the desktop app (K3PTA Core) adds the UI and starts with a free Pro day.
-
-## [2.13.18] — 2026-09-24
-
-### Changed
-- **The READMEs carry the tier naming everywhere:** Core is the free desktop download (one free Pro day, then daily limits, never locks — plus the headless engine for agents), Pro is the license key.
-
-## [2.13.17] — 2026-09-24
-
-### Removed
-- **The browser UI is gone from K3PTA Core.** The interface is the free desktop app (K3PTA Pro) — one file, one download, one free Pro day with every install. `npx kepta-mcp ui` now points there instead of serving a second-rate page; the demo ends with the same pointer. The graph builder stays (API + CLI).
-
-## [2.13.16] — 2026-09-24
-
-### Fixed
-- **The version string drifted: the UI and /api/health reported 2.13.12 since 2.13.13.** The embedded app version (src/core/version.ts) was never bumped alongside package.json — the promised parity guard (tests/version.test.ts) did not exist. It does now: one test holds all five places (package.json, server.json ×2, npm/package.json, version.ts) to the same number.
-
-### Changed
-- **The core UI funnels to the desktop app.** A persistent banner above the list states plainly what this surface is (the headless developer core) and that the full desktop app is free — one free Pro day with every download, then daily limits, never locks — with the download link right there. The Pro panel no longer promises a Linux build (releases ship macOS and Windows) and leads with the download; the `ui` command prints the same pointer on start.
-
-## [2.13.14] — 2026-09-23
-
-### Changed
-- **The README leads with the download.** The funnel is now: see the app →
-  download it (one free Pro day included) → connect agents. The throwaway
-  demo command is no longer advertised (it stays in the package for
-  developers). The desktop app is named correctly everywhere (K3PTA Pro,
-  macOS and Windows — no Linux builds exist), and the buy path reflects
-  reality: the Upgrade button points to the current way to buy while the
-  self-serve checkout is in its final review.
-
-## [2.13.13] — 2026-09-22
-
-### Changed
-- **The demo opens on the graph.** `npx kepta-mcp demo` now lands in the
-  browser with `#graph` (the surface understands a `#view` hash), and the
-  graph spans the full content width instead of sitting in a 320 px list
-  tile. The demo corpus grew from 10 to 33 notes — the fictional tax firm
-  „Steiner & Kollegen" with clients, deadlines, DATEV, a live contradiction
-  (Hoffmann filing deadline vs. extension) and an expired note, so graph,
-  search, contradiction and the time slider all have something real to show
-  on the first screen.
-
-### Fixed
-- **Force layout stopped drifting into a corner.** The tick loop applied
-  each edge force to only one endpoint (the counter-force landed on a not
-  yet initialized velocity and was discarded), so the graph's center of
-  mass walked into the bottom-right corner on wide canvases. Forces are
-  now applied symmetrically; the graph centers at any size.
-- **The Pro panel names the current pricing** — €12/month or €120/year for
-  K3PTA Pro, price by agreement for organizations (K3PTA Enterprise). The
-  stale "€25/user/month for teams (K3PTA Business)" line is gone.
-- **The graph view no longer leaves a permanent "Loading graph…" label**
-  above the canvas.
-
-## [2.13.12] — 2026-09-22
-
-### Changed
-- **`npx kepta-mcp demo` is now a show, not a page.** A 90-second story plays
-  in the terminal — and every beat is real product code on a throwaway
-  database: a fact walks in and the classification rules decide its type and
-  tags, the memory answers a question with sources, the client changes their
-  mind and the contradiction surfaces on demand, the supersede chain keeps
-  both versions, the time slider proves what the file said 30 days ago, and
-  the throwaway file is encrypted (AES-256 with a per-run throwaway key —
-  no keychain contact). At the end the same database opens in the browser.
-  `--fast` plays without pauses (that is the mode the tests drive).
-
-## [2.13.11] — 2026-09-21
-
-### Fixed
-- **Graph-Zähler zählt, was gezeichnet wird:** die Beschriftung des
-  Wissensgraphen nannte alle Kanten der API, gezeichnet werden aber nur
-  Kanten mit beiden Enden im Bild — die Zählung passt sich jetzt der
-  Leinwand an statt der Rohdaten.
-- **esbuild 0.28.2** (nur Entwicklungswerkzeug): räumt das Dependabot-
-  Finding „arbitrary file read im Dev-Server" weg (LOW, Windows-only).
-
-## [2.13.10] — 2026-09-21
-
-### Added
-- **Das Erlebnis-CLI:** fünf Befehle fürs Terminal, auf derselben
-  verschlüsselten Datenbank — `npx kepta-mcp remember "…"` (Typ und Tags
-  setzt die Klassifikations-Regeln, nicht „alles Fakt"), `recall "Frage"`
-  (Top-Treffer mit Typ, Alter und Tags), `timeline "Thema"` (alt → neu),
-  `contradict` (Widersprüche/Duplikate als dry-run), `stats` (Notizen,
-  Verschlüsselungsstatus, Graph-Kanten, Top-Tags).
-
-### Fixed
-- **`recall` blieb stumm:** die CLI-Kommandos fielen im Dispatcher durch, der
-  MCP-Server startete mit, und das asynchrone `recall` wurde vom Abbruch des
-  (nun konkurrierenden) Servers geköpft, bevor es antworten konnte. Die
-  Kommando-Zweige sind jetzt exklusiv verkettet, `process.exit()` wartet auf
-  den stdout-Drain — abgesichert durch einen Test, der das echte Bundle mit
-  echtem `argv` fährt.
-
-## [2.13.9] — 2026-09-21
-
-### Fixed
-- **Die Oberfläche war ganz leer (nicht nur der Graph):** in das eingebaute
-  Seiten-JavaScript hatten sich drei übereinanderliegende `function openNote`
-  Deklarationen eingeschlichen — ein Syntaxfehler, der das gesamte Frontend
-  tötete, während der Server heil weiterlief. Neu im Wächter-Test: das
-  eingebettete JavaScript muss als Code parsen, nicht nur als String.
-
-## [2.13.8] — 2026-09-21
-
-### Added
-- **Ähnlichkeits-Kanten im Graph:** Notizen mit geteilten Tags oder
-  ähnlichen Titeln werden gestrichelt verbunden (dieselbe Heuristik wie in
-  K3PTA Pro — [[Links]] bleiben die durchgezogenen echten Kanten und überleben
-  jede Kürzung). Die Legende im Graph-Tab zählt beide Sorten.
-
-### Fixed
-- **Der Graph war unsichtbar:** die Knoten wurden gezeichnet, bevor das Canvas
-  im Dokument hing — die Themen-Farben ließen sich nicht auflösen, schwarz auf
-  schwarz. Jetzt misst die Ansicht nach dem Einfügen und holt das Kraft-Layout
-  passend zur Breite vom Server (`/api/graph?width=…&height=…` — das Layout ist
-  serverseitig gerechnet und in tests/ui/graph.test.ts abgesichert).
-
-## [2.13.6] — 2026-09-21
-
-### Added
-- **`npx kepta-mcp demo`:** die 60-Sekunden-Führung — eine Wegwerf-Demodatenbank
-  im temporären Verzeichnis (fasst die echte Datei nie an), ein fiktiver
-  Kanzlei-Korpus mit [[Verknüpfungen]], die Oberfläche öffnet sich mit
-  gefülltem Graphen. Sieht man es erst, versteht man es sofort.
-
-## [2.13.5] — 2026-09-21
-
-### Added
-- **Wissensgraph in der Core-Oberfläche:** die Ansicht „Graph" zeichnet Notizen
-  als Knoten und [[Links]] als Kanten (read-only, Kraft-Layout vorberechnet,
-  Knoten ziehen, Klick öffnet die Notiz) — der Vergleich mit gratis
-  Graph-Tools hört auf zu sticheln. Neu: `GET /api/graph`.
-
-## [2.13.4] — 2026-09-20
-
-### Added
-- **ChatGPT-Import (die Kompatibilitätsfalle):** `npx -y kepta-mcp import chatgpt
-  <entpackter-Export-Ordner>` verwandelt den ChatGPT-Datenexport in Memories —
-  nur user-Nachrichten (die Quelle der Wahrheit über den Nutzer), Assistant-
-  Antworten werden gezählt, aber nicht gespeichert. Deterministische IDs machen
-  den Re-Import idempotent (aktualisiert statt verdoppelt); Zeitstempel der
-  Nachrichten werden zu gültig-ab übernommen.
-
-## [2.13.3] — 2026-09-18
-
-### Added
-- **Setup erkennt mehr KI-Apps:** Gemini CLI, Cline und Roo Code werden jetzt
-  per Auto-Connect verbunden; Zed, Codex CLI, Continue und jeder andere
-  MCP-Client bekommen den exakten Konfigurations-Schnipsel zum Einfügen.
-
-## [2.13.2] — 2026-09-18
+## [2.13.4] — 2026-09-22
 
 ### Security
-- **Private notes never leave K3PTA over MCP — now also in the open core.** A
-  note with scope `private` is filtered from `memory_search` and `memory_list`,
-  even when a client explicitly asks for scope `private`. (The desktop app
-  carries the full MCP guard on top: privacy shield, audit log, activity.)
-
-### Changed
-- Core parity with the 2.13.2 app: one shared sanitizer (`src/core/sanitize.ts`)
-  for store and server, version alignment across app, npm package and server
-  registry entry, and the freemium framing in the README (the app never locks —
-  the free plan runs with daily limits, Pro removes them).
+- **The files next to the database are now encrypted too.** `profile.json`,
+  `scan-config.json` and the sync journal sat in plaintext next to an
+  encrypted knowledge base — the same 256-bit key now protects them
+  (AES-256-GCM), and plaintext files from older versions are understood on
+  read and encrypted on the next write. Deliberate plaintext exceptions are
+  documented in SECURITY.md: `endpoint.json` (no secret — it is how local
+  tools find the app) and the inbox folder (files you dropped there yourself).
+- **The keychain can no longer silently destroy your key.** Creating a
+  database key used `security add-generic-password -U` on macOS — an update
+  in place. If a read failed transiently (keychain ACL, a hanging `security`
+  call), a key creation looked like "no entry yet" and overwrote the real
+  key: the encrypted knowledge base became unopenable. Now: the key is read
+  twice before anything is created, an existing entry is never overwritten
+  (creating against an existing entry fails loudly with recovery
+  instructions), and a regression test pins all of it.
 
 ### Fixed
-- Unnecessary regex escapes in the wiki-link matchers (obsidian, mcp) and the
-  embedding queue's constructor (erasable syntax, TS 5.9-friendly).
+- **Device-Sync export no longer truncates silently.** The bundle took the
+  default page of 100 memories — a "full" export of a larger base was
+  incomplete. It paginates now; a test exports 137 notes and expects all of
+  them.
 
-## [2.12.0] — 2026-09-14
-
-### Changed
-- **Notes look like notes.** The browser interface renders Markdown — headings,
-  lists and task lists, tables, code, Obsidian callouts, highlights, links and
-  `[[links]]`. The page builds it element by element, never as HTML, so the
-  strict CSP stays and no note can run anything. Cards show a clean preview
-  without YAML front matter, Markdown marks or template placeholders.
-- **Readable titles.** A note stored under a file path or a slug shows the
-  title from its front matter, its own first heading or a tidied file name;
-  the path stays as a small hint.
-- **Templates are recognised.** Notes with `{{date}}` or Templater `<% %>`
-  placeholders carry a *Template* label, and the placeholders show as such.
-- **The Obsidian import files notes by their content.** Without a `type` in the
-  front matter the rules decide between fact, event, how-to and document —
-  until now a whole vault landed as facts. Titles are the file name without
-  folders, as in Obsidian, so `[[links]]` find them; a re-import finds notes
-  stored under the old folder title instead of duplicating them.
-- **Search results show why they match** — a snippet around the first hit,
-  with the search terms marked.
-- **Works in a narrow window.** When there is no room for the sidebar, the
-  views, *Activity* and *Connect* sit in one row under the search field.
-- **K3PTA Enterprise, quietly.** No locked entries in the sidebar, no banner,
-  no button in the top bar and no hints in the middle of your work any more —
-  one link at the bottom of the sidebar shows what the desktop app adds.
+## [2.13.3] — 2026-09-22
 
 ### Added
-- **Watch your AI use its memory.** The browser interface lists the AI apps
-  that use K3PTA — with a live dot while one is active — and an *Activity*
-  view: who saved, updated or searched what, as it happens. When Claude saves
-  a note, it appears on the page while you watch. The MCP server records the
-  last 500 calls in the same encrypted file; nothing leaves the computer.
-- **`npx -y kepta-mcp setup`** finds Claude Desktop, Claude Code, Cursor,
-  Windsurf and VS Code and adds K3PTA to them — asking per app, or all at once
-  with `--yes`. It keeps a backup of every file it changes, leaves every other
-  entry alone and never touches a file that is not plain JSON. Claude Code gets
-  K3PTA through its own `claude mcp add`. The same is one click in the browser
-  interface: *Connect an AI app*.
-- **Sort by kind in one click.** When notes look filed under the wrong kind,
-  the interface says so once, shows before and after with examples, re-sorts
-  on request without touching the modified date, and offers one undo.
+- **Team memory, first slice (Enterprise).** Team scopes and roles arrive in the
+  app: `team:*` scopes are available on Enterprise editions only, with roles
+  read from the managed file — admins and members can write, viewers read
+  (Pro stays exactly as it was). A new **Team view** shows edition, seats,
+  roles and per-team note counts; on Free/Pro it renders as an upgrade card
+  instead of a dead end.
+- A **LongMemEval benchmark harness** ships under `tools/longmemeval/` — the
+  measuring stick for the retrieval engine. First published baseline:
+  29.2 % on LongMemEval-S with the lexical-only path, reported with full
+  per-question results.
+
+### Fixed
+- **Search keeps its footing on large knowledge bases.** The search engine
+  re-read every note on every query (page-by-page over the whole store) — now
+  it holds a per-store inventory cache that invalidates on any write. On a
+  200 000-note corpus this took a query from over a minute down to
+  milliseconds; the 3 000-note daily reality stops paying that tax too.
+- Internally labelled "business" editions now display as **K3PTA Enterprise**
+  everywhere (sidebar, team view, settings, upgrade panel) — the public tier
+  named Business no longer exists.
+
+## [2.13.2] — 2026-09-17
+
+### Security
+- **K3PTA answers this computer only.** The app's HTTP server now refuses
+  requests whose `Host` header does not name this computer — a website using
+  DNS rebinding could otherwise read the notes — and refuses requests from any
+  other website that would change something: before, an ordinary web page
+  open in the browser could write a note into the knowledge base through a
+  form. The app window, AI apps over MCP and scripts work as before.
+- express 4.22.3 with qs 6.16.0: a crafted query string can no longer stall
+  the server (GHSA-4mjr-xmp4-gh2g) or slip past the array limit
+  (GHSA-x5fp-wj9c-mxmx).
+
+### Changed
+- **Codebase modernised, no behaviour change.** The server — formerly one
+  2 300-line file — is now organised as `server/app.ts` plus one router module
+  per feature area, with shared helpers under `server/helfer/`; the stack
+  moved to Express 5.2, Vite 8, Vitest 5, TypeScript 5.9 and Electron 44.4
+  (keeping the qs fixes from 4.22.3), `npm run lint` now also runs ESLint
+  (flat config, zero errors required), and the front end talks to the API
+  through one typed client instead of scattered `fetch` calls. 1 486 tests,
+  coverage gates unchanged.
+- **Time travel, rebuilt.** The knowledge-graph time filter is now
+  **date-exact**: pick a day in the date field (or scrub the slider) and the
+  graph shows exactly that moment — no more whole-layout rebuilds while you
+  drag, no seconds of frozen window on large knowledge bases. Layouts only
+  recompute in the view that actually shows them, and a chosen moment stands
+  still instead of sliding.
+- Messages about features that need a license now name **K3PTA Pro**.
+
+### Fixed
+- *Settings → MCP / API* shows where Claude Desktop keeps its config file on
+  Windows too, not only on macOS.
+
+## [2.13.1] — 2026-09-16
+
+The installers published as 2.13.1 were built on 16 September and contain
+everything below.
+
+### Added
+- **Import your AI history.** *Settings → Data management → Import your AI
+  history* turns a ChatGPT or Claude data export (`conversations.json`) into
+  notes; importing the same export again updates instead of duplicating.
+- **Managed deployment and central policies.** An organization places one
+  `managed-settings.json` (macOS `/Library/Application Support/KEPTA/`, Linux
+  `/etc/kepta/`, Windows `%PROGRAMDATA%\KEPTA\`, or `KEPTA_MANAGED_CONFIG`):
+  it can pre-provision the license — validated offline like any key — and
+  enforce `chat_cloud: deny`, `machine_scan: deny` and
+  `privacy_shield: force_on` on the server. *Settings* shows an Organization
+  panel with the tier, seats and active policies. `SECURITY-ENTERPRISE.md`
+  describes it for procurement.
+- **Windows installers** for x64 and arm64, built in CI.
+
+### Changed
+- **Licenses know their tier.** A key now says whether it is for K3PTA Pro
+  (personal), K3PTA Business (with its number of seats) or K3PTA Enterprise,
+  and the sidebar shows the tier. Every tier unlocks the same app. Keys issued
+  before stay valid and count as Pro. The lock screen now simply says
+  *Activate K3PTA*. The tier shown updates when the window regains focus.
+- The app package contains no source maps at all, dependencies included.
+- **The graph's time slider moves smoothly.** The layout is rebuilt once when
+  you let go instead of at every step, and in the tree view the notes stand in
+  their new place at once instead of gliding for seconds.
+
+### Fixed
+- **Dossier sentences stay whole.** A key fact no longer ends after an
+  abbreviation — „The signed Lumen & Co.“ is now the whole sentence, and the
+  same goes for „Dr.“, „z. B.“, „etc.“ and initials. A name that ends in a
+  period no longer leaves two of them behind („Lumen & Co..“).
+
+## [2.13.0] — 2026-09-14
+
+### Added
+- **Today.** One page for the start of the day: what is new since your last
+  visit and who added it — you, an import or which AI app —, what changed, the
+  open to-dos from your notes, what expires soon and what your AI apps did.
+  Read straight from the local database: no AI involved, nothing leaves the
+  computer. ⌘5.
+- **Contradictions, side by side.** Two notes that name a different time,
+  date, amount, percentage or quantity for the same thing appear next to each
+  other, the differing value in bold: *Keep the newer*, *Keep the older* (the
+  other is marked as replaced, never deleted) or *Both are right* (never asked
+  again). Careful on purpose — only facts and how-tos are compared, both
+  sentences must share their meaningful words, notes from the same file stay
+  out, and so do the parts of a split file („README — 5/17“), the source line
+  of a note and ranges like „2–4 days“. On a real knowledge base of 3 491
+  notes, the first version raised 17 alarms — all from split files, source
+  lines or ranges; with these rules it raises none.
+- **Dossier.** Everything about a person, a project or a topic on one page:
+  key facts, a timeline, how-tos, documents, open to-dos, contradictions and
+  related topics. *Copy as Markdown* or *Save as note*. ⌘6.
+- **Connect your AI apps in one click.** K3PTA finds Claude Desktop, Claude
+  Code, Cursor, Windsurf and VS Code and adds itself to their MCP settings —
+  pointing to the server inside the app, no Node and no npm. A backup of the
+  old file sits right next to it, every other entry stays, and a file that is
+  not plain JSON is never touched.
+- **Live activity, with names.** Which AI app is active right now and what it
+  searched, saved or changed — and a message the moment it happens: *Claude
+  saved “…”*. ⌘7.
+- **Audit log.** Every access to the knowledge base — by you, by each AI app
+  and by scripts —, with exactly the notes an app got to see. Every entry is
+  sealed with the SHA-256 of the one before it; *Check integrity* shows whether
+  anything was changed, removed or cut off. Export as CSV, safe against
+  spreadsheet formulas. A note's preview says which app read it and when.
+- **Privacy shield.** Before a question goes to a cloud model, email
+  addresses, phone numbers, IBANs, card numbers, passwords and keys become
+  placeholders like `[EMAIL-1]` — the answer shows the real values again, even
+  while it streams. AI apps read your notes without passwords, keys, card
+  numbers and IBANs, and if one writes such a note back, the real values stay.
+  Both protections are on by default, and every request to a cloud model is in
+  the audit log. Settings → AI & data shows a live preview of what a cloud
+  model would see.
+- **Private notes.** One switch in the editor: a private note is never shown
+  to an AI app and never sent to a cloud model — whatever the other switches
+  say.
+
+### Changed
+- **The Obsidian import files notes by their content** instead of making a
+  whole vault „facts“, and titles are the file name without folders, as in
+  Obsidian; a re-import finds notes under their old folder title.
+- Messages about AI apps name the app — *Claude saved “…”* — instead of *An
+  agent saved a node*.
+
+### Fixed
+- **A license key has exactly one spelling.** Its last character carries one
+  padding bit, and a key that differed only there was accepted as the same
+  key. Issued keys are unaffected.
+
+## [2.12.0] — 2026-09-13
+
+### Changed
+- **Every license has its own number, and the name shows in the app.** The
+  sidebar says *Licensed to …*; the license number sits in its tooltip.
+  Activation stays as simple as before — name and key, offline, once — and
+  nothing leaves the Mac.
+- **Keys that are passed on can be revoked.** A revoked license number is
+  listed in the app; from the next update on, its key no longer unlocks K3PTA,
+  also on Macs where it was already activated. The activation window says so.
+- **Keys of the 2.11 form (without a number) are no longer accepted.** None
+  had been handed to customers.
+- **Names match in either Unicode form** — an „ü“ typed as one character or as
+  „u“ plus a combining diaeresis (as it often comes out of a PDF) is the same
+  name.
+
+### Fixed
+- **Copy buttons work again** — in the chat, for the recovery key, in the
+  system status and for the MCP block. The window was denied every browser
+  permission, writing to the clipboard included; now exactly that one is
+  allowed, reading stays blocked.
+- The activation window sent every activation twice (the button's click and
+  the form's submit both triggered it). One click, one request.
 
 ## [2.11.0] — 2026-09-11
 
-### Added
-- **K3PTA Core in your browser: `npx -y kepta-mcp ui`.** A local interface on
-  `http://127.0.0.1:4747` for the same encrypted knowledge base the agents use:
-  browse by kind and tag, search ranked by relevance, open notes and follow
-  their `[[links]]`, write and edit notes with kind, tags and validity, trash
-  and restore, dark and light. No framework, no CDN, no new dependency; it
-  listens on loopback only, checks the host of every request and needs a
-  per-session token for every change, so no other website can touch your notes.
-
-- **Recovery key in one click.** In the browser interface, *Encrypted at rest*
-  in the sidebar shows the recovery key with a *Copy* button — paste it into a
-  password manager once, no terminal needed. Day to day nobody needs it: the
-  store and the MCP server fetch the key from the keychain by themselves.
-
-- **K3PTA Enterprise, one click away.** The browser interface shows what the
-  desktop app adds — the knowledge graph, import, chat with your memory,
-  duplicate review — in the sidebar and behind *Enterprise* in the top bar,
-  and how to get it. A note with `[[links]]`, an
-  empty knowledge base and a search offer the matching feature. Nothing pops
-  up on its own.
-
 ### Changed
-- **The browser interface shows the real K3PTA logo** — in the tab and in the
-  sidebar, the same marks as K3PTA Enterprise — instead of a redrawn one.
-- **Praxis-Sync is now called Device Sync** — in the README and in the activity
-  feed of the HTTP API, which reads `Device Sync: 3 imported` instead of a
-  German line. The bundle format stays the same, so bundles exported earlier
-  still import.
-- **The npm package `kepta-mcp` is AGPL-3.0-or-later**, like the repository it is
-  built from; until 2.10 it said MIT while the source said AGPL. The Python
-  client stays MIT — it only speaks to the HTTP API and should be free to embed
-  anywhere. A commercial license for the core is available.
+- **Praxis-Sync is now called Device Sync** — in the settings tab, its
+  messages, the activity feed and the export file name
+  (`kepta-device-sync_…json`); its last German messages are English now. The
+  bundle format stays the same, so bundles exported earlier still import.
 
 ### Added
 - **The knowledge base is encrypted on disk.** `kepta.db` is stored in the
@@ -429,6 +5952,30 @@ The audit pass on this repository, done as fixes rather than as notes. Every ite
   was overwritten with zeros.
 - **System status shows *Encryption at rest*** — where the key lives, or why
   the file is not encrypted yet. `/api/health` reports the same as `encryption`.
+- **A license key from the first launch.** There is no trial: without a valid
+  key the app shows the lock screen. A license key is an
+  Ed25519 signature over the buyer's name: the app carries only the public key
+  and checks it offline, so nobody can issue a key by unpacking the app. Keys
+  are issued with `scripts/generate-license.mjs`, which signs with a private
+  key that lives only in the maintainer's keychain. The lock screen is in
+  English.
+- **The app's own server checks the license too, not only the window.**
+  Without a valid key, what only K3PTA Enterprise can do — chat, model
+  discovery, the clipper, opening files, the machine scan and the profile —
+  answers 403. Everything the open core can do stays free: notes, search,
+  import, sync, export, MCP and the recovery key.
+- **Agents connect without Node.js.** *Settings → MCP / API* now offers the
+  MCP server that ships inside the app, started by K3PTA itself — no Node.js,
+  no npm, and no stumbling over an npm release that cannot open the encrypted
+  file. `/api/health` reports the exact command as `mcp.stdio`.
+- **The app no longer ships its server source.** The package contained
+  `dist/server.cjs.map` with the original code of 17 files; source maps now
+  stay on the build machine, and the server bundle is minified (names kept).
+
+- **Recovery key in one click.** *Settings → System status → Show recovery key*
+  shows the key with a *Copy* button — paste it into a password manager once,
+  no terminal needed. Day to day nobody needs it: the app and the MCP server
+  fetch the key from the keychain by themselves.
 
 ### Changed
 - **SQLite engine:** `node:sqlite` could not open an encrypted file, so K3PTA
@@ -881,6 +6428,13 @@ The audit pass on this repository, done as fixes rather than as notes. Every ite
   inverted index. Measured afterwards: 3 000 nodes, 9 500 edges, 60 fps, and
   the whole graph framed on opening. Node labels no longer pile into an
   unreadable carpet — they yield to one another.
+  *Annotation 11.10.2026, R1: the sentence above (“3 000 nodes, 9 500 edges,
+  60 fps”) was never reproducible from this repository — no runner existed. It is
+  now, and it does not hold: measured at 3 000 notes the frame costs 30.4 ms with
+  547 intersecting disc pairs. See `docs/graph-kosten.md:65-67` and
+  `scripts/fps-laeufer.mjs`. The README lines that carried this number have been
+  rewritten to the measurement; this entry is left as written, because it is the
+  historical source of the claim.*
 - **Density no longer collapses as the base grows.** With a constant central
   force the equilibrium radius scales as N^(1/3) while constant density needs
   N^(1/2); the force now scales with 1/sqrt(n). Node spacing stays at ~92 px

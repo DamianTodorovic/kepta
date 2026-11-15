@@ -1,0 +1,16 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.1 [39m[90m/Users/damiantodorovic/kepta-app[39m
+
+(node:29946) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m tests/server-nachzug.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1994[2mms[22m[39m
+   [32m✓[39m N-4 — zwei Rufe, ein Lauf [2m(1)[22m
+     [33m[2m✓[22m[39m weist den zweiten Ruf ab, waehrend der erste laeuft[33m 480[2mms[22m[39m
+   [32m✓[39m N-5 — Abbruch laesst einen gueltigen Zwischenstand [2m(1)[22m
+     [33m[2m✓[22m[39m der Abbruch stoppt, und ein voller Lauf danach landet auf demselben Endstand[33m 1418[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 13:36:10
+[2m   Duration [22m 2.44s[2m (tests 83%, transform 8%, import 5%, setup 4%)[22m
+

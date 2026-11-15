@@ -1,0 +1,44 @@
+1) Pfad- und Grenzsonde, Marke aus electron-builder.json = "K3PTA"  [6.11.2026, 20:06:03]
+   README.md: vor dem Schlag 1 Pfadstellen in 1 Marke(n) [KEPTA], 0 Zeile(n) mit Grenze in der Gegenwart
+   README.md: nach dem Schlag 1 Pfadstellen in 1 Marke(n) [K3PTA], 0 Zeile(n) mit Grenze in der Gegenwart
+   .github/release-notes.md: vor dem Schlag 5 Pfadstellen in 1 Marke(n) [KEPTA], 2 Zeile(n) mit Grenze in der Gegenwart
+   .github/release-notes.md: nach dem Schlag 5 Pfadstellen in 1 Marke(n) [K3PTA], 0 Zeile(n) mit Grenze in der Gegenwart
+   Kontrolle gegen taube Sonde: ROADMAP.md hat 0 Pfadstellen
+
+2) release/ am 6.11.2026, 20:06:03: 134 Dateien, 33 Fassungen 3.2.158…3.2.190
+   dmg             33 Stueck  4.94 GiB
+   dmg.blockmap    33 Stueck  0.01 GiB
+   zip             33 Stueck  4.94 GiB
+   zip.blockmap    33 Stueck  0.01 GiB
+   andere           2 Stueck  0.00 GiB
+   zusammen: 9.89 GiB — davon x64: 0, SHA256SUMS: 0
+
+3) latest-mac.yml nennt 2 Dateien fuer Version 3.2.190; beide mit grosse und sha512 geprueft: true
+   K3PTA-3.2.190-mac-arm64.zip: grosse 160797231 gegen 160797231 (gleich), sha512 gleich — sha256 ce60780a7d673681…
+   K3PTA-3.2.190-mac-arm64.dmg: grosse 160736038 gegen 160736038 (gleich), sha512 gleich — sha256 1515c7cd49ef10b8…
+   Die Summen-Quelle deckt 2 von 132 Installations-Dateien der Ablage (1.5 %), also eine von 33 Fassungen.
+
+4) Signatur und Gatekeeper  [6.11.2026, 20:06:07]
+   installiert: 16 Zeilen Beschreibung, Signature=adhoc flags=0x2(adhoc) TeamIdentifier=not set Authority-Zeilen=0 CDHash=508ef0425124561c7510c62618d10b9de59b6df7 versiegelte Dateien=69 — spctl: /Applications/K3PTA.app: rejected
+   installer: 16 Zeilen Beschreibung, Signature=adhoc flags=0x2(adhoc) TeamIdentifier=not set Authority-Zeilen=0 CDHash=508ef0425124561c7510c62618d10b9de59b6df7 versiegelte Dateien=69 — spctl: /tmp/rl0611/mnt/K3PTA.app: rejected
+   Der Code-Hash des installierten Bundels ist derselbe wie der des letzten Installers (508ef0425124561c7510c62618d10b9de59b6df7 gegen 508ef0425124561c7510c62618d10b9de59b6df7).
+   Am installierten Bundel haengt kein com.apple.quarantine: 0 xattr-Nennung(en) — der Rechner hier hat die App nicht heruntergeladen.
+   Das Installer-Bundel nennt in seiner Info.plist die Fassung 3.2.190 — derselbe Name, den die Datei und latest-mac.yml tragen.
+   codesign --verify --deep --strict am Installer-Bundel: Exit 0, Meldung: keine Meldung bei Exit 0 — die Signatur ist auf der Platte in Ordnung
+
+5) Verbraucher im ausgelieferten app.asar (47 MiB)  [6.11.2026, 20:06:14]
+   autoUpdater          0-mal
+   electron-updater     0-mal
+   checkForUpdates      0-mal
+   latest-mac           0-mal
+   differentialPackage  0-mal
+   Kontrolle, damit die Sonde nicht taub ist: memory_search 21-mal
+
+6) oeffentlich herunterladbar, aus der GitHub-API gelesen  [6.11.2026, 20:06:14]
+   9 Releases, letzter Tag app-3.2.1; 58 Assete: arm64 24, x64 23, dmg 12, SHA256SUMS 5
+   Datei-Staemme in den Asseten: KEPTA
+   Der Koerper des obersten Releases (14 Zeilen) traegt: com.apple.quarantine 0-mal, KEPTA.app 0-mal, K3PTA.app 0-mal, Tageslimiten 0-mal, daily limit 0-mal, notar 0-mal
+
+7) Platte  [6.11.2026, 20:06:15]
+   frei 9.05 GiB — Bau braucht 9.9 GiB, Tausch 8.53 GiB (Kante 8 GiB + entpacktes Objekt 402840 KiB + Spiel 0,15 GiB)
+   ruecklager im stapel: 3 ordner (1.15 GiB), ablage 9.89 GiB, stapel insgesamt 1.27 GiB

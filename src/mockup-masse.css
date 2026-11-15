@@ -1,0 +1,471 @@
+/* ============================================================
+   P202 MOCKUP-MASSSE — jeder Wert 1:1 aus k3pta-app-fenster.html.
+   Die Datei lädt ALS LETZTES (main.tsx, nach index.css) — ihre
+   Regeln tragen !important auf den kritischen Maßen, damit die
+   Kaskade der früheren Welt sie nicht mehr überschreiben kann.
+   Die Heat-Map (scripts/p202-pixel-differ.mjs) und die DOM-Tabelle
+   (scripts/p202-dom-masse.mjs) wachen über die Pixel.
+
+   Damian 14.11.2026: „K3PTA muss genau 1:1 so aussehen wie auf dem Mockup
+   in jedem einzelnen Aspekt." Die Mockup-Schrift-Skala (10.5 · 11.5 · 12.5 ·
+   13.5 px) trägt dieses Gesetz und tritt damit an die Stelle der Token-
+   Rundung — nur an diesen Stellen, nur in dieser Datei.
+   ============================================================ */
+
+/* ── Die Basis-Schrift des Fensters: 13px (das Mockup body) ·
+   Leserraster des Mockups: letter-spacing normal (die App-Welt zog
+   −0.112px über alles — das Mockup trägt kein Sperrung) ── */
+.huelle { font-size: var(--fs-3) !important; letter-spacing: normal !important; }
+
+/* ── Titeltbalken: height 38 · padding 0 12 · ampel 12px gap 7 · titel 13/600 · platz 62 ── */
+.huelle .fenster-titelleiste { height: 38px !important; padding: 0 12px !important; background: var(--bg-inset) !important; border-bottom: 1px solid var(--border-subtle) !important; }
+.huelle .huelle .fenster-titelleiste .fenster-ampel { gap: 7px !important; width: 62px !important; }
+.huelle .huelle .huelle .fenster-titelleiste .fenster-ampel i { width: 12px !important; height: 12px !important; }
+.huelle .huelle .fenster-titelleiste .fenster-titel { font-size: var(--fs-3) !important; font-weight: 600 !important; color: var(--text-2) !important; }
+.huelle .huelle .fenster-titelleiste .fenster-platz { width: 62px !important; }
+
+/* ── Statuszeile: height 26 · padding 0 14 · gap 14 · font 11 ── */
+.huelle .flaechen-status { height: 26px !important; min-height: 26px !important; padding: 0 14px !important; gap: 14px !important; font-size: var(--fs-1) !important; background: var(--bg-inset) !important; }
+.huelle .flaechen-status .rechts { gap: 14px; }
+
+/* ── Navigation: width 208 · padding 8 · suche h28 mb8 font 12.5 · navi h30 pad 0 8 gap 8 icon 15 ── */
+.huelle .seiten-leiste:not([aria-hidden="true"]) { width: 208px !important; padding: 8px !important; }
+.huelle .seiten-leiste[aria-hidden="true"] { width: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important; overflow: hidden !important; }
+/* Die Container der Leiste: das Mockup trägt ALLE Abstände über die 8px-Außen-
+   Polster — die inneren px-3/py-3 (12px) schoben die Navi zu tief. */
+.huelle .seiten-leiste .px-3.pt-3.pb-1 { padding: 0 0 8px 0 !important; }
+.huelle .seiten-leiste .px-3.py-3 { padding: 0 !important; }
+.huelle .seiten-leiste .flex-1.px-3.py-2 { padding: 0 !important; }
+.huelle .seiten-leiste .sidebar-suche-feld { height: 28px !important; min-height: 28px !important; font-size: 12.5px !important; background: var(--eb-2) !important; border: 1px solid var(--border-subtle) !important; line-height: 1.45 !important; box-shadow: none !important; }
+.huelle .seiten-leiste .sidebar-suche-feld ~ svg, .huelle .seiten-leiste .relative svg:first-child { width: 13px !important; height: 13px !important; }
+.huelle .seiten-leiste .sidebar-nav-btn { height: 30px !important; min-height: 30px !important; padding: 0 8px !important; gap: 8px !important; font-size: var(--fs-3) !important; font-weight: 500 !important; line-height: 1.45 !important; }
+.huelle .seiten-leiste .sidebar-nav-btn[data-active="true"] { font-weight: 600 !important; }
+.huelle .seiten-leiste .space-y-1 > :not([hidden]) ~ :not([hidden]) { margin-top: 1px !important; margin-block-end: 0 !important; }
+.huelle .seiten-leiste .sidebar-nav-btn .seiten-ikone { width: 15px !important; height: 15px !important; }
+.huelle .seiten-leiste .sidebar-nav-btn .seiten-zahl { font-size: 11.5px !important; font-weight: 600 !important; }
+.huelle .seiten-leiste .seiten-kopf { font-size: 10.5px !important; font-weight: 600 !important; padding: 12px 8px 4px !important; width: 100% !important; }
+.huelle .seiten-leiste .px-2.mb-2 { padding-inline: 0 !important; margin-bottom: 0 !important; }
+.huelle .seiten-leiste .sidebar-tag-btn { height: 26px !important; min-height: 26px !important; padding: 0 8px !important; gap: 7px !important; font-size: 12.5px !important; line-height: 1.45 !important; }
+html:not(.dark) .huelle .seiten-leiste .sidebar-tag-btn > span:first-child { color: oklch(0.5297 0.1075 252.7) !important; }
+.huelle .seiten-leiste .sidebar-tag-btn .seiten-plakette { font-size: 11.5px !important; }
+/* Der Tag-Behälter: das Mockup rollt die Tags ohne rechtes Polster (die
+   App- `pr-1` schob die Zeilen 4px schmaler als das Mockup-Maß 191). */
+.huelle .seiten-leiste .flex-1.overflow-y-auto { padding-right: 0 !important; scrollbar-width: none !important; }
+.huelle .seiten-leiste .flex-1.overflow-y-auto::-webkit-scrollbar { display: none !important; }
+.huelle .seiten-leiste .nav-fuss-leiste { padding: 8px 6px 0 !important; gap: 7px !important; height: 33px !important; min-height: 33px !important; }
+.huelle .huelle .seiten-leiste .nav-fuss-leiste .seiten-marke { font-size: var(--fs-2) !important; }
+.huelle .seiten-leiste .nav-fuss-ikon { width: 24px !important; height: 24px !important; }
+
+/* ── Liste: width 420 · kopf h44 pad 8/14 titel 13.5/700 zahl 12 · ikon-knopf 28×28 ── */
+.huelle .listen-spalte { width: 420px !important; }
+.huelle .listen-spalte .listen-kopf { height: 44px !important; min-height: 44px !important; padding: 8px 14px !important; gap: 8px !important; }
+.huelle .listen-spalte .listen-kopf .listen-titel { font-size: 13.5px !important; font-weight: 700 !important; }
+.huelle .listen-spalte .listen-kopf .listen-zahl { font-size: var(--fs-2) !important; }
+.huelle .listen-spalte .listen-kopf .btn-ghost, .huelle .listen-spalte .listen-kopf .btn-primary { width: 28px !important; height: 28px !important; padding: 0 !important; display: grid !important; place-items: center !important; border-radius: 7px !important; }
+.huelle .listen-spalte .listen-kopf .btn-ghost:not([aria-pressed="true"]) { border-color: transparent !important; background: transparent !important; }
+.huelle .listen-spalte .listen-kopf .btn-ghost:not([aria-pressed="true"]):hover { background: var(--bg-hover) !important; border-color: transparent !important; }
+.huelle .listen-spalte .listen-kopf .btn-ghost[aria-pressed="true"] { border-color: transparent !important; }
+.huelle .listen-spalte .listen-kopf .kopf-handlungen { gap: 4px !important; }
+
+/* Die Seg-Wand (P202, Mockup .listen-seg): die Steuer steht FEST zwischen dem
+   Kopf und dem rollenden Blatt — kein scrollbar-Schieben, keine Zeilen-Polster. */
+.huelle .listen-spalte .listen-seg-wand { flex: none !important; }
+.huelle .listen-spalte .apple-seg { padding: 6px 12px !important; gap: 2px !important; width: 100% !important; margin-bottom: 0 !important; border-bottom: 1px solid var(--border-subtle) !important; }
+.huelle .listen-spalte .apple-seg-btn { padding: 4px 10px !important; border-radius: 6px !important; font-size: var(--fs-2) !important; min-height: 0 !important; height: auto !important; min-width: 0 !important; font-weight: 550 !important; line-height: 1.45 !important; }
+.huelle .listen-spalte .apple-seg-btn[data-on="true"] { font-weight: 600 !important; }
+
+/* Filter-Reihe (.listen-filter): eine ruhige, unumbrüchige Zeile statt schwerer Kasten-Chips. */
+.huelle .listen-spalte .listen-filter {
+  padding: 6px 12px !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+  background: transparent !important;
+}
+.huelle .listen-spalte .listen-filter::-webkit-scrollbar { display: none !important; }
+.huelle .listen-spalte .listen-filter > div {
+  flex-wrap: nowrap !important;
+  gap: 4px !important;
+  align-items: center !important;
+}
+.huelle .listen-spalte .listen-filter .row-quiet {
+  padding: 2px 7px !important;
+  min-height: 22px !important;
+  border-radius: 6px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  font-size: var(--fs-1) !important;
+}
+.huelle .listen-spalte .listen-filter .row-quiet:not([aria-pressed="true"]) {
+  border-color: var(--border-subtle) !important;
+  background: transparent !important;
+}
+.huelle .listen-spalte .listen-filter .row-quiet:not([aria-pressed="true"]):hover {
+  background: var(--bg-hover) !important;
+  border-color: var(--border) !important;
+}
+
+/* Die Zeilen-Rolle: das padding 6px 8px und saubere Abschneidung gegen Quetschen. */
+.huelle .listen-spalte .listen-zeilen { padding: 6px 8px !important; scrollbar-width: none !important; }
+.huelle .listen-spalte .listen-zeilen::-webkit-scrollbar { display: none !important; }
+/* Die Zeilen: padding 10px 11px radius 8 gap 10 · punkt 8×8 r3 mt5 · titel 13/600 ·
+   vorschau 12 mt2 · zeit 11 · herkunft 10.5 mt2 */
+.huelle .listen-spalte .row-entry { padding: 10px 11px !important; gap: 10px !important; border-radius: 8px !important; min-width: 0 !important; width: 100% !important; overflow: hidden !important; box-sizing: border-box !important; }
+.huelle .listen-spalte .row-punkt { width: 8px !important; height: 8px !important; border-radius: 3px !important; margin-top: 5px !important; flex: none !important; }
+.huelle .listen-spalte .row-body { flex: 1 1 0% !important; min-width: 0 !important; overflow: hidden !important; }
+.huelle .listen-spalte .row-body h3 { font-size: var(--fs-3) !important; font-weight: 600 !important; line-height: 1.45 !important; margin: 0 !important; letter-spacing: 0 !important; font-family: inherit !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+.huelle .listen-spalte .row-body p { font-size: var(--fs-2) !important; line-height: 1.45 !important; margin-top: 2px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+.huelle .listen-spalte .row-time { font-size: var(--fs-1) !important; line-height: 15.95px !important; margin-top: 0 !important; white-space: nowrap !important; }
+.huelle .listen-spalte .row-herkunft { font-size: 10.5px !important; line-height: 15.225px !important; margin-top: 2px !important; max-width: 100% !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+.huelle .listen-spalte .row-meta { flex: 0 0 auto !important; max-width: 86px !important; gap: 0 !important; margin-top: 0 !important; padding-top: 0 !important; align-items: flex-end !important; text-align: right !important; }
+.huelle .listen-spalte .row-tags { display: none !important; }
+
+/* Der Listen-Fuß: EINE ruhige Zeile — padding 0 10 · font 11.5 · kein Abschneiden */
+.huelle .listen-spalte .listen-fuss { height: 32px !important; min-height: 32px !important; padding: 0 10px !important; font-size: 11.5px !important; gap: 4px !important; align-items: center !important; flex-wrap: nowrap !important; overflow: hidden; }
+.huelle .listen-spalte .listen-fuss .chip { white-space: nowrap; border: 0 !important; background: transparent !important; padding: 1px 3px !important; border-radius: 5px !important; min-width: 0 !important; min-height: 0 !important; height: auto !important; gap: 3px !important; }
+.huelle .listen-spalte .listen-fuss button { min-width: 22px !important; min-height: 22px !important; height: auto !important; padding: 2px 4px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; }
+.huelle .listen-spalte .listen-fuss button.chip:hover { background: var(--bg-hover) !important; }
+.huelle .listen-spalte .listen-fuss > * { white-space: nowrap !important; flex: none !important; }
+
+/* ── Detail: kopf h43 pad 8/14 wo 12 · korper pad 18/22 · h1 18/700 · meta 12 gap 10 ·
+   koerper-text 13.5/1.65 mt16 max62ch · gruppe mt22 name 11.5/600 pb6 ── */
+/* Die Detail-Spalte trägt die Mockup-Grammatik (das Mockup .detail: die
+   Kartenfläche, KEINE Glas-Kante) — die App-Schicht zog border 1px +
+   Innen-Schatten über die Spalte und fraß dem Kopf/Körper 2px Breite.
+   Die Kartenfläche heißt hier --eb-2 (die App-Karte-Ebene, die auch
+   glass-strong trug — das Mockup nennt sie --karte). */
+.huelle .detail-spalte .glass-strong { border: 0 !important; box-shadow: none !important; background: var(--eb-2) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.huelle .detail-spalte .detail-kopf { height: 44px !important; min-height: 44px !important; padding: 8px 18px !important; gap: 8px !important; width: 100% !important; }
+.huelle .detail-spalte .detail-kopf .wo { font-size: var(--fs-2) !important; }
+.huelle .detail-spalte .detail-kopf .btn-ghost:not(.btn-text), .huelle .detail-spalte .detail-kopf .btn-primary:not(.btn-text) { width: 28px !important; height: 28px !important; padding: 0 !important; display: grid !important; place-items: center !important; border-radius: 7px !important; }
+.huelle .detail-spalte .detail-kopf .btn-ghost:not(.btn-text):not([aria-pressed="true"]) { border-color: transparent !important; background: transparent !important; }
+.huelle .detail-spalte .detail-kopf .btn-ghost:not(.btn-text):not([aria-pressed="true"]):hover { background: var(--bg-hover) !important; border-color: transparent !important; }
+.huelle .detail-spalte .detail-kopf .btn-ghost:not(.btn-text)[aria-pressed="true"] { border-color: transparent !important; }
+.huelle .detail-spalte .detail-kopf .btn-ghost.btn-text {
+  width: auto !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 10px !important;
+  border-radius: 6px !important;
+  font-size: var(--fs-2) !important;
+  font-weight: 550 !important;
+  border: 1px solid var(--border-subtle) !important;
+  background: var(--eb-2) !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+.huelle .detail-spalte .detail-kopf .btn-ghost.btn-text:hover {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-hover) !important;
+}
+.huelle .detail-spalte .detail-kopf .kopf-handlungen { gap: 6px !important; }
+.huelle [data-testid="activity-view"] > .listen-kopf { height: 44px !important; min-height: 44px !important; padding: 7px 18px !important; }
+.huelle [data-testid="activity-view"] > .listen-kopf .listen-titel { font-size: 13.5px !important; font-weight: 700 !important; }
+.huelle [data-testid="activity-view"] > .listen-kopf [role="tablist"].apple-seg { height: 30px !important; padding: 2px !important; gap: 2px !important; border-radius: 7px !important; }
+.huelle [data-testid="activity-view"] > .listen-kopf [role="tablist"].apple-seg .apple-seg-btn { height: 24px !important; min-height: 24px !important; padding: 0 10px !important; font-size: var(--fs-2) !important; border-radius: 5px !important; display: inline-flex !important; align-items: center !important; }
+.huelle .detail-korper { padding: 22px 28px !important; }
+.huelle .detail-korper h1, .huelle .detail-korper h2 { font-size: var(--fs-detail) !important; font-weight: 700 !important; letter-spacing: -0.01em !important; margin: 0 !important; line-height: 1.45 !important; }
+.huelle .detail-korper article { font-size: 13.5px !important; line-height: 1.65 !important; max-width: 65ch !important; margin-top: 16px !important; overflow-wrap: anywhere; word-break: break-word; }
+.huelle .detail-gruppe { margin-top: 22px !important; }
+.huelle .detail-gruppe-name { font-size: 11.5px !important; font-weight: 600 !important; padding-bottom: 6px !important; }
+.huelle .gruppen-tisch { background: var(--bg-inset) !important; border: 1px solid var(--border-subtle) !important; border-radius: 9px !important; }
+
+/* Die Meta-Zeile: font 12 · gap 10 · die Pillen kompakt (padding 1px 7px, Höhe ~19).
+   Der Herkunft-Knopf ist ein Text, kein Stiefel: seine Höhe folgt der Zeile. */
+.huelle .detail-meta { font-size: var(--fs-2) !important; gap: 6px !important; margin-top: 6px !important; }
+.huelle .detail-meta span { font-size: var(--fs-2); }
+.huelle .detail-meta button { height: auto !important; min-height: 0 !important; padding: 0 !important; }
+
+/* Die zustandszeile: gap 12 pad 8/12 font 12.5 · art w66 fw650 · app-zeile pad 8/12 gap 10 */
+.huelle .zustandszeile { gap: 12px !important; padding: 8px 12px !important; font-size: 12.5px !important; }
+.huelle .zustandszeile .art { width: 66px !important; font-weight: 650 !important; font-size: 12.5px !important; }
+.huelle .zustandszeile .inhalt { font-size: 12.5px !important; }
+.huelle .app-zeile { gap: 10px !important; padding: 8px 12px !important; }
+.huelle .app-icon { width: 22px !important; height: 22px !important; border-radius: 6px !important; font-size: 10px !important; font-weight: 700 !important; background: rgba(31,30,28,.06) !important; }
+.huelle .app-icon.ok { background: var(--accent-soft) !important; color: var(--accent) !important; }
+.huelle .app-name { font-size: 12.5px !important; font-weight: 600 !important; }
+.huelle .app-zustand { font-size: 11.5px !important; }
+
+/* ── Chat: fluss pad 16/20 gap 10 · blasen r9 pad 9/12 font 13 · panel 260 ── */
+.huelle .chat-fluss { padding: 16px 20px !important; gap: 10px !important; }
+.huelle .nachricht { max-width: 68ch !important; }
+.huelle .nachricht .blasen { border-radius: 9px !important; padding: 9px 12px !important; font-size: var(--fs-3) !important; }
+.huelle .nachricht .wer { font-size: var(--fs-2) !important; gap: 7px !important; }
+.huelle .huelle .nachricht .wer .zeichen { width: 16px !important; height: 16px !important; border-radius: 4px !important; }
+.huelle .quellen-zeile { gap: 5px !important; margin-top: 7px !important; }
+.huelle .huelle .quellen-zeile .quelle { font-size: var(--fs-1) !important; padding: 2px 7px !important; border-radius: 5px !important; }
+.huelle .chat-panel { width: 260px !important; }
+
+/* ── Settings (s-settings): liste 190 pad 8 · Kante rechts · Hintergrund --seite ·
+   button h30 pad 0 9 font 13 · panel pad 18/22 frei (kein Kasten) ·
+   h2/h3 15/700 · farbwahl-zeile pad 7/12 · sw 10×10 r3 · name 12.5/550 · ton 11.5 ── */
+.huelle .einstellungen-liste { width: 190px !important; padding: 8px !important; border-right: 1px solid var(--border-subtle) !important; background: var(--bg-inset) !important; }
+@media (max-width: 1100px) {
+  .huelle .listen-spalte { width: 360px !important; }
+  .huelle .listen-spalte .listen-fuss .chip.hidden { display: none !important; }
+}
+@media (max-width: 767px) {
+  .huelle .listen-spalte { width: 100% !important; border-right: 0 !important; }
+  .huelle[data-ansicht="memories"] .detail-spalte:has([data-testid="detail-leer"]) { display: none !important; }
+  .huelle[data-ansicht="memories"] .listen-spalte:has(+ .detail-spalte:not(:has([data-testid="detail-leer"]))) { display: none !important; }
+  .huelle [data-testid="today-view"],
+  .huelle [data-testid="dossier-view"] {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+  }
+  .huelle [data-testid="today-view"] > .listen-spalte,
+  .huelle [data-testid="dossier-view"] > .listen-spalte {
+    max-height: 280px !important;
+    border-bottom: 1px solid var(--kante-dekor) !important;
+    flex: none !important;
+  }
+  .huelle .einstellungen-liste { width: 100% !important; border-right: 0 !important; border-bottom: 1px solid var(--border-subtle) !important; }
+  .huelle .einstellungen-liste .navi { flex-direction: row !important; flex-wrap: wrap !important; gap: 4px !important; }
+  .huelle .flaechen-status { height: auto !important; min-height: 26px !important; flex-wrap: wrap !important; row-gap: 2px !important; column-gap: 10px !important; padding: 4px 10px !important; line-height: 1.35 !important; }
+  .huelle .flaechen-status .rechts { margin-left: 0 !important; gap: 8px !important; }
+  .huelle .listen-spalte .listen-fuss { height: auto !important; min-height: 30px !important; padding: 5px 10px !important; gap: 4px 8px !important; flex-wrap: wrap !important; }
+}
+.huelle .einstellungen-liste .navi button { height: 30px !important; padding: 0 9px !important; font-size: var(--fs-3) !important; }
+.huelle .settings-panel-fenster { padding: 18px 22px !important; }
+.huelle .settings-panel-fenster h2, .huelle .settings-panel-fenster h3 { font-size: 15px !important; font-weight: 700 !important; }
+.huelle .gruppen-tisch { background: var(--eb-2) !important; border: 1px solid var(--border-subtle) !important; border-radius: 9px !important; margin-top: 12px !important; max-width: 680px !important; }
+.huelle .farbwahl-zeile { display: flex !important; align-items: center !important; gap: 9px !important; padding: 7px 12px !important; }
+.huelle .farbwahl-zeile + .farbwahl-zeile { border-top: 1px solid var(--border-subtle) !important; }
+.huelle .farbwahl-zeile input[type="color"] { width: 10px !important; height: 10px !important; border-radius: 3px !important; padding: 0 !important; border: none !important; cursor: pointer !important; }
+.huelle .farbwahl-zeile .name { font-size: 12.5px !important; font-weight: 550 !important; color: var(--text-1) !important; }
+.huelle .farbwahl-zeile .ton { margin-left: auto !important; font-size: 11.5px !important; color: var(--text-3) !important; font-variant-numeric: tabular-nums !important; }
+
+/* ── Die Overlays (s-scan/s-duplicates/s-palette): der Vorhang liegt NUR über
+   dem Körper — Titelbalken und Statuszeile stehen hell darüber (das Mockup
+   baut sie außerhalb des .vorhang) und tragen die Overlay-Zeile. Die Vorhang-
+   Dichte ist die Mockup-Wert-Familie rgba(31,30,28,.24)/.2 (im Toleranz-Fenster
+   der Messung eine Dichte). ── */
+.huelle .fenster-titelleiste, .huelle .flaechen-status { position: relative !important; z-index: 80 !important; }
+/* Damian 14.11.: 100 % wie das Bild. Der Mockup-Vorhang ist rgba(31,30,28,.24)
+   über einer LEEREN Fläche — das Bild malt das einheitliche Grau ohne Durchsicht.
+   Die opake Fassung derselben Farbe trifft das Bild und schirmt die echte
+   Fläche ganz ab. */
+.huelle .hud-backdrop { background: #c3c2c0 !important; }
+/* Die Modal-Geometrie: das Mockup .modale ist 460px breit, radius 12 —
+   die App-Dialoge zogen 672 (Scan) und 768 (Duplicates). */
+.huelle [role="dialog"][aria-label="Scan this computer"] .panel,
+.huelle [role="dialog"][aria-label="Duplicates"] .panel { width: 460px !important; max-width: 460px !important; border-radius: 12px !important; }
+
+/* ── Palette (s-palette): 540 gesamt · Suchfeld pad 11/14 fs 13 · Liste 380 mit
+   Haarlinie rechts + leere Vorschau-Zone · Zeile pad 7/9 r7 · ikon 22 ·
+   name 13/600 · unter 11.5 · die aktive Zeile trägt die getönte Fläche und
+   das grüne Ikon ── */
+.huelle .palette-lens { width: 640px !important; max-width: calc(100vw - 32px) !important; }
+.huelle .palette-row { min-height: 0 !important; padding: 7px 9px !important; margin: 0 !important; gap: 10px !important; border-radius: 7px !important; }
+.huelle .palette-row[data-active="true"] { background: var(--accent-soft) !important; }
+.huelle .palette-row[data-active="true"] .pal-ikon { background: rgba(46,125,91,.14) !important; color: var(--accent) !important; }
+.huelle .palette-row .fs-2 { font-size: 11.5px !important; }
+.huelle .huelle .palette-row .pal-ikon { width: 22px !important; height: 22px !important; border-radius: 6px !important; }
+
+/* ── Memos-Feed Kartenstrom, Top-K Select & Slider (Werkbank Blueprint) ── */
+.huelle .memos-feed-shell {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--eb-0);
+  padding: 20px 28px 36px;
+}
+.huelle .memos-feed-col {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.huelle .notiz-karte {
+  background: var(--eb-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-card);
+  padding: 15px 18px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.huelle .notiz-karte:hover {
+  border-color: var(--border-hover);
+}
+.huelle .notiz-karte-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-2);
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+.huelle .notiz-karte-title {
+  font-size: var(--fs-5);
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+  margin: 0 0 5px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.huelle .notiz-karte-body {
+  font-size: var(--fs-3);
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.huelle .notiz-karte-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.huelle .limit-select {
+  font-size: var(--fs-1);
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--eb-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-chip);
+  padding: 1px 4px;
+  min-width: 0;
+  height: 20px;
+  cursor: pointer;
+}
+.huelle input[type="range"].arch-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  margin: 0;
+}
+.huelle input[type="range"].arch-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: transparent;
+}
+.huelle input[type="range"].arch-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: var(--knopf);
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-apple), box-shadow var(--dur-fast) var(--ease-apple);
+}
+.huelle input[type="range"].arch-range:hover::-webkit-slider-thumb,
+.huelle input[type="range"].arch-range:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-sm);
+}
+.huelle input[type="range"].arch-range:focus-visible {
+  outline: none;
+}
+.huelle input[type="range"].arch-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: transparent;
+}
+.huelle input[type="range"].arch-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--knopf);
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+@media (max-width: 767px) {
+  .huelle .memos-feed-shell { padding: 14px; }
+}
+.huelle [data-testid="today-view"] .listen-steuer {
+  height: auto !important;
+  min-height: 0 !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding: 8px 14px 9px !important;
+  gap: 3px !important;
+  background: var(--bg-inset);
+}
+.huelle .zeitstrahl-spur-rahmen {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 28px;
+}
+.huelle .zeitstrahl-gleis {
+  pointer-events: none;
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--border-subtle);
+}
+.huelle .zeitstrahl-fuellung {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width var(--dur-fast) var(--ease-apple);
+}
+.huelle .zeitstrahl-punkt {
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: var(--border-hover);
+  box-shadow: 0 0 0 1.5px var(--feld);
+  transition: background var(--dur-fast) var(--ease-apple);
+}
+.huelle .zeitstrahl-punkt[data-aktiv="true"] {
+  background: var(--accent);
+}
+.huelle .zeitstrahl-marken {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 2px;
+}
+.huelle .zeitfenster-stopp {
+  min-height: 24px !important;
+  height: 24px !important;
+  min-width: 0 !important;
+  padding: 0 7px !important;
+  border-radius: 6px !important;
+  background: transparent;
+  color: var(--text-3);
+  font-weight: 400;
+  white-space: nowrap;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur-fast) var(--ease-apple), color var(--dur-fast) var(--ease-apple);
+}
+.huelle .zeitfenster-stopp:hover {
+  color: var(--text-1);
+  background: var(--bg-hover);
+}
+.huelle .zeitfenster-stopp[data-on="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.huelle .listen-spalte .listen-fuss > span:only-child {
+  flex: 0 1 auto !important;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

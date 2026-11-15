@@ -1,0 +1,18 @@
+--- Stufe bge-m3, Frage 'Hetzner'
+  m16: float64 cos = 0.5002722382648656 | float32-Pfad cos = 0.500272274017334
+  m17: float64 cos = 0.5002722382648656 | float32-Pfad cos = 0.500272274017334
+  m16 und m17 gleich auf 16 Stellen, float64: True (0.5002722382648656 / 0.5002722382648656)
+  m16 und m17 gleich auf 16 Stellen, float32: True (0.500272274017334 / 0.500272274017334)
+--- Stufe nomic-embed-text, Frage 'Deployment und Domain'
+  m16: float64 cos = 0.6135395898723778 | float32-Pfad cos = 0.6135395169258118
+  m17: float64 cos = 0.6135395898723778 | float32-Pfad cos = 0.6135395169258118
+  m16 und m17 gleich auf 16 Stellen, float64: True (0.6135395898723778 / 0.6135395898723778)
+  m16 und m17 gleich auf 16 Stellen, float32: True (0.6135395169258118 / 0.6135395169258118)
+chroma 1.5.9, bge-m3: 'Deployment und Domain' top m01, Abstand 0.513106, Liste ['m01', 'm58', 'm29', 'm57', 'm02']
+chroma 1.5.9, bge-m3: 'Hetzner' top m16, Abstand 0.499727, Liste ['m16', 'm17', 'm37', 'm36', 'm01']
+sqlite-vec 0.1.9, bge-m3: 'Deployment und Domain' top m01, Abstand 0.513105, Liste ['m01', 'm58', 'm29', 'm57', 'm02']
+sqlite-vec 0.1.9, bge-m3: 'Hetzner' top m17, Abstand 0.499727, Liste ['m17', 'm16', 'm37', 'm36', 'm01']
+chroma 1.5.9, nomic: 'Deployment und Domain' top m01, Abstand 0.316589, Liste ['m01', 'm09', 'm11', 'm40', 'm17']
+chroma 1.5.9, nomic: 'Hetzner' top m36, Abstand 0.357627, Liste ['m36', 'm37', 'm16', 'm17', 'm22']
+sqlite-vec 0.1.9, nomic: 'Deployment und Domain' top m01, Abstand 0.316589, Liste ['m01', 'm09', 'm11', 'm40', 'm17']
+sqlite-vec 0.1.9, nomic: 'Hetzner' top m36, Abstand 0.357627, Liste ['m36', 'm37', 'm17', 'm16', 'm22']

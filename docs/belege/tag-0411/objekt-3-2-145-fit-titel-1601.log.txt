@@ -1,0 +1,46 @@
+  Bilder-Ziel: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0411/fenster-145
+  ok    Artefakte bytegleich mit dem installierten Objekt: 5 (erwartet 5)
+  Bundel: 5 Stuecke geprueft, Version laut Baum 3.2.145
+  Diener: Version 3.2.145, Bestand 0 (eigne Kapsel, Verschluesselung aus)
+  Assistent: Weg ueber "Later"; Schirm danach zu
+  ok    die Saat geht durch die echte Import-Tuer: true (erwartet true)
+  ok    der Bestand zaehlt die Saat: true (erwartet true)
+  Bestand nach der Saat: 150
+  Assistent-Klick: kein Knopf innerhalb 12 s
+  ok    der Assistent ist beiseite, die Flaeche hat ihre Breite: true (erwartet true)
+  Sprung nach: Graph
+  ok    **die Graph-Flaeche ist offen**: "Graph" (erwartet "Graph")
+  Farbflecke: 195 nach 8 s — ruhig geworden
+  Das Bild steht: nach 2 s
+  ok    der Export gibt eine PNG-Kette her: true (erwartet true)
+  ok    die Kette traegt eine echte PNG-Signatur: true (erwartet true)
+  ok    **das Bild hat die Groesse der Leinwand (716 x 1248 gegen 716 x 1248)**: true (erwartet true)
+  Schirmaufnahme: /tmp/kepta-fenster/bilder/graph-150-notizen-390px-aufnahme.png
+  Ansicht beim Eintreffen: Kasten 24,99 bis 692,801 in 716x1248 (Grund #38383a, Tinte 149265 von 893568) — frei: oben 7.9 %, unten 35.7 %, links 3.4 %, rechts 3.2 %; Kanten beruehrt: keine
+  Kanten: Tinte [], gemeldet [], Marke []
+  ok    **jede Kante, die Tinte traegt, ist als Beschnitt gemeldet**: [] (erwartet [])
+  ok    **und jede gemeldete Kante traegt wirklich Tinte**: [] (erwartet [])
+  ok    **jede gemeldete Kante malt die Marke**: [] (erwartet [])
+  ok    **keine ungemeldete Kante malt eine Marke**: [] (erwartet [])
+  ok    **der Export traegt einen undurchsichtigen Grund**: 255 (erwartet 255)
+  Feld erstarrt nach 2 s — Vergleich folgt auf stehender Welt
+  ok    **der Kameravergleich laeuft auf erstarrtem Feld**: true (erwartet true)
+  Kontrolle ohne Griff: null -> null (Drift 0)
+  Notizen im Bild: vorher null — nach der Kontrolle null — nach dem Fit null von null; Verlust gegen die Ankunft 0, Drift ohne Griff 0
+  Bilanzzeile schweigt (der Rahmen haelt alles) — dieser Vergleich hat in diesem Lauf keinen Gegenstand; die Wache fahrt ihn mit 34 Notizen bei 390 x 628
+  dieselbe Ansicht nach Fit gedrueckt (Bild steht: 2 s; Titel nun: Fit — held at the readability floor, and all 150 notes are in the picture): Kasten 24,120 bis 692,822 in 716x1248 (Grund #38383a, Tinte 152158 von 893568) — frei: oben 9.6 %, unten 34.1 %, links 3.4 %, rechts 3.2 %; Kanten beruehrt: keine
+  Bildbeweis nach Fit: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0411/fenster-145/graph-150-notizen-390px-nach-fit.png (446518 B, 716 x 1248)
+  nach dem Fit: Kanten beruehrt keine, weiteste freie Seite 34.1 % (vorher 35.7 %)
+  Tinte auf vier Kanten: vorher 0, nach dem Fit 0
+  ok    **der Fit-Knopf schneidet nicht mehr ab als die Ankunft**: true (erwartet true)
+  Legende offen: Zustand zu, deckt 21.1 % der Leinwand (358 x 624 px) — Bilanzzeile: {"da":true,"text":"","sichtbar":false}
+  Der Fit-Knopf sagt ueber sich: Fit — held at the readability floor, and all 150 notes are in the picture
+  Klappe (kein Knopf mit diesem Wort): Zustand zu, deckt 21.1 % — Bilanzzeile: {"da":true,"text":"","sichtbar":false}
+  ok    die Bilanzzeile schweigt, und kein Rand ist beschnitten — alles steht im Bild
+  ok    die zugemachte Legende deckt hoechstens 25 % des Bildes: true (erwartet true)
+  Klappe zurueck (Show legend): Zustand auf
+  Bildbeweis: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0411/fenster-145/graph-150-notizen-390px.png (436342 B, 716 x 1248, Name "k3pta-graph-2026-11-04.png")
+  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen
+  Bilder: 1 nach /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0411/fenster-145
+  Kapsel noch da? nein
+  eigne Kinder: Server 37625, Browser 37626

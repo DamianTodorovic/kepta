@@ -1,0 +1,78 @@
+Zeit: 9.11.2026, 17:40:46 MEZ
+Dateien: README.md, SECURITY.md, ROADMAP.md, .github/release-notes.md — Einheiten ueber 25 Zeichen.
+Riss: satz-riss.mjs (P128, markdown-fest). Vorher: Satzende + Leerzeichen ueber dem
+ganzen Text, wodurch Aufzaehlungen, Tabellenzeilen und `<summary>`-Kuelsen als EIN
+Satz zaehlten. Unter beiden Naivlingen, in diesem Lauf nachgerechnet:
+  53 Einheiten trugen nach dem Punkt-Naivling noch Block-Struktur,
+  117 nach dem zeilenweisen. Ein Zitat aus einer frueheren Runde stünde hier
+  nicht — die Zahl soll diejenige sein, die dieser Stand der vier Texte hergibt.
+
+| Datei | Saetze | absolute | mit Messzeug | ohne Messzeug | Anteil ohne |
+|---|---|---|---|---|---|
+| `README.md` | 411 | 137 | 137 | 0 | 0.0 % |
+| `SECURITY.md` | 33 | 9 | 9 | 0 | 0.0 % |
+| `ROADMAP.md` | 77 | 16 | 16 | 0 | 0.0 % |
+| `.github/release-notes.md` | 50 | 20 | 20 | 0 | 0.0 % |
+| **zusammen** | **571** | **182** | **182** | **0** | **0.0 %** |
+
+Nenner fuer den Anteil: 182 absolute Behauptungen in 571 Saetzen der vier Texte.
+
+Zweite Lesung — der Zeuge darf im selben Abschnitt stehen (Absatz, Tabelle, Aufzaehlung):
+| Datei | absolute | mit Messzeug | ohne Messzeug |
+|---|---|---|---|
+| `README.md` | 137 | 68 | 69 |
+| `SECURITY.md` | 9 | 3 | 6 |
+| `ROADMAP.md` | 16 | 2 | 14 |
+| `.github/release-notes.md` | 20 | 11 | 9 |
+| zusammen | 182 | 84 | 98 |
+   mit Messzeug im selben Abschnitt: 84 von 182 = 46.2 % (gegen 182 von 182 = 100.0 % in der engen Lesung).
+
+Die schmalere Klasse — Saetze, die ein Werkzeug widerlegen koennte (never/always/cannot/0 %/100 %):
+   README.md                  31 von 137 absoluten
+   SECURITY.md                2 von 9 absoluten
+   ROADMAP.md                 1 von 16 absoluten
+   .github/release-notes.md   2 von 20 absoluten
+   zusammen 36 von 182 — der Rest ist Produktcopy ("no password to type"), keine Behauptung ueber eine Maschine.
+   Die Liste, in Lesereihenfolge, mit dem Marker „Zeug", wenn derselbe Satz schon ein Messzeug nennt:
+   [README.md] ZEUG While it cools at 3 000 notes a few pairs still touch for a moment; tests/lib/graphLayout.test.ts:2455-2458 pins that funnel at ≤ 40 pairs by step 250, ≤ 40 again by step 310 and zero by step 380, so no sentence here say
+   [README.md] ZEUG On macOS the key never sits in a file; on Windows it is the DPAPI-sealed database-key.dpapi in the data folder, readable only under the same account, and a headless install with KEPTA_DB_KEY keeps it in the process envir
+   [README.md] ZEUG Every memory carries a type and a confidence score — the type is the rules' answer when nobody set one, never a silent fall-back to *fact*, and an unset confidence reads as 1 (tests/core/notiz-drei-felder.test.ts:53, :67
+   [README.md] ZEUG The validity window is the one field a note really can lack: the row then holds null, and the reader decides — no start means the note's own creation date, no end means it never expires (:75 reads both nulls back, :87 an
+   [README.md] ZEUG Keys, credentials, browser profiles, keychains and system folders are never read, and that cannot be switched off (tests/scan/regeln.test.ts tries to open the barrier with a widened file-type list and is refused) — becau
+   [README.md] ZEUG Everything lives in ~/.kepta/, encrypted on disk, no account, no telemetry (no unchosen foreign address travels in the shipped code — tests/keine-telemetrie.test.ts:73 — and the licence route answers nothing, read or wri
+   [README.md] ZEUG Private notes — one switch in the editor: a private note is never shown to an AI app and never sent to a cloud model — in the app (tests/mcp.test.ts refuses it over MCP even when an agent asks by scope; tests/enterprise-
+   [README.md] ZEUG Expired entries are marked, never quietly hidden (tests/engine.test.ts:78-83 asks for an expired note, gets it back with expired: true, and sees it ranked below the fresh one rather than missing)
+   [README.md] ZEUG Local reranking: a deterministic reranker (term coverage, phrase hits, title, tags) refines the fused ranking and is exposed as rerankScore — no network, always on (tests/core/lokaler-rerank.test.ts scores with the embed
+   [README.md] ZEUG Meaning search can be switched off, and the result slider runs 5 · 10 · 20 · 50 · 100 · 250 · All — tests/components/Dashboard.test.tsx:206 drives all seven positions of the rendered control and reads each label back, te
+   [README.md] ZEUG npm run ablation divides by 5 and reports a real P@5 on the same corpus: two metrics, two names, never comparable (tests/eval-metrik.test.ts:37 pins the capped divisor, :55 pins the division by five and the P@5 name, :48
+   [README.md] ZEUG It is computed on the server, so no embedding ever travels into the view (tests/rest-semantik.test.ts:70 reads the raw HTTP body and refuses any word like embedding, vektor or vector in it)
+   [README.md] ZEUG At phone width a readability floor can decide the size instead of the frame; when it does, the button says so in its own title, and tests/components/graph-fit-390-keine-verlust.test.tsx:73 holds the one promise that surv
+   [README.md] ZEUG The second channel switches itself off with the reason when the base holds only one kind of arrival; it never paints everything grey (tests/components/KnowledgeGraph.render.test.tsx:3537 finds the Provenance control disa
+   [README.md] ZEUG *Keep the newer*, *Keep the older* (the other is marked as replaced, never deleted — tests/enterprise-api.test.ts:215 reads the replaced note back with supersededBy set, and tests/engine.test.ts:167 counts both notes sti
+   [README.md] ZEUG A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched (tests/lib/einrichtung.test.ts:42 checks the backup and the untouched neighbours, :61 hands a co
+   [README.md] ZEUG Private notes never reach an app or a cloud model — the same two checks apply here: tests/mcp.test.ts refuses a private note at the MCP door even when an agent asks for it by scope, and tests/enterprise-api.test.ts reads
+   [README.md] ZEUG Card numbers must pass the Luhn check and IBANs the mod-97 check; dates are never taken for phone numbers (tests/lib/schild.test.ts:39 runs both validators head-on — one shifted IBAN digit and an all-zero card number fai
+   [README.md] ZEUG Without a reachable local LLM it always degrades to ADD — the gate can never block you (tests/engine.test.ts:333 runs it with the embedding service at 503 and still lands on ADD without asking the model; :360 feeds it a 
+   [README.md] ZEUG Settings can only narrow what is read, never widen it (tests/scan/regeln.test.ts:190 tries to talk the barrier into reading secrets by ticking file types and is refused; :199 allows a smaller size cap and refuses a bigge
+   [README.md] ZEUG HTML is turned into text before import, and content that carries no knowledge — markup scaffolding, repeated table rows — never becomes a note (tests/core/klassifikation.test.ts:112 strips script, style and tags into rea
+   [README.md] ZEUG The list groups by file, by kind or by period, and *Load more* never cuts a group in half (tests/lib/gruppenfenster.test.ts pins the window rule: a group that starts is shown whole, so a five-part file never appears as t
+   [README.md] ZEUG GET /api/memories/:id therefore stays unimplemented until a client needs a body it cannot already reach; until then this table names only the methods the server registers, and tests/doku-plattform.test.ts fails if the tw
+   [README.md] ZEUG A page whose name rebinds to 127.0.0.1 is refused before any handler runs (tests/herkunft.test.ts:76), a page under another name gets no Access-Control-Allow-Origin and so cannot read a byte back (tests/server-herkunft.t
+   [README.md] ZEUG Nothing is sent by the app itself, and the store never syncs on its own: the device sync hands you an AES-256-GCM bundle and stops at that answer (server/router/sync.ts:40 returns it to the window, it posts it nowhere), 
+   [README.md] ZEUG There is nothing to activate and nothing to buy inside the window, so the app also never asks for it — no key field, no counter, no trial clock, no "first day free" and no message about a limit (tests/keine-grenzen.test.
+   [README.md] ZEUG It was never a lock — but it was counting, and counting needed places to hide the tally: an AES-256-GCM blob in the store's settings, two keychain entries under app.kepta.plan, and a trial-anchor file in a per-user direc
+   [README.md] ZEUG The data is never hostage (tests/keine-grenzen.test.ts:102-116 shows the licence route answers nothing, read or write, and no part of the surface asks it; tests/server.test.ts:327 writes the store out as Markdown files).
+   [README.md] ZEUG They are built from this source and never published here — every electron-builder call in .github/workflows/build.yml carries --publish never (:111, :204, :310; driven by tests/ci-publish.test.ts:51), so they are unteste
+   [README.md] ZEUG One limit travels with the number: a short :165 with no file beside it on its own line cannot be attributed, so the guard counts those instead of guessing at a file — measured 2026-11-07 10:44 MEZ.
+   [README.md] ZEUG src/scan (machine-scan rules) | must not fall under 98 % of lines · must hold 100 % of functions (both in vitest.config.ts, key "src/scan/") | what may be read, and what never is
+   [SECURITY.md] ZEUG The three keychain paths are covered by tests/core/schluessel.test.ts — :101 reads a Windows entry through the injected command runner with the path passed in the environment, :111 proves the key never sits in the argume
+   [SECURITY.md] ZEUG It never leaves the keychain on its own — what that means is checked, not promised: tests/core/schluessel.test.ts:111 reads the argument list of every launch and finds the key absent there (it travels in the child's envi
+   [ROADMAP.md] ZEUG Time-travel search | asOf on memory_search and POST /api/search — ask what was known at any moment; time-travelled queries never count as access (tests/engine.test.ts:254 shows the older note and hides the later one at t
+   [.github/release-notes.md] ZEUG A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf — nothing in this app reads, sells or validates one: the licence route answers neither read nor write and no surface calls it 
+   [.github/release-notes.md] ZEUG Ein signierter Schlüssel ist Artefakt einer Enterprise-Vereinbarung, nie ein Kaufprodukt von der Liste — nichts in dieser App liest, verkauft oder prüft einen: die Lizenz-Route antwortet weder lesend noch schreibend, und
+
+Zwei von ihnen nachgegriffen, im selben Lauf:
+   "no screenshot of it here yet" (Semantic-Ansicht): README nennt 20 Bilder (12 in Markdown, 8 als <img alt>), davon 0 mit "Semantic"; der Satz steht noch da — haltbar.
+   "no embedding ever travels into the view": 8 von 8 benannten Flaechen-Dateien gelesen, zusammen 0 Nennung(en) "embedding"; das Wort liegt in 37 Test-Dateien des Repos. Fehlende Dateien: keine.
+
+Die 0 ohne Messzeug, in Lesereihenfolge der Dateien (erste 40):

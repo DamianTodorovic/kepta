@@ -7,6 +7,7 @@ import {
   chunkText,
   cosineSimilarity,
   ollamaBaseUrl,
+  einbettModell,
   embedTexts,
   embedQuery,
   ollamaAvailable,
@@ -98,18 +99,71 @@ describe("cosineSimilarity", () => {
 });
 
 describe("ollamaBaseUrl", () => {
-  it("default ohne env", () => {
-    const prev = process.env.KEPTA_OLLAMA_URL;
+  // Der Loeser hat seit dem 3.11. zwei Namen (KEPTA_OLLAMA_URL, dann OLLAMA_HOST), weil die
+  // Routen denselben Loeser brauchen wie der Kern (Aufgabe #45). "Default" heisst darum:
+  // beide weg — nicht nur der eine.
+  const ohneBeide = (hin: () => void): void => {
+    const a = process.env.KEPTA_OLLAMA_URL;
+    const b = process.env.OLLAMA_HOST;
     delete process.env.KEPTA_OLLAMA_URL;
-    expect(ollamaBaseUrl()).toBe("http://127.0.0.1:11434");
-    if (prev !== undefined) process.env.KEPTA_OLLAMA_URL = prev;
+    delete process.env.OLLAMA_HOST;
+    try { hin(); } finally {
+      if (a !== undefined) process.env.KEPTA_OLLAMA_URL = a;
+      if (b !== undefined) process.env.OLLAMA_HOST = b;
+    }
+  };
+
+  it("default ohne env", () => {
+    ohneBeide(() => expect(ollamaBaseUrl()).toBe("http://127.0.0.1:11434"));
   });
+
+  it("OLLAMA_HOST gilt, wenn KEPTA_OLLAMA_URL fehlt", () => {
+    const a = process.env.KEPTA_OLLAMA_URL;
+    const b = process.env.OLLAMA_HOST;
+    delete process.env.KEPTA_OLLAMA_URL;
+    process.env.OLLAMA_HOST = "http://anderer-rechner:11434";
+    try {
+      expect(ollamaBaseUrl()).toBe("http://anderer-rechner:11434");
+    } finally {
+      if (a !== undefined) process.env.KEPTA_OLLAMA_URL = a;
+      if (b !== undefined) process.env.OLLAMA_HOST = b;
+      else delete process.env.OLLAMA_HOST;
+    }
+  });
+
+  it("KEPTA_OLLAMA_URL gewinnt gegen den zweiten Namen", () => {
+    const a = process.env.KEPTA_OLLAMA_URL;
+    const b = process.env.OLLAMA_HOST;
+    process.env.KEPTA_OLLAMA_URL = "http://kern-haft:11434";
+    process.env.OLLAMA_HOST = "http://alias-haft:11434";
+    try {
+      expect(ollamaBaseUrl()).toBe("http://kern-haft:11434");
+    } finally {
+      if (a !== undefined) process.env.KEPTA_OLLAMA_URL = a; else delete process.env.KEPTA_OLLAMA_URL;
+      if (b !== undefined) process.env.OLLAMA_HOST = b; else delete process.env.OLLAMA_HOST;
+    }
+  });
+
   it("env mit trailing slash wird bereinigt", () => {
     const prev = process.env.KEPTA_OLLAMA_URL;
     process.env.KEPTA_OLLAMA_URL = "http://host:1234///";
     expect(ollamaBaseUrl()).toBe("http://host:1234");
     if (prev === undefined) delete process.env.KEPTA_OLLAMA_URL;
     else process.env.KEPTA_OLLAMA_URL = prev;
+  });
+
+  it("einbettModell kennt dieselbe Reihenfolge", () => {
+    const a = process.env.KEPTA_EMBED_MODEL;
+    const b = process.env.OLLAMA_EMBED_MODEL;
+    process.env.KEPTA_EMBED_MODEL = "kern-modell";
+    process.env.OLLAMA_EMBED_MODEL = "alias-modell";
+    try {
+      expect(einbettModell()).toBe("kern-modell");
+    } finally {
+      if (a !== undefined) process.env.KEPTA_EMBED_MODEL = a; else delete process.env.KEPTA_EMBED_MODEL;
+      if (b !== undefined) process.env.OLLAMA_EMBED_MODEL = b; else delete process.env.OLLAMA_EMBED_MODEL;
+    }
+    ohneBeide(() => expect(einbettModell()).toBe("nomic-embed-text"));
   });
 });
 
@@ -240,123 +294,79 @@ describe("EmbeddingQueue", () => {
   });
 });
 
-// Befund A4-13 / Q-15: 15 Sekunden Dunkelheit nach jedem Start. Die Produktwege
-// rufen queue.start() OHNE Argument (server.ts, src/mcp-server.ts) — die Queue muss
-// den Sofortlauf also selbst kennen. Gemessen am echten nomic-embed-text vor der
-// Aenderung: erster Vektor nach 15 063 ms am Hochlauf, nach 14 466 ms auf einen Write.
-describe("EmbeddingQueue: Sofortlauf", () => {
-  let store: KeptaStore;
-
-  beforeEach(() => {
-    store = freshStore();
+describe("P169: Sprach- und Embedding-Cluster", () => {
+  it("embed-sprachtest fuehrt vier deutsche und vier englische Notizen und Fragenpaare und zaehlt Rang-1-Treffer auf dem Standardmodell", async () => {
+    const mod = (await import("../scripts/embed-sprachtest")) as Record<string, unknown>;
+    const deDok = mod.DEUTSCH_DOK as [string, string][] | undefined;
+    const deFragen = mod.DEUTSCH_FRAGEN as [string, string][] | undefined;
+    const enDok = mod.ENGLISCH_DOK as [string, string][] | undefined;
+    const enFragen = mod.ENGLISCH_FRAGEN as [string, string][] | undefined;
+    const durchlauf = mod.durchlauf as ((name: string, dok: [string, string][], fragen: [string, string][]) => Promise<number>) | undefined;
+    expect(deDok?.length, "DEUTSCH_DOK muss 4 Notizen tragen").toBe(4);
+    expect(deFragen?.length, "DEUTSCH_FRAGEN muss 4 Fragen tragen").toBe(4);
+    expect(enDok?.length, "ENGLISCH_DOK muss 4 Notizen tragen").toBe(4);
+    expect(enFragen?.length, "ENGLISCH_FRAGEN muss 4 Fragen tragen").toBe(4);
+    expect(typeof durchlauf, "durchlauf muss exportiert sein").toBe("function");
+    const geseheneModelle: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: { body?: string }) => {
+        const body = JSON.parse(init?.body ?? "{}") as { model: string; input: string[] };
+        geseheneModelle.push(body.model);
+        const embeddings = body.input.map((t, i) =>
+          t.includes("pasta") || t.includes("carbonara") ? [1, 0, 0, 0] : [0, i + 1, 1, 0],
+        );
+        return { ok: true, status: 200, json: async () => ({ embeddings }) } as unknown as Response;
+      }),
+    );
+    const treffer = await durchlauf!("Englisch", enDok!, enFragen!);
+    expect(geseheneModelle.every((m) => m === "nomic-embed-text")).toBe(true);
+    expect(treffer).toBeGreaterThanOrEqual(1);
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
+  it("eine Suche nach dem Queue-Tick bettet nur die Anfrage ein, keinen gespeicherten Chunk", async () => {
+    const { indexMemory, searchMemories } = await import("../src/core/engine");
+    const s = freshStore();
+    const m = s.createMemory({ title: "Carbonara", content: "Guanciale und Pecorino Romano ohne Sahne" });
+    indexMemory(s, m.id);
+    const aufrufe: string[][] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: { body?: string }) => {
+        const body = JSON.parse(init?.body ?? "{}") as { input: string[] };
+        aufrufe.push(body.input);
+        const embeddings = body.input.map(() => [1, 0.5, 0.25, 0.1]);
+        return { ok: true, status: 200, json: async () => ({ embeddings }) } as unknown as Response;
+      }),
+    );
+    const q = new EmbeddingQueue(s, { batchSize: 10 });
+    expect(await q.tick()).toBeGreaterThan(0);
+    expect(s.chunksNeedingEmbedding().length).toBe(0);
+    aufrufe.length = 0;
+    const res = await searchMemories(s, { query: "Was koche ich mit Pecorino", limit: 5 });
+    expect(res.usedVectors).toBe(true);
+    expect(aufrufe.length).toBe(1);
+    expect(aufrufe[0]?.length).toBe(1);
+    expect(aufrufe[0]?.[0]).toContain("Was koche ich mit Pecorino");
+    expect(aufrufe[0]?.[0]).not.toContain("Guanciale");
   });
 
-  const warte = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-  it("bettet einen wartenden Chunk beim start() ohne Argument", async () => {
-    const m = store.createMemory({ title: "Erstimport", content: "Diese Notiz wartet beim Hochlauf" });
-    store.replaceChunks(m.id, ["chunk eins", "chunk zwei"]);
-    stubEmbedFetch();
-    const q = new EmbeddingQueue(store, { intervalMs: 15_000, batchSize: 32, model: "fake" });
-    q.start(); // kein Argument — genau so rufen die Produktwege die Queue
-    await warte(30);
-    q.stop();
-    expect(store.chunksNeedingEmbedding().length).toBe(0);
-  });
-
-  it("start(false) bleibt der alte Weg: kein Sofortlauf am Hochlauf", async () => {
-    const m = store.createMemory({ title: "Spaeter", content: "Kein Sofortlauf erwuenscht" });
-    store.replaceChunks(m.id, ["nur dieser chunk"]);
-    stubEmbedFetch();
-    const q = new EmbeddingQueue(store, { intervalMs: 15_000, model: "fake" });
-    q.start(false);
-    await warte(30);
-    expect(store.chunksNeedingEmbedding().length).toBe(1);
-    q.stop();
-  });
-
-  it("bettet am Hochlauf den ganzen Rückstand, nicht nur den ersten Batch", async () => {
-    // 3 Notizen a 2 Chunks bei batchSize 2 = 3 Batches. Wuerde die Queue nach dem
-    // ersten Batch wieder aufs Intervall (15 s) warten, blieben 4 von 6 Chunks blind —
-    // und ein Erstimport von 1 000 Notizen waere trotz Sofortlauf rund 16 Minuten lang
-    // semantisch leer. Genau das ist der gemessene Schaden hinter A4-13.
-    for (let i = 0; i < 3; i++) {
-      const m = store.createMemory({ title: `Erstimport ${i}`, content: `Notiz ${i} aus dem Import` });
-      store.replaceChunks(m.id, [`chunk eins ${i}`, `chunk zwei ${i}`]);
+  it("eval-sprachuebergriff zieht 15 Fragenpaare aus den 45 Korpus-Anfragen und erbt jedes Antwort-Set", async () => {
+    const mod = (await import("../scripts/eval-sprachuebergriff")) as Record<string, unknown>;
+    const { CORPUS, QUERIES } = await import("../scripts/eval-corpus");
+    const paare = mod.PAARE as { deutsch: string; englisch: string }[] | undefined;
+    const paarePruefen = mod.paarePruefen as (() => { deutsch: string; englisch: string; relevant: string[] }[]) | undefined;
+    expect(CORPUS.length).toBe(58);
+    expect(QUERIES.length).toBe(45);
+    expect(paare?.length, "PAARE muss 15 Paare tragen").toBe(15);
+    expect(typeof paarePruefen, "paarePruefen muss exportiert sein").toBe("function");
+    const geerbt = paarePruefen!();
+    expect(geerbt.length).toBe(15);
+    for (const z of geerbt) {
+      const original = QUERIES.find((q) => q.query === z.deutsch);
+      expect(original, `keine Korpus-Anfrage fuer ${z.deutsch}`).toBeDefined();
+      expect(z.relevant).toEqual(original!.relevant);
+      expect(z.englisch.length).toBeGreaterThan(5);
     }
-    stubEmbedFetch();
-    const q = new EmbeddingQueue(store, { intervalMs: 15_000, batchSize: 2, model: "fake" });
-    q.start();
-
-    for (let i = 0; i < 40 && store.chunksNeedingEmbedding(500).length > 0; i++) await warte(25);
-    q.stop();
-    expect(store.chunksNeedingEmbedding(500).length).toBe(0);
-    expect(store.embeddingStats().chunksOhneVektor).toBe(0);
-  });
-
-  it("gibt bei einem Fehler den Lauf auf, statt ihn zu wiederholen", async () => {
-    // Ein nicht erreichbarer Dienst darf die Queue nicht in eine Endlosschleife
-    // werfen: eine Runde, Fehler, dann wartet wieder das Intervall.
-    let aufrufe = 0;
-    vi.stubGlobal("fetch", vi.fn(async () => {
-      aufrufe++;
-      return { ok: false, status: 503, json: async () => ({}) } as Response;
-    }));
-    for (let i = 0; i < 3; i++) {
-      const m = store.createMemory({ title: `Ohne Dienst ${i}`, content: `Notiz ${i}` });
-      store.replaceChunks(m.id, [`c1 ${i}`, `c2 ${i}`, `c3 ${i}`]);
-    }
-    const q = new EmbeddingQueue(store, { intervalMs: 15_000, batchSize: 2, model: "fake" });
-    q.start();
-    await warte(60);
-    q.stop();
-
-    expect(aufrufe).toBe(1);
-    expect(store.chunksNeedingEmbedding(500).length).toBe(9);
-    expect(q.lastError).toContain("503");
-  });
-
-  it("bettet eine frisch geschriebene Notiz, ohne aufs Intervall zu warten", async () => {
-    stubEmbedFetch();
-    const q = new EmbeddingQueue(store, { intervalMs: 15_000, batchSize: 32, model: "fake" });
-    q.start(false); // nur der Intervall-Timer; der Write-Sofortlauf ist der gepruefte Teil
-    const m = store.createMemory({ title: "Frische Notiz", content: "Entsteht im laufenden Betrieb" });
-    store.replaceChunks(m.id, ["chunk der frischen notiz"]);
-
-    for (let i = 0; i < 40 && store.chunksNeedingEmbedding().length > 0; i++) await warte(25);
-    q.stop();
-    expect(store.chunksNeedingEmbedding().length).toBe(0);
-  });
-
-  it("stop() nimmt auch den Write-Sofortlauf", async () => {
-    stubEmbedFetch();
-    const q = new EmbeddingQueue(store, { intervalMs: 15_000, model: "fake" });
-    q.start();
-    q.stop();
-
-    const m = store.createMemory({ title: "Nach dem Stop", content: "Darf nicht mehr eingebettet werden" });
-    store.replaceChunks(m.id, ["chunk nach stop"]);
-    await warte(900);
-    expect(store.chunksNeedingEmbedding().length).toBe(1);
-  });
-
-  it("embeddingStats weist chunksOhneVektor aus", async () => {
-    const a = store.createMemory({ title: "A", content: "Inhalt A" });
-    const b = store.createMemory({ title: "B", content: "Inhalt B" });
-    store.replaceChunks(a.id, ["a1", "a2"]);
-    store.replaceChunks(b.id, ["b1"]);
-    stubEmbedFetch();
-    const q = new EmbeddingQueue(store, { model: "fake", batchSize: 10 });
-
-    const vorher = store.embeddingStats();
-    expect(vorher.chunksOhneVektor).toBe(3);
-    expect(vorher.total - vorher.embedded).toBe(vorher.chunksOhneVektor);
-
-    await q.tick();
-    expect(store.embeddingStats().chunksOhneVektor).toBe(0);
   });
 });

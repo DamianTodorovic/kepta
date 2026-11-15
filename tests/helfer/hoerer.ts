@@ -1,128 +1,140 @@
-// Ein Horcher pro Testdatei, auf dem Port der Datei — nicht ein Horcher je Anfrage.
+// Ein Hörer pro Express-App — und er sitzt auf IPv4-Loopback.
 //
-// Warum diese Datei existiert: `request(app)` horcht JE Anfrage neu. supertest wickelt
-// eine function-App in `http.createServer(app)` (`node_modules/supertest/lib/test.js:36-42`)
-// und ruft `app.listen(0)` (`test.js:63`). Node bindet ohne Host auf `::` — gemessen:
-// `listen(0) -> { address: "::", family: "IPv6", port: 55007 }` (FALL 1 des Nachbaus).
-// Auf einem dual-stack Rechner folgt daraus zweierlei, und beides ist mit eigenen Augen
-// gesehen:
+// Supertest macht aus einer Express-App für JEDE Anfrage einen neuen
+// `http.Server`, bindet ihn auf einen ephemeren Port und schließt ihn nach der
+// Antwort wieder. Über hundert Test-Worker × hundert Anfragen ist das ein
+// beständiges Vergeben und Freigeben von Loopback-Ports, und die Suite hat schon
+// Antworten von einem Server bekommen, der nicht der eigene war: 401 statt 403,
+// 404 statt 400, ETIMEDOUT — Zahlen, die diese App an keiner Stelle selbst sendet
+// (`git grep 401 -- server src` findet keine einzige 401-Stelle).
 //
-//   1. Ein zweiter Hoerer kann sich auf dieselbe Zahl setzen, die schon v4-explizit
-//      gehalten wird, weil er v6-Wildcard bindet (FALL 2), und umgekehrt: ein
-//      v4-expliziter Hoerer kommt durch, obwohl schon ein v6-Wildcard-Hoerer auf der
-//      Zahl sitzt (FALL 3).
-//   2. Wenn das passiert ist, beantwortet der FREMDE die Anfragen auf
-//      `http://127.0.0.1:<port>` — nicht unser Horcher. FALL 3 und FALL 4 zeigen es mit
-//      einer echten Anfrage an einen echten Kindprozess: `status=401`,
-//      `content-type: text/plain`, Leib `Unauthorized`. superagent laesst dabei
-//      `res.body` leer — und genau so sehen die beiden Roetungen aus, die diese Suite
-//      hatte: `Schreiblauf 27: 401 {}` (13.10., `tests/server-mcp-spiegel.test.ts`) und
-//      `Schreiblauf 30: 404 {}` (12.10.). Weder `src/` noch `server.ts` wirft eine 401
-//      (grep ueber den Produktcode, 13.10.: null Treffer); die einzige 401, die dieser
-//      Repo sends, ist die Koeder-Antwort in `scripts/nachbau-sockel.mjs`.
+// Der Riegel hängt an genau einer Stelle: `http.createServer(app)`, so wie
+// Supertest es in seinem Konstruktor ruft (node_modules/supertest/lib/test.js:42).
+// Ein `createServer()` ohne Handler und ein gewöhnlicher Request-Listener bleiben
+// unberührt — Mock-Server der Tests können weiter selbst lauschen.
 //
-// Der Nachbau liegt als Skript UND als Ausgabe im Repo
-// (`scripts/nachbau-sockel.mjs`, `docs/belege/nacht-13-10/sockel-nachbau-1357.log.txt`),
-// weil ein Protokoll, das nur auf einem Schreibtisch liegt, fuer jeden anderen ein
-// toter Link ist. Der Arbeiter, der die Klasse zuerst jagte, sah denselben Erfolg
-// dreimal hintereinander; sein Protokoll lag unter `/tmp` und ist fort — die FALLS oben
-// sind die Wiederholung von der Leitung, einzeln ausgefuehrt, im Repo nachfuehrbar.
+// WARUM IPv4 UND NICHT `::` (Ursache 9, zum zweiten Mal gemessen, 4.11. 21:47 MEZ):
+// Supertest verbindet hart `http://127.0.0.1:<port>` (desselben Datei Zeile 69). Ein
+// Hörer auf `::` nimmt diese Verbindung zwar über die IPv4-gemappte Adresse an, aber
+// er allein ist sie nicht: ein Versuch auf diesem Rechner (/tmp/v4v6-race.mjs, und
+// als Fall in tests/helfer/horchen.test.ts) zeigte, dass ein IPv4-Hörer auf
+// 127.0.0.1:45991 und ein Doppelstapel-Hörer auf :::45991 **gleichzeitig** sitzen
+// können, und die Anfrage an 127.0.0.1 beantwortete der IPv4-Inländer. Einem Hörer,
+// der selbst auf 127.0.0.1 sitzt, verwehrt der Kernel denselben Port dagegen.
 //
-// Dieser Horcher schliesst die Klasse, statt ein Symptom zu daempfen:
-//   * Horchen passiert EINMAL pro Datei (`beforeAll`), nicht je Anfrage.
-//   * Der Port kommt aus `portFuerHorer` (`tests/helfer/port-vergabe.ts`) und liegt im
-//     Vergabefenster 41000..44999 — unterhalb des ephemeren Fensters dieses Rechners
-//     (`net.inet.ip.portrange.first = 49152`, FALL-Nachbau gemessen), in dem fremde
-//     Programme ein- und ausgehen. Kein Programm dieser Maschine alloziert hierher.
-//   * Gebunden auf `127.0.0.1`, ausdruecklich. Das ist die dichte Richtung: ein zweiter
-//     v4-Hoerer auf derselben Zahl scheitert dann an EADDRINUSE statt durchzukommen
-//     (FALL 5), und ein v6-Wildcard-Hoerer, der NACH uns auf derselben Zahl sitzt,
-//     gewinnt die Demux nicht (FALL 2: die Antworten blieben bei uns).
-//   * Die App wird durchgereicht, nicht neu gehorcht: `gebeApp` entscheidet, welcher
-//     Stapel die Anfragen dieser Datei bekommt. Eine Datei, die ihren Bestand je Fall
-//     frisch baut (`beforeEach`), behält genau das — der Horcher bleibt, der Stapel
-//     wechselt. Kein Verhalten wird verbogen: dieselben Routen, dieselben Schlüssel,
-//     dieselben Erwartungen, nur über eine bestehende Verbindung statt je Anfrage eine
-//     neue.
+// Das eine Problem dabei: Supertest liest `app.address()` IM KONSTRUKTOR, im selben
+// Taktschnitt nach `listen(0)` (Zeile 63-66). Eine Bindung MIT Hostangabe liefert
+// Node aber erst nach dem `listening`-Ereignis — also würde ein direkter
+// `listen(0, "127.0.0.1")` im Moment des Aufrufs `null` geben und Supertest auf die
+// Idee bringen, selbst ein `listen(0)` (Doppelstapel!) zu rufen. Darum liegt der
+// IPv4-Bund VOR dem Test: `vorratAuffuellen()` bindet wartende Hörer auf
+// 127.0.0.1, und `hoerer()` gibt einen davon weiter. Der Vorrat wird in
+// tests/setup.horchen.ts vor jeder Datei und vor jedem Fall gefüllt; ist er trotzdem
+// einmal leer, zählt die Datei ein Ausweichen und meldet es am Ende — still auf den
+// Doppelstapel zurückzufallen wäre genau der alte Fehler mit neuer Verkleidung.
 import http from "node:http";
-import type { Express } from "express";
 
-import { portErzwingen, portFuerHorer } from "./port-vergabe";
+const ZEICHEN = Symbol.for("kepta-test-hoerer");
 
-export interface DateiHoerer {
-  /** Die Kennung, aus der der Port folgt — meist der Pfad der Testdatei, mit `#slot` für eine zweite Tür. */
-  readonly kennung: string;
-  readonly port: number;
-  /** Die URL, an die alle Anfragen dieser Datei gehen: `http://127.0.0.1:<Port>`. */
-  readonly url: string;
-  /**
-   * Wie der Horcher wirklich sitzt, nach dem Bind: Addresse und Familie. Die Wache in
-   * `tests/sockel-vertrag.test.ts` verlangt `127.0.0.1` — ausdrucklich, nicht `::`.
-   * Der Grund ist gemessen (`scripts/nachbau-sockel.mjs`, FALL 2 und FALL 5): ein fremder v4-expliziter
-   * Horcher auf derselben Zahl laesst unseren v4-Bind mit EADDRINUSE scheitern, ein
-   * v6-Wildcard-Bind geht dagegen durch, und dann beantwortet der FREMDE die
-   * Anfragen auf `http://127.0.0.1:<Port>`.
-   */
-  readonly bindung: { adresse: string; familie: string; port: number };
-  /** Welchem Stapel der Horcher gerade spricht. Vor der ersten Anfrage zu setzen. */
-  gebeApp(app: Express | null): void;
-  /** Zu in `afterAll`: connections herzfertig schliessen, damit ein offener Stream die Datei nicht hält. */
-  schliesse(): Promise<void>;
+const gepuffert = new WeakMap<object, http.Server>();
+const offen = new Set<http.Server>();
+const echtErzeugen = http.createServer.bind(http) as typeof http.createServer;
+
+/** Ein fertig gebundener IPv4-Hörer, der auf seine App wartet. */
+type Platz = { hoerer: http.Server; nimm: (app: object) => void; frei: boolean };
+
+const vorrat: Platz[] = [];
+let ausgewichen = 0;
+
+/** Nur Express-Apps treffen, nie einen gewöhnlichen Request-Listener. */
+function istExpressApp(kandidat: unknown): kandidat is object {
+  if (typeof kandidat !== "function") return false;
+  const app = kandidat as unknown as Record<string, unknown>;
+  return typeof app.set === "function" && typeof app.use === "function" && typeof app.get === "function";
 }
 
 /**
- * Der langlebige Horcher dieser Datei. `kennung` ist der Pfad der Testdatei; Dateien,
- * die zwei Bestände gleichzeitig brauchen (die Zwei-Türen-Spiegel), rufen ein zweites
- * Mal mit einem Slot auf: `tests/server-mcp-spiegel.test.ts#b`.
+ * Ein Hörer auf 127.0.0.1, der seine App erst spät kennt: der Handler liest ein
+ * Feld, das `nimm` setzt. So kann die Bindung fertig sein, bevor Supertest die App
+ * durchreicht — und `address()` liefert im selben Taktschnitt, den Supertest braucht.
  */
-export async function hoererDerDatei(kennung: string): Promise<DateiHoerer> {
-  const port = portFuerHorer(kennung);
-  let aktuelleApp: Express | null = null;
-
-  const hoerer = http.createServer((req, res) => {
-    if (!aktuelleApp) {
-      // Kein stummer 500er, der wie ein Produktfehler aussieht: hier hat die Datei
-      // ihren Stapel nicht eingetragen — ein Fehler im Test, nicht im Pfad.
-      res.writeHead(500, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: `Test-Hoerer ${kennung} (127.0.0.1:${port}): keine App gesetzt — gebeApp() vor der ersten Anfrage aufrufen.` }));
+async function neuenPlatz(): Promise<Platz> {
+  let app: object | null = null;
+  const hoerer = echtErzeugen((req, res) => {
+    const handler = app as unknown as ((a: http.IncomingMessage, b: http.ServerResponse) => void) | null;
+    if (!handler) {
+      res.statusCode = 503;
+      res.end();
       return;
     }
-    aktuelleApp(req, res);
+    handler(req, res);
   });
+  await new Promise<void>((resolve, reject) => {
+    hoerer.once("error", reject);
+    hoerer.listen(0, "127.0.0.1", () => resolve());
+  });
+  return { hoerer, nimm: (a) => { app = a; }, frei: true };
+}
 
-  // Der Zahl-Vertrag: ein belegter Port scheitert hoerbar, er ruft den Nachbarn an.
-  try {
-    await portErzwingen(port, kennung);
-  } catch (e) {
-    throw new Error(`${(e as Error).message} — ein zweiter Lauf desselben Baums laeuft; nicht zwei Suiten auf einem Baum.`);
+/** Haelt `ziel` freie Hörer bereit; wartet auf jede neue Bindung. */
+export async function vorratAuffuellen(ziel = 2): Promise<void> {
+  let freie = vorrat.reduce((n, p) => n + (p.frei ? 1 : 0), 0);
+  while (freie < ziel) {
+    vorrat.push(await neuenPlatz());
+    freie += 1;
   }
+}
 
-  await new Promise<void>((los, fehler) => {
-    hoerer.once("error", (e: NodeJS.ErrnoException) =>
-      fehler(new Error(`${kennung}: Horcher auf 127.0.0.1:${port} nicht erreichbar (${e.code ?? e.message})`))
-    );
-    hoerer.listen(port, "127.0.0.1", () => los());
-  });
+/** Der Hörer einer App — aus dem Vorrat, und nie einer pro Anfrage. */
+export function hoerer(app: object): http.Server {
+  let server = gepuffert.get(app);
+  if (server) return server;
+  const platz = vorrat.find((p) => p.frei);
+  if (platz) {
+    platz.frei = false;
+    platz.nimm(app);
+    server = platz.hoerer;
+  } else {
+    // Ausweichen auf den alten Weg: richtig fuers Bild, falsch fuer die Familie —
+    // dieser Hoerer sitzt auf `::`. Gezaehlt und gemeldet in setup.horchen.ts.
+    ausgewichen += 1;
+    server = echtErzeugen(app as unknown as Parameters<typeof echtErzeugen>[0]);
+    server.listen(0);
+  }
+  gepuffert.set(app, server);
+  offen.add(server);
+  return server;
+}
 
-  const sitz = hoerer.address() as { address: string; family: string; port: number };
+/** Derselbe Hörer, den die Suite benutzt — für die Messung, `undefined` ohne ihn. */
+export function horcherVon(app: object): http.Server | undefined {
+  return gepuffert.get(app);
+}
 
-  return {
-    kennung,
-    port,
-    url: `http://127.0.0.1:${port}`,
-    bindung: { adresse: sitz.address, familie: sitz.family, port: sitz.port },
-    gebeApp: (app) => {
-      aktuelleApp = app;
-    },
-    schliesse: async () => {
-      // Ein offener Live-Stream darf das Datei-Ende nicht halten: zuerst die
-      // Verbindungen nehmen, dann den Horcher schliessen, beides mit Frist —
-      // ein haengender afterAll ist hier ein schlechterer Deal als ein verlorener Socket.
-      hoerer.closeAllConnections?.();
-      await Promise.race([
-        new Promise<void>((los) => hoerer.close(() => los())),
-        new Promise<void>((los) => setTimeout(los, 3_000).unref()),
-      ]);
-    },
-  };
+/** `true`, wenn der Riegel sitzt — ohne ihn liefe die Suite gegen wandernde Ports. */
+export function geriegelt(): boolean {
+  return Boolean((http as unknown as Record<symbol, unknown>)[ZEICHEN]);
+}
+
+/** Wie oft der Vorrat nicht reichte; ein Wert ueber null ist ein Befund, kein Detail. */
+export function ausgewichenZaehlen(): number {
+  return ausgewichen;
+}
+
+/** Supertest ist CommonJS: der Riegel muss auf das Objekt, das `require("http")` gibt. */
+export function riegelEinsetzen(): void {
+  if (geriegelt()) return;
+  (http as unknown as Record<symbol, unknown>)[ZEICHEN] = true;
+  http.createServer = ((...args: Parameters<typeof http.createServer>) => {
+    const handler = args[0];
+    if (istExpressApp(handler) && args.length === 1) return hoerer(handler);
+    return (echtErzeugen as unknown as (...a: unknown[]) => http.Server)(...args);
+  }) as typeof http.createServer;
+}
+
+/** Alle Hörer dieser Datei schließen, damit nach dem letzten Fall keiner offen bleibt. */
+export function hoererSchliessen(): Promise<void> {
+  const die = [...offen];
+  offen.clear();
+  return Promise.all(die.map((h) => new Promise<void>((resolve) => h.close(() => resolve())))).then(() => undefined);
 }

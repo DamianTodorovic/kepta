@@ -1,36 +1,23 @@
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
+// F12 — Q-18 in der Desktop-App: der Inbox-Watcher folgte Symlinks. Im Kern ist das
+// seit F3 zu (lstat auf den Eintrag, realpath auf die Lage, Grund wird gemeldet);
+// die App hatte im ganzen Baum kein realpath und kein lstat. Anlagen identisch.
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import request from "supertest";
 import { KeptaStore } from "../src/core/store";
-import { hoererDerDatei, type DateiHoerer } from "./helfer/hoerer";
-import { anlage } from "./helfer/anlage";
 
-// Server importieren, bevor AUTOSTART gesetzt ist, wurde den echten Server starten.
+// ../server erst nach dieser Zeile importieren, sonst startet der echte Server.
 process.env.KEPTA_NO_AUTOSTART = "1";
+process.env.KEPTA_ENCRYPTION = "off";
 
-let createApp: (store: KeptaStore) => import("express").Express;
+let createApp: typeof import("../server").createApp;
 let store: KeptaStore;
 let app: import("express").Express;
 let prevHome: string | undefined;
 let dir: string;
 let fremd: string;
-
-// Ein Horcher pro Datei, auf IHREM Port — nicht einer je Anfrage
-// (`tests/helfer/hoerer.ts`: der Nachbau vom 13.10., der eine offene
-// `request(URLE)`-Kette an einen fremden v4-Hoerer verlor).
-let hoerer: DateiHoerer;
-let URLE: string;
-
-beforeAll(async () => {
-  hoerer = await hoererDerDatei("tests/server-inbox-symlink.test.ts");
-  URLE = hoerer.url;
-});
-
-afterAll(async () => {
-  await hoerer.schliesse();
-});
 
 beforeEach(async () => {
   dir = fs.mkdtempSync(path.join(tmpdir(), "kepta-inbox-"));
@@ -42,7 +29,6 @@ beforeEach(async () => {
   ({ createApp } = await import("../server"));
   store = new KeptaStore(path.join(dir, "test.db"));
   app = createApp(store);
-  hoerer.gebeApp(app);
 });
 
 afterEach(() => {
@@ -60,16 +46,18 @@ function legeFremdeDatei(): string {
 }
 
 const knotentext = async () => {
-  const res = await request(URLE).get("/api/memories");
-  return (res.body as { content: string }[]).map((m) => m.content).join("\n");
+  const res = await request(app).get("/api/memories");
+  // Seit Aufgabe #64(1) nennt der Leib die Liste unter `memories` (wie die Suchtuer,
+  // server/router/search.ts:23-28) — nicht mehr als nackter Array.
+  return ((res.body as { memories?: { content: string }[] }).memories ?? []).map((m) => m.content).join("\n");
 };
 
-describe("Q-18 — der Inbox-Watcher folgt Symlinks (CWE-59)", () => {
+describe("Q-18 — der Inbox-Waechter folgt Symlinks (CWE-59)", () => {
   it("lehnt einen Symlink auf eine Datei ausserhalb der Inbox ab und meldet den Grund", async () => {
     const ziel = legeFremdeDatei();
     fs.symlinkSync(ziel, inbox("verlinkt.txt"));
 
-    const res = await request(URLE).post("/api/inbox/scan");
+    const res = await request(app).post("/api/inbox/scan");
     expect(res.status).toBe(200);
     expect(await knotentext()).not.toContain(MARKER);
     expect(res.body.skipped).toEqual(
@@ -82,7 +70,7 @@ describe("Q-18 — der Inbox-Watcher folgt Symlinks (CWE-59)", () => {
   it("verschiebt den abgelehnten Symlink nicht ins Archiv — er bleibt sichtbar liegen", async () => {
     const ziel = legeFremdeDatei();
     fs.symlinkSync(ziel, inbox("verlinkt.txt"));
-    anlage(await request(URLE).post("/api/inbox/scan"), "Inbox-Scan als Anlage", [200]);
+    await request(app).post("/api/inbox/scan");
     expect(fs.existsSync(inbox("verlinkt.txt"))).toBe(true);
     expect(fs.existsSync(inbox("archive", "verlinkt.txt"))).toBe(false);
     expect(fs.existsSync(ziel)).toBe(true);
@@ -93,7 +81,7 @@ describe("Q-18 — der Inbox-Watcher folgt Symlinks (CWE-59)", () => {
     const ziel = path.join(dir, "ausserhalb.txt");
     fs.writeFileSync(ziel, `auch hier: ${MARKER}`, "utf-8");
     fs.symlinkSync(ziel, inbox("nachbarn.txt"));
-    const res = await request(URLE).post("/api/inbox/scan");
+    const res = await request(app).post("/api/inbox/scan");
     expect(await knotentext()).not.toContain(MARKER);
     expect(res.body.skipped?.[0]?.reason).toBeTruthy();
   });
@@ -103,23 +91,23 @@ describe("Q-18 — der Inbox-Watcher folgt Symlinks (CWE-59)", () => {
     fs.mkdirSync(ordner, { recursive: true });
     fs.writeFileSync(path.join(ordner, "beet.md"), `im verlinkten ordner: ${MARKER}`, "utf-8");
     fs.symlinkSync(ordner, inbox("garten"));
-    const res = await request(URLE).post("/api/inbox/scan");
+    const res = await request(app).post("/api/inbox/scan");
     expect(await knotentext()).not.toContain(MARKER);
     expect(res.body.skipped).toEqual(
       expect.arrayContaining([expect.objectContaining({ file: "garten" })])
     );
   });
 
-  it("eine echte Datei in der Inbox wird weiterhin übernommen (die Schleise ist kein Zubringer-Verbot)", async () => {
-    fs.writeFileSync(inbox("echt.txt"), "Ein echter Text aus der Inbox mit Substanz für einen Knoten.", "utf-8");
-    const res = await request(URLE).post("/api/inbox/scan");
+  it("eine echte Datei in der Inbox wird weiter uebernommen (die Schleuse ist kein Zubringer-Verbot)", async () => {
+    fs.writeFileSync(inbox("echt.txt"), "Ein echter Text aus der Inbox mit Substanz fuer einen Knoten.", "utf-8");
+    const res = await request(app).post("/api/inbox/scan");
     expect(res.body.skipped ?? []).toEqual([]);
     expect(res.body.imported).toBeGreaterThan(0);
     expect(await knotentext()).toContain("echter Text aus der Inbox");
     expect(fs.existsSync(inbox("echt.txt"))).toBe(false);
   });
 
-  it("der WATCHER selbst übernimmt die verlinkte Datei nicht (A3-Beweispfad)", async () => {
+  it("der WAechter selbst uebernimmt die verlinkte Datei nicht (A3-Beweispfad)", async () => {
     const ziel = legeFremdeDatei();
     fs.writeFileSync(inbox("normal.txt"), "normale Inbox-Datei mit Inhalt, damit der Waechter laeuft.", "utf-8");
 

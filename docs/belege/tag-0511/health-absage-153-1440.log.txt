@@ -1,0 +1,18 @@
+  Bilder-Ziel: /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0511/fenster-153
+  ok    Artefakte bytegleich mit dem installierten Objekt: 5 (erwartet 5)
+  Bundel: 5 Stuecke geprueft, Version laut Baum 3.2.153
+  Diener: Version 3.2.153, Bestand 0 (eigne Kapsel, Verschluesselung aus)
+  Assistent: Weg ueber "Later"; Schirm danach zu
+  Diener 60780 wird fortgenommen (eignes Kind, eigener Port 3601)
+  die Gesundheits-Zeile sagt: "The health check did not arrive. Your notes are safe."
+  ihr Kasten (breite, hoehe, links, rechts) bei 1440 px: [606,16,539,1145]
+  ok    **die Absage malt eine Zeile, statt nur die Farbe zu wechseln**: true (erwartet true)
+  ok    **und die Stille erhaelt keine erfundne Zahl**: false (erwartet false)
+  ok    **auch nicht das Wort des Browsers**: false (erwartet false)
+  ok    **sonst ihren eignen Satz: Ankunft fehlt**: true (erwartet true)
+  ok    **und die Zeile bleibt im Fenster**: true (erwartet true)
+  Bild: /tmp/kepta-fenster/bilder/health-absage-1440px.png
+  alle Zyklen durch: Wert gesetzt, Fenster neu geladen, Wirkung gesehen
+  Bilder: 1 nach /Users/damiantodorovic/Desktop/ki gehirn/audit-2026-10-09/feldzug/belege-0511/fenster-153
+  Kapsel noch da? nein
+  eigne Kinder: Server 60780, Browser 60781
