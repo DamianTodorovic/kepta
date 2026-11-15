@@ -40,12 +40,12 @@ kommt also aus der laufenden App selbst. Krank waren nur die zwei Blätter, die 
 limits on the endpoints that matter … A signed key only removes the daily limits" (englisch) und
 „Der erste Tag nach dem Erststart ist ein Tag ohne Grenzen, danach geht es kostenlos weiter mit
 Tageslimiten … Ein signierter Schlüssel entfernt nur die Limiten" (deutsch). Seit 3.1.5 ist das
-Preis-Werk ausgebaut — `README.md:357` beschreibt den Ausbau, `tests/keine-grenzen.test.ts` prüft die
+Preis-Werk ausgebaut — `f9163f6:README.md:357` beschreibt den Ausbau, `tests/keine-grenzen.test.ts` prüft die
 runtime. Gemessen vor dem Schlag: 2 Zeilen mit einer Grenze in der Gegenwart; nach dem Schlag: 0.
 
 Die neue Wache trennt Geschichte von Behauptung: ein Satz, der ein Wort des ausgebauten Werk zeugt,
 darf es nur in der Vergangenheit tun (`until 3.1.4`, `was removed`, `entfernt wurde`, `stopped being
-read`). README.md:357 erfüllt das und bleibt stehen; der Vorlage fällt die Gegenwart auf die Füsse.
+read`). f9163f6:README.md:357 erfüllt das und bleibt stehen; der Vorlage fällt die Gegenwart auf die Füsse.
 Beide Dateien müssen es offen sagen, dass es keine Schlüssel und keine Grenzen gibt — README tat das
 schon („No keys, no limits, no upgrade panel"), die Vorlage sagt es jetzt auch.
 
@@ -85,7 +85,7 @@ und am installierten Bundel, mit `codesign -dvvv`, `codesign --verify --deep --s
 
 - `Signature=adhoc`, `flags=0x2(adhoc)`, `TeamIdentifier=not set`, **0** Authority-Zeilen. Damit kann
   das Bundel nicht notariert sein: Notarisierung setzt eine Developer-ID-Signatur voraus. Genau das
-  sagt `scripts/adhoc-sign.cjs` auch, und README.md:409 sagt es dem Kunden.
+  sagt `scripts/adhoc-sign.cjs` auch, und f9163f6:README.md:409 sagt es dem Kunden.
 - `codesign --verify --deep --strict` am Installer-Bundel: Exit 0, keine Meldung. Das dmg ist also
   nicht „beschädigt" im Sinne der Signatur — die Heilung von v2.6.9 trägt.
 - `spctl --assess --type execute -vvv` sagt für **beide** Bundel `rejected`. Die installierte App läuft
@@ -98,7 +98,7 @@ und am installierten Bundel, mit `codesign -dvvv`, `codesign --verify --deep --s
 Was hier **nicht** gemessen ist und auch in diesem Lauf nicht gemessen werden kann: was ein Mensch auf
 macOS 26 sieht, wenn er das dmg herunterlädt und öffnet. Die Prüfung dafür wäre ein erster Start eines
 kopierten Bundels mit Quarantäne-Flag — und der würde Damians echtes Profil anfassen, weil `open` die
-Umgebung des Anmeldebenutzters erbt. Die Behauptung in README.md:421 (“an ordinary unsigned app you can
+Umgebung des Anmeldebenutzters erbt. Die Behauptung in f9163f6:README.md:421 (“an ordinary unsigned app you can
 approve, rather than a damaged one it refuses outright") bleibt damit eine Behauptung über eine
 Finder-Oberfläche, die wir nicht getestet haben; ihre zwei harten Bedingungen (adhoc statt ganz
 unsichtbar, keine Notarisierung) sind oben gemessen. Externe Berichte sagen für macOS 15+, dass
@@ -122,7 +122,7 @@ Fünf Wörter, die ein Auto-Update-Verbraucher im ausgelieferten Objekt stehen m
 Die Kontrolle ist der Grund, warum diese Null etwas heißt. Es gibt keinen Verbraucher der
 Update-Plantage; `package.json` kennt `electron-updater` nicht als Abhängigkeit. Die 66 blockmaps
 (0,01 GiB) und `latest-mac.yml` sind Maschinerie für einen Updater, den das Produkt nicht hat. Die
-`.zip`-Dateien dagegen sind nicht totes Gewicht: README.md:405 erklärt sie dem Mensch zu Recht als
+`.zip`-Dateien dagegen sind nicht totes Gewicht: f9163f6:README.md:405 erklärt sie dem Mensch zu Recht als
 „the same programs without an installer". Wer Platz freimachen will, muss dmg und zip zusammen
 betrachten — nicht die blockmaps.
 
@@ -599,7 +599,7 @@ bis die richtigen Fälle gefunden waren).
 |---|---|---|
 | „Settings can only narrow what is read, never widen it" | README.md:229 | `tests/scan/regeln.test.ts:190` (redet der Sperre das Lesen von Geheimnissen über die Dateiarten nicht an) und `:199` (kleinere Größengrenze ja, größere nein) |
 | „A backup of the old file sits right next to it, every other entry stays, and a file that is not plain JSON is never touched" | README.md:177 | `tests/lib/einrichtung.test.ts:42` (Sicherung daneben, Nachbareinträge bleiben) und `:61` (eine Datei mit Kommentaren wird nicht umgeschrieben, sondern abgelehnt) |
-| „There is nothing to activate and nothing to buy inside the window, so the app also never asks for it" | README.md:355 | `tests/keine-grenzen.test.ts:102-116` (Lizenzroute antwortet nicht, kein Zähler wird geschrieben, keine Oberfläche ruft sie) |
+| „There is nothing to activate and nothing to buy inside the window, so the app also never asks for it" | f9163f6:README.md:355 | `tests/keine-grenzen.test.ts:102-116` (Lizenzroute antwortet nicht, kein Zähler wird geschrieben, keine Oberfläche ruft sie) |
 
 Zensus 22:25:56 MEZ, Exit 0: Nenner bleibt **170** absolute Behauptungen aus 565 Einheiten,
 mit Messzeug **28** = 16,5 %, ohne Messzeug **142** = 83,5 %; Abschnittslesung 49 = 28,8 % gegen
@@ -676,11 +676,11 @@ Zeugen.
 
 P132 hatte die Regel gesetzt: erst die vorhandenen Wachen durchsuchen, dann bauen. Die Queue
 lieferte damit einen Satz, der gar kein Instrument brauchte (README.md:180, Prüfziffern), einen
-neuen Fallblock (README.md:450) — und **eine Behauptung, die falsch war**.
+neuen Fallblock (f9163f6:README.md:450) — und **eine Behauptung, die falsch war**.
 
 ### Der Fund
 
-README.md:450 sagte nach aussen: *"the only exclusion is the bootstrap, which binds a port and never
+f9163f6:README.md:450 sagte nach aussen: *"the only exclusion is the bootstrap, which binds a port and never
 runs in a unit test"*. `vitest.config.ts` tut das nicht. Gemessen an der Datei (Zeilen 40-61):
 
 - `exclude:` enthält **drei** Einträge: `src/**/types.ts`, `**/*.d.ts`, `src/lib/pdfText.ts`.
@@ -798,7 +798,7 @@ Die Regel aus P132 — erst suchen, dann bauen — läuft jetzt ohne Reibung. Dr
 | Satz | Wo | Zeuge | Was er wirklich hält |
 |---|---|---|---|
 | „markup scaffolding, repeated table rows — never becomes a note" | README.md:229 | `tests/core/klassifikation.test.ts:112`, `:83`, `:78` | Skript/Stil/Auszeichnung werden Text; eine Tabelle nur gleicher Zeilen wird abgewiesen; nackte HTML-Zeilennummern ebenso |
-| „The data is never hostage" **und** „There is no key that could revoke it" | README.md:360 | `tests/keine-grenzen.test.ts:102-116`, `tests/server.test.ts:327` | die Lizenz-Route antwortet nicht (lesend wie schreibend), nichts in der Fläche fragt sie, und der Bestand geht als Markdown nach draußen — beide Sätze mit eignem Zeugen |
+| „The data is never hostage" **und** „There is no key that could revoke it" | f9163f6:README.md:360 | `tests/keine-grenzen.test.ts:102-116`, `tests/server.test.ts:327` | die Lizenz-Route antwortet nicht (lesend wie schreibend), nichts in der Fläche fragt sie, und der Bestand geht als Markdown nach draußen — beide Sätze mit eignem Zeugen |
 | „the other is marked as replaced, never deleted" | README.md:169 (zweite Hälfte) | `tests/enterprise-api.test.ts:215`, `tests/engine.test.ts:167` | die ersetzte Notiz liest sich zurück mit `supersededBy` — sie ist noch da; nach einer Konsolidierung zählen weiter beide als aktiv |
 
 Der dritte Satz zählte schon vorher als gedeckt (P132 hat die *Both-are-right*-Hälfte bewaffnet). Die
@@ -885,8 +885,8 @@ Anteilskante auf **> 0,24** gehoben, Pinne auf 41 von 169.
 | Wo | Satz | Warum er offen bleibt |
 |---|---|---|
 | README.md:181 | „IT deploys one managed-settings.json (the macOS MDM path, since the app ships macOS only)" | die MDM-Ablage ist nicht auf diesem Rechner entscheidbar; und der Absatz gehört zur Enterprise-Konsole, die auf Damians Wort vom 5.11. 13:24 MEZ zugefroren ist |
-| README.md:357 | „It was never a lock — but it was counting, and counting needed places to hide the tally" | Geschichte über einen früheren Stand, nicht über diesen Baum; ein Zeuge müsste den alten Stand fahren |
-| README.md:427 | „built from this source and never published here, so they are untested against a real installer download" | von diesem Rechner aus **nicht** entscheidbar — Windows/Linux-Installers laufen hier nicht. Ehrliche Tat: als Quellbau benennen, nicht als geprüft verkaufen |
+| f9163f6:README.md:357 | „It was never a lock — but it was counting, and counting needed places to hide the tally" | Geschichte über einen früheren Stand, nicht über diesen Baum; ein Zeuge müsste den alten Stand fahren |
+| f9163f6:README.md:427 | „built from this source and never published here, so they are untested against a real installer download" | von diesem Rechner aus **nicht** entscheidbar — Windows/Linux-Installers laufen hier nicht. Ehrliche Tat: als Quellbau benennen, nicht als geprüft verkaufen |
 | ROADMAP.md (asOf-Zeile) | „time-travelled queries never count as access" | eine Zusage an eine Tür, die die App nicht hat — ROADMAP ist Absage, nicht Befund |
 | .github/release-notes.md (englisch) | „A signed key is an artefact of a K3PTA Enterprise agreement, never something sold off a shelf" | Enterprise-Papier, zugefroren — nur meldbar |
 | .github/release-notes.md (deutsch) | derselbe Satz in Deutsch | Träger-Zensus: zwei Träger, eine Aussage (P132-Lektion aus dem Oktober: erst die Träger zählen, dann ziehen) |
@@ -927,7 +927,7 @@ Klasse — „fully intact" und „only when" treffen das Muster nicht). Kante a
 
 Der Weg der letzten vier Schläge in derselben Klasse: 14, 15, 18, 20, 23. Die sechs Verbleibenden
 sind nachgesehen und gehören zu drei Wänden (Damians Wort: Enterprise und MDM; die Grenze dieses
-Rechners: Windows/Linux; ein früherer Stand: README.md:357; eine ROADMAP-Absage: asOf).
+Rechners: Windows/Linux; ein früherer Stand: f9163f6:README.md:357; eine ROADMAP-Absage: asOf).
 
 ## 26. P138 — Die blinde Masse spricht zurück: drei Zeilen gehalten, und eine meiner eignen Sortierungen war falsch (6.11. 23:55 MEZ)
 
@@ -956,9 +956,9 @@ Zensus 23:55:07 MEZ, Exit 0: 568 Einheiten, 169 absolute Behauptungen, **47 mit 
 (vorher 44 = 26,0 %), 122 ohne. Abschnittslesung 57 = 33,7 % (zwei mehr). Schmale Klasse 29, davon
 **24** mit Messzeug → **5 Arbeit**. Reihe über zehn Schläge: 4, 5, 8, 11, 14, 15, 18, 20, 23, 24.
 
-Die „drei Wände" von P136 sind damit auf vier Sätze geschrumpft, und einer davon (README.md:427,
+Die „drei Wände" von P136 sind damit auf vier Sätze geschrumpft, und einer davon (f9163f6:README.md:427,
 Windows/Linux-Quellbau) ist die einzige Grenze, die diese Maschine wirklich zieht. Der Rest ist
-Damians Wort (README.md:181, release-notes zweimal) oder ein früherer Stand (README.md:357).
+Damians Wort (README.md:181, release-notes zweimal) oder ein früherer Stand (f9163f6:README.md:357).
 
 ## 27. P139 — SECURITY.md: drei Sätze, und der Nenner wächst, weil ich ihn bewaffe (7.11. 00:04 MEZ)
 
@@ -1346,7 +1346,7 @@ beiden Zensus-Artefakte abermals zu alt (30 586 B / 15 870 B auf der Platte gege
 16 008 B ausgewiesen — die unbewaffnete Liste ist um vier Zeilen kürzer), und
 `tests/belege-siegel.test.ts:112` meldete es 02:02:21 MEZ, bevor irgendwer danach suchte.
 
-**Offen:** README.md:357 bleibt der letzte Satz der schmalen Klasse — eine Aussage über die Zeit
+**Offen:** f9163f6:README.md:357 bleibt der letzte Satz der schmalen Klasse — eine Aussage über die Zeit
 vor 3.1.5, deren Zeuge kein Test ist, sondern ein Beleg aus der Historie (in diesem Repo gibt es
 keine v3.1.x-Tags, 0 Treffer, gemessen 02:04:32 MEZ). Und der Linux-Pfad streitet mit seinem
 eignen Kommentar: `src/lib/richtlinien.ts:4` verspricht `/etc/kepta/…`, der Code liefert
@@ -1355,7 +1355,7 @@ Zeile, braucht aber einen Bau.
 
 ## 35. P147 — Der letzte Satz der schmalen Klasse: ein Zeuge aus der Historie (7.11. 02:10 MEZ)
 
-README.md:357 sprach über die Zeit vor 3.1.5 — „it was counting, and counting needed places to
+f9163f6:README.md:357 sprach über die Zeit vor 3.1.5 — „it was counting, and counting needed places to
 hide the tally". Ein Test auf dem heutigen Baum kann das nicht prüfen; der einzige zulässige Zeuge
 ist der Quelltext von damals. `git tag | grep -cE '^v?3\.1\.[0-9]'` = **0** (02:04:32 MEZ), also
 führt der Weg über Commits: gelesener Stand ist `113093c`, der Eltern-Commit von `c7cde55`
@@ -1411,7 +1411,7 @@ einen Bruch oder ein Prozent ohne Nenner-Kuelsenwort im selben Satz.
 |---|---|
 | README.md:231 „Text size — 100, 115 or 130 %" | **schon ausgenommen, im Satz selbst** („not a measurement") — die Sonde flaggt trotzdem: ihr Raster kennt die Ausnahmedeklaration nicht. Kein Befund, ein Regel-Fehler |
 | README.md:230 „which part it is … a label like `2/5`" | **UI-Beispielzahl, nicht verständlich gemacht** — berichtigt zu „a label like `2/5`, where the 5 is the number of parts that one file was split into, not a share of the store" |
-| README.md:458 „The status panel quotes the 71 %" | **die eigentliche Lücke** — 71 % ohne Maß und Grundgesamtheit im selben Satz. Jetzt: „Hit@1, 41 of the 45 queries of that corpus, drawn in `docs/belege/tag-13-10/ablation-beine-1144.log.txt:10`" |
+| f9163f6:README.md:458 „The status panel quotes the 71 %" | **die eigentliche Lücke** — 71 % ohne Maß und Grundgesamtheit im selben Satz. Jetzt: „Hit@1, 41 of the 45 queries of that corpus, drawn in `docs/belege/tag-13-10/ablation-beine-1144.log.txt:10`" |
 
 Die 71 % sind am Artefakt nachgelesen, nicht aus dem README zitiert (`grep`, 02:26:17 MEZ):
 `BM25 allein 71 % 21 % 0.76 41/45` und `Alle drei (RRF) 76 % … 45/45`. Zwei Zeilen führen 71 %
@@ -1434,7 +1434,7 @@ grün (02:27 MEZ). Keine neuen Fälle: README bleibt 3779, Dateien 352.
 
 ## 37. P149 — Die Messstelle nennt ihre Verteilung, und drei Faelle halten sie (7.11. 02:36 MEZ)
 
-README.md:458 beschreibt `npm run eval` mit drei Zahlen — „58 notes, 45 queries, five
+f9163f6:README.md:458 beschreibt `npm run eval` mit drei Zahlen — „58 notes, 45 queries, five
 categories". Kein Fall sah den Korpus, also konnte jede kuenftige Aenderung an
 `scripts/eval-corpus.ts` die README-Zahl still luegen machen.
 
@@ -1565,7 +1565,7 @@ Bindestrich zur Behauptung.
   Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline, Roo Code)". Nichts hielt diese Acht-Namen-Liste.
 - README.md:177, zweiter Satz — „Zed, Codex CLI, Continue and every other MCP client get the exact
   snippet to paste".
-- README.md:355 — „Every tool in the app runs without bound: chat, clipper, machine scan, dossiers,
+- f9163f6:README.md:355 — „Every tool in the app runs without bound: chat, clipper, machine scan, dossiers,
   briefings, audit, Device Sync, all eight MCP tools". Die Acht war behauptet, nicht gezählt.
 
 **Neue Fälle, und ihr Rot war ein Rot der andern Art.** `tests/lib/einrichtung.test.ts:140`
@@ -1665,7 +1665,7 @@ lebt in der Suite.
 
 **Die Frage vor der Arbeit.** P152 ließ 105 absolute Behauptungen ohne Messzeug und eine Liste von 26,
 deren Zeuge im *Nachbar*-Satz steht. Die ersten zwei Treffer dieser Liste waren Sätze, die ich selbst
-in P151 bewaffnet hatte — README.md:355 und `.github/release-notes.md:12/:75`. Beim Nachlesen der
+in P151 bewaffnet hatte — f9163f6:README.md:355 und `.github/release-notes.md:12/:75`. Beim Nachlesen der
 Nachbarn fiel etwas anderes auf: diese Sätze sind **als Aussage falsch**.
 
 **Der Befund, gemessen am Quelltext** (`server/helfer/limiter.ts:56-68`, 03:46:41 MEZ): die App hat
@@ -1696,7 +1696,7 @@ Schutzkante: such=240"); **D2** `SUCH_KAPPE` auf 300 gesetzt, Papier bleibt bei 
 
 **Die Heilung, in allen drei Stellen, EN und DE symmetrisch.** Nicht "die App hat Grenzen", sondern
 die Unterscheidung, die der Kunde braucht: keine **Lizenz**-Grenze, und eine **Schutz**-Kante, deren
-Zahlen da stehen und die weit über normaler Arbeit am eignen Rechner liegen. README.md:355 sagt jetzt
+Zahlen da stehen und die weit über normaler Arbeit am eignen Rechner liegen. f9163f6:README.md:355 sagt jetzt
 "runs without bound **by a licence**: … The one bound that remains is local protection, not commerce —
 chat 20/min, clipper 12/min, searches 240/min, writes 600/min, read off `server/helfer/limiter.ts:63-68`
 and checked by `tests/keine-grenzen.test.ts:140`". Die release-notes nennen dasselbe in beiden
@@ -1785,7 +1785,7 @@ Drei nackte Basenames im Ledger heißen jetzt vollständig, und der Bereich
 `src/components/Dashboard.tsx:1411-1414` — vorher begann er zwei Zeilen höher, auf einer Leerzeile.
 
 **Die Grenze, die kein Fall hält.** Mein eigner neuer Absatz verschob alle README-Zeilen ab 432
-um zwei; die Ledger-Zeugen `README.md:448` und `README.md:456` trafen dadurch Inhalt — aber den
+um zwei; die Ledger-Zeugen `f9163f6:README.md:448` und `f9163f6:README.md:456` trafen dadurch Inhalt — aber den
 falschen. Die Wache prüft Existenz und Inhalt, nicht Sinn. Per Hand nachgemessen (10:26 MEZ),
 geheilt auf :450 und :458. Größenordnung, zuletzt gemessen 10:55:28 MEZ: 96 der 420 Anker zeigen
 Zeilen. P155: der Fall, der ein wörtlich zitiertes Satzstück gegen die genannte Zeile prüft.
@@ -1966,7 +1966,7 @@ belegen kann.
     verwechselte. Vor dem Committen berichtigt auf die tatsächlich gemessenen Stände (129 / 132 /
     172 / 170 / 169) mit ihren Schlagsnummern. Derselbe Grund wie 16.10. im Wachbuch: eine Reihe,
     die ich nicht nachgezählt habe, ist keine Messung, sondern ein Gedächtnis.
-27. **Ein eigner Bericht war zu weit.** Im P135-Text (und im Commit) hieß es, README.md:360 sei mit
+27. **Ein eigner Bericht war zu weit.** Im P135-Text (und im Commit) hieß es, f9163f6:README.md:360 sei mit
     dem einen Klammerzusatz gedeckt. Der Zensus zählt Sätze: die Fett-Zeile „The data is never
     hostage" blieb blind, nur der Satz darunter war gedeckt. Aus der Artefaktliste gelesen, beide
     Sätze bewaffnet, Zahl und Papier nachgezogen (37 → 38). Ein Zeuge in einer Zeile bewaffnet nicht,
@@ -2239,7 +2239,7 @@ belegen kann.
     worden. Also: Paritaet an `tests/mcp-rest-paritaet.test.ts:66/:80`, Verschlüsselung an
     `tests/nebendateien.test.ts:22/:41`, und der Satz nennt beide getrennt.
 76. **Ich hatte eine Ueber-behauptung bewaffnet, statt sie zu pruefen.** P151 setzte Zeugen in
-   README.md:355 und ließ den Satz "Every tool in the app runs without bound" stehen — während
+   f9163f6:README.md:355 und ließ den Satz "Every tool in the app runs without bound" stehen — während
    `server/helfer/limiter.ts:63` den Chat bei 20/min deckelt. Ein Beleg an einem falschen Satz ist
    kein Beweis, sondern ein falsch beglaubigter Satz (P134, P142). Gesehen beim Lesen der
    Nachbar-Zeugen-Liste in P153, nicht beim Schreiben.
@@ -2263,7 +2263,7 @@ belegen kann.
    22 von 23. Mit dem neuen Zweig wirft die Kopie. Eine Wache, die ihren Crash als Urteil ausgibt,
    ist schädlicher als keine.
 81. **Mein eigner neuer Absatz verschob Zeilen und machte zwei Fremdanker falsch.**
-   `README.md:448` und `README.md:456` im Ledger trafen nach dem Eintragen Inhalt — aber den
+   `f9163f6:README.md:448` und `f9163f6:README.md:456` im Ledger trafen nach dem Eintragen Inhalt — aber den
    falschen (Tabelle statt Ausnahmetext, Einleitung statt eval-Zahl). Die Wache kann das nicht
    sehen: Existenz und Inhalt, nicht Sinn. Per Hand gefunden (10:26 MEZ), geheilt auf :450 und
    :458; P155 ist der Fall, der ein wörtlich zitiertes Satzstück gegen die genannte Zeile prüft.

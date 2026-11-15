@@ -301,9 +301,10 @@ describe("P129, der Wortschatz: ein benanntes Instrument ist ein Messzeug", () =
     // Nach P174 (9.11.): Die letzten 7 verbleibenden All-Saetze ueber alle 4 Aussendungs-Blaetter
     // (README.md:3, :5, :45, :70, :85, SECURITY.md:5, ROADMAP.md:74) nennen ihre Zeugen.
     // Zaehler 175 -> 182 (100,0 %), ohne 7 -> 0 (0,0 %). Nenner 182, Einheiten 571 und schmale
-    // Klasse 36 bleiben — Vollbewaffnung aller vier Aussendungs-Blaetter erreicht.
-    expect(absoluten, "der Nenner ist nicht mehr 182 — der Riss oder die Klasse hat sich bewegt").toBe(182);
-    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war 182`).toBe(182);
+    // Desktop-only README (15.11.2026): npx/pip/Source-Build-Abschnitte aus README.md entfernt;
+    // Nenner sinkt sauber von 182 auf 176 (alle 176 = 100 % bewaffnet).
+    expect(absoluten, "der Nenner hat sich bewegt — der Riss oder die Klasse hat sich bewegt").toBe(176);
+    expect(mit, `${mit} von ${absoluten} nennen ein Messzeug — erwartet war ${absoluten}`).toBe(176);
     expect(mit / absoluten, "Anteil ohne Nenner ist ein Urteil").toBeGreaterThan(0.3);
     expect(maschine.source.length, "die schmale Klasse wurde nicht mitgeändert").toBeGreaterThan(10);
   });

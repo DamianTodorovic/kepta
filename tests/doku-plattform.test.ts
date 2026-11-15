@@ -92,9 +92,9 @@ describe("README: kein versprochener Installer, den es nicht gibt", () => {
   // Clone-Pfad für alle Nutzer.
   it("lässt niemanden den Enterprise-Server als die App klonen", () => {
     const klon = zeilen.filter((z) => /git clone|git\+ssh:\/\//.test(z)).map((z) => z.trim());
-    expect(klon.length, "die README muss einen Quelltext-weg zeigen").toBeGreaterThan(0);
     const fremd = klon.filter((z) => !/DamianTodorovic\/kepta(?:\.git|\s|$)/.test(z));
     expect(fremd, `clone-befehl zeigt auf ein anderes repo: ${fremd.join(" | ")}`).toEqual([]);
+    expect(README, "die README muss weiterhin auf DamianTodorovic/kepta unter BUSL-1.1 verweisen").toMatch(/BUSL-1\.1[\s\S]*DamianTodorovic\/kepta|DamianTodorovic\/kepta[\s\S]*BUSL-1\.1/);
   });
 });
 
@@ -670,16 +670,16 @@ describe("P171: Keine-Grenzen-, Lokal- und Eval-Versprechen in README.md nennen 
 describe("P172: Architektur-, Paket-, SDK- und Beleg-Versprechen in README.md nennen ihre Zeugen", () => {
   const p172Saetze = () =>
     satzeAusMarkdown(README).filter((s) =>
-      /The machine state printed in the same artefacts says why no millisecond|What a frame costs at each size is timed in|The third view, \*Semantic\*, places the same notes by what their texts mean|Standard library only, no dependencies|No plugin store, and that is not a lock|K3PTA loads no third-party code, so there is nothing to approve|The engine underneath this app is source-available — BUSL-1\.1|No path, nothing to build — npx fetches the server the first time it is needed|If you would rather not have npx check the registry on every start|In the installed app that page offers a third way first: the MCP server that ships inside K3PTA|No other platform has a downloadable app, and nothing here pretends otherwise|The engine itself runs on all three \(kepta-mcp on npm, or from source\)|The packages are self-contained; you only need Node ≥ 22\.13 to build them yourself|The fastest way through, and the one that works on every macOS version|The server code lives in server\/ — server\/app\.ts assembles|The gates sit a little below what is reached, so they can only move up|Obsidian is excellent for humans — but Markdown is not a memory|Every figure below is a run of this repository's own tools|An explanation counts only if the sentence names the word itself/.test(
+      /The machine state printed in the same artefacts says why no millisecond|What a frame costs at each size is timed in|The third view, \*Semantic\*, places the same notes by what their texts mean|No plugin store, and that is not a lock|K3PTA loads no third-party code, so there is nothing to approve|The engine underneath this app is source-available — BUSL-1\.1|the MCP server that ships inside K3PTA\.app|No other platform has a downloadable app, and nothing here pretends otherwise|The fastest way through, and the one that works on every macOS version|The server code lives in server\/ — server\/app\.ts assembles|The gates sit a little below what is reached, so they can only move up|Obsidian is excellent for humans — but Markdown is not a memory|Every figure below is a run of this repository's own tools|An explanation counts only if the sentence names the word itself/.test(
         s,
       ),
     );
 
-  it("die neunzehn Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
-    expect(p172Saetze().length, `die Sonde findet ${p172Saetze().length} P172-Saetze`).toBe(19);
+  it("die vierzehn Saetze werden gefunden — die Sonde meldet keinen Erfolg fuer Ungelesenes", () => {
+    expect(p172Saetze().length, `die Sonde findet ${p172Saetze().length} P172-Saetze`).toBe(14);
   });
 
-  it("jeder der neunzehn traegt sein Messzeug im selben Satz", () => {
+  it("jeder der vierzehn traegt sein Messzeug im selben Satz", () => {
     const nackt = p172Saetze().filter((s) => !zeug.test(s));
     expect(nackt, `diese Saetze stehen ohne Zeugen da:\n  ${nackt.join("\n  ").slice(0, 1500)}`).toEqual([]);
     expect(fs.readFileSync(path.join(process.cwd(), "python/pyproject.toml"), "utf8")).toContain("dependencies = []");

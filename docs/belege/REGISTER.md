@@ -338,7 +338,7 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 
 ### Der Historien-Beleg `p147-0711/` (7.11.)
 
-README.md:357 spricht ueber die Zeit **vor** 3.1.5: die App habe bis dahin gezaehlt, und das
+f9163f6:README.md:357 spricht ueber die Zeit **vor** 3.1.5: die App habe bis dahin gezaehlt, und das
 Zaehlen habe drei Verstecke gebraucht. Fuer eine Aussage ueber eine fruehere Quelltext-Fassung
 ist kein heutiger Test ein zulassiger Zeuge, sondern nur der Quelltext selbst.
 `node docs/belege/p147-0711/zeugen.mjs` zieht ihn per `git show` aus `113093c` — dem Eltern-Commit
