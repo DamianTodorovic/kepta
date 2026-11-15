@@ -86,14 +86,14 @@ describe("README: kein versprochener Installer, den es nicht gibt", () => {
     expect(vage, `Downloads werden als Mehrsystem verkauft: ${vage.join(" | ")}`).toEqual([]);
   });
 
-  // „Run it from source" in der App-README wollte, dass jeder
-  // `kepta-enterprise` klont — der Enterprise-Server, ein anderes produkt aus
-  // einem anderen repo. Wer die App aus dem quelltext bauen will, braucht dieses
-  // repo, und das ist seit 8.10.2026 privat mit zugang als lisenznehmer.
+  // „Run it from source" in der README darf niemanden auf `kepta-enterprise` oder
+  // das alte private `kepta-app`-Repo schicken: K3PTA (Desktop-App + Engine) lebt
+  // öffentlich unter BUSL-1.1 auf `DamianTodorovic/kepta` — mit direktem
+  // Clone-Pfad für alle Nutzer.
   it("lässt niemanden den Enterprise-Server als die App klonen", () => {
     const klon = zeilen.filter((z) => /git clone|git\+ssh:\/\//.test(z)).map((z) => z.trim());
     expect(klon.length, "die README muss einen Quelltext-weg zeigen").toBeGreaterThan(0);
-    const fremd = klon.filter((z) => !/DamianTodorovic\/kepta-app/.test(z));
+    const fremd = klon.filter((z) => !/DamianTodorovic\/kepta(?:\.git|\s|$)/.test(z));
     expect(fremd, `clone-befehl zeigt auf ein anderes repo: ${fremd.join(" | ")}`).toEqual([]);
   });
 });

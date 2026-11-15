@@ -1,8 +1,8 @@
 """Python client for a locally running K3PTA.
 
-K3PTA itself is a desktop app (Electron). This package does not install it — it
-talks to the HTTP API of the running instance, so that Python agents use the same
-memory as Claude Desktop or Cursor.
+K3PTA itself is a local server (Node.js) with an HTTP API on 127.0.0.1. This
+package does not install it — it talks to the running instance, so that Python
+agents use the same memory as Claude Desktop or Cursor.
 """
 
 from __future__ import annotations
@@ -14,10 +14,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Literal
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlparse, urlencode
 from urllib.request import Request, urlopen
 
-MemoryType = Literal["semantic", "episodic", "procedural"]
+MemoryType = Literal["semantic", "episodic", "procedural", "reference"]
+
+ForgetMethod = Literal["expire", "supersede", "delete"]
 
 DEFAULT_URL = "http://127.0.0.1:3000"
 ENDPOINT_FILE = "endpoint.json"
@@ -53,16 +55,28 @@ def discover_url() -> str:
     return DEFAULT_URL
 
 
+def network_reason(error: BaseException) -> str:
+    """Why the socket did not answer, in the operating system's own words."""
+    reason = getattr(error, "reason", None) or error
+    text = getattr(reason, "strerror", None) or str(reason) or type(reason).__name__
+    return str(text).strip().rstrip(".!").lower()
+
+
 @dataclass(frozen=True)
 class Memory:
-    """A memory. Timestamps are milliseconds since the epoch."""
+    """A memory. Timestamps are milliseconds since the epoch.
+
+    `scope` defaults to "local" — the value the server itself assigns when a
+    save arrives without one, so a locally built Memory and a round-tripped one
+    agree.
+    """
 
     id: str
     title: str
     content: str
     tags: list[str] = field(default_factory=list)
     type: MemoryType = "semantic"
-    scope: str = "user"
+    scope: str = "local"
     confidence: float | None = None
     valid_from: int | None = None
     valid_to: int | None = None
@@ -89,7 +103,7 @@ class Memory:
             content=str(d.get("content", "")),
             tags=list(d.get("tags") or []),
             type=d.get("type") or "semantic",
-            scope=d.get("scope") or "user",
+            scope=d.get("scope") or "local",
             confidence=d.get("confidence"),
             valid_from=d.get("validFrom"),
             valid_to=d.get("validTo"),
@@ -144,6 +158,9 @@ class KeptaClient:
             if cleaned:
                 target += "?" + urlencode(cleaned)
         data = json.dumps(body).encode("utf-8") if body is not None else None
+        allowed = urlparse(target).hostname
+        if allowed not in ("127.0.0.1", "localhost", "::1"):
+            raise KeptaError(f"K3PTA refuses to talk to {allowed!r} - the client only speaks to the local server.")
         req = Request(target, data=data, method=method)
         req.add_header("Content-Type", "application/json")
         try:
@@ -154,10 +171,14 @@ class KeptaClient:
             detail = e.read().decode("utf-8", "replace")[:400]
             raise KeptaError(f"{method} {path} failed ({e.code}): {detail}") from e
         except (URLError, TimeoutError) as e:
+            # `from None`, weil die Rahmen von urllib und socket zwischen dem
+            # Nutzer und diesem Satz standen (69 Zeilen, Befund A1-07). Der Grund
+            # selbst steht in der Meldung.
             raise KeptaError(
-                f"K3PTA at {self.url} is unreachable. Is the app running? "
-                f"Otherwise set KEPTA_URL. Cause: {e}"
-            ) from e
+                f"K3PTA at {self.url} is not answering ({network_reason(e)}). "
+                "Start the server (the K3PTA app, or npm run dev in the core) "
+                "or set KEPTA_URL to the running address."
+            ) from None
 
     # ---------- Reading ----------
 
@@ -249,3 +270,37 @@ class KeptaClient:
         """Bring a memory back out of the trash."""
         data = self._request("POST", f"/api/memories/{memory_id}/restore")
         return bool((data or {}).get("ok", True))
+
+    # ---------- Maintenance (parity with the MCP tools) ----------
+
+    def consolidate(self, *, dry_run: bool = True, threshold: float | None = None) -> dict[str, Any]:
+        """Find duplicates and contradictions by embedding similarity.
+
+        With ``dry_run=False`` the older copy of each duplicate pair is marked
+        superseded — the history stays, nothing is deleted.
+        """
+        body: dict[str, Any] = {"dryRun": dry_run}
+        if threshold is not None:
+            body["threshold"] = max(0.0, min(1.0, float(threshold)))
+        return self._request("POST", "/api/mcp/consolidate", body)
+
+    def forget(
+        self,
+        memory_id: str,
+        *,
+        mode: ForgetMethod = "expire",
+        valid_to: int | None = None,
+        supersede_by: str | None = None,
+    ) -> dict[str, Any]:
+        """Forget a memory the way the ``memory_forget`` tool does.
+
+        ``expire`` closes the validity window (default, reversible via
+        ``update(valid_to=...)``), ``supersede`` marks it replaced by
+        ``supersede_by``, ``delete`` moves it to the trash.
+        """
+        body: dict[str, Any] = {"id": memory_id, "mode": mode}
+        if valid_to is not None:
+            body["validTo"] = valid_to
+        if supersede_by is not None:
+            body["supersedeBy"] = supersede_by
+        return self._request("POST", "/api/mcp/forget", body)

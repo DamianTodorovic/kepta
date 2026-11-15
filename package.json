@@ -87,7 +87,7 @@
   },
   "main": "electron.js",
   "productName": "K3PTA",
-  "license": "UNLICENSED",
+  "license": "BUSL-1.1",
   "homepage": "https://github.com/DamianTodorovic/kepta#readme",
   "repository": {
     "type": "git",

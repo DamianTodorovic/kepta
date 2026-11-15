@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.error import URLError
 
 import pytest
 
 from kepta import KeptaClient, KeptaError, Memory, SearchHit, discover_url
+from kepta.client import network_reason
 
 CALLS: list[tuple[str, str, dict | None]] = []
 
@@ -53,6 +55,12 @@ class Stub(BaseHTTPRequestHandler):
             ]})
         if self.path.endswith("/restore"):
             return self._send({"ok": True})
+        if self.path.startswith("/api/mcp/consolidate"):
+            return self._send({"dryRun": body.get("dryRun", True), "applied": 1,
+                               "candidates": [{"keepId": "m1", "duplicateId": "m2",
+                                               "similarity": 0.95, "reason": "embedding"}]})
+        if self.path.startswith("/api/mcp/forget"):
+            return self._send({"forgotten": True, "mode": body.get("mode", "expire")})
         if self.path.startswith("/api/memories"):
             return self._send({"memory": {"id": body.get("id", "neu"), "title": body.get("title", ""),
                                           "content": body.get("content", ""), "tags": body.get("tags", []),
@@ -130,6 +138,20 @@ def test_save_klemmt_konfidenz_in_den_bereich(client):
     assert CALLS[-1][2]["confidence"] == 0.0
 
 
+def test_scope_default_ist_local_wie_beim_server():
+    # Ohne Scope schreibt der Server "local" (createMemory -> SINGLE_LOCAL_USER).
+    # "user" stand nur in diesem Modell — ein Round-Trip widersprach sich selbst.
+    assert Memory(id="m1", title="t", content="c").scope == "local"
+    assert Memory.from_api({"id": "m1", "title": "t", "content": "c"}).scope == "local"
+    # Nennt der Server einen Scope, gewinnt er.
+    assert Memory.from_api({"id": "m1", "title": "t", "content": "c", "scope": "agent"}).scope == "agent"
+
+
+def test_save_ueberlaesst_den_scope_dem_server(client):
+    client.save("t", "c")
+    assert "scope" not in CALLS[-1][2]
+
+
 def test_update_uebersetzt_schluessel_nach_camelcase(client):
     client.update("m1", valid_to=123, tags=["x"])
     body = CALLS[-1][2]
@@ -155,11 +177,92 @@ def test_graph(client):
     assert client.graph() == {"entities": [], "relations": []}
 
 
+# ---------- Parität mit den 8 MCP-Tools ----------
+
+MCP_TOOLS = {
+    "memory_search": "search",
+    "memory_save": "save",
+    "memory_update": "update",
+    "memory_delete": "delete",
+    "memory_list": "list",
+    "memory_graph": "graph",
+    "memory_consolidate": "consolidate",
+    "memory_forget": "forget",
+}
+
+
+def test_client_hat_fuer_jedes_mcp_tool_eine_methode():
+    for tool, methode in MCP_TOOLS.items():
+        assert callable(getattr(KeptaClient, methode, None)), f"{tool} hat keine Methode .{methode}()"
+
+
+def test_consolidate_dry_run_ist_standard(client):
+    ergebnis = client.consolidate()
+    assert ergebnis["dryRun"] is True and ergebnis["applied"] == 1
+    assert CALLS[-1][1] == "/api/mcp/consolidate"
+    assert CALLS[-1][2] == {"dryRun": True}
+
+
+def test_consolidate_anwenden_mit_schwelle(client):
+    ergebnis = client.consolidate(dry_run=False, threshold=0.8)
+    assert ergebnis["dryRun"] is False
+    assert CALLS[-1][2] == {"dryRun": False, "threshold": 0.8}
+    assert ergebnis["candidates"][0]["keepId"] == "m1"
+
+
+def test_consolidate_klemmt_schwelle(client):
+    client.consolidate(threshold=5)
+    assert CALLS[-1][2]["threshold"] == 1.0
+
+
+def test_forget_standard_ist_expire(client):
+    ergebnis = client.forget("m1")
+    assert ergebnis == {"forgotten": True, "mode": "expire"}
+    assert CALLS[-1][1] == "/api/mcp/forget"
+    assert CALLS[-1][2] == {"id": "m1", "mode": "expire"}
+
+
+def test_forget_supersede_mit_nachfolger(client):
+    ergebnis = client.forget("m1", mode="supersede", supersede_by="m2")
+    assert ergebnis["mode"] == "supersede"
+    assert CALLS[-1][2] == {"id": "m1", "mode": "supersede", "supersedeBy": "m2"}
+
+
+def test_forget_delete_und_valid_to(client):
+    client.forget("m1", mode="delete")
+    assert CALLS[-1][2] == {"id": "m1", "mode": "delete"}
+    client.forget("m1", valid_to=42)
+    assert CALLS[-1][2] == {"id": "m1", "mode": "expire", "validTo": 42}
+
+
 def test_fehler_bei_nicht_erreichbarem_server():
     c = KeptaClient("http://127.0.0.1:9")  # Port 9 nimmt keine Verbindungen an
-    with pytest.raises(KeptaError, match="unreachable"):
+    with pytest.raises(KeptaError, match="not answering"):
         c.health()
     assert c.is_alive() is False
+
+
+def test_netzfehler_ist_ein_Satz_ohne_Netzstapel():
+    # Befund A1-07: der Rat stand als letzte Zeile hinter 69 Zeilen urllib, http
+    # und socket. Ein Satz, der Grund und Adresse nennt, und keine Kette dahinter.
+    c = KeptaClient("http://127.0.0.1:9")
+    with pytest.raises(KeptaError) as fall:
+        c.health()
+    meldung = str(fall.value)
+    assert "\n" not in meldung
+    assert "http://127.0.0.1:9" in meldung
+    assert "connection refused" in meldung
+    assert "KEPTA_URL" in meldung
+    assert fall.value.__cause__ is None
+    assert fall.value.__suppress_context__ is True
+
+
+def test_unbekannter_Host_ohne_strerror_bleibt_bei_der_Sache():
+    # Ein Grund ohne strerror (NameServer-Antwort als Objekt) darf die Meldung
+    # nicht leer laufen lassen.
+    assert network_reason(URLError(RuntimeError("no route to host"))) == "no route to host"
+    assert network_reason(TimeoutError()) != ""
+    assert "\n" not in network_reason(URLError(ConnectionRefusedError(61, "Connection refused")))
 
 
 def test_http_fehler_wird_zu_kepta_error(client):
