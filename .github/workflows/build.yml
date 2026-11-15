@@ -13,25 +13,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run lint
-      # Messvorlauf, kein Urteil — bitte nicht als ueberfluessig loeschen.
-      # vitest schreibt seinen JSON-Bericht erst am ENDE eines Laufs, ein Test in
-      # diesem Lauf kann ihn also nicht lesen. Die Zahlenwache
-      # (tests/doku-zahlen.test.ts) haelt die Testzahl im README gegen genau diesen
-      # Bericht und verweigert den Vergleich, wenn er fehlt — ohne diesen Vorlauf
-      # waere jeder frische Runner rot, ohne dass ein Fehler im Code steckte.
-      # timeout-minutes: 8 und 12 sind Latten in dieser Datei, keine Messungen —
-      # die Desk-Dauern vom 12.10., aus denen sie gewaehlt wurden, lagen nur in
-      # test-results/ (git-ignoriert, von der Platte gefegt) und sind darum aus
-      # CHANGELOG.md und README.md gezogen; nachmessen will sie niemand, solange
-      # scripts/ruhe-sonde.mjs diese Maschine als belegt sieht — eine Zeit unter
-      # fremder Last ist kein Urteiler. Der Vorlauf bleibt bei 8, das Gate bei 12,
-      # gemessen an den vier Kernen von ubuntu-latest.
+      # Messvorlauf, kein Urteil — bitte nicht als ueberfluessig loeschen. vitest
+      # schreibt seinen JSON-Bericht erst am ENDE eines Laufs, ein Test in diesem
+      # Lauf kann ihn also nicht lesen. Die Zahlenwache (tests/doku-zahlen.test.ts)
+      # haelt die Testzahl im README gegen genau diesen Bericht und verweigert den
+      # Vergleich, wenn er fehlt — ohne diesen Vorlauf waere jeder frische Runner rot.
+      # timeout-minutes: 8 und 12 sind Latten in dieser Datei, keine Messungen — die
+      # Desk-Dauern vom 12.10., aus denen sie gewaehlt wurden, lagen nur in test-results/
+      # (git-ignoriert, gefegt) und sind darum aus CHANGELOG.md und README.md gezogen;
+      # nachmessen will sie niemand, solange scripts/ruhe-sonde.mjs die Maschine belegt
+      # sieht — eine Zeit unter fremder Last ist kein Urteiler. Der Vorlauf bleibt
+      # bei 8, das Gate bei 12, gemessen an den vier Kernen von ubuntu-latest.
       - name: Messvorlauf (schreibt test-results/vitest.json, Befund zaehlt nicht)
         run: npm test || true
         timeout-minutes: 8
