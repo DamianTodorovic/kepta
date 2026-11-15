@@ -1,7 +1,13 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="K3PTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/tests-1102%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/tag/app-3.2.213"><img src="https://img.shields.io/badge/Download-K3PTA%203.2.213-111111" alt="K3PTA 3.2.213 herunterladen"></a> <img src="https://img.shields.io/badge/tests-1102%20passing-brightgreen" alt="Tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20der%20Zeilen-brightgreen" alt="Coverage-Gate"> <img src="https://img.shields.io/badge/Verschl%C3%BCsselung-SQLCipher%204-green" alt="verschlüsselt"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic auf LinkedIn"></a></p>
 
 # K3PTA — das Gedächtnis für KI-Systeme (deutsches Readme)
+
+> **Desktop-App herunterladen — [K3PTA 3.2.213](https://github.com/DamianTodorovic/kepta/releases/tag/app-3.2.213) (einzig unterstützte Version):**
+> - **Apple Silicon (M1–M4):** [`K3PTA-3.2.213-mac-arm64.dmg`](https://github.com/DamianTodorovic/kepta/releases/download/app-3.2.213/K3PTA-3.2.213-mac-arm64.dmg)
+> - **Intel Mac:** [`K3PTA-3.2.213-mac-x64.dmg`](https://github.com/DamianTodorovic/kepta/releases/download/app-3.2.213/K3PTA-3.2.213-mac-x64.dmg)
+>
+> Ziehe `K3PTA.app` in **Programme**, dann **Systemeinstellungen → Datenschutz & Sicherheit → Dennoch öffnen** oder `xattr -dr com.apple.quarantine /Applications/K3PTA.app`.
 
 Deine KI vergisst alles. Jeder Chat beginnt bei null.
 
@@ -29,9 +35,9 @@ Eine **Notiz** ist ein Ding, das dein Gedächtnis hält — `remember` schreibt 
 
 ## 🖥️ Oder lad die Desktop-App
 
-**Der Kern hat keine eigene Oberfläche: seine Oberfläche ist dein KI-Client.** Wer ein Fenster will, nimmt die kostenlose Desktop-App — dieselbe Engine, dieselbe verschlüsselte Datei, derselbe Schlüssel — und die liegt in den Releases dieses Repos. Für Teams und Organisationen gibt es K3PTA Enterprise nach Absprache. Dieser Dreisatz ist die ganze Antwort, und jedes Dokument hier sagt dasselbe.
+**Der Kern hat keine eigene Oberfläche: seine Oberfläche ist dein KI-Client.** Wer ein Fenster will, nimmt die kostenlose Desktop-App — dieselbe Engine, dieselbe verschlüsselte Datei, derselbe Schlüssel — und **[K3PTA 3.2.213](https://github.com/DamianTodorovic/kepta/releases/tag/app-3.2.213)** ist das einzige aktuelle Release in diesem Repo. Für Teams und Organisationen gibt es K3PTA Enterprise nach Absprache. Dieser Dreisatz ist die ganze Antwort, und jedes Dokument hier sagt dasselbe.
 
-Die App bringt Memory-Browser, Hybridsuche mit Spuren-Herkunft, Wissensgraph, Zeitreise, Dossiers und einen Chat, der das Gedächtnis liest. Die DMG für deinen Mac liegt im [neuesten Release](https://github.com/DamianTodorovic/kepta/releases/latest) (Apple Silicon oder Intel), reinziehen in „Programme". Die Builds sind ad-hoc signiert und nicht notarisiert, macOS fragt also ein einziges Mal. Zwei Wege, die auf jeder macOS-Version funktionieren: `xattr -dr com.apple.quarantine /Applications/KEPTA.app`, oder *Systemeinstellungen → Datenschutz & Sicherheit* → die K3PTA-Meldung → **Dennoch öffnen**. Einmal, dann nie wieder. Ältere Anleitungen empfehlen Rechtsklick → **Öffnen** — Apple hat diesen Weg mit macOS 15 entfernt, er tut auf aktuellen Systemen nichts. (Was aus diesem Repository läuft, hat kein Fenster: `npm run dev` startet die HTTP-API und ihr `POST /mcp` — ein Dienst auf deinem Rechner, keine Oberfläche.)
+Die App bringt Memory-Browser, Hybridsuche mit Spuren-Herkunft, Wissensgraph, Zeitreise, Dossiers und einen Chat, der das Gedächtnis liest. Die DMG für deinen Mac liegt im [neuesten Release (K3PTA 3.2.213)](https://github.com/DamianTodorovic/kepta/releases/latest) (Apple Silicon oder Intel), `K3PTA.app` reinziehen in „Programme". Die Builds sind ad-hoc signiert und nicht notarisiert, macOS fragt also ein einziges Mal. Zwei Wege, die auf jeder macOS-Version funktionieren: `xattr -dr com.apple.quarantine /Applications/K3PTA.app`, oder *Systemeinstellungen → Datenschutz & Sicherheit* → die K3PTA-Meldung → **Dennoch öffnen**. Einmal, dann nie wieder. Ältere Anleitungen empfehlen Rechtsklick → **Öffnen** — Apple hat diesen Weg mit macOS 15 entfernt, er tut auf aktuellen Systemen nichts. (Was aus diesem Repository läuft, hat kein Fenster: `npm run dev` startet die HTTP-API und ihr `POST /mcp` — ein Dienst auf deinem Rechner, keine Oberfläche.)
 
 Die App ist gratis wie alles in diesem Repository. K3PTA Enterprise (Team- und Mandanten-Gedächtnis, Audit-Kette, Menschenschleuse, Point-in-Time-Recovery) wird nach Absprache lizenziert — [schreib mir auf LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 

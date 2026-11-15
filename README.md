@@ -1,9 +1,15 @@
 <p align="center"><img src="docs/kepta-logo.svg" width="88" alt="K3PTA"></p>
-<p align="center"><img src="https://img.shields.io/badge/version-3.4.0-blue" alt="v3.4.0"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-1102%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
+<p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/tag/app-3.2.213"><img src="https://img.shields.io/badge/Download-K3PTA%203.2.213-111111" alt="Download K3PTA 3.2.213"></a> <img src="https://img.shields.io/badge/version-3.4.0-blue" alt="v3.4.0"> <img src="https://img.shields.io/badge/license-BUSL--1.1-blue" alt="BUSL-1.1"> <img src="https://img.shields.io/badge/tests-1102%20passing-brightgreen" alt="tests"> <img src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2070%25%20of%20lines-brightgreen" alt="coverage gate"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="platform"> <img src="https://img.shields.io/badge/encryption-SQLCipher%204-green" alt="encrypted"> <a href="https://www.linkedin.com/in/damian-todorovic-244235434"><img src="https://img.shields.io/badge/LinkedIn-Damian%20Todorovic-0A66C2?logo=linkedin&logoColor=white" alt="Damian Todorovic on LinkedIn"></a></p>
 
 # K3PTA — the memory for AI systems
 
 ## Your AI forgets everything. Every chat starts from zero.
+
+> **Download Desktop App — [K3PTA 3.2.213](https://github.com/DamianTodorovic/kepta/releases/tag/app-3.2.213) (only supported release):**
+> - **Apple Silicon (M1–M4):** [`K3PTA-3.2.213-mac-arm64.dmg`](https://github.com/DamianTodorovic/kepta/releases/download/app-3.2.213/K3PTA-3.2.213-mac-arm64.dmg)
+> - **Intel Mac:** [`K3PTA-3.2.213-mac-x64.dmg`](https://github.com/DamianTodorovic/kepta/releases/download/app-3.2.213/K3PTA-3.2.213-mac-x64.dmg)
+>
+> Drag `K3PTA.app` into **Applications**, then open **System Settings → Privacy & Security → Open Anyway** or run `xattr -dr com.apple.quarantine /Applications/K3PTA.app`.
 
 **K3PTA is the fix: one local, encrypted memory that every AI reads and writes — Claude, Cursor, Gemini CLI, Cline, any MCP client, and scripts over HTTP. No cloud. No account. One file you own.**
 
@@ -74,13 +80,11 @@ A **note** is one thing your memory holds — `remember` writes one by hand, you
 
 ---
 
----
-
 ## 🖥️ Or download the desktop app
 
-**The core has no window of its own: its interface is your AI client.** If you want a window, that is the free desktop app — same engine, same encrypted file, same key — and it is downloadable from the releases of this repository. For teams and organizations there is K3PTA Enterprise by agreement. These three sentences are the whole answer; every document here says the same.
+**The core has no window of its own: its interface is your AI client.** If you want a window, that is the free desktop app — same engine, same encrypted file, same key — and **[K3PTA 3.2.213](https://github.com/DamianTodorovic/kepta/releases/tag/app-3.2.213)** is the current and only release downloadable from the releases of this repository. For teams and organizations there is K3PTA Enterprise by agreement. These three sentences are the whole answer; every document here says the same.
 
-The app brings the memory browser, hybrid search with retrieval provenance, the knowledge graph, time travel, dossiers and a chat that reads the memory. Download the DMG for your Mac from the [latest release](https://github.com/DamianTodorovic/kepta/releases/latest) (Apple Silicon or Intel) and drag it into Applications. The build is ad-hoc signed and not notarised, so macOS asks a single time. Two ways through, and both work on every macOS version: `xattr -dr com.apple.quarantine /Applications/KEPTA.app`, or **System Settings → Privacy & Security** → the K3PTA message → **Open Anyway**. Once, then never again. Older guides say right-click → *Open*; Apple removed that route in macOS 15 and it does nothing on current systems. (What runs from this repository has no window: `npm run dev` starts the HTTP API and its `POST /mcp` — a service on your machine, not an interface.)
+The app brings the memory browser, hybrid search with retrieval provenance, the knowledge graph, time travel, dossiers and a chat that reads the memory. Download the DMG for your Mac from the [latest release (K3PTA 3.2.213)](https://github.com/DamianTodorovic/kepta/releases/latest) (Apple Silicon or Intel) and drag `K3PTA.app` into Applications. The build is ad-hoc signed and not notarised, so macOS asks a single time. Two ways through, and both work on every macOS version: `xattr -dr com.apple.quarantine /Applications/K3PTA.app`, or **System Settings → Privacy & Security** → the K3PTA message → **Open Anyway**. Once, then never again. Older guides say right-click → *Open*; Apple removed that route in macOS 15 and it does nothing on current systems. (What runs from this repository has no window: `npm run dev` starts the HTTP API and its `POST /mcp` — a service on your machine, not an interface.)
 
 The app is free, like everything in this repository. K3PTA Enterprise (team and tenant memory, audit chain, human review, point-in-time recovery) is licensed by agreement — [write to me on LinkedIn](https://www.linkedin.com/in/damian-todorovic-244235434).
 
