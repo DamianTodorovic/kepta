@@ -3,12 +3,13 @@ import fs from "node:fs";
 import { APP_VERSION } from "../src/core/version";
 import { SERVER_INFO } from "../src/core/mcp";
 
-const pkg = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf-8")) as { version: string };
-const bundel = JSON.parse(fs.readFileSync(new URL("../npm/package.json", import.meta.url), "utf-8")) as { version: string };
+const pkg = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf-8")) as { version: string; license: string };
+const bundel = JSON.parse(fs.readFileSync(new URL("../npm/package.json", import.meta.url), "utf-8")) as { version: string; license: string };
 const sperre = JSON.parse(fs.readFileSync(new URL("../package-lock.json", import.meta.url), "utf-8")) as {
   version: string;
-  packages: Record<string, { version?: string }>;
+  packages: Record<string, { version?: string; license?: string }>;
 };
+const lizenzText = fs.readFileSync(new URL("../LICENSE", import.meta.url), "utf-8");
 
 // Es gibt EINE Versions-Quelle: src/core/version.ts. Health-Endpoint und MCP SERVER_INFO
 // importieren sie; dieser Test verhindert Versions-Drift zur package.json.
@@ -32,5 +33,24 @@ describe("Versions-Quelle", () => {
     expect(bundel.version, "npm/package.json").toBe(APP_VERSION);
     expect(sperre.version, "package-lock.json (oben)").toBe(APP_VERSION);
     expect(sperre.packages[""].version, 'package-lock.json (packages[""])').toBe(APP_VERSION);
+  });
+});
+
+// Die Lizenz hat dieselbe Falle wie die Version damals, nur eine Etage tiefer — und sie
+// ist am 15.11.2026 wirklich zugeschnappt: a1ee382 stellte package.json und LICENSE auf
+// BUSL-1.1, das eingecheckte Sperrschema behielt "UNLICENSED" (zuletzt angefasst 12.11.
+// in 854dfa5), und der Desktop-Bau, der 34 Minuten VOR der Umstellung lief, trug dasselbe
+// Feld in jedes ausgelieferte app.asar. Gelesen hat es niemand: dieses Blatt pinnte vier
+// Versionsfelder und kein einziges Lizenzfeld, scripts/pruefe-lock.mjs hat keinen
+// Lizenz-Griff. Eine Lizenz, die an vier Orten steht und an einem nicht, ist keine
+// Aussage — sie ist ein Widerspruch, den erst ein Käufer findet.
+const LIZENZ = "BUSL-1.1";
+
+describe("Lizenz-Quelle", () => {
+  it("package.json, das Sperrschema, das npm-Bündel und der LICENSE-Text nennen dieselbe Lizenz", () => {
+    expect(pkg.license).toBe(LIZENZ);
+    expect(sperre.packages[""].license, 'package-lock.json (packages[""])').toBe(LIZENZ);
+    expect(bundel.license, "npm/package.json").toBe(LIZENZ);
+    expect(lizenzText.split("\n")[0].trim(), "LICENSE (erste Zeile)").toBe("Business Source License 1.1");
   });
 });

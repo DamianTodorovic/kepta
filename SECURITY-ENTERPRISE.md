@@ -70,9 +70,9 @@ Enterprise editions (`business`, `enterprise`) are encoded in the signed license
 
 ## 6. Supply chain and updates
 
-- Installers are ad-hoc signed. The public release carries the macOS arm64/x64 DMGs and zips together with electron-builder's `latest-mac.yml`, whose **SHA-512 digests** are the published integrity values — there are no separate checksum files, and no Windows or Linux installer is published.
+- Installers are ad-hoc signed. The public release carries the macOS arm64/x64 `.dmg` installers plus `SHA256SUMS.txt`, whose **SHA-256 digests** are the published integrity values — measured on release `app-3.2.213` through the GitHub releases API: exactly those three assets. Zips, blockmaps and electron-builder's `latest-mac.yml` are produced by `npm run build:mac` and stay on the build machine, because the app has no auto-updater (`electron-updater` and `autoUpdater` appear nowhere in the app source) and `latest-mac.yml` therefore has no consumer. No Windows or Linux installer is published.
 - Source maps never ship: the app build excludes `**/*.map` (`electron-builder.json`), and neither the app bundle nor the npm artifacts contain a `sourceMappingURL`. The app's server bundle is minified.
-- The engine (all retrieval, storage, MCP code) is **source-available under BUSL-1.1** and auditable — every line readable, running it free including in production, each release converting to AGPL-3.0-or-later four years after release. It is deliberately not called open source: BUSL-1.1 is not an OSI-approved licence. The desktop application is proprietary.
+- The engine (all retrieval, storage, MCP code) is **source-available under BUSL-1.1** and auditable — every line readable, running it free including in production, each release converting to AGPL-3.0-or-later four years after release. It is deliberately not called open source: BUSL-1.1 is not an OSI-approved licence. The desktop application is source-available under the same BUSL-1.1 terms — `LICENSE` names the Licensed Work as "K3PTA (the desktop application, the memory engine, the MCP server, and the HTTP API, including 'kepta-mcp')", and `package.json`, `package-lock.json` and `npm/package.json` carry the same `license` field, pinned by `tests/version.test.ts`.
 
 ## 7. Contact
 
