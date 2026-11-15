@@ -99,7 +99,10 @@ async function zeichne() {
   );
   const view = render(<KnowledgeGraph memories={bestand()} onSelectMemory={vi.fn()} />);
   await act(async () => {
-    for (let i = 0; i < 60; i++) await new Promise((r) => setTimeout(r, 50));
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 50));
+      if (kaesten().length >= 3) break;
+    }
   });
   return view;
 }
@@ -110,7 +113,8 @@ const groesse = (schrift: unknown) => {
 };
 
 /**
- * Die Titelkaesten des letzten Rahmens, der ueberhaupt einen Notiztitel gemalt hat.
+ * Die Titelkaesten des letzten Rahmens mit tragfaehiger Titelzahl (>= 3 Notiztitel),
+ * sonst hilfsweise des letzten Rahmens mit irgendeinem Titel.
  *
  * Der Rahmen wird aus der Aufruffolge nachgespielt (clearRect teilt ihn, save /
  * restore stapeln die Schrift), weil die Flaeche Etikette in festem Bildpixel-Satz
@@ -120,6 +124,7 @@ function kaesten(): { text: string; links: number; rechts: number; oben: number;
   const alle = buch.aufrufe;
   const starts: number[] = [];
   for (let i = 0; i < alle.length; i++) if (alle[i].op === "clearRect") starts.push(i);
+  let bester: { text: string; links: number; rechts: number; oben: number; unten: number }[] | null = null;
   for (let r = starts.length - 1; r >= 0; r--) {
     const ende = r + 1 < starts.length ? starts[r + 1] : alle.length;
     const rahmen: Aufruf[] = alle.slice(starts[r], ende);
@@ -139,9 +144,10 @@ function kaesten(): { text: string; links: number; rechts: number; oben: number;
         funde.push({ text, links, rechts: links + breite, oben: y, unten: y + schrift });
       }
     }
-    if (funde.length > 0) return funde;
+    if (funde.length >= 3) return funde;
+    if (!bester && funde.length > 0) bester = funde;
   }
-  return [];
+  return bester ?? [];
 }
 
 describe("KnowledgeGraph: der erste Blick beruehrt keine Kante", () => {

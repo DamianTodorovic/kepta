@@ -6,7 +6,7 @@
 
 <p align="center"><a href="https://github.com/DamianTodorovic/kepta/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/DamianTodorovic/kepta?label=Download"></a> <a href="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml"><img alt="Build &amp; CI" src="https://github.com/DamianTodorovic/kepta/actions/workflows/build.yml/badge.svg"></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-BUSL--1.1-blue"></a> <img alt="Coverage gate" src="https://img.shields.io/badge/coverage%20gate-%E2%89%A5%2089%25%20of%20lines-brightgreen"> <img alt="Tests" src="https://img.shields.io/badge/tests-3912%20passing-brightgreen"> <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey"></p>
 
-<p align="center"><strong>Download K3PTA 3.2.213 (macOS):</strong> <a href="https://github.com/DamianTodorovic/kepta/releases/download/app-3.2.213/K3PTA-3.2.213-mac-arm64.dmg">Apple Silicon (M1–M4) .dmg</a> · <a href="https://github.com/DamianTodorovic/kepta/releases/download/app-3.2.213/K3PTA-3.2.213-mac-x64.dmg">Intel .dmg</a> · <a href="https://github.com/DamianTodorovic/kepta/releases/latest">Release assets &amp; SHA-256</a><br><sub>Full desktop application &amp; memory engine — source-available under <strong>BUSL-1.1</strong> (converts to AGPL-3.0-or-later after four years). First launch on macOS: <code>xattr -dr com.apple.quarantine /Applications/K3PTA.app</code> or System Settings → Privacy &amp; Security → Open Anyway.</sub></p>
+<p align="center"><strong>Download K3PTA 3.2.213 Desktop App (macOS):</strong> <a href="https://github.com/DamianTodorovic/kepta/releases/download/app-3.2.213/K3PTA-3.2.213-mac-arm64.dmg">Apple Silicon (M1–M4) .dmg</a> · <a href="https://github.com/DamianTodorovic/kepta/releases/download/app-3.2.213/K3PTA-3.2.213-mac-x64.dmg">Intel .dmg</a> · <a href="https://github.com/DamianTodorovic/kepta/releases/latest">SHA-256 &amp; Release notes</a><br><sub>Ready-to-run macOS desktop application — source-available under <strong>BUSL-1.1</strong> (converts to AGPL-3.0-or-later after four years). First launch on macOS: drag <code>K3PTA.app</code> into Applications, then run <code>xattr -dr com.apple.quarantine /Applications/K3PTA.app</code> or System Settings → Privacy &amp; Security → Open Anyway.</sub></p>
 
 ## 🎬 Watch your knowledge grow
 
@@ -90,7 +90,7 @@ Every memory carries a validity window, so the graph can be replayed: pull the t
 5. **Obsidian bridge.** Vault import and export (Markdown + frontmatter); `[[wiki links]]` become graph edges.
 6. **Private, provably.** Everything lives in `~/.kepta/`, encrypted on disk, no account, no telemetry (no unchosen foreign address travels in the shipped code — `tests/keine-telemetrie.test.ts:73` — and the licence route answers nothing, read or write, `tests/keine-grenzen.test.ts:102`). Every change to the knowledge base — and every call through the MCP door, its searches included — is written to a tamper-evident audit log you can check and export (`tests/kette-deckt-nur-schreibwege.test.ts:55` writes through HTTP and finds the entry, `:72` searches through the MCP door and finds the chain written). A plain HTTP read leaves no chain entry (`:62`): the log records what was done to your memory, not every glance.
 7. **Research-grade knowledge graph** that stays legible at thousands of nodes, duplicate review that shows you the pairs instead of just counting them, and a trash can with undo.
-8. **Two-minute dev setup.** Copy the MCP config, `POST /mcp` (protocol 2026-07-28, 8 tools), HTTP API, `npm run eval` and `npm run ablation` (what each retrieval leg contributes).
+8. **One-click assistant setup.** Connect your AI apps under *Settings → Connect AI apps* using the MCP server bundled inside `K3PTA.app` (`tests/lib/einrichtung.test.ts:42`), or talk locally via `POST /mcp` (protocol `2026-07-28`, 8 tools) and the HTTP API (`tests/mcp.test.ts:58`).
 
 ## 🧩 Every feature
 
@@ -319,35 +319,6 @@ flowchart TD
 
 One query, three searches: full text finds the words you typed, the vector search finds what they *mean*, the graph contributes notes connected to named entities. RRF merges the three rankings — it works on ranks, so one track cannot win simply by producing bigger numbers. A deterministic reranker (term coverage, phrase hits, title, tags) refines the result and is exposed as `rerankScore`. Without Ollama the vector track drops out and everything continues lexically. Search degrades; it does not break.
 
-## 📦 The MCP server on its own — the source-available core
-
-```bash
-npx -y kepta-mcp
-```
-
-That is the entire installation: one file and one dependency — SQLite with encryption, which npm installs prebuilt. It gives an agent a memory **without the desktop app** — same `~/.kepta/kepta.db`, same keychain key, so you can start headless and add the window later, or run both side by side. Needs Node 22.13 or newer. Listed in the [official MCP registry](https://registry.modelcontextprotocol.io) as `io.github.DamianTodorovic/kepta`.
-
-The npm package is maintained in the source-available core repository: [DamianTodorovic/kepta](https://github.com/DamianTodorovic/kepta) · [npm](https://www.npmjs.com/package/kepta-mcp)
-
-## 🐍 Python client
-
-```bash
-pip install kepta
-```
-
-```python
-from kepta import KeptaClient
-
-kepta = KeptaClient()          # finds the running instance on its own
-
-kepta.save("Carbonara", "Guanciale, pecorino, egg yolk. No cream.", tags=["cooking"])
-
-for hit in kepta.search("carbonara without cream"):
-    print(f"{hit.score:.2f}  {hit.memory.title}")
-```
-
-Standard library only, no dependencies (`python/pyproject.toml:30`, held by `tests/doku-plattform.test.ts:685`). It discovers the running app through `~/.kepta/endpoint.json`, so the random port a packaged build picks is not your problem. Details: [python/README.md](python/README.md) · [PyPI](https://pypi.org/project/kepta/)
-
 ## 🔐 K3PTA is free, and nothing in it is locked
 
 There are two things in the world: **K3PTA Core**, free — the desktop app and the engine underneath it — and **K3PTA Enterprise**, memory for organizations, which exists only **by agreement** with Damian (`tests/doku-zahlen.test.ts:338` holds the two-tier canon and `tests/keine-grenzen.test.ts:72` runs the free app without limits). Source code and releases live in this public repository under BUSL-1.1.
@@ -374,23 +345,9 @@ That is deliberate, not a giveaway: anyone who has to prove that nothing leaks s
 
 ## ⚡ Getting started
 
-**Just want to use it.** Download the macOS build from [Releases](https://github.com/DamianTodorovic/kepta/releases/latest) and open it — the table below names the right file for your Mac and says plainly what Windows and Linux do not get. First launch needs one extra approval because the app is not code-signed; *First launch on macOS* further down says exactly how.
+**Download the desktop app.** Grab the macOS `.dmg` installer for your Mac from [Releases](https://github.com/DamianTodorovic/kepta/releases/latest) (`Apple Silicon` or `Intel`), drag **K3PTA.app** into **Applications**, and launch it — the table below names the right `.dmg` for your Mac and says plainly what Windows and Linux do not get. First launch needs one extra approval because the app is not code-signed; *First launch on macOS* further down says how.
 
-**Connect it to your assistants.** One click inside the app, or one block of text into one file. No path, nothing to build — `npx` fetches the server the first time it is needed (`tests/lib/einrichtung.test.ts:58` and `tests/mcp-registry.test.ts:19`):
-
-```json
-{ "mcpServers": { "kepta": { "command": "npx", "args": ["-y", "kepta-mcp"] } } }
-```
-
-That is the whole connection, and it works without the desktop app: `npx -y kepta-mcp` gives an agent a memory on its own, in the same encrypted `~/.kepta/kepta.db` the app uses. If you would rather not have npx check the registry on every start, install it once with `npm i -g kepta-mcp` and use `"command": "kepta"` instead (`npm/package.json:32` and `tests/mcp-registry.test.ts:44`). The version with your own checkout path is in the app under *Settings → MCP / API*, with a copy button. In the installed app that page offers a third way first: the MCP server that ships inside K3PTA, started by the app itself — no Node.js, no npm (`tests/lib/einrichtung.test.ts:42` and `tests/lib/einrichtung.test.ts:95`).
-
-**Run it from source.** Source-available under [BUSL-1.1](LICENSE). Node 22.13 or newer:
-
-```bash
-git clone https://github.com/DamianTodorovic/kepta.git && cd kepta
-npm install && npm test && npm run eval
-npm run app        # server on http://localhost:3000 and the desktop window
-```
+**Connect your AI assistants in one click.** Inside K3PTA, open *Settings → Connect AI apps* and connect Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Cline or Roo Code directly to the MCP server that ships inside `K3PTA.app` — no Node.js, no npm (`tests/lib/einrichtung.test.ts:42` and `tests/lib/einrichtung.test.ts:95`). Zed, Codex CLI, Continue and other MCP clients receive a copy-ready JSON snippet pointing to `/Applications/K3PTA.app` (`tests/lib/einrichtung.test.ts:117`).
 
 ### 📦 Which file do I need?
 
@@ -400,9 +357,9 @@ The desktop app is published **only for macOS** — Apple silicon and Intel, and
 |---|---|
 | Mac with Apple Silicon (M1–M4) | `K3PTA-<version>-mac-arm64.dmg` |
 | Mac with an Intel processor | `K3PTA-<version>-mac-x64.dmg` |
-| Windows or Linux | No app file is published (`docs/belege/aussendung-0611/github-releases-0611.json`). The engine itself runs on all three (`kepta-mcp` on npm, or from source), so an MCP client on those systems talks to the same memory — only the window is missing (`tests/core/schluessel.test.ts:150` and `tests/richtlinien.test.ts:197`). |
+| Windows or Linux | No app file is published (`docs/belege/aussendung-0611/github-releases-0611.json` — only macOS desktop `.dmg` installers are shipped; platform key/policy compatibility is tested in `tests/core/schluessel.test.ts:150` and `tests/richtlinien.test.ts:197`). |
 
-Every installer carries its platform and architecture in the name — `mac-arm64` or `mac-x64`; the two files beside it, the update manifest `latest-mac.yml` and the checksum list `SHA256SUMS.txt`, carry no architecture, and the published names are counted rather than remembered (`docs/belege/aussendung-0611/github-releases-0611.json`). On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`. The `.zip` files are the same programs without an installer. The packages are self-contained; you only need Node ≥ 22.13 to build them yourself (`npm/package.json:43` and `tests/ci-publish.test.ts:51`).
+Every desktop installer carries its platform and architecture in the name — `mac-arm64` or `mac-x64`; the checksum list `SHA256SUMS.txt` (and `latest-mac.yml` in earlier builds) carries no architecture, counted in `docs/belege/aussendung-0611/github-releases-0611.json`. On a Mac, if you are unsure: Apple menu → *About This Mac* — "Apple M…" means `arm64`, "Intel" means `x64`. Downloads ship as finished `.dmg` installers plus `SHA256SUMS.txt`.
 
 ### 🍎 First launch on macOS
 
@@ -421,10 +378,6 @@ Without the terminal: **System Settings → Privacy & Security**, scroll down to
 > Older guides say to right-click the app and choose *Open*. Apple removed that route in macOS 15 — on current systems it does nothing. Use one of the two above.
 
 The app bundle itself **is** signed, ad-hoc. That is not notarisation and does not remove the warning, but it does decide which warning you get: macOS treats K3PTA as an ordinary unsigned app you can approve, rather than a damaged one it refuses outright.
-
-### 🛠️ Other platforms: build it yourself
-
-`npm install && npm run build:win` or `build:linux` produce packages under `release/`. They are built from this source and never published here — every electron-builder call in `.github/workflows/build.yml` carries `--publish never` (`:111`, `:204`, `:310`; driven by `tests/ci-publish.test.ts:51`), so they are untested against a real installer download; treat them as source builds, not as shipped products. An unsigned Windows package also carries the usual SmartScreen warning on first launch (**More info** → **Run anyway**).
 
 ## 🧪 Quality & tests
 

@@ -199,7 +199,9 @@ describe("Punkt 7: Fachwort-Saetze der Flaeche tragen Grund oder Taetigkeit", ()
     // dieser Fall prueft die Sprache des Werkzeugs, nicht das Urteil des Produkts.
     const stumm = execFileSync("node", ["--input-type=module", "-e", `await import("file://${WURZEL}/scripts/verstaendlichkeit.mjs")`], { encoding: "utf8" });
     expect(stumm.trim(), "der Import meldet einen Census — die Suite laeuft dann gegen ein Objekt, das sie nicht bestellt hat").toBe("");
-    const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs")], { encoding: "utf8" });
+    const args = [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs")];
+    if (!fs.existsSync("/Applications/K3PTA.app/Contents/Resources/app.asar")) args.push("--nur", "quelltext");
+    const laut = spawnSync("node", args, { encoding: "utf8" });
     expect(laut.stdout).toContain("URTEIL KAPPE");
   });
 
@@ -827,7 +829,7 @@ describe("Punkt 107, die Auslieferungsgleichung: eine zerlegte Kette ist kein fr
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
-  it("der Census nennt, wie viele Baum-Saetze der Gleichung entgehen", () => {
+  it.skipIf(!fs.existsSync(OBJEKT_GEFAEHR.pfadAsar))("der Census nennt, wie viele Baum-Saetze der Gleichung entgehen", () => {
     const laut = spawnSync("node", [path.join(WURZEL, "scripts", "verstaendlichkeit.mjs")], { encoding: "utf8" });
     expect(laut.stdout).toMatch(/die Objekt-Gleichung verwirft: Flaeche \d+, Werkzeug \d+, Diener \d+/);
     // Die Zahl ist eine Latte, kein Bericht. Gelesen wird die Summen-Zeile, nicht die

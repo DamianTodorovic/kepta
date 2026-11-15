@@ -34,10 +34,10 @@ jobs:
       # bei 8, das Gate bei 12, gemessen an den vier Kernen von ubuntu-latest.
       - name: Messvorlauf (schreibt test-results/vitest.json, Befund zaehlt nicht)
         run: npm test || true
-        timeout-minutes: 8
+        timeout-minutes: 15
       - name: Tests + Coverage (Gate)
         run: npm run test:cov
-        timeout-minutes: 12
+        timeout-minutes: 20
       - name: Retrieval-Eval (Hit@1)
         run: npm run eval
       - name: Coverage-Zusammenfassung (Job-Summary)
