@@ -61,7 +61,7 @@ export function spanneCrashWachter(): void {
     const meldung = e.message || "unbekannter Fehler";
     const fundstelle = e.filename ? `${e.filename.split("/").pop()}:${e.lineno}` : "(keine Fundstelle)";
     const stapel = e.error instanceof Error ? e.error.stack : `${meldung}\n${fundstelle}`;
-    zeichne(String(fundstelle), String(meldung), String(stapel));
+    zeichne(String(meldung), String(fundstelle), String(stapel));
   });
   window.addEventListener("unhandledrejection", (e) => {
     const grund = e.reason;

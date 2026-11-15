@@ -15,6 +15,7 @@
 // wissen. Diese Datei spiegelt in beide Richtungen.
 
 import { wendeZoomAn } from "./uiText";
+import { coalescedJson, invalidateApiCache } from "./api";
 
 /** Praefixe, die zu K3PTA gehoeren. Alles andere bleibt unberuehrt. */
 const UNSERE = ["kepta_", "ki_gehirn_"];
@@ -41,9 +42,9 @@ function sicherSetzen(k: string, v: string): void {
 export async function ladeEinstellungen(): Promise<number> {
   if (typeof window === "undefined" || !window.localStorage) return 0;
   try {
-    const res = await fetch("/api/settings");
+    const res = await coalescedJson<Record<string, unknown>>("/api/settings", { ttlMs: 500 });
     if (!res.ok) return 0;
-    const daten = (await res.json()) as Record<string, unknown>;
+    const daten = res.data ?? {};
     let uebernommen = 0;
     for (const [k, v] of Object.entries(daten ?? {})) {
       if (typeof v !== "string" || !gehoertUns(k)) continue;
@@ -67,6 +68,7 @@ let geplant: ReturnType<typeof setTimeout> | null = null;
  */
 function sende(stapel: Record<string, string | null>, keepalive = false): void {
   if (Object.keys(stapel).length === 0) return;
+  invalidateApiCache("/api/settings");
   void fetch("/api/settings", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

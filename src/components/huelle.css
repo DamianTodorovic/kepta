@@ -77,7 +77,14 @@
 }
 .seiten-leiste .sidebar-nav-btn[data-active="true"] .seiten-ikone { color: var(--s-akzent); }
 .seiten-leiste .sidebar-tag-btn { color: var(--s-tinte-2); }
-.seiten-leiste .sidebar-tag-btn[data-active="true"] { color: var(--s-tinte-1); }
+.seiten-leiste .sidebar-tag-btn[data-active="true"] {
+  background: color-mix(in srgb, var(--type-semantic) 12%, transparent);
+  color: var(--type-semantic);
+}
+.dark .seiten-leiste .sidebar-tag-btn[data-active="true"] {
+  background: var(--side-marke-auswahl);
+  color: var(--s-tinte-1);
+}
 
 /* Ein Zeichen pro Bedeutung (Z-07): die Auswahl zeichnet aus, die Handlung
    lädt ein. Auf dem Stahl ist die Handlung unterstrichene Tinte — nicht ein

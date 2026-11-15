@@ -69,7 +69,7 @@ function Row({ ok, label, detail, fix, seal, unknown }: { ok: boolean; label: st
       <span className="art" style={{ color: unknown ? 'var(--text-3)' : ok ? 'var(--accent)' : 'var(--warn)', paddingTop: 3 }}>
         {unknown
           ? <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'var(--text-3)' }} />
-          : ok ? 'Arbeitet' : 'Einrichten'}
+          : ok ? 'Working' : 'Set up'}
       </span>
       <div className="inhalt">
         <b style={{ color: 'var(--text-1)', fontWeight: 650 }}>{label}</b>
@@ -93,7 +93,7 @@ function Row({ ok, label, detail, fix, seal, unknown }: { ok: boolean; label: st
  */
 type Auskunft = 'laeuft' | 'da' | 'weg';
 
-export function SystemStatus() {
+export function SystemStatus({ aktiv = true }: { aktiv?: boolean } = {}) {
   const [health, setHealth] = useState<Health | null>(null);
   const [antwort, setAntwort] = useState<Auskunft>('laeuft');
   const [ollama, setOllama] = useState<boolean | null>(null);
@@ -107,15 +107,17 @@ export function SystemStatus() {
   const [bereit, setBereit] = useState(false);
 
   useEffect(() => {
+    if (!aktiv) return;
     let vorbei = false;
     hydrateAISettings().then(
       () => { if (!vorbei) setBereit(true); },
       () => { if (!vorbei) setBereit(true); },
     );
     return () => { vorbei = true; };
-  }, []);
+  }, [aktiv]);
 
   useEffect(() => {
+    if (!aktiv) return;
     void (async () => {
       const h = await getJsonOderNull<Parameters<typeof normalisiereHealth>[0]>('/api/health');
       setHealth(h ? normalisiereHealth(h) : null);
@@ -129,7 +131,7 @@ export function SystemStatus() {
         setOllama(res.ok);
       } catch { setOllama(false); }
     })();
-  }, []);
+  }, [aktiv]);
 
   const s = loadAISettings();
   const prov = providerById(s.providerId);

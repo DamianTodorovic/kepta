@@ -63,7 +63,7 @@ function zeige() {
 
 async function frageStellen(frageText: string) {
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Chat Eingabe"), frageText);
+  await user.type(screen.getByLabelText("Chat input"), frageText);
   await user.click(screen.getByRole("button", { name: "Send" }));
 }
 

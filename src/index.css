@@ -882,6 +882,17 @@ select:focus-visible {
   min-width: 0;
   min-height: 0;
 }
+@media (max-width: 767px) {
+  .graph-leinwand {
+    min-height: 240px;
+  }
+  .graph-panel {
+    width: 100%;
+    max-height: 46%;
+    border-left: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+}
 .graph-panel-kopf {
   flex: none;
   display: flex;
@@ -925,7 +936,8 @@ select:focus-visible {
 }
 .graph-fuss-zeile .wert { margin-left: auto; color: var(--text-1); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
 .graph-fuss-knoepfe { display: flex; gap: 5px; margin-top: 6px; }
-.graph-fuss-knoepfe .btn-ghost { flex: 1; justify-content: center; }
+.graph-fuss-knoepfe > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px; width: 100%; min-width: 0; }
+.graph-fuss-knoepfe .btn-ghost { flex: 0 1 auto; justify-content: center; padding: 4px 6px; margin-right: 0; }
 /* Die Farbwahl-Zeile des Panels (Mockup .farbwahl-zeile): swatch + Name. */
 .farbwahl-zeile { display: flex; align-items: center; gap: 9px; padding: 7px 12px; }
 .farbwahl-zeile + .farbwahl-zeile { border-top: 1px solid var(--border-subtle); }
@@ -1247,6 +1259,18 @@ select:focus-visible {
 .einstellungen-liste .navi button:hover { background: var(--bg-hover); color: var(--text-1); }
 .einstellungen-liste .navi button[data-on='true'] { background: var(--accent-soft); color: var(--accent); }
 .settings-panel-fenster { flex: 1; min-width: 0; overflow-y: auto; padding: 20px 24px; }
+@media (max-width: 767px) {
+  .einstellungen-liste {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .einstellungen-liste .navi {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--s-1);
+  }
+}
 /* ─────────── Chat-Nachricht (P202, Mockup k3pta-app-fenster .nachricht):
    wer-Zeile (K-Zeichen + Name) über der Blase; die eigene Frage rechts mit
    „You" und der getönten Blase. Die früheren Füll-Blasen (weiß auf Grün) und
@@ -1977,7 +2001,7 @@ svg[aria-hidden="true"] { min-block-size: var(--icon-min); min-inline-size: var(
      und Linear ihre Liste führen). Die Raster-Grammatik (320-px-Kolumnen)
      las die Fläche wie ein Board lesen; eine Software-Liste steht in Zeilen. */
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0;
 }
 .row-entry {
@@ -2100,6 +2124,7 @@ button.hud-label:active { transform: scale(0.97); }
 .row-pct { font-family: var(--font-display); font-size: var(--fs-5); font-weight: var(--fw-halbfest); color: var(--accent); }
 .row-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start; min-width: 0; overflow: hidden; }
 .row-tag { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-1); color: var(--text-2); }
+html:not(.dark) .row-tag { color: var(--type-semantic); }
 .row-time { font-size: var(--fs-1); color: var(--text-3); white-space: nowrap; margin-left: auto; }
 
 /* ---------- Apple-Segmented Control ----------
@@ -2451,22 +2476,40 @@ button.hud-label:active { transform: scale(0.97); }
 }
 
 /* #96 — das Leistenband: der Ueberblick ueber die GEMALTEN Knoten je Gruppe, ohne Zoom.
-   Es liegt im freien Band ueber der Leinwand, 10 px hoch, und isst keinen Klick
-   (pointer-events: none) — der Treffertest geht an die Leinwand darunter.
-   Unter 1 px waere kein Kanal (#29/#59): jeder Abschnitt hat eine Mindestbreite. */
+   Wohnt jetzt eingebettet im rechten Graph-Inspector (keine Leiste ueber der Canvas),
+   und isst keinen Klick (pointer-events: none). */
 .graph-gruppenband {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 10px;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
   display: flex;
   pointer-events: none;
-  z-index: 5;
   overflow: hidden;
 }
 .graph-gruppenband-segment {
   display: block;
   height: 100%;
   min-width: 2px;
+}
+
+@media (max-width: 639px) {
+  .listen-kopf {
+    flex-wrap: wrap;
+    height: auto !important;
+    min-height: 44px;
+    padding-block: 6px !important;
+  }
+  .listen-kopf .listen-zahl {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .listen-kopf .kopf-handlungen {
+    margin-left: auto;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 1 1 auto;
+  }
 }

@@ -282,6 +282,7 @@ type SpurZeile = SuchVektoren["liste"][number];
 interface SpurEintrag {
   memGen: number;
   embedGen: number;
+  modell: string;
   nach: Map<string, SpurZeile[]>;
   spur: SuchVektoren;
   dreckig: Set<string>;
@@ -345,8 +346,9 @@ function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
   registriereVektorDelta(store);
   const memGen = store.memGeneration();
   const embedGen = store.embedGeneration();
+  const modell = aktivesSuchModell(store);
   const eintrag = vektorCache.get(store);
-  if (eintrag && eintrag.memGen === memGen && eintrag.embedGen === embedGen) return eintrag.spur;
+  if (eintrag && eintrag.memGen === memGen && eintrag.embedGen === embedGen && eintrag.modell === modell) return eintrag.spur;
 
   // Nachtragen statt neu bauen: ein gemeldeter Schreibfall traegt NUR seine eigne Notiz nach.
   // An der echten Tuer war der Volllauf 188,00 ms gegen 8,85 ms am stehenden Vorrat
@@ -360,13 +362,13 @@ function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
   // geloescht, und der Zweig faellt durch zum Volllauf unten. Ohne die Gleichung waere der
   // Nachzug schneller und falscher — gemessen 4.11. an der Tuer: 60.34 ms Volllauf fuer 32
   // neue Zeilen, und am gefuellten Index 1 321.99 ms fuer 64 164 Abschnitte.
-  if (eintrag && eintrag.dreckig.size > 0) {
+  if (eintrag && eintrag.dreckig.size > 0 && eintrag.modell === modell) {
     const ids = [...eintrag.dreckig];
     eintrag.dreckig.clear();
-    const neu = zeilenNachNotiz(store.chunksFuerMemories(ids).filter((z) => z.model === DEFAULT_EMBED_MODEL));
+    const neu = zeilenNachNotiz(store.chunksFuerMemories(ids).filter((z) => z.model === modell));
     for (const [id, gruppe] of neu) eintrag.nach.set(id, gruppe);
     for (const id of ids) if (!neu.has(id)) eintrag.nach.delete(id);
-    if (zeilenImVorrat(eintrag.nach) === store.vektorZeilen(DEFAULT_EMBED_MODEL)) {
+    if (zeilenImVorrat(eintrag.nach) === store.vektorZeilen(modell)) {
       eintrag.spur = flacheSpur(eintrag.nach);
       eintrag.memGen = memGen;
       eintrag.embedGen = embedGen;
@@ -382,9 +384,9 @@ function suchVektoren(store: KeptaStore, wer: SpurBaumeister): SuchVektoren {
   // sonst alt und neu zugleich im Leib — in der eignen Kapsel stieg die Resident Size ueber
   // zwei Baue auf 1 038 688 KiB, wo ein Bau 697 088 bis 730 896 KiB braucht.
   vektorCache.delete(store);
-  const liste = store.allEmbeddableChunks().filter((c) => c.model === DEFAULT_EMBED_MODEL);
+  const liste = store.allEmbeddableChunks().filter((c) => c.model === modell);
   const spur: SuchVektoren = { liste, normen: normenVon(liste) };
-  vektorCache.set(store, { memGen, embedGen, nach: zeilenNachNotiz(liste), spur, dreckig: new Set() });
+  vektorCache.set(store, { memGen, embedGen, modell, nach: zeilenNachNotiz(liste), spur, dreckig: new Set() });
   if (wer === "vorwaermung") vektorSpurStatistik.vorwaermungen += 1;
   else vektorSpurStatistik.suchbauten += 1;
   vektorSpurStatistik.zeilen = liste.length;
@@ -744,12 +746,12 @@ export interface ConsolidationResult {
   dryRun: boolean;
 }
 
-function jaccard(a: string[], b: string[]): number {
-  const sa = new Set(a);
-  const sb = new Set(b);
+function jaccardSets(sa: ReadonlySet<string>, sb: ReadonlySet<string>): number {
   if (sa.size === 0 || sb.size === 0) return 0;
   let inter = 0;
-  for (const x of sa) if (sb.has(x)) inter++;
+  const kleiner = sa.size <= sb.size ? sa : sb;
+  const groesser = sa.size <= sb.size ? sb : sa;
+  for (const x of kleiner) if (groesser.has(x)) inter++;
   return inter / (sa.size + sb.size - inter);
 }
 
@@ -774,14 +776,25 @@ export async function consolidateMemories(
   // private Dupletten zu melden hieße, dem Agenten zwei private ids und ihre
   // Ähnlichkeit zu nennen.
   const active = aktiveErinnerungen(store).aktiv.filter((m) => !m.record.supersededBy && !opts.ausnehmen?.has(m.record.id));
+  const activeById = new Map<string, MemoryRecord>();
+  for (const m of active) activeById.set(m.record.id, m.record);
   const candidates: ConsolidationCandidate[] = [];
+  const seenPairs = new Set<string>();
+  const addCandidate = (a: string, b: string, similarity: number, reason: ConsolidationCandidate["reason"]): boolean => {
+    const key = a < b ? `${a}\0${b}` : `${b}\0${a}`;
+    if (seenPairs.has(key)) return false;
+    seenPairs.add(key);
+    const [keep, dup] = pickKeep(activeById, a, b);
+    candidates.push({ keepId: keep, duplicateId: dup, similarity, reason });
+    return true;
+  };
 
-  // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — Cosine nur zwischen
-  // identischen Modellen (Cross-Modell-Vektoren erzeugen Schein-Dubletten).
+  // Embedding-Dubletten: Centroid pro Memory+Modell vergleichen — vorab L2-normiert und
+  // entlang einer Einheits-Diagonale sortiert (exakte Dreiecksungleichungs-Schranke ohne Verlust).
   const chunks = embeddbareChunks(store);
   const centroids = new Map<string, { model: string; vec: Float32Array; count: number }>();
   for (const c of chunks) {
-    if (!active.some((m) => m.record.id === c.memoryId)) continue;
+    if (!activeById.has(c.memoryId)) continue;
     const prev = centroids.get(c.memoryId);
     if (!prev) {
       centroids.set(c.memoryId, { model: c.model, vec: Float32Array.from(c.embedding), count: 1 });
@@ -792,40 +805,123 @@ export async function consolidateMemories(
     }
     // Chunk mit anderem Modell als der bisherige Centroid: ignorieren (Queue re-embeddet)
   }
-  const centroidList = [...centroids.entries()];
-  for (let i = 0; i < centroidList.length; i++) {
-    for (let j = i + 1; j < centroidList.length; j++) {
-      if (centroidList[i]![1].model !== centroidList[j]![1].model) continue;
-      const sim = cosineSimilarity(centroidList[i]![1].vec, centroidList[j]![1].vec);
-      if (sim >= threshold) {
-        const a = centroidList[i]![0];
-        const b = centroidList[j]![0];
-        const [keep, dup] = pickKeep(store, a, b);
-        candidates.push({ keepId: keep, duplicateId: dup, similarity: sim, reason: "embedding" });
+
+  interface UnitCentroid {
+    id: string;
+    vec: Float32Array;
+    diag: number;
+    altDiag: number;
+  }
+  const byModel = new Map<string, UnitCentroid[]>();
+  for (const [id, entry] of centroids) {
+    const v = entry.vec;
+    let sq = 0;
+    let sum = 0;
+    let altSum = 0;
+    for (let k = 0; k < v.length; k++) {
+      const val = v[k]!;
+      sq += val * val;
+      sum += val;
+      altSum += (k & 1) === 0 ? val : -val;
+    }
+    if (sq <= 0) continue;
+    const invNorm = 1 / Math.sqrt(sq);
+    for (let k = 0; k < v.length; k++) v[k] = v[k]! * invNorm;
+    const invSqrtD = 1 / Math.sqrt(v.length);
+    let grp = byModel.get(entry.model);
+    if (!grp) {
+      grp = [];
+      byModel.set(entry.model, grp);
+    }
+    grp.push({ id, vec: v, diag: sum * invSqrtD, altDiag: altSum * invSqrtD });
+  }
+
+  const maxDist = Math.sqrt(2 * Math.max(0, 1 - threshold)) + 1e-4;
+  for (const grp of byModel.values()) {
+    grp.sort((a, b) => a.diag - b.diag);
+    for (let i = 0; i < grp.length; i++) {
+      const ci = grp[i]!;
+      const vi = ci.vec;
+      const dim = vi.length;
+      for (let j = i + 1; j < grp.length; j++) {
+        const cj = grp[j]!;
+        if (cj.diag - ci.diag > maxDist) break;
+        if (Math.abs(cj.altDiag - ci.altDiag) > maxDist) continue;
+        const vj = cj.vec;
+        if (vj.length !== dim) continue;
+        let s0 = 0;
+        let s1 = 0;
+        let s2 = 0;
+        let s3 = 0;
+        let k = 0;
+        for (; k + 3 < dim; k += 4) {
+          s0 += vi[k]! * vj[k]!;
+          s1 += vi[k + 1]! * vj[k + 1]!;
+          s2 += vi[k + 2]! * vj[k + 2]!;
+          s3 += vi[k + 3]! * vj[k + 3]!;
+        }
+        let sim = s0 + s1 + s2 + s3;
+        for (; k < dim; k++) sim += vi[k]! * vj[k]!;
+        if (sim >= threshold) addCandidate(ci.id, cj.id, sim, "embedding");
       }
+      if ((i & 511) === 511) await new Promise<void>((r) => setImmediate(r));
     }
   }
 
-  // Lexikalischer Fallback: Titel-Jaccard + Tag-Überlappung
-  for (let i = 0; i < active.length; i++) {
-    for (let j = i + 1; j < active.length; j++) {
-      const a = active[i]!.record;
-      const b = active[j]!.record;
-      const ta = new Set(a.title.toLowerCase().split(/\W+/).filter((w) => w.length > 2));
-      const tb = new Set(b.title.toLowerCase().split(/\W+/).filter((w) => w.length > 2));
-      if (ta.size === 0 || tb.size === 0) continue;
-      let inter = 0;
-      for (const w of ta) if (tb.has(w)) inter++;
-      const titleSim = inter / Math.min(ta.size, tb.size);
-      const tagSim = jaccard(a.tags, b.tags);
-      if (titleSim >= 0.85 && (tagSim >= 0.5 || a.tags.length === 0 || b.tags.length === 0)) {
-        const pairExists = candidates.some(
-          (c) => (c.keepId === a.id && c.duplicateId === b.id) || (c.keepId === b.id && c.duplicateId === a.id)
-        );
-        if (!pairExists) {
-          const [keep, dup] = pickKeep(store, a.id, b.id);
-          candidates.push({ keepId: keep, duplicateId: dup, similarity: titleSim, reason: "title+tags" });
+  // Lexikalischer Fallback: Titel-Wörter + Tag-Überlappung vorab einmal je Notiz aufbereiten
+  // und über invertierten Wort-Index vergleichen — vermeidet O(N²) Regex/Set-Allokationen.
+  const nActive = active.length;
+  const titleSets: Set<string>[] = new Array(nActive);
+  const tagSets: Set<string>[] = new Array(nActive);
+  const wordIndex = new Map<string, number[]>();
+  for (let i = 0; i < nActive; i++) {
+    const rec = active[i]!.record;
+    const words = new Set(rec.title.toLowerCase().split(/\W+/).filter((w) => w.length > 2));
+    titleSets[i] = words;
+    tagSets[i] = new Set(rec.tags);
+    for (const w of words) {
+      let list = wordIndex.get(w);
+      if (!list) {
+        list = [];
+        wordIndex.set(w, list);
+      }
+      list.push(i);
+    }
+  }
+
+  const stamp = new Int32Array(nActive);
+  const sharedWords = new Int32Array(nActive);
+  const touched: number[] = [];
+  for (let i = 0; i < nActive; i++) {
+    const ta = titleSets[i]!;
+    if (ta.size === 0) continue;
+    const marker = i + 1;
+    touched.length = 0;
+    for (const w of ta) {
+      const postings = wordIndex.get(w)!;
+      for (let p = 0; p < postings.length; p++) {
+        const j = postings[p]!;
+        if (j <= i) continue;
+        if (stamp[j] !== marker) {
+          stamp[j] = marker;
+          sharedWords[j] = 1;
+          touched.push(j);
+        } else {
+          sharedWords[j] = sharedWords[j]! + 1;
         }
+      }
+    }
+    const a = active[i]!.record;
+    const tagA = tagSets[i]!;
+    for (let t = 0; t < touched.length; t++) {
+      const j = touched[t]!;
+      const tb = titleSets[j]!;
+      const titleSim = sharedWords[j]! / Math.min(ta.size, tb.size);
+      if (titleSim < 0.85) continue;
+      const b = active[j]!.record;
+      const tagSim = jaccardSets(tagA, tagSets[j]!);
+      if (tagSim >= 0.5 || a.tags.length === 0 || b.tags.length === 0) {
+        addCandidate(a.id, b.id, titleSim, "title+tags");
       }
     }
   }
@@ -846,9 +942,9 @@ export async function consolidateMemories(
   return { candidates, applied, dryRun };
 }
 
-function pickKeep(store: KeptaStore, a: string, b: string): [string, string] {
-  const ra = store.getMemory(a);
-  const rb = store.getMemory(b);
+function pickKeep(byId: ReadonlyMap<string, MemoryRecord>, a: string, b: string): [string, string] {
+  const ra = byId.get(a) ?? null;
+  const rb = byId.get(b) ?? null;
   // Behalte die neuere, längere Memory
   const scoreOf = (r: MemoryRecord | null): number => (r ? r.updatedAt + r.content.length * 1000 : 0);
   return scoreOf(ra) >= scoreOf(rb) ? [a, b] : [b, a];

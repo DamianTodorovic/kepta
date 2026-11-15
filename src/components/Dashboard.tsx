@@ -1,4 +1,4 @@
-import { ApiFehler, tuerSatz } from '../lib/api';
+import { ApiFehler, coalescedJson, tuerSatz } from '../lib/api';
 import { sichtbareGruppen as sichtbareGruppenRegel } from "../lib/gruppenfenster";
 import { absage } from '../lib/absage';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -33,11 +33,12 @@ import { findDuplicateGroups, redundantCount } from '../lib/duplicates';
 import { loadProfile } from '../lib/profile';
 import { KeptaMark } from './KeptaMark';
 import { Memory } from '../types';
-import { parseQuelle, oeffneQuelle, type Quelle } from '../lib/quelle';
+import { parseQuelle, oeffneQuelle, inhaltOhneQuelle, type Quelle } from '../lib/quelle';
 import { pdfTextAusBuffer } from '../lib/pdfText';
 import { TYP_BESCHREIBUNG, TRAEGER_FRAGE, TRAEGER_FRAGE_SATZ, THEMA_FRAGE, TRAEGER_LABELS, TRAEGER_REIHENFOLGE, TRAEGER_HINWEISE, THEMA_LABELS, THEMA_REIHENFOLGE, THEMA_HINWEISE, gruppenVonNotiz, themenFaecher, zahlDerAuswahl, type Traeger, type Thema, type AchsenZahlen } from '../lib/graphHierarchy';
 import { t, wendeZoomAn } from '../lib/uiText';
 import { ansichtLabel } from '../lib/ansichten';
+import { kurzeZeit, typFarbe } from '../lib/zeit';
 import { Search, Plus, CheckCircle2, Copy, PanelLeftOpen, ScanSearch, UploadCloud, Globe, Loader2, AlertCircle, Sparkles, Trash2, HardDriveDownload, FileText, ExternalLink } from "../lib/icons";
 import { motion, AnimatePresence } from 'motion/react';
 import { FEDER_OVERLAY } from '../lib/motionTokens';
@@ -284,6 +285,7 @@ export function Dashboard() {
   // Klick auf eine Karte oeffnet die lesbare Vorschau — der Editor kommt nur
   // noch ueber deren „Edit“-Knopf.
   const [vorschauMemory, setVorschauMemory] = useState<Memory | null>(null);
+  const [feedModus, setFeedModus] = useState(false);
   // Eine Organisation kann Rollen setzen (managed-settings.json). Nur wenn das
   // geschehen ist, führt der Weg zu Team — sonst wäre der Punkt eine Sackgasse.
   // Dieselbe Frische-Regel wie früher bei der Lizenz: beim Start und bei
@@ -782,11 +784,11 @@ export function Dashboard() {
   const [tuerLebt, setTuerLebt] = useState<"offen" | "antwortete" | "verweigerte">("offen");
   const holeGesundheit = useCallback(async (abgebrochen?: { current: boolean }) => {
     try {
-      const r = await fetch('/api/health');
+      const r = await coalescedJson<Record<string, unknown>>('/api/health');
       if (abgebrochen?.current) return;
       // Ein HTTP 500 mit einem Leib ist keine Antwort, die man als Leben buchen darf.
-      if (!r.ok) { setTuerLebt("verweigerte"); return; }
-      const d = await r.json();
+      if (!r.ok || !r.data) { setTuerLebt("verweigerte"); return; }
+      const d = r.data;
       if (!d || typeof d !== 'object') { setTuerLebt("verweigerte"); return; }
       const e = (d.embeddings ?? {}) as Record<string, unknown>;
       const v = (d.encryption ?? {}) as Record<string, unknown>;
@@ -834,24 +836,30 @@ export function Dashboard() {
     return () => { flag.current = true; };
   }, [holeGesundheit, holeGruppen]);
 
-  // #116 — die Queue arbeitet im Hintergrund und meldet sich nicht bei der Flaeche: am
-  // ausgelieferten 3.2.68 gemessen 21:52 bis 21:56, wo der Hinweis bei "0 of 500" stehen
-  // blieb, langst 500 von 500 eingebettet war. Solange eine Zahl fehlt, fragt die Flaeche
-  // nach; ist sie voll, hoert das Fragen von selbst auf.
+  // #116 + Punkt 4 (02.11.): ein einziger Health-Takt (3 s waehrend Einbettung, sonst 5 s)
+  // statt zweier ueberlappender Timer; pausiert wenn das Fenster versteckt ist und zieht
+  // bei Rueckkehr sofort nach.
+  const bettetEin = Boolean(gehirn && gehirn.embedTotal > 0 && gehirn.embedEmbedded < gehirn.embedTotal);
   useEffect(() => {
-    if (!gehirn || gehirn.embedTotal <= 0 || gehirn.embedEmbedded >= gehirn.embedTotal) return;
-    const timer = setInterval(() => void holeGesundheit(), 3000);
-    return () => clearInterval(timer);
-  }, [gehirn, holeGesundheit]);
-
-  // Punkt 4 (02.11.): die Tuer kann sterben, nachdem die Flaeche gebaut ist. Ohne Frage
-  // bleibt der Tod unsichtbar - der #116-Takt oben fragt nur, solange eine Einbettung fehlt.
-  // Fuenf Sekunden auf einen health-Griff von 4-6 ms Bildzeit sind kein Preis, sondern die
-  // einzige Art, wie ein Nutzer erfahrt, dass sein Speicher nicht mehr antwortet.
-  useEffect(() => {
-    const timer = setInterval(() => void holeGesundheit(), 5000);
-    return () => clearInterval(timer);
-  }, [holeGesundheit]);
+    const takt = bettetEin ? 3000 : 5000;
+    const tick = () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      void holeGesundheit();
+    };
+    const timer = setInterval(tick, takt);
+    const beiSichtbar = () => {
+      if (typeof document !== 'undefined' && !document.hidden) void holeGesundheit();
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', beiSichtbar);
+    }
+    return () => {
+      clearInterval(timer);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', beiSichtbar);
+      }
+    };
+  }, [bettetEin, holeGesundheit]);
 
   // --- Activity-Stream: das Gehirn lebt — Agent-Aktionen live sehen ---
   const [brainPulse, setBrainPulse] = useState(0);
@@ -1224,7 +1232,7 @@ export function Dashboard() {
     setEditingMemory({
       id: '',
       userId: 'local',
-      title: payload.title || 'Kernaussage',
+      title: payload.title || 'Key point',
       content: payload.content,
       tags: payload.tags.length ? payload.tags : ['ai-log'],
       createdAt: Date.now(),
@@ -1280,10 +1288,10 @@ export function Dashboard() {
           : `Saved ${gelungen} ${gelungen === 1 ? "note" : "notes"} from ${list.length} ${list.length === 1 ? "file" : "files"}.`;
       if (gelungen === versuche) {
         setImportMsg(quittung);
-        setTimeout(() => setImportMsg((c) => (c === quittung ? null : quittung)), QUITTUNG_MS);
+        setTimeout(() => setImportMsg((c) => (c === quittung ? null : c)), QUITTUNG_MS);
       } else {
         setImportErr(quittung);
-        setTimeout(() => setImportErr((c) => (c === quittung ? null : quittung)), QUITTUNG_MS);
+        setTimeout(() => setImportErr((c) => (c === quittung ? null : c)), QUITTUNG_MS);
       }
     } catch (e: unknown) {
       // P4-2310 (c) gilt auch hier: nach aussen geht ein fester Satz, der Wortlaut der
@@ -1339,7 +1347,7 @@ export function Dashboard() {
       const content: string = data.content || "";
       const tags = ["clip", new URL(url).hostname.replace(/^www\./, "")];
       await saveMemory({ title, content: `Source: ${data.url || url}\n\n${content}`, tags });
-      const marke = `„${title.slice(0, 48)}“ importiert`;
+      const marke = `Imported “${title.slice(0, 48)}”`;
       setClipOk(marke);
       setClipUrl("");
       setTimeout(() => setClipOk((c) => (c === marke ? null : c)), QUITTUNG_MS);
@@ -1492,16 +1500,16 @@ export function Dashboard() {
   const listenInhalt = useMemo(() => (
     <>
       {gruppen ? (
-        <div className="space-y-7">
+        <div className="space-y-4">
           {(sichtbareGruppen ?? []).map((g) => (
             <section key={g.schluessel}>
-              <div className="flex items-center gap-2 mb-2 px-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5 px-2.5 pt-2 min-w-0">
                 {g.quelle?.art === 'datei' && <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent)' }} />}
                 {g.quelle?.art === 'url' && <ExternalLink className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--accent)' }} />}
                 <h3 className="fs-3 font-semibold truncate" style={{ color: 'var(--text-1)' }} title={g.quelle?.art === 'datei' ? g.quelle.pfad : g.titel}>
                   {g.titel}
                 </h3>
-                <span className="fs-1 tnum whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
+                <span className="fs-1 tnum whitespace-nowrap truncate min-w-0 ml-auto" style={{ color: 'var(--text-3)' }}>
                   {g.memories.length} {g.memories.length === 1 ? 'note' : 'notes'}{g.typMix ? ` · ${g.typMix}` : ''}
                 </span>
                 {g.quelle && (
@@ -1613,7 +1621,7 @@ export function Dashboard() {
   // „Duplicates“); die Palette bleibt auf ihrer Fläche (s-palette: „Knowledge“).
   const istElectron = typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron');
   const fensterTitel = wizardOpen
-    ? 'K3PTA einrichten'
+    ? 'Setup — K3PTA'
     : scanOpen
       ? 'Import — K3PTA'
       : duplicatesOpen
@@ -1624,11 +1632,11 @@ export function Dashboard() {
   // Die Overlay-Zeile gewinnt deterministisch über die Flächen-Meldung (der
   // Slot liest sie zuerst); die Mockup-Zeilen stehen in s-scan/s-duplicates/s-palette.
   const overlayZeile: FensterStatusZeile | null = scanOpen
-    ? { links: 'Import läuft lokal', rechts: 'no cloud, no account' }
+    ? { links: 'Local import', rechts: 'no cloud, no account' }
     : duplicatesOpen
       ? { links: `${duplicateCount} duplicates in ${duplicateGroups.length} groups`, rechts: 'keeper = richest copy' }
       : paletteOpen
-        ? { links: '⌘K öffnet die Palette', rechts: `${paletteActions.length} actions` }
+        ? { links: '⌘K Command palette', rechts: `${paletteActions.length} actions` }
         : null;
 
   // Die Statuszeile ist ein Slot am Fenster (volle Breite, Mockup .statuszeile).
@@ -1828,10 +1836,27 @@ export function Dashboard() {
                 )}
                 <div className="kopf-handlungen">
                   {/* P202, Mockup-Grammatik (k3pta-app-fenster .listen-kopf): der Kopf
-                      trägt drei Werkzeuge — Import (öffnet das Scan-Modal direkt,
-                      wie das Mockup-Bild „Scan this computer“), Duplicates, New.
+                      trägt die Mockup-Werkzeuge — Card stream, Import (Scan), Duplicates, New.
                       Der Papierkorb wohnt im Listen-Fuß, die Palette an ⌘K (Leiste
                       und Tastatur), der Kontext-Kopierriff am Chat. */}
+                  <button
+                    type="button"
+                    data-testid="memos-feed-toggle"
+                    aria-pressed={feedModus}
+                    onClick={() => {
+                      setFeedModus((v) => {
+                        const next = !v;
+                        if (next) setVorschauMemory(null);
+                        return next;
+                      });
+                    }}
+                    className="btn-ghost treff p-1.5 rounded-lg"
+                    style={feedModus ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
+                    title={feedModus ? "Switch to split view" : "Switch to card stream"}
+                    aria-label="Card stream"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => setScanOpen(true)}
                     className="btn-ghost treff p-1.5 rounded-lg"
@@ -2142,9 +2167,11 @@ export function Dashboard() {
                     <AlertCircle className="w-3 h-3" />{importErr}
                   </span>
                 )}
-                <span className={agentActive || tuerLebt === "antwortete" ? "gruen" : undefined}>
-                  {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync' : tuerLebt === "verweigerte" ? 'No answer' : 'Asking…'}
-                </span>
+                {(agentActive || tuerLebt !== "antwortete") && (
+                  <span className={agentActive ? "gruen" : undefined}>
+                    {agentActive ? 'Agent working' : tuerLebt === "verweigerte" ? 'No answer' : 'Asking…'}
+                  </span>
+                )}
                 {/* Such-Cache-Status: der Kern baut den Suchindex beim ersten
                     Zugriff einmal auf und patcht ihn danach nur noch — die App
                     misst die Antwortzeit und zeigt, wenn das Gehirn warm ist. */}
@@ -2199,7 +2226,7 @@ export function Dashboard() {
                   <button
                     onClick={handleInboxScan}
                     disabled={inboxScanBusy}
-                    className="ml-1 -mr-1 min-h-6 px-2 inline-flex items-center rounded fs-1 font-semibold hover:opacity-80 disabled:opacity-40"
+                    className="ml-0.5 min-h-[22px] min-w-[22px] px-1 inline-flex items-center justify-center rounded fs-1 font-semibold hover:opacity-80 disabled:opacity-40"
                     style={{ color: 'var(--accent)' }}
                     title="Scan the inbox now and import"
                   >
@@ -2211,7 +2238,7 @@ export function Dashboard() {
                     Prüfansicht. */}
                 {duplicateCount === 0 ? (
                   <span
-                    className="chip hidden lg:inline-flex"
+                    className="chip hidden xl:inline-flex"
                     title="Nothing to do — the knowledge base has no obvious duplicates"
                   >
                     No duplicates
@@ -2248,11 +2275,11 @@ export function Dashboard() {
                 >
                   <Trash2 className="w-3 h-3" />{trashCount !== null && trashCount > 0 ? <span className="tnum">{trashCount}</span> : null}
                 </button>
-                {/* Die Such-Steuer (Mockup: „Meaning search 5"): das Wort schaltet die
-                    Bedeutungssuche, die Zahl nennt die Stufe des Treffer-Reglers — der
-                    Regler selbst wohnt im DOM (die Wachen klicken ihn), das Bild der
-                    Zeile ruht. */}
-                <span className="ml-auto" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {/* Die Such-Steuer (Mockup: „Meaning search 5“ + Top-K-Auswahl): das Wort schaltet die
+                    Bedeutungssuche, das Select zeigt die wählbare Stufe des Treffer-Reglers — der
+                    Range-Regler bleibt im DOM (die Wachen prüfen alle 7 Stufen), während
+                    der Mensch direkt das Dropdown nutzen kann. */}
+                <span className="ml-auto" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <label className="cursor-pointer select-none inline-flex items-center gap-1.5" title="Searches the meaning of your question, not only the words">
                     <input
                       type="checkbox"
@@ -2261,9 +2288,22 @@ export function Dashboard() {
                       className="sr-only"
                     />
                     <span className="fs-1 font-semibold whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
-                      {ansichtLabel("semantic")} search <b style={{ color: 'var(--text-1)' }}>{resultLabel(topK)}</b>
+                      {ansichtLabel("semantic")} search <b className="sr-only" style={{ color: 'var(--text-1)' }}>{resultLabel(topK)}</b>
                     </span>
                   </label>
+                  <select
+                    data-testid="top-k-select"
+                    aria-label="Result limit"
+                    value={String(topK)}
+                    onChange={(e) => setTopK(Number(e.target.value))}
+                    className="limit-select tnum"
+                  >
+                    {RESULT_STOPS.map((stop) => (
+                      <option key={stop} value={String(stop)}>
+                        {stop === 0 ? 'All' : String(stop)}
+                      </option>
+                    ))}
+                  </select>
                   <span hidden data-testid="suche-regler-verwahrt">
                     <input
                       type="range"
@@ -2281,38 +2321,107 @@ export function Dashboard() {
               </div>
             </aside>
             {/* Die Detail-Spalte STEHT IMMER (Mockup-Grammatik): die geöffnete Akte füllt
-                sie, ohne gewählte Notiz zeigt sie ihren leeren Zustand — kein Panel,
-                das erst bei Klick erscheint. */}
+                sie, ohne gewählte Notiz zeigt sie je nach Modus den Kartenstrom oder
+                ihren leeren Zustand — kein Panel, das erst bei Klick erscheint. */}
             <section className="detail-spalte">
-              <AnimatePresence>
-                {isEditorOpen ? (
-                  /* P202, Mockup-Treue: der Editor STEHT in der Detail-Spalte (die Drei
-                      Spalten bleiben) — die Schublade über der Fläche flog. */
-                  <MemoryEditor
-                    key="editor"
-                    memory={editingMemory}
-                    onSave={handleSave}
-                    onClose={() => setIsEditorOpen(false)}
-                    onDelete={editingMemory ? () => handleDelete(editingMemory.id) : undefined}
-                    spalte
-                  />
-                ) : vorschauMemory ? (
-                  <MemoryPreview
-                    key="vorschau"
-                    memory={vorschauMemory}
-                    ohneVorhang
-                    onClose={() => setVorschauMemory(null)}
-                    onEdit={(m) => { setVorschauMemory(null); setEditingMemory(m); setIsEditorOpen(true); }}
-                    onDelete={(m) => { setVorschauMemory(null); void handleDelete(m.id); }}
-                  />
-                ) : null}
-              </AnimatePresence>
-              {!isEditorOpen && !vorschauMemory && (
-                <div className="detail-leer" data-testid="detail-leer">
-                  <p className="fs-3 font-semibold" style={{ color: 'var(--text-2)', margin: 0 }}>Nothing selected</p>
-                  <p className="fs-2" style={{ color: 'var(--text-3)', margin: 0 }}>Choose a note on the left — it opens here.</p>
-                </div>
-              )}
+              {isEditorOpen ? (
+                /* P202, Mockup-Treue: der Editor STEHT in der Detail-Spalte (die Drei
+                    Spalten bleiben) — die Schublade über der Fläche flog. */
+                <MemoryEditor
+                  key="editor"
+                  memory={editingMemory}
+                  onSave={handleSave}
+                  onClose={() => setIsEditorOpen(false)}
+                  onDelete={editingMemory ? () => handleDelete(editingMemory.id) : undefined}
+                  spalte
+                />
+              ) : vorschauMemory ? (
+                <MemoryPreview
+                  key="vorschau"
+                  memory={vorschauMemory}
+                  ohneVorhang
+                  onClose={() => setVorschauMemory(null)}
+                  onEdit={(m) => { setVorschauMemory(null); setEditingMemory(m); setIsEditorOpen(true); }}
+                  onDelete={(m) => { setVorschauMemory(null); void handleDelete(m.id); }}
+                  onOpenById={(id) => {
+                    const local = memories.find((x) => x.id === id);
+                    if (local) { setVorschauMemory(local); return; }
+                    void fetch(`/api/memories/${encodeURIComponent(id)}`)
+                      .then((r) => (r.ok ? r.json() : null))
+                      .then((d: { memory?: Memory } | Memory | null) => {
+                        const target = d && "memory" in d && d.memory ? d.memory : (d as Memory | null);
+                        if (target && target.id) setVorschauMemory(target);
+                      })
+                      .catch(() => {});
+                  }}
+                />
+              ) : feedModus ? (
+                <div className="memos-feed-shell" data-testid="memos-feed">
+                    <div className="memos-feed-col">
+                      <div className="flex items-center justify-between gap-2 px-1 pb-1">
+                        <span className="fs-2 font-semibold" style={{ color: 'var(--text-2)' }}>Card stream</span>
+                        <div className="flex items-center gap-2">
+                          <span className="fs-1 tnum" style={{ color: 'var(--text-3)' }}>
+                            {displayedMemories.length.toLocaleString('en-GB')} {displayedMemories.length === 1 ? 'note' : 'notes'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setFeedModus(false)}
+                            className="btn-ghost px-2 py-1 rounded fs-1 md:hidden"
+                          >
+                            Split view
+                          </button>
+                        </div>
+                      </div>
+                      {paginatedMemories.map((m) => (
+                        <article
+                          key={m.id}
+                          onClick={() => setVorschauMemory(m)}
+                          className="notiz-karte"
+                          data-testid="memos-feed-card"
+                        >
+                          <div className="notiz-karte-head">
+                            <span aria-hidden className="row-punkt" style={{ background: typFarbe(m.type) }} />
+                            <span className="font-semibold" style={{ color: 'var(--text-1)' }}>{TYP_BESCHREIBUNG[m.type ?? 'semantic'] ?? TYP_BESCHREIBUNG.semantic}</span>
+                            <span>·</span>
+                            <span className="tnum">{kurzeZeit(m.updatedAt)}</span>
+                            {m.scope === 'private' && (
+                              <span className="chip ml-auto" style={{ color: 'var(--warn)' }}>private</span>
+                            )}
+                          </div>
+                          <h3 className="notiz-karte-title">{m.title || 'Untitled'}</h3>
+                          <p className="notiz-karte-body">
+                            {(() => {
+                              const clean = inhaltOhneQuelle(m.content) || m.content;
+                              return clean.length > 260 ? `${clean.slice(0, 260)}…` : clean;
+                            })()}
+                          </p>
+                          {m.tags.length > 0 && (
+                            <div className="notiz-karte-tags">
+                              {m.tags.slice(0, 6).map((tagName) => (
+                                <span
+                                  key={tagName}
+                                  className="px-2 py-0.5 rounded-full fs-1 font-semibold"
+                                  style={{
+                                    color: 'var(--type-semantic)',
+                                    background: 'color-mix(in srgb, var(--type-semantic) 12%, transparent)',
+                                  }}
+                                >
+                                  #{tagName}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="detail-leer" data-testid="detail-leer">
+                    <p className="fs-3 font-semibold" style={{ color: 'var(--text-2)', margin: 0 }}>Nothing selected</p>
+                    <p className="fs-2" style={{ color: 'var(--text-3)', margin: 0 }}>Choose a note on the left — it opens here.</p>
+                  </div>
+                )}
             </section>
           </div>
 
@@ -2405,6 +2514,7 @@ export function Dashboard() {
           className={cn("ansicht-blende flex-1 h-full overflow-hidden", currentView === 'chat' ? 'flex' : 'hidden')}
         >
           <Chat
+            aktiv={currentView === 'chat'}
             activeMemories={chatMemories}
             onSaveToBrain={handleSaveToBrain}
             onSaveToBrainWithMeta={handleSaveToBrainWithMeta}
@@ -2450,33 +2560,33 @@ export function Dashboard() {
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'today' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'today' ? 'flex' : 'hidden')}
         >
           <TodayView aktiv={currentView === 'today'} onOpenMemory={oeffneNotiz} onGo={(v) => setCurrentView(v)} />
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'dossier' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'dossier' ? 'flex' : 'hidden')}
         >
-          <DossierView dossierThema={dossierThema} onOpenMemory={oeffneNotiz} onEditMemory={(id) => { const m = memories.find((x) => x.id === id); if (m) { setEditingMemory(m); setIsEditorOpen(true); } }} />
+          <DossierView aktiv={currentView === 'dossier'} dossierThema={dossierThema} onOpenMemory={oeffneNotiz} onEditMemory={(id) => { const m = memories.find((x) => x.id === id); if (m) { setEditingMemory(m); setIsEditorOpen(true); } }} />
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'activity' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'activity' ? 'flex' : 'hidden')}
         >
           <ActivityView aktiv={currentView === 'activity'} onOpenMemory={oeffneNotiz} />
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'team' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'team' ? 'flex' : 'hidden')}
         >
           <TeamView aktiv={currentView === 'team'} />
         </div>
 
         <div
-          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'settings' ? 'block' : 'hidden')}
+          className={cn("ansicht-blende flex-1 flex flex-col h-full min-h-0 overflow-hidden", currentView === 'settings' ? 'flex' : 'hidden')}
         >
-          <Settings />
+          <Settings aktiv={currentView === 'settings'} />
         </div>
       </main>
       </FensterStatusAnbieter>
@@ -2492,16 +2602,19 @@ export function Dashboard() {
         <div className="flaechen-status" data-testid="gehirn-status">
           {currentView === 'memories' ? (
             <>
-              <span className="gruen">
-                {agentActive ? <span className="agent-dot" data-laeuft="true" />
-                  : tuerLebt === "antwortete" ? <span className="status-dot" />
-                    : <span className="status-dot status-dot-leise" />}
-                {agentActive ? 'Agent working' : tuerLebt === "antwortete" ? 'In sync'
-                  : tuerLebt === "verweigerte" ? 'No answer from the store' : 'Asking the store'}
-              </span>
+              {(agentActive || tuerLebt !== "antwortete") && (
+                <>
+                  <span className={agentActive ? "gruen" : undefined} style={!agentActive ? { display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-3)' } : undefined}>
+                    {agentActive ? <span className="agent-dot" data-laeuft="true" />
+                      : <span className="status-dot status-dot-leise" />}
+                    {agentActive ? 'Agent working'
+                      : tuerLebt === "verweigerte" ? 'No answer from the store' : 'Asking the store'}
+                  </span>
+                  {gehirn && <span className="strich">·</span>}
+                </>
+              )}
               {gehirn && (
                 <>
-                  <span className="strich">·</span>
                   {/* P202, Mockup-Wortlaut: "40 notes, 6 tags" — der Bestand des
                       Fensters. Die Version wohnt im Systemstatus (Settings), die
                       Verschlüsselungs-Auskunft im selben Tisch. */}
@@ -2546,7 +2659,16 @@ export function Dashboard() {
         </div>
       </div>
 
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} actions={paletteActions} />
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        actions={paletteActions}
+        memories={memories}
+        onSelectMemory={(m) => {
+          setCurrentView('memories');
+          setVorschauMemory(m);
+        }}
+      />
 
       <OnboardingWizard open={wizardOpen} onClose={closeWizard} onComplete={closeWizard} />
 

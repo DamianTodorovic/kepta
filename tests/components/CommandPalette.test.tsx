@@ -3,6 +3,20 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CommandPalette, buildPaletteActions, type PaletteAction } from "../../src/components/CommandPalette";
+import type { Memory } from "../../src/types";
+
+const sampleNotes: Memory[] = [
+  {
+    id: "note-1",
+    userId: "local",
+    title: "PgBouncer Pool Strategy",
+    content: "Max server connections capped at 100 in transaction mode.",
+    tags: ["postgres", "ops"],
+    type: "semantic",
+    createdAt: Date.now() - 3600_000,
+    updatedAt: Date.now() - 1800_000,
+  },
+];
 
 function actions(overrides: Partial<Record<string, () => void>> = {}): PaletteAction[] {
   return [
@@ -26,11 +40,29 @@ describe("CommandPalette", () => {
   });
 
   it("filtert nach Eingabe", async () => {
-    render(<CommandPalette open onClose={() => {}} actions={actions()} />);
+    const onClose = vi.fn();
+    const onSelectMemory = vi.fn();
+    render(
+      <CommandPalette
+        open
+        onClose={onClose}
+        actions={actions()}
+        memories={sampleNotes}
+        onSelectMemory={onSelectMemory}
+      />,
+    );
     const input = screen.getByPlaceholderText(/Command or search/);
     await userEvent.type(input, "graph");
     expect(screen.getByText("Graph öffnen")).toBeInTheDocument();
     expect(screen.queryByText("Neuer Knoten")).not.toBeInTheDocument();
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "PgBouncer");
+    expect(screen.getAllByText("PgBouncer Pool Strategy").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/Note preview/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /PgBouncer Pool Strategy/ }));
+    expect(onClose).toHaveBeenCalled();
+    expect(onSelectMemory).toHaveBeenCalledWith(sampleNotes[0]);
   });
 
   it("zeigt Leermeldung ohne Treffer", async () => {

@@ -86,6 +86,9 @@ function aktivitaetSeit(store: KeptaStore, seit: number): { client: string; tool
   }
 }
 
+const aufgabenCache = new WeakMap<KeptaStore, { stand: string; todos: { total: number; items: Aufgabe[] } }>();
+const widerspruchCache = new WeakMap<KeptaStore, { stand: string; items: Widerspruch[] }>();
+
 export function briefing(store: KeptaStore, opts: { seit: number; jetzt?: number; widersprueche?: Widerspruch[] }): Briefing {
   const jetzt = opts.jetzt ?? Date.now();
   const seit = opts.seit;
@@ -94,17 +97,33 @@ export function briefing(store: KeptaStore, opts: { seit: number; jetzt?: number
 
   const vonApp = new Map<string, string>();
   for (const a of aktivitaet) if (a.tool === "memory_save" && a.memory_id) vonApp.set(a.memory_id, anzeigeName(a.client));
-  const neu = db.prepare("SELECT id, title, type, created_at AS at FROM memories WHERE deleted_at IS NULL AND created_at > ? ORDER BY created_at DESC").all(seit) as Zeile[];
+  const neuZahl = (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL AND created_at > ?").get(seit) as { n: number }).n;
+  const neu = db.prepare("SELECT id, title, type, created_at AS at FROM memories WHERE deleted_at IS NULL AND created_at > ? ORDER BY created_at DESC LIMIT 12").all(seit) as Zeile[];
   const quellen = new Map<string, number>();
-  for (const z of neu) {
-    const wer = vonApp.get(z.id) ?? "You & imports";
-    quellen.set(wer, (quellen.get(wer) ?? 0) + 1);
+  let appGesamt = 0;
+  if (vonApp.size > 0 && neuZahl > 0) {
+    const hatNotiz = db.prepare("SELECT 1 FROM memories WHERE id = ? AND deleted_at IS NULL AND created_at > ?");
+    for (const [id, wer] of vonApp) {
+      if (hatNotiz.get(id, seit)) {
+        quellen.set(wer, (quellen.get(wer) ?? 0) + 1);
+        appGesamt++;
+      }
+    }
   }
+  const eigenZahl = Math.max(0, neuZahl - appGesamt);
+  if (eigenZahl > 0) quellen.set("You & imports", eigenZahl);
 
-  const geaendertZahl = (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND created_at <= ? AND updated_at > ?").get(seit, seit) as { n: number }).n;
-  const geaendert = db
-    .prepare("SELECT id, title, type, updated_at AS at FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND created_at <= ? AND updated_at > ? ORDER BY updated_at DESC LIMIT 12")
-    .all(seit, seit) as Zeile[];
+  // Im „Alles“-Fenster ist jede Notiz „neu“ (created_at > 0) — eine Änderung
+  // ist dort eine, die NACH der Erstellung kam, nicht eine nach dem Fensterstart.
+  const alles = seit <= 0;
+  const geaendertZahlFenster = alles
+    ? (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND updated_at > created_at + 999").get() as { n: number }).n
+    : (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND +created_at <= ? AND updated_at > ?").get(seit, seit) as { n: number }).n;
+  const geaendertNotizen = alles
+    ? (db.prepare("SELECT id, title, type, updated_at AS at FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND updated_at > created_at + 999 ORDER BY updated_at DESC LIMIT 12").all() as Zeile[])
+    : (db
+        .prepare("SELECT id, title, type, updated_at AS at FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND +created_at <= ? AND updated_at > ? ORDER BY updated_at DESC LIMIT 12")
+        .all(seit, seit) as Zeile[]);
 
   // Abgeloeste: eine neuere Version hat diese Notiz ueberholt (superseded_by).
   // Geloeschte: im Fenster in den Papierkorb gewandert. „Alles“ (seit 0) ist
@@ -124,32 +143,38 @@ export function briefing(store: KeptaStore, opts: { seit: number; jetzt?: number
     .prepare("SELECT id, title, type, deleted_at AS at FROM memories WHERE deleted_at IS NOT NULL AND deleted_at > ? ORDER BY deleted_at DESC LIMIT 12")
     .all(fensterStart) as Zeile[];
 
-  // Im „Alles“-Fenster ist jede Notiz „neu“ (created_at > 0) — eine Änderung
-  // ist dort eine, die NACH der Erstellung kam, nicht eine nach dem Fensterstart.
-  const alles = seit <= 0;
-  const geaendertZahlFenster = alles
-    ? (db.prepare("SELECT COUNT(*) AS n FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND updated_at > created_at + 999").get() as { n: number }).n
-    : geaendertZahl;
-  const geaendertNotizen = alles
-    ? (db.prepare("SELECT id, title, type, updated_at AS at FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND updated_at > created_at + 999 ORDER BY updated_at DESC LIMIT 12").all() as Zeile[])
-    : geaendert;
-
   const TAG = 86_400_000;
   const gueltig = (von: number, bis: number) =>
     (db
-      .prepare("SELECT id, title, type, updated_at AS at, valid_to AS validTo FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND valid_to > ? AND valid_to <= ? ORDER BY valid_to LIMIT 20")
+      .prepare("SELECT id, title, type, updated_at AS at, valid_to AS validTo FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND valid_to IS NOT NULL AND valid_to > ? AND valid_to <= ? ORDER BY valid_to LIMIT 20")
       .all(von, bis) as (Zeile & { validTo: number })[]).map((z) => ({ ...kurz(z), validTo: z.validTo }));
 
-  const mitAufgaben = db
-    .prepare("SELECT id, title, content FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND content LIKE '%[ ]%' ORDER BY updated_at DESC LIMIT 500")
-    .all() as { id: string; title: string; content: string }[];
-  const aufgaben: Aufgabe[] = [];
-  let aufgabenGesamt = 0;
-  for (const n of mitAufgaben) {
-    for (const text of offeneAufgaben(n.content)) {
-      aufgabenGesamt++;
-      if (aufgaben.length < 30) aufgaben.push({ id: n.id, title: n.title, text });
+  const todoStand = typeof store.memGeneration === "function"
+    ? `gen:${store.memGeneration()}`
+    : (() => {
+        const todoStandZ = db
+          .prepare("SELECT COUNT(*) AS n, COALESCE(MAX(updated_at), 0) AS u FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL")
+          .get() as { n: number; u: number };
+        return `${todoStandZ.n}:${todoStandZ.u}`;
+      })();
+  const gepuffert = aufgabenCache.get(store);
+  let todos: { total: number; items: Aufgabe[] };
+  if (gepuffert && gepuffert.stand === todoStand) {
+    todos = gepuffert.todos;
+  } else {
+    const mitAufgaben = db
+      .prepare("SELECT id, title, content FROM memories WHERE deleted_at IS NULL AND superseded_by IS NULL AND content LIKE '%[ ]%' ORDER BY updated_at DESC LIMIT 500")
+      .all() as { id: string; title: string; content: string }[];
+    const aufgaben: Aufgabe[] = [];
+    let aufgabenGesamt = 0;
+    for (const n of mitAufgaben) {
+      for (const text of offeneAufgaben(n.content)) {
+        aufgabenGesamt++;
+        if (aufgaben.length < 30) aufgaben.push({ id: n.id, title: n.title, text });
+      }
     }
+    todos = { total: aufgabenGesamt, items: aufgaben };
+    aufgabenCache.set(store, { stand: todoStand, todos });
   }
 
   const apps = new Map<string, { who: string; calls: number; saves: number; searches: number }>();
@@ -162,21 +187,35 @@ export function briefing(store: KeptaStore, opts: { seit: number; jetzt?: number
     apps.set(who, s);
   }
 
+  let contradictions: Widerspruch[];
+  if (opts.widersprueche !== undefined) {
+    contradictions = opts.widersprueche;
+  } else {
+    const okRaw = store.einstellungen()[OK_SCHLUESSEL] ?? "";
+    const widStand = `${todoStand}::${okRaw}`;
+    const widCache = widerspruchCache.get(store);
+    if (widCache && widCache.stand === widStand) {
+      contradictions = widCache.items;
+    } else {
+      contradictions = findeWidersprueche(pruefnotizen(store), { ok: leseOk(okRaw || undefined), limit: 10 });
+      widerspruchCache.set(store, { stand: widStand, items: contradictions });
+    }
+  }
+
   return {
     since: seit,
     created: {
-      total: neu.length,
+      total: neuZahl,
       bySource: [...quellen].map(([who, count]) => ({ who, count })).sort((a, b) => b.count - a.count),
-      notes: neu.slice(0, 12).map((z) => kurz(z, vonApp.get(z.id))),
+      notes: neu.map((z) => kurz(z, vonApp.get(z.id))),
     },
     changed: { total: geaendertZahlFenster, notes: geaendertNotizen.map((z) => kurz(z)) },
     superseded: { total: abgeloestZahl, notes: abgeloest.map((z) => ({ ...kurz(z), supersededBy: z.supersededBy, ...(z.replacedBy ? { replacedBy: z.replacedBy } : {}) })) },
     deleted: { total: geloeschtZahl, notes: geloescht.map((z) => kurz(z)) },
     expiring: gueltig(jetzt, jetzt + 14 * TAG),
     expired: gueltig(jetzt - 7 * TAG, jetzt),
-    todos: { total: aufgabenGesamt, items: aufgaben },
-    contradictions:
-      opts.widersprueche ?? findeWidersprueche(pruefnotizen(store), { ok: leseOk(store.einstellungen()[OK_SCHLUESSEL]), limit: 10 }),
+    todos,
+    contradictions,
     apps: [...apps.values()].sort((a, b) => b.calls - a.calls),
   };
 }

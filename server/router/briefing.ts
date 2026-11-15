@@ -2,7 +2,7 @@
 // Widersprüche werden über alle Fakten und Anleitungen gesucht — einmal
 // berechnet und gehalten, bis sich eine Notiz ändert (oder zehn Minuten um sind).
 import express from "express";
-import { briefing, merkeOk, pruefnotizen, leseOk, OK_SCHLUESSEL } from "../../src/lib/briefing";
+import { briefing, merkeOk, pruefnotizen, leseOk, OK_SCHLUESSEL, type Briefing } from "../../src/lib/briefing";
 import { dossier, dossierAlsMarkdown, vorschlaege } from "../../src/lib/dossier";
 import { findeWidersprueche, paarSchluessel } from "../../src/lib/widersprueche";
 import { schreibe as protokolliere } from "../../src/lib/pruefprotokoll";
@@ -14,11 +14,14 @@ export function mountBriefing(app: express.Express, ctx: AppKontext): void {
   const titelVon = (id: string) => store.getMemory(id)?.title ?? id;
 
   let widerspruchCache: { stand: string; zeit: number; liste: ReturnType<typeof findeWidersprueche> } | null = null;
+  let allesBriefingCache: { stand: string; daten: Briefing } | null = null;
+
   function aktuelleWidersprueche() {
-    const z = store.db.prepare("SELECT COUNT(*) AS n, COALESCE(MAX(updated_at), 0) AS m FROM memories WHERE deleted_at IS NULL").get() as { n: number; m: number };
-    const ok = leseOk(store.einstellungen()[OK_SCHLUESSEL]);
-    const stand = `${z.n}:${z.m}:${ok.size}`;
+    const okRow = store.db.prepare("SELECT wert FROM einstellungen WHERE schluessel = ?").get(OK_SCHLUESSEL) as { wert?: string } | undefined;
+    const gen = typeof store.memGeneration === "function" ? store.memGeneration() : 0;
+    const stand = `${gen}:${okRow?.wert ?? ""}`;
     if (!widerspruchCache || widerspruchCache.stand !== stand || Date.now() - widerspruchCache.zeit > 10 * 60_000) {
+      const ok = leseOk(okRow?.wert);
       widerspruchCache = { stand, zeit: Date.now(), liste: findeWidersprueche(pruefnotizen(store), { ok, limit: 50 }) };
     }
     return widerspruchCache.liste;
@@ -26,9 +29,26 @@ export function mountBriefing(app: express.Express, ctx: AppKontext): void {
 
   app.get("/api/briefing", (req, res) => {
     const seit = Number(req.query.since);
+    const effSeit = Number.isFinite(seit) && seit >= 0 ? seit : Date.now() - 86_400_000;
+    const widersprueche = aktuelleWidersprueche().slice(0, 10);
     // Paket 3 (Today 2.0): since=0 ist das „Everything“-Fenster der Zeitmaschine —
     // es darf NICHT auf den 24h-Default fallen (der gilt nur für fehlenden Müll).
-    res.json(briefing(store, { seit: Number.isFinite(seit) && seit >= 0 ? seit : Date.now() - 86_400_000, widersprueche: aktuelleWidersprueche().slice(0, 10) }));
+    if (effSeit === 0) {
+      const gen = typeof store.memGeneration === "function" ? store.memGeneration() : 0;
+      let actStamp = "0";
+      try {
+        const row = store.db.prepare("SELECT COUNT(*) AS n, COALESCE(MAX(id), 0) AS m FROM agent_activity").get() as { n: number; m: number };
+        actStamp = `${row.n}:${row.m}`;
+      } catch { /* keine Agenten-Aktivität */ }
+      const stand = `${gen}:${actStamp}:${widerspruchCache?.stand ?? ""}:${Math.floor(Date.now() / 60_000)}`;
+      if (allesBriefingCache && allesBriefingCache.stand === stand) {
+        return res.json(allesBriefingCache.daten);
+      }
+      const daten = briefing(store, { seit: 0, widersprueche });
+      allesBriefingCache = { stand, daten };
+      return res.json(daten);
+    }
+    res.json(briefing(store, { seit: effSeit, widersprueche }));
   });
 
   app.post("/api/contradictions/resolve", ctx.limiter.write, (req, res) => {

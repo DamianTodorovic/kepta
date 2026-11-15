@@ -13,6 +13,7 @@ import { ApiFehler } from "../lib/api";
 import { absage } from "../lib/absage";
 import { t } from "../lib/uiText";
 import { inhaltOhneQuelle, oeffneQuelle, parseChunkTitel, parseQuelle } from "../lib/quelle";
+import { TYP_BESCHREIBUNG } from "../lib/graphHierarchy";
 import { kurzeZeit } from "../lib/zeit";
 import { QUITTUNG_MS } from "../lib/quittung";
 
@@ -30,6 +31,7 @@ interface MemoryPreviewProps {
    * über ihr. Ohne das Prop bleibt alles wie vorher (Schublade über der Fläche).
    */
   ohneVorhang?: boolean;
+  onOpenById?: (id: string) => void;
 }
 
 
@@ -46,14 +48,13 @@ function quellEndung(q: { art: string; name: string; pfad?: string; url?: string
   const wort = name.trim().split(/\s+/)[0] || "";
   return wort ? wort.toLowerCase() : null;
 }
-/* Die Tag-Pillen tragen im Mockup getönte Farben („#compliance“ blau, „#q3“
-   bernstein, „#md“ rot) — deterministisch aus dem Tag-Namen, über die vier
-   Art-Farben. Dieselbe Zuordnung überall (die Sidebar, die Zeilen, das Detail). */
+/* Alle Tag-Pillen tragen einheitliches K3PTA-Blau (--type-semantic) —
+   im White Mode klar lesbar (#3a6ea8) auf sanfter blauer Tönung, wie gewünscht. */
 const PILLE_FARBEN = [
   { ton: "var(--type-semantic)", flaeche: "color-mix(in srgb, var(--type-semantic) 12%, transparent)" },
-  { ton: "var(--type-episodic)", flaeche: "color-mix(in srgb, var(--type-episodic) 12%, transparent)" },
-  { ton: "var(--type-reference)", flaeche: "color-mix(in srgb, var(--type-reference) 12%, transparent)" },
-  { ton: "var(--type-procedural)", flaeche: "color-mix(in srgb, var(--type-procedural) 12%, transparent)" },
+  { ton: "var(--type-semantic)", flaeche: "color-mix(in srgb, var(--type-semantic) 12%, transparent)" },
+  { ton: "var(--type-semantic)", flaeche: "color-mix(in srgb, var(--type-semantic) 12%, transparent)" },
+  { ton: "var(--type-semantic)", flaeche: "color-mix(in srgb, var(--type-semantic) 12%, transparent)" },
 ];
 
 interface Stand {
@@ -64,7 +65,7 @@ interface Stand {
   createdAt: number;
 }
 
-export function MemoryPreview({ memory, onClose, onEdit, onDelete, ohneVorhang = false }: MemoryPreviewProps) {
+export function MemoryPreview({ memory, onClose, onEdit, onDelete, ohneVorhang = false, onOpenById }: MemoryPreviewProps) {
   const toast = useToast();
   const [kopiert, setKopiert] = useState(false);
   const kopierTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -253,10 +254,12 @@ export function MemoryPreview({ memory, onClose, onEdit, onDelete, ohneVorhang =
           {/* P202, Mockup-Meta (.detail-korper .meta): der Art-Punkt, die Art mit
               ihrem KIND-Wort, die Endung der Quelle, die kurze Zeit, die Herkunft —
               die getönten Tag-Pillen stehen in derselben Zeile. */}
-          <div className="detail-meta" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 6, fontSize: "var(--fs-2)", color: "var(--text-3)" }}>
+          <div className="detail-meta" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 6, fontSize: "var(--fs-2)", color: "var(--text-3)" }}>
             <span aria-hidden style={{ width: 7, height: 7, borderRadius: 3, background: memory.type ? `var(--type-${memory.type})` : "var(--text-3)", flex: "none" }} />
-            {endung && <><span>{endung}</span><span>·</span></>}
-            <span>·</span>
+            {memory.type && <span>{TYP_BESCHREIBUNG[memory.type as keyof typeof TYP_BESCHREIBUNG] ?? memory.type}</span>}
+            {memory.type && endung && <span aria-hidden>·</span>}
+            {endung && <span>{endung}</span>}
+            {(memory.type || endung) && <span aria-hidden>·</span>}
             <span className="tnum">{kurzeZeit(memory.updatedAt)}</span>
             {quelle && (
               <>
@@ -291,6 +294,27 @@ export function MemoryPreview({ memory, onClose, onEdit, onDelete, ohneVorhang =
             })}
           </div>
           {/* Der komplette Text, Absatz fuer Absatz — kein Formular, kein Markup-Zwang */}
+          {memory.supersededBy && (
+            <div
+              className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 fs-2"
+              style={{ background: "var(--bg-inset)", color: "var(--text-2)", border: "1px solid var(--border-subtle)" }}
+            >
+              <span>Superseded — newer note <span className="font-mono fs-1">{memory.supersededBy.slice(0, 8)}</span></span>
+              {onOpenById ? (
+                <button
+                  type="button"
+                  data-testid="preview-superseded-link"
+                  onClick={() => onOpenById(memory.supersededBy!)}
+                  className="btn-ghost px-2 py-1 rounded-lg fs-1 font-semibold"
+                  style={{ color: "var(--accent)" }}
+                >
+                  Replaced by a newer note — open
+                </button>
+              ) : (
+                <span data-testid="preview-superseded-link" className="fs-1">Replaced by a newer note</span>
+              )}
+            </div>
+          )}
           {gewaehlterStand ? (
             <>
               <div
@@ -364,7 +388,7 @@ export function MemoryPreview({ memory, onClose, onEdit, onDelete, ohneVorhang =
             <div className="detail-gruppe-name">Read by</div>
             <div className="gruppen-tisch">
               <div className="zustandszeile" style={{ borderBottom: "none" }} data-testid="preview-readers">
-                <span className="art">{privat ? "Private" : leser.length === 0 ? (leserStand === "da" ? "Noch nie" : "Gelesen") : "Gelesen"}</span>
+                <span className="art">{privat ? "Private" : leser.length === 0 ? (leserStand === "da" ? "Never" : "Read") : "Read"}</span>
                 <div className="inhalt">
                   {privat
                     ? "AI apps and cloud AI never see this note."
@@ -382,7 +406,7 @@ export function MemoryPreview({ memory, onClose, onEdit, onDelete, ohneVorhang =
             <div className="gruppen-tisch">
               {staende !== null && staende.length > 0 ? (
                 <div className="zustandszeile" style={{ borderBottom: "none" }}>
-                  <span className="art tnum">{staende.length + 1} {staende.length + 1 === 1 ? "Stand" : "Stände"}</span>
+                  <span className="art tnum">{staende.length + 1} {staende.length + 1 === 1 ? "stand" : "stands"}</span>
                   <div className="inhalt">
                     <button
                       onClick={() => setStaendeOffen((v) => !v)}

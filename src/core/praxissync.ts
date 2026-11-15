@@ -12,6 +12,7 @@ import path from "node:path";
 import type { KeptaStore } from "./store";
 import { indexMemory } from "./engine";
 import { defaultAuditDir } from "./extensions";
+import { sanitizeTags, sanitizeText, sanitizeTitle } from "./sanitize";
 import type { MemoryRecord, MemoryType } from "./types";
 
 export const PRAXISSYNC_FORMAT = "kepta-praxissync";
@@ -50,14 +51,29 @@ function assertPassphrase(passphrase: unknown): asserts passphrase is string {
   }
 }
 
+const KDF_MIN_N = 1024;
+const KDF_MAX_N = 262144;
+const KDF_MAX_R = 16;
+const KDF_MAX_P = 8;
+const KDF_MAX_MEM = 256 * 1024 * 1024;
+
 function deriveKey(passphrase: string, salt: Buffer, kdf: KdfParams = KDF_CURRENT): Buffer {
   if (kdf.name !== "scrypt") throw new Error(`Unbekanntes KDF-Verfahren: ${String(kdf.name)}`);
+  const { N, r, p } = kdf;
+  if (
+    !Number.isInteger(N) || N < KDF_MIN_N || N > KDF_MAX_N || (N & (N - 1)) !== 0 ||
+    !Number.isInteger(r) || r < 1 || r > KDF_MAX_R ||
+    !Number.isInteger(p) || p < 1 || p > KDF_MAX_P ||
+    128 * N * r > KDF_MAX_MEM
+  ) {
+    throw new Error("KDF parameters out of permitted security bounds");
+  }
   return crypto.scryptSync(passphrase, salt, KEY_LEN, {
-    N: kdf.N,
-    r: kdf.r,
-    p: kdf.p,
+    N,
+    r,
+    p,
     // 128 * N * r plus Reserve; ohne das wirft scryptSync ab N = 2^15.
-    maxmem: 256 * kdf.N * kdf.r,
+    maxmem: Math.min(256 * N * r, KDF_MAX_MEM),
   });
 }
 
@@ -188,13 +204,17 @@ export function importBundle(store: KeptaStore, bundle: SyncBundle, opts: Import
   let imported = 0;
   let skipped = 0;
   for (const m of memories) {
+    const cleanTitle = sanitizeTitle(m.title) || "Imported note";
+    const cleanContent = sanitizeText(m.content);
+    const cleanTags = sanitizeTags(m.tags ?? []);
+    const cleanScope = typeof m.scope === "string" && m.scope.trim() ? m.scope.trim().slice(0, 120) : bundle.scope;
     const { created } = store.upsertMemory({
       id: m.id,
-      title: m.title,
-      content: m.content,
-      tags: m.tags ?? [],
+      title: cleanTitle,
+      content: cleanContent,
+      tags: cleanTags,
       type: m.type,
-      scope: m.scope,
+      scope: cleanScope,
       confidence: m.confidence,
       validFrom: m.validFrom ?? undefined,
       validTo: m.validTo ?? undefined,

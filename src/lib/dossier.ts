@@ -72,13 +72,23 @@ function notizenZurEntitaet(store: KeptaStore, name: string): MemoryRecord[] {
   const ids = store.db
     .prepare("SELECT me.memory_id AS id FROM memory_entities me JOIN entities e ON e.id = me.entity_id WHERE lower(e.name) = lower(?) LIMIT 200")
     .all(name) as { id: string }[];
-  return ids.map((z) => store.getMemory(z.id)).filter((m): m is MemoryRecord => !!m);
+  return store.getMemoriesByIds(ids.map((z) => z.id));
 }
+
+const dossierCache = new WeakMap<KeptaStore, { gen: number; eintraege: Map<string, Dossier> }>();
 
 export async function dossier(store: KeptaStore, thema: string, opts: { limit?: number } = {}): Promise<Dossier> {
   const topic = thema.replace(/\s+/g, " ").trim().slice(0, 120);
   if (!topic) throw new Error("Tell K3PTA who or what the dossier is about.");
-  const treffer = await searchMemories(store, { query: topic, limit: opts.limit ?? 40 });
+  const limit = opts.limit ?? 40;
+  const gen = typeof store.datenGeneration === "function" ? store.datenGeneration() : 0;
+  const schluessel = `${topic.toLowerCase()}::${limit}`;
+  const cacheEintrag = dossierCache.get(store);
+  if (cacheEintrag && cacheEintrag.gen === gen) {
+    const hit = cacheEintrag.eintraege.get(schluessel);
+    if (hit) return hit;
+  }
+  const treffer = await searchMemories(store, { query: topic, limit });
   const bester = treffer.hits[0]?.score ?? 0;
   const gesammelt = new Map<string, MemoryRecord>();
   for (const h of treffer.hits) if (h.score >= bester * 0.25) gesammelt.set(h.memory.id, h.memory);
@@ -98,7 +108,7 @@ export async function dossier(store: KeptaStore, thema: string, opts: { limit?: 
   for (const m of notizen) for (const text of offeneAufgaben(m.content)) if (todos.length < 20) todos.push({ id: m.id, title: m.title, text });
 
   const zeiten = notizen.map((m) => m.createdAt);
-  return {
+  const ergebnis: Dossier = {
     topic,
     total: notizen.length,
     kinds,
@@ -118,6 +128,14 @@ export async function dossier(store: KeptaStore, thema: string, opts: { limit?: 
     first: zeiten.length ? Math.min(...zeiten) : null,
     last: zeiten.length ? Math.max(...zeiten) : null,
   };
+  const bucket = cacheEintrag && cacheEintrag.gen === gen ? cacheEintrag : { gen, eintraege: new Map<string, Dossier>() };
+  if (bucket.eintraege.size >= 32) {
+    const aeltester = bucket.eintraege.keys().next().value;
+    if (aeltester !== undefined) bucket.eintraege.delete(aeltester);
+  }
+  bucket.eintraege.set(schluessel, ergebnis);
+  dossierCache.set(store, bucket);
+  return ergebnis;
 }
 
 const tag = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -151,12 +169,19 @@ export function dossierAlsMarkdown(d: Dossier, datum: (ms: number) => string = t
   return zeilen.join("\n");
 }
 
+const vorschlagCache = new WeakMap<KeptaStore, { stand: string; wert: { tags: { name: string; count: number }[]; topics: { name: string; count: number }[] } }>();
+
 /** What a dossier could be about: the biggest tags and knowledge entities. */
 export function vorschlaege(store: KeptaStore): { tags: { name: string; count: number }[]; topics: { name: string; count: number }[] } {
+  const gen = typeof store.datenGeneration === "function" ? store.datenGeneration() : 0;
+  const stand = `gen:${gen}`;
+  const gepuffert = vorschlagCache.get(store);
+  if (gepuffert && gepuffert.stand === stand) return gepuffert.wert;
+
   const zaehler = new Map<string, number>();
-  for (const z of store.db.prepare("SELECT tags FROM memories WHERE deleted_at IS NULL").iterate() as Iterable<{ tags: string }>) {
+  for (const r of store.db.prepare("SELECT tags FROM memories WHERE deleted_at IS NULL").iterate() as Iterable<{ tags: string }>) {
     try {
-      for (const t of JSON.parse(z.tags) as string[]) zaehler.set(t, (zaehler.get(t) ?? 0) + 1);
+      for (const t of JSON.parse(r.tags) as string[]) zaehler.set(t, (zaehler.get(t) ?? 0) + 1);
     } catch {
       // broken tag list — skip it
     }
@@ -167,5 +192,7 @@ export function vorschlaege(store: KeptaStore): { tags: { name: string; count: n
       "SELECT e.name AS name, COUNT(*) AS count FROM memory_entities me JOIN entities e ON e.id = me.entity_id JOIN memories m ON m.id = me.memory_id WHERE m.deleted_at IS NULL GROUP BY e.id HAVING count >= 2 ORDER BY count DESC, e.name LIMIT 10"
     )
     .all() as { name: string; count: number }[];
-  return { tags, topics };
+  const wert = { tags, topics };
+  vorschlagCache.set(store, { stand, wert });
+  return wert;
 }

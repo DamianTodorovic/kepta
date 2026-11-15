@@ -66,6 +66,7 @@ interface ChatProps {
       Kopiergriff wohnt am Chat, nicht am Knowledge-Kopf). */
   onCopyContext?: () => void;
   kontextKopiert?: boolean;
+  aktiv?: boolean;
 }
 
 // ---------- Pricing pro Provider (pro 1k Tokens, USD) ----------
@@ -109,7 +110,7 @@ const SERVER_DEBOUNCE_MS = 300;
 
 /** Hat eines der drei Beine den Treffer gesehen? Für die Herkunfts-Badges der Quellen. */
 
-export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isFocusMode, onToggleFocus, onCopyContext, kontextKopiert }: ChatProps) {
+export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isFocusMode, onToggleFocus, onCopyContext, kontextKopiert, aktiv = true }: ChatProps) {
   const toast = useToast();
   const [messages, setMessages] = useState<ExtendedChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -139,6 +140,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   const [suchLaeuft, setSuchLaeuft] = useState(false);
 
   useEffect(() => {
+    if (!aktiv) return;
     let cancelled = false;
     // Der Schalter wird gefragt, BEVOR gerufen wird. Die beiden Hafen-Adressen stehen
     // in src/lib/profile.ts:127 (Ollama) und :128 (LM Studio) und werden von dort
@@ -493,7 +495,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
         const cases = eigene.length ? `Focus: ${eigene.join(', ')}. ` : "";
         const goal = p.goal ? `Goal: ${p.goal}. ` : "";
         const note = p.customNote ? `Note: ${p.customNote}. ` : "";
-        if (name || cases || goal || note) profileLine = `[User profile] ${name}${cases}${goal}${note}Passe Antwort-Stil und Beispiele daran an.\n\n`;
+        if (name || cases || goal || note) profileLine = `[User profile] ${name}${cases}${goal}${note}Adapt your response style and examples accordingly.\n\n`;
       }
     } catch (e) {
       // Die Profilzeile ist Zusatz, kein Grund eine Antwort abzubrechen — aber ihr Fehlen
@@ -816,6 +818,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
   // „Context 5/5 · ~390 tokens | local · private“.
   const melde = benutzeFensterStatus();
   useEffect(() => {
+    if (!aktiv) return;
     melde({
       links: (
         <>
@@ -826,7 +829,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
       ),
       rechts: 'local · private',
     });
-  }, [budgetedMemories.length, activeMemories.length, contextTokens, melde]);
+  }, [aktiv, budgetedMemories.length, activeMemories.length, contextTokens, melde]);
 
   return (
     <div className="flex flex-col h-full w-full relative">
@@ -1201,7 +1204,7 @@ export function Chat({ activeMemories, onSaveToBrain, onSaveToBrainWithMeta, isF
             placeholder={isStreaming ? "Generating an answer — Stop to cancel" : "Write a message…"}
             disabled={isStreaming}
             className="composer w-full py-3 pl-4 pr-[92px] fs-4 lh-lesbar disabled:opacity-60 bg-transparent"
-            aria-label="Chat Eingabe"
+            aria-label="Chat input"
           />
           <div className="absolute right-2 top-1.5 bottom-1.5 flex items-center gap-1">
             {isStreaming ? (

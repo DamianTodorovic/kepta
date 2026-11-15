@@ -437,8 +437,12 @@ export function MemoryEditor({ memory, onSave, onClose, onDelete, spalte = false
                 {tags.map(tag => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 px-3 py-1 rounded-lg fs-4 lh-lesbar font-semibold hud-inset"
-                    style={{ color: 'var(--accent)' }}
+                    className="flex items-center gap-1 px-3 py-1 rounded-lg fs-4 lh-lesbar font-semibold"
+                    style={{
+                      background: 'color-mix(in srgb, var(--type-semantic) 12%, transparent)',
+                      color: 'var(--type-semantic)',
+                      border: '1px solid color-mix(in srgb, var(--type-semantic) 24%, transparent)',
+                    }}
                   >
                     <Hash className="w-3.5 h-3.5 opacity-60" />
                     {tag}

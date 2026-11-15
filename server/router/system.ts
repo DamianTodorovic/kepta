@@ -136,7 +136,8 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
     // Fensters) sind die Stelle, an der der Index idx_memory_entities_entity
     // (src/core/store.ts:353) arbeitet. Ohne Marke war sein Gewinn an der laufenden Tuer
     // nicht zu zeigen — Punkt 6, ARBEITSLISTE.md:52.
-    const memoriesByEntity = Object.fromEntries(g.entities.map((e) => [e.name, [...store.memoryIdsForEntities([e.id])]]));
+    const byEntId = store.memoryIdsByEntity(g.entities.map((e) => e.id));
+    const memoriesByEntity = Object.fromEntries(g.entities.map((e) => [e.name, [...(byEntId.get(e.id) ?? [])]]));
     zeit.marke("begriffsmemorien");
     // Die Deckung: wie viele der aktiven Notizen an wenigstens einem Begriff
     // haengen. Eine Zahl, die nur Begriffe und Kanten nennt, laesst den Leser
@@ -267,7 +268,8 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       }
       res.json({ exported: memories.length, path: dir });
     } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : "Export failed" });
+      console.error("kepta: /api/export/markdown failed:", e instanceof Error ? e.message : String(e));
+      res.status(500).json({ error: "Export failed" });
     }
   });
 
@@ -279,22 +281,22 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
   app.post("/api/open", ctx.limiter.write, express.json({ limit: "16kb" }), async (req, res) => {
     const pfad = typeof req.body?.pfad === "string" ? req.body.pfad.trim() : "";
     if (!pfad || !path.isAbsolute(pfad) || pfad.length > 1024) {
-      return res.status(400).json({ error: "Pfad fehlt oder ist nicht absolut" });
+      return res.status(400).json({ error: "Path is missing or not absolute." });
     }
     const aufgeloest = path.resolve(pfad);
     const home = os.homedir();
     if (!aufgeloest.startsWith(home + path.sep)) {
-      return res.status(403).json({ error: "Nur Dateien im Home-Verzeichnis" });
+      return res.status(403).json({ error: "Only files inside the home folder can be opened." });
     }
     let stat: fs.Stats;
     try {
       // Asynchron: ein stat im Schreibtisch-Ordner kann auf die macOS-Freigabe warten.
       stat = await fs.promises.stat(aufgeloest);
     } catch {
-      return res.status(404).json({ error: "Datei nicht gefunden" });
+      return res.status(404).json({ error: "File not found." });
     }
     if (!stat.isFile()) {
-      return res.status(400).json({ error: "Keine Datei" });
+      return res.status(400).json({ error: "Target is not a regular file." });
     }
     // start (Windows) braucht ein leeres Fenstertitel-Argument, sonst frisst
     // es den ersten Pfadteil als Titel.
@@ -307,7 +309,8 @@ export function mountSystem(app: express.Express, ctx: AppKontext): void {
       const kind = spawn(befehl.cmd, befehl.args, { detached: true, stdio: "ignore" });
       kind.unref();
     } catch (e) {
-      return res.status(500).json({ error: e instanceof Error ? e.message : "Öffnen fehlgeschlagen" });
+      console.error("kepta: /api/open failed:", e instanceof Error ? e.message : String(e));
+      return res.status(500).json({ error: "Opening the file failed." });
     }
     res.json({ ok: true, geoeffnet: aufgeloest });
   });

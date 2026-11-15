@@ -41,6 +41,12 @@ const GRUND_TEXTE: Record<string, string> = {
     "Not valid JSON, so nothing was read. Export conversations.json again; the logs keep it.",
   "import-unbekanntes-format":
     "Neither a ChatGPT nor a Claude export, so nothing was imported. Pick its conversations.json.",
+  "adresse-blockiert":
+    "That provider address points to a private or link-local target and was blocked; choose a valid endpoint under Settings.",
+  "ungueltige-adresse":
+    "The provider address is not a valid HTTP or HTTPS URL without credentials; update it under Settings.",
+  "wolke-verboten":
+    "Cloud models are turned off by organization policy; pick a local model under Settings.",
 };
 
 /** Ein Satz fuer die Kennung, oder null, wenn die Kennung neu oder fehlt. */

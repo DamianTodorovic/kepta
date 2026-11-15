@@ -171,7 +171,7 @@ export class KeptaStore {
     let hinweis: string | undefined;
     let umgewandelt = false;
     try {
-      schluessel = extensions.keys.keyFor(dbPath);
+      schluessel = extensions?.keys ? extensions.keys.keyFor(dbPath) : null;
     } catch (e) {
       hinweis = fehlertext(e);
     }
@@ -197,8 +197,10 @@ export class KeptaStore {
     else pruefeLesbar(this.db, hinweis);
     this.walEinschalten();
     this.db.exec("PRAGMA foreign_keys = ON");
+    this.db.exec("PRAGMA cache_size = -16384");
+    this.db.exec("PRAGMA temp_store = MEMORY");
     this.migrate();
-    const ablage = extensions.keys.ablage;
+    const ablage = extensions?.keys?.ablage;
     this.verschluesselung = schluessel
       ? { aktiv: true, ...(ablage ? { ablage } : {}), ...(umgewandelt ? { umgewandelt } : {}) }
       : { aktiv: false, ...(hinweis ? { hinweis } : {}) };
@@ -351,6 +353,13 @@ export class KeptaStore {
       -- Schreibungen 0,259 ms je Zeile ohne Index, 0,286 ms mit — +0,027 ms (10,4 %),
       -- ueber den vollen Bestand 21 066 also rund +0,57 s, verteilt ueber den Lauf.
       CREATE INDEX IF NOT EXISTS idx_memories_deleted_updated ON memories(deleted_at, updated_at DESC, rid);
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_created ON memories(deleted_at, created_at DESC, rid);
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_superseded_updated ON memories(deleted_at, superseded_by, updated_at DESC, rid);
+      CREATE INDEX IF NOT EXISTS idx_memories_superseded_updated ON memories(updated_at DESC) WHERE deleted_at IS NULL AND superseded_by IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_memories_valid_to ON memories(valid_to) WHERE deleted_at IS NULL AND superseded_by IS NULL AND valid_to IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_memories_d_s_u_c ON memories(deleted_at, superseded_by, updated_at DESC, created_at) WHERE deleted_at IS NULL AND superseded_by IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_superseded_valid_to ON memories(deleted_at, superseded_by, valid_to) WHERE valid_to IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_memories_deleted_superseded_only ON memories(deleted_at, updated_at DESC) WHERE deleted_at IS NULL AND superseded_by IS NOT NULL;
       -- Titel-Spur (Punkt 6, 31.10.): der Import sucht je neue Notiz ihren Titel in
       -- findByTitle, und ohne diese Spur nimmt der Plan idx_memories_deleted_updated —
       -- bei deleted_at IS NULL also fast alle Zeilen des Bestands, sortiert nach
@@ -793,6 +802,41 @@ export class KeptaStore {
     if (!this.extensions.policy.canRead(this.actor(), { id: record.id, scope: record.scope, type: record.type })) return null;
     this.audit("read", record.id);
     return record;
+  }
+
+  getMemoriesByIds(ids: readonly string[]): MemoryRecord[] {
+    if (ids.length === 0) return [];
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const id of ids) {
+      if (typeof id === "string" && id && !seen.has(id)) {
+        seen.add(id);
+        unique.push(id);
+      }
+    }
+    if (unique.length === 0) return [];
+    const byId = new Map<string, MemoryRecord>();
+    const BATCH = 500;
+    const actor = this.actor();
+    for (let i = 0; i < unique.length; i += BATCH) {
+      const slice = unique.slice(i, i + BATCH);
+      const marks = slice.map(() => "?").join(",");
+      const rows = this.db
+        .prepare(`SELECT ${KeptaStore.COLS} FROM memories WHERE id IN (${marks})`)
+        .all(...slice) as Record<string, unknown>[];
+      for (const r of rows) {
+        const record = this.rowToRecord(r);
+        if (!this.extensions.policy.canRead(actor, { id: record.id, scope: record.scope, type: record.type })) continue;
+        this.audit("read", record.id);
+        byId.set(record.id, record);
+      }
+    }
+    const ordered: MemoryRecord[] = [];
+    for (const id of unique) {
+      const rec = byId.get(id);
+      if (rec) ordered.push(rec);
+    }
+    return ordered;
   }
 
   findByTitle(title: string): MemoryRecord | null {
@@ -1876,9 +1920,20 @@ export function float32ToBlob(vec: Float32Array): Buffer {
   return buf;
 }
 
+const IS_LITTLE_ENDIAN = new Uint8Array(new Uint16Array([0x0102]).buffer)[0] === 0x02;
+
 export function blobToFloat32(buf: Uint8Array): Float32Array {
+  const count = Math.floor(buf.byteLength / 4);
+  if (IS_LITTLE_ENDIAN) {
+    if (buf.byteOffset % 4 === 0) {
+      return Float32Array.from(new Float32Array(buf.buffer, buf.byteOffset, count));
+    }
+    const copy = new Uint8Array(count * 4);
+    copy.set(buf.subarray(0, count * 4));
+    return new Float32Array(copy.buffer);
+  }
   const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  const out = new Float32Array(Math.floor(buf.byteLength / 4));
+  const out = new Float32Array(count);
   for (let i = 0; i < out.length; i++) out[i] = view.getFloat32(i * 4, true);
   return out;
 }

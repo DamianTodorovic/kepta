@@ -3,7 +3,8 @@ import crypto from "crypto";
 import express from "express";
 import { indexMemory, gateDecision, writeGateEnabled } from "../../src/core/engine";
 import { extractWikiLinks } from "../../src/core/mcp";
-import { klassifiziere, gruppen, type Traeger, type Thema } from "../../src/core/klassifikation";
+import { klassifiziere, type Traeger, type Thema } from "../../src/core/klassifikation";
+import { gruppenVonNotiz } from "../../src/lib/graphHierarchy";
 import { sanitizeText, sanitizeTitle, sanitizeTags } from "../../src/core/sanitize";
 import { behauptungenAus } from "../../src/core/behauptungen";
 import { sanitizeScope, sanitizeId, istGueltigeId } from "../helfer/ids";
@@ -266,9 +267,42 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
    * nicht hinter einer Schreibaktion alt bleiben. Was der Lauf kostet, steht im
    * Leib (`ms`) und wird gemeldet statt versteckt.
    */
+  let gruppenCache: {
+    stand: string;
+    traeger: Record<Traeger, number>;
+    themen: Record<Thema, number>;
+    ohneThema: number;
+    gezahlt: number;
+    themenNachTraeger: Record<Traeger, Record<Thema, number>>;
+    ohneThemaNachTraeger: Record<Traeger, number>;
+  } | null = null;
+
   app.get("/api/memories/gruppen", (_req, res) => {
     const started = Date.now();
     const zeit = zeitnahme();
+    const stand = typeof store.memGeneration === "function"
+      ? `gen:${store.memGeneration()}`
+      : (() => {
+          const z = store.db.prepare(
+            "SELECT COUNT(*) AS n, COALESCE(MAX(updated_at), 0) AS u, COALESCE(MAX(created_at), 0) AS c, (SELECT COUNT(*) FROM memories WHERE deleted_at IS NOT NULL) AS d FROM memories WHERE deleted_at IS NULL"
+          ).get() as { n: number; u: number; c: number; d: number };
+          return `${z.n}:${z.u}:${z.c}:${z.d}`;
+        })();
+    if (gruppenCache && gruppenCache.stand === stand) {
+      zeit.marke("lesen");
+      zeit.marke("klassifikation");
+      res.setHeader("x-kepta-teilzeiten", zeit.kopf());
+      return res.json({
+        ok: true,
+        bestand: gruppenCache.gezahlt,
+        traeger: gruppenCache.traeger,
+        themen: gruppenCache.themen,
+        ohneThema: gruppenCache.ohneThema,
+        themenNachTraeger: gruppenCache.themenNachTraeger,
+        ohneThemaNachTraeger: gruppenCache.ohneThemaNachTraeger,
+        ms: Date.now() - started,
+      });
+    }
     const traeger: Record<Traeger, number> = { notes: 0, files: 0, code: 0, daten: 0, anderes: 0 };
     const themen: Record<Thema, number> = { people: 0, projects: 0, events: 0, tasks: 0, guides: 0, links: 0 };
     // Punkt 5, dritter Schritt: zwei Raender erzaehlen nicht, welches Fach ein Thema fuellt.
@@ -291,7 +325,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
     const alle = ctx.listAllMemories();
     zeit.marke("lesen");
     for (const m of alle) {
-      const g = gruppen({ title: m.title, content: m.content, tags: m.tags });
+      const g = gruppenVonNotiz({ id: m.id, updatedAt: m.updatedAt, title: m.title, content: m.content, tags: m.tags });
       traeger[g.traeger] += 1;
       if (g.themen.length === 0) {
         ohneThema += 1;
@@ -304,6 +338,7 @@ export function mountMemories(app: express.Express, ctx: AppKontext): void {
       gezahlt += 1;
     }
     zeit.marke("klassifikation");
+    gruppenCache = { stand, traeger, themen, ohneThema, gezahlt, themenNachTraeger, ohneThemaNachTraeger };
     res.setHeader("x-kepta-teilzeiten", zeit.kopf());
     res.json({
       ok: true, bestand: gezahlt, traeger, themen, ohneThema,

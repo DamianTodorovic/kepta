@@ -1,3 +1,5 @@
+import { coalescedJson, invalidateApiCache } from "./api";
+
 // Die Nutzer-Präferenzen leben im localStorage — und der hängt am
 // Random-Port-Origin der App: jeder Neustart war leer (26.9.-Audit: zehn
 // verwaiste Origins im Chromium-Profil). Der Spiegel in die verschlüsselte
@@ -55,6 +57,7 @@ export function spiegelePrefs(): void {
     spiegelTimer = setTimeout(() => {
       spiegelTimer = null;
       try {
+        invalidateApiCache("/api/settings");
         fetch('/api/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -76,9 +79,9 @@ export function hydratePrefs(): Promise<void> {
 
 async function liesSpiegelung(): Promise<void> {
   try {
-    const r = await fetch('/api/settings');
-    if (!r.ok) return;
-    const d = (await r.json()) as Record<string, unknown>;
+    const r = await coalescedJson<Record<string, unknown>>('/api/settings', { ttlMs: 500 });
+    if (!r.ok || !r.data) return;
+    const d = r.data;
     // Die Settings-Maske auf der Server-Seite haelt `ui_prefs` als Zeichenkette
     // (der Speicher nimmt nur Strings an). Solange beide Seiten committet werden,
     // ist das eine Form, die wechseln kann — und ein stummer Ausfall dieser

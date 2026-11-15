@@ -145,7 +145,7 @@ export function mountNachzug(app: express.Express, ctx: AppKontext): void {
     })();
   });
 
-  app.post("/api/graph/nachzug/cancel", (_req, res) => {
+  app.post("/api/graph/nachzug/cancel", ctx.limiter.write, (_req, res) => {
     abbruch = true;
     res.json({ cancelling: lage.laeuft });
   });

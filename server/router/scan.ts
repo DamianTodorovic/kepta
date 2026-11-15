@@ -201,7 +201,8 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
 
   function leseScanEinstellungen(): { roots: string[]; endungen: string[]; maxDateiBytes: number; zusaetzlichAusgelassen: string[] } {
     try {
-      const roh = JSON.parse(fs.readFileSync(SCAN_CONFIG_FILE, "utf-8")) as Record<string, unknown>;
+      const roh = leseJsonDatei<Record<string, unknown>>(SCAN_CONFIG_FILE, nebendateiSchl);
+      if (!roh) throw new Error("missing");
       return {
         roots: Array.isArray(roh.roots) ? roh.roots.map(String).slice(0, 8) : [],
         endungen: Array.isArray(roh.endungen)
@@ -416,7 +417,7 @@ export function mountScan(app: express.Express, ctx: AppKontext): void {
     });
   });
 
-  app.post("/api/scan/cancel", (_req, res) => {
+  app.post("/api/scan/cancel", ctx.limiter.write, (_req, res) => {
     scanAbbruch = true;
     res.json({ cancelling: scanLage.laeuft });
   });

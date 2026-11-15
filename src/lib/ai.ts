@@ -1,5 +1,5 @@
 // Aufgabe #94 (24.10.): das Lokal-Kriterium wohnt an einer Stelle - dieselbe Funktion wie die Tuer.
-import { ApiFehler } from './api';
+import { ApiFehler, coalescedJson, invalidateApiCache } from './api';
 import { istLokaleAdresse } from './schild';
 
 export type Protocol = 'openai' | 'anthropic';
@@ -469,12 +469,12 @@ const ALTE_ABLAGEN = [ALTER_BLOB, ALTE_SITZUNGS_NAME];
  */
 async function altFund(): Promise<AltFund | null> {
   try {
-    const r = await fetch('/api/settings');
-    if (!r.ok) {
+    const r = await coalescedJson<Record<string, unknown>>('/api/settings', { ttlMs: 500 });
+    if (!r.ok || !r.data) {
       console.warn(`kepta: legacy key check did not answer (HTTP ${r.status})`);
       return null;
     }
-    const d = (await r.json()) as Record<string, unknown>;
+    const d = r.data;
     for (const name of ALTE_ABLAGEN) {
       const wert = d[name];
       if (typeof wert === 'string' && wert) return { name, gesetzt: true, ende: null, form: 'klartext' };
@@ -498,6 +498,7 @@ async function spiegle(s: AISettings): Promise<boolean> {
   // Wurf haette ihn spaetestens hier verloren, ohne dass jemand es gemerkt haette.
   const fund = await altFund();
   if (haelt && !fund) for (const alt of ALTE_ABLAGEN) leib[alt] = null;
+  invalidateApiCache('/api/settings');
   const antwort = await fetch('/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -522,15 +523,15 @@ async function spiegle(s: AISettings): Promise<boolean> {
  */
 async function versiegeltVorhanden(): Promise<boolean> {
   try {
-    const r = await fetch('/api/settings');
-    if (!r.ok) {
+    const r = await coalescedJson<Record<string, unknown>>('/api/settings', { ttlMs: 500 });
+    if (!r.ok || !r.data) {
       // #31: "nicht versiegelt" und "ich konnte die Tuer nicht fragen" sind zwei Antworten.
       // Die Richtung bleibt die sichere - der Klartext wird nicht fortgenommen, niemand
       // wird ausgesperrt -, aber der Ausfall steht jetzt im Protokoll.
       console.warn(`kepta: sealing check did not answer (HTTP ${r.status})`);
       return false;
     }
-    const d = (await r.json()) as Record<string, unknown>;
+    const d = r.data;
     const roh = d[SPIEGEL_NAME];
     if (typeof roh !== 'string' || !roh) return false;
     const gespiegelt = JSON.parse(roh) as GespiegelteVerbindung;
@@ -605,14 +606,14 @@ export async function hydrateAISettings(): Promise<AISettings> {
       if (s.apiKey && (await versiegeltVorhanden())) legeFest(s);
       return s;
     }
-    const r = await fetch('/api/settings');
-    if (!r.ok) {
+    const r = await coalescedJson<Record<string, unknown>>('/api/settings', { ttlMs: 500 });
+    if (!r.ok || !r.data) {
       // #31: die Tuer hat abgewiesen. "Keine Verbindung" ist hier keine Auskunft ueber
       // den Bestand, sondern ueber die Antwort — der Rueckgriff bleibt, die Zahl nicht.
       console.warn(`kepta: settings door refused, the mirror was not read (HTTP ${r.status})`);
       return loadAISettings();
     }
-    const d = (await r.json()) as Record<string, unknown>;
+    const d = r.data;
 
     const roh = typeof d[SPIEGEL_NAME] === 'string' ? (d[SPIEGEL_NAME] as string) : '';
     if (roh) {

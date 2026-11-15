@@ -2,7 +2,7 @@
 // one page, ready to copy into a document or keep as a note.
 import { absage } from '../lib/absage';
 import { ApiFehler, tuerSatz } from '../lib/api';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, Check, Save, Loader2, AlertTriangle, Plus } from '../lib/icons';
 import { useToast } from './ui/Toast';
 import { inForm } from '../lib/antwort';
@@ -79,7 +79,11 @@ function Liste({ titel, eintraege, onOpen }: { titel: string; eintraege: Eintrag
 
 interface DossierThema { text: string; nr: number }
 
-export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOpenMemory: (id: string) => void; onEditMemory?: (id: string) => void; /** von außen gesetzt: das Dossier, das offen sein soll (Klick auf ein Konzept im Graphen). `nr` unterscheidet zwei Klicks auf denselben Begriff. */ dossierThema?: DossierThema }) {
+const SCANNER_TAGS = new Set([
+  'machine-scan', 'json', 'md', 'txt', 'csv', 'pdf', 'html', 'log', 'xml', 'yml', 'yaml', 'ts', 'tsx', 'js', 'jsx',
+]);
+
+export function DossierView({ aktiv = true, onOpenMemory, onEditMemory, dossierThema }: { aktiv?: boolean; onOpenMemory: (id: string) => void; onEditMemory?: (id: string) => void; /** von außen gesetzt: das Dossier, das offen sein soll (Klick auf ein Konzept im Graphen). `nr` unterscheidet zwei Klicks auf denselben Begriff. */ dossierThema?: DossierThema }) {
   const toast = useToast();
   const [eingabe, setEingabe] = useState('');
   const [daten, setDaten] = useState<Dossier | null>(null);
@@ -117,6 +121,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
   };
 
   useEffect(() => {
+    if (!aktiv || vorschlaege) return;
     let vorbei = false;
     fetch('/api/dossier/suggestions')
       .then((r) => {
@@ -128,7 +133,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
       .then((d) => { if (!vorbei && d) { setVorschlaege(d as Vorschlaege); setVorschlagGrund(null); } })
       .catch(() => { if (!vorbei) setVorschlagGrund('Suggestions did not arrive — the store did not answer.'); });
     return () => { vorbei = true; };
-  }, []);
+  }, [aktiv, vorschlaege]);
 
   const erstelle = async (thema: string) => {
     const t = thema.trim();
@@ -191,7 +196,21 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
     }
   };
 
-  const chips = [...(vorschlaege?.topics ?? []), ...(vorschlaege?.tags ?? [])].filter((v, i, a) => a.findIndex((x) => x.name.toLowerCase() === v.name.toLowerCase()) === i).slice(0, 12);
+  const chips = useMemo(() => {
+    const seen = new Set<string>();
+    const liste: { name: string; count: number; kind: 'topic' | 'tag'; rang: number }[] = [];
+    const hinzufuegen = (name: string, count: number, kind: 'topic' | 'tag') => {
+      const norm = name.trim().toLowerCase();
+      if (!norm || seen.has(norm)) return;
+      seen.add(norm);
+      const rang = kind === 'topic' ? 0 : SCANNER_TAGS.has(norm) ? 2 : 1;
+      liste.push({ name: name.trim(), count, kind, rang });
+    };
+    for (const t of vorschlaege?.topics ?? []) hinzufuegen(t.name, t.count, 'topic');
+    for (const t of vorschlaege?.tags ?? []) hinzufuegen(t.name, t.count, 'tag');
+    liste.sort((a, b) => a.rang - b.rang || b.count - a.count || a.name.localeCompare(b.name));
+    return liste.slice(0, 18);
+  }, [vorschlaege]);
 
   // Die Statuszeile wohnt am Fenster-Slot (volle Breite, Mockup .statuszeile):
   // „6 dossiers · 40 notes covered“ — hier ehrlich: das gebaute Dossier und
@@ -199,6 +218,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
   const melde = benutzeFensterStatus();
   const gebaut = !!daten && daten.total > 0;
   useEffect(() => {
+    if (!aktiv) return;
     melde({
       links: gebaut ? (
         <>
@@ -211,7 +231,7 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
       ),
       rechts: 'local · private',
     });
-  }, [gebaut, daten, melde]);
+  }, [aktiv, gebaut, daten, melde]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -241,22 +261,56 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
             </form>
           </div>
           <div className="listen-zeilen">
-            {chips.length > 0 && !daten && (
-              <div className="px-2 pt-2">
-                <div className="fs-1 font-semibold" style={{ color: 'var(--text-3)', padding: '4px 10px 4px' }}>For example</div>
-                <div className="flex flex-wrap gap-1 px-2">
-                  {chips.map((c) => (
-                    <button key={c.name} onClick={() => void erstelle(c.name)} className="min-h-7 inline-flex items-center px-2.5 py-0.5 rounded-full fs-2 hover:opacity-80" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
-                      {c.name}
-                    </button>
-                  ))}
+            {fehler && <p className="fs-3 px-3 py-2" style={{ color: 'var(--warn)', margin: 0 }}>{fehler}</p>}
+            {chips.length > 0 && (
+              <div>
+                <div className="fs-1 font-semibold px-3 pt-2.5 pb-1" style={{ color: 'var(--text-3)' }}>
+                  Suggested topics
                 </div>
+                <ul>
+                  {chips.map((c) => {
+                    const istAktiv = Boolean(daten && daten.topic.toLowerCase() === c.name.toLowerCase());
+                    return (
+                      <li key={c.name}>
+                        <button
+                          type="button"
+                          aria-label={c.name}
+                          aria-current={istAktiv ? 'true' : undefined}
+                          onClick={() => void erstelle(c.name)}
+                          className="zeile-item fs-3 w-full text-left"
+                          style={istAktiv ? { background: 'var(--accent-soft)' } : undefined}
+                        >
+                          <span
+                            aria-hidden
+                            className="row-punkt"
+                            style={{
+                              background: istAktiv || c.kind === 'topic' ? 'var(--accent)' : 'var(--text-3)',
+                              opacity: istAktiv ? 1 : c.kind === 'topic' ? 0.8 : 0.45,
+                            }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="row-titel-zeile truncate" style={{ fontWeight: istAktiv ? 650 : 500, color: 'var(--text-1)' }}>
+                              {c.name}
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <span className="row-zeit tnum">{c.count}</span>
+                          </div>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             )}
             {vorschlagGrund && chips.length === 0 && !daten && (
               <p role="status" className="fs-3 px-3 py-2" style={{ color: 'var(--text-3)' }}>{vorschlagGrund}</p>
             )}
-            {fehler && <p className="fs-3 px-3 py-2" style={{ color: 'var(--warn)' }}>{fehler}</p>}
+            {chips.length === 0 && !vorschlagGrund && !fehler && (
+              <p className="fs-2 px-3 py-3" style={{ color: 'var(--text-3)', margin: 0 }}>
+                Enter a person, project or topic above.
+              </p>
+            )}
           </div>
           <div className="listen-fuss">
             <span className="tnum">Builds a brief from your notes</span>
@@ -268,21 +322,41 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
               <div className="detail-kopf">
                 <span className="wo">{daten.topic}</span>
                 <div className="kopf-handlungen">
-                  <button onClick={() => void kopieren()} className="btn-ghost px-2 py-1 rounded-lg fs-2 flex items-center gap-1" style={{ border: '1px solid var(--border-subtle)' }}>
+                  <button onClick={() => void kopieren()} className="btn-ghost btn-text rounded-lg fs-2 flex items-center gap-1.5">
                     {kopiert ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {kopiert ? 'Copied' : 'Copy as Markdown'}
                   </button>
-                  <button onClick={() => void speichern()} disabled={gespeichert} className="btn-ghost px-2 py-1 rounded-lg fs-2 flex items-center gap-1 disabled:opacity-50" style={{ border: '1px solid var(--border-subtle)' }}>
+                  <button onClick={() => void speichern()} disabled={gespeichert} className="btn-ghost btn-text rounded-lg fs-2 flex items-center gap-1.5 disabled:opacity-50">
                     <Save className="w-3.5 h-3.5" /> {gespeichert ? 'Saved' : 'Save as note'}
                   </button>
                 </div>
               </div>
               <div className="detail-korper">
-                <article>
+                <div className="max-w-[680px]">
                   <h2 className="fs-6 lh-dicht font-semibold" style={{ color: 'var(--text-1)' }}>{daten.topic}</h2>
                   <p className="fs-2 mt-1 tnum" style={{ color: 'var(--text-3)' }}>
                     {daten.total} {daten.total === 1 ? 'note' : 'notes'}
                     {daten.first !== null && daten.last !== null ? ` · ${tag(daten.first)} – ${tag(daten.last)}` : ''}
                   </p>
+                  {(() => {
+                    const bereiche = [
+                      { label: 'Statements', zahl: daten.facts.length },
+                      { label: 'Chronology', zahl: daten.timeline.length },
+                      { label: 'Instructions', zahl: daten.howtos.length },
+                      { label: 'Attachments', zahl: daten.documents.length },
+                      { label: 'To-dos', zahl: daten.todos.length },
+                    ].filter((b) => b.zahl > 0);
+                    if (bereiche.length === 0) return null;
+                    return (
+                      <div className="gruppen-tisch mt-4 grid grid-cols-2 sm:flex sm:divide-x overflow-hidden" style={{ borderColor: 'var(--border-subtle)' }}>
+                        {bereiche.map((b) => (
+                          <div key={b.label} className="flex-1 px-3 py-2.5 min-w-0" style={{ borderColor: 'var(--border-subtle)' }}>
+                            <div className="fs-1" style={{ color: 'var(--text-3)' }}>{b.label}</div>
+                            <div className="fs-4 font-semibold tnum mt-0.5" style={{ color: 'var(--text-1)' }}>{b.zahl}</div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                   <Liste titel={DOSSIER_TITEL.punkte} eintraege={daten.facts} onOpen={onOpenMemory} />
                   <Liste titel={DOSSIER_TITEL.zeit} eintraege={daten.timeline} onOpen={onOpenMemory} />
                   <Liste titel={DOSSIER_TITEL.anleitungen} eintraege={daten.howtos} onOpen={onOpenMemory} />
@@ -298,7 +372,13 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
                             </span>
                             <div className="min-w-0 flex-1">
                               <div className="app-name">{t.text}</div>
-                              <div className="app-zustand">{t.title}</div>
+                              {t.id ? (
+                                <button onClick={() => onOpenMemory(t.id)} className="app-zustand hover:underline underline-offset-2 text-left" style={{ color: 'var(--text-3)' }}>
+                                  {t.title}
+                                </button>
+                              ) : (
+                                <div className="app-zustand">{t.title}</div>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -306,15 +386,15 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
                     </section>
                   )}
                   {daten.contradictions.length > 0 && (
-                    <section className="mb-6">
-                      <h3 className="fs-3 font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
+                    <section className="detail-gruppe">
+                      <div className="detail-gruppe-name flex items-center gap-1.5" style={{ color: 'var(--text-1)' }}>
                         <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--warn)' }} /> To check
-                      </h3>
+                      </div>
                       {/* Paket 3: die Auflösung passiert im Fluss — je Karte drei Entscheidungen.
                           Ohne ids (alter Server-Stand) bleibt es bei der ehrlichen Textzeile. */}
                       <div className="space-y-3">
                         {daten.contradictions.map((w) => (
-                          <div key={w.key} className="hud-inset rounded-xl p-4" data-testid="dossier-contradiction">
+                          <div key={w.key} className="gruppen-tisch p-4" data-testid="dossier-contradiction">
                             <div className="fs-3 mb-2 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
                               Two notes disagree{w.about ? ` about “${w.about}”` : ''}.
                             </div>
@@ -350,32 +430,63 @@ export function DossierView({ onOpenMemory, onEditMemory, dossierThema }: { onOp
                     </section>
                   )}
                   {daten.related.length > 0 && (
-                    <div className="flex flex-wrap gap-2 items-center pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                    <div className="flex flex-wrap gap-2 items-center pt-5 mt-5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                       <span className="fs-1 mr-1" style={{ color: 'var(--text-3)' }}>Related:</span>
                       {daten.related.map((r) => (
-                        <button key={r.tag} onClick={() => void erstelle(r.tag)} className="px-2 py-1 rounded-full fs-2" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
+                        <button key={r.tag} onClick={() => void erstelle(r.tag)} className="min-h-7 inline-flex items-center px-2.5 py-0.5 rounded-full fs-2 hover:opacity-80" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-2)' }}>
                           #{r.tag}
                         </button>
                       ))}
                     </div>
                   )}
-                </article>
+                </div>
               </div>
             </>
           ) : daten && daten.total === 0 ? (
-            <div className="detail-leer">
-              <p className="fs-3 max-w-[46ch]" style={{ color: 'var(--text-2)', margin: 0 }}>
-                K3PTA knows nothing about “{daten.topic}” yet. Try another name — or save a first note about it.
-              </p>
-            </div>
+            <>
+              <div className="detail-kopf"><span className="wo">{daten.topic}</span></div>
+              <div className="detail-korper">
+                <div className="gruppen-tisch p-5 max-w-xl">
+                  <p className="fs-3" style={{ color: 'var(--text-2)', margin: 0 }}>
+                    K3PTA knows nothing about “{daten.topic}” yet. Try another name — or save a first note about it.
+                  </p>
+                </div>
+              </div>
+            </>
           ) : (
-            <div className="detail-leer">
-              <p className="fs-3 font-semibold" style={{ color: 'var(--text-2)', margin: 0 }}>Nothing built yet</p>
-              <p className="fs-2 max-w-[46ch]" style={{ color: 'var(--text-3)', margin: 0 }}>
-                Everything you know about a person, a project or a topic — on one page: the statements, what happened
-                when, how it's done, the files behind it and what is still open.
-              </p>
-            </div>
+            <>
+              <div className="detail-kopf"><span className="wo">Overview</span></div>
+              <div className="detail-korper">
+                <div className="max-w-[680px]">
+                  {laedt ? (
+                    <p className="fs-3" style={{ color: 'var(--text-2)' }}>Building your dossier…</p>
+                  ) : (
+                    <>
+                      <h2 className="fs-6 lh-dicht font-semibold" style={{ color: 'var(--text-1)' }}>Select or build a dossier</h2>
+                      <p className="fs-3 mt-1.5 lh-lesbar" style={{ color: 'var(--text-3)' }}>
+                        One page gathers what K3PTA knows about a person, project or topic.
+                      </p>
+                      <div className="detail-gruppe">
+                        <div className="detail-gruppe-name">What it puts together</div>
+                        <div className="gruppen-tisch">
+                          {[
+                            ['Key points', 'Statements and decisions pulled together from your notes.'],
+                            ['Timeline', 'What happened first and what changed most recently.'],
+                            [`${DOSSIER_TITEL.anleitungen} & ${DOSSIER_TITEL.papiere}`, 'Saved instructions, references and source notes.'],
+                            ['Open to-dos & checks', 'Unfinished tasks and notes that disagree with each other.'],
+                          ].map(([titel, text], i, arr) => (
+                            <div key={titel} className="zustandszeile" style={i === arr.length - 1 ? { borderBottom: 'none' } : undefined}>
+                              <span className="shrink-0 font-semibold fs-2" style={{ width: 164, color: 'var(--text-1)' }}>{titel}</span>
+                              <div className="inhalt" style={{ color: 'var(--text-2)' }}>{text}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
           )}
         </section>
       </div>

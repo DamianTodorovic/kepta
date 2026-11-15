@@ -4,12 +4,49 @@
 import express from "express";
 import { trimSlash, chatFehler, starteUpstreamStream, streamUpstreamDeltas, readFullAnswer, type ChatRequest } from "../helfer/upstream";
 import { Schild, beschreibe, istLokaleAdresse, ohnePrivateBloecke } from "../../src/lib/schild";
+import { normalizeIpv4, ipv6Groups, eingebettetesIpv4 } from "../helfer/ssrf";
 import { liesVerwaltet, richtlinie, istLokalerHost } from "../../src/lib/richtlinien";
 import { schreibe as protokolliere } from "../../src/lib/pruefprotokoll";
 import { schildEinstellungen, privateIds } from "./schild";
 import { bodyOf } from "../helfer/body";
 import { aktivesSuchModell, einbettModell, ollamaBaseUrl } from "../../src/core/embeddings";
 import type { AppKontext } from "../kontext";
+
+function istBlockierteAnbieterIp4(ip: string): boolean {
+  const parts = ip.split(".").map(Number);
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n) || n < 0 || n > 255)) return true;
+  const [a, b] = parts as [number, number, number, number];
+  // Block unspecified (0.0.0.0/8), link-local/cloud metadata (169.254.0.0/16), multicast/reserved (224.0.0.0+)
+  return a === 0 || (a === 169 && b === 254) || a >= 224;
+}
+
+function istBlockierteAnbieterHost(rawHost: string): boolean {
+  const h = rawHost.replace(/^\[|\]$/g, "").split("%")[0]!.trim().toLowerCase();
+  if (!h) return true;
+  if (
+    h === "metadata" ||
+    h === "metadata.google.internal" ||
+    h === "metadata.google" ||
+    h === "metadata.goog" ||
+    h === "instance-data" ||
+    h.includes("169.254.")
+  ) {
+    return true;
+  }
+  const ip4 = normalizeIpv4(h);
+  if (ip4 && istBlockierteAnbieterIp4(ip4)) return true;
+  const g = ipv6Groups(h);
+  if (g) {
+    if (g.every((x) => x === 0)) return true; // ::
+    if (g[0]! >= 0xfe80 && g[0]! <= 0xfebf) return true; // fe80::/10 link-local
+    if (g[0]! >= 0xff00) return true; // ff00::/8 multicast
+    if (g[0] === 0xfd00 && g[1] === 0x0ec2) return true; // fd00:ec2::/32 AWS metadata IPv6
+    for (const emb of eingebettetesIpv4(g)) {
+      if (istBlockierteAnbieterIp4(emb)) return true;
+    }
+  }
+  return false;
+}
 
 export function mountChat(app: express.Express, ctx: AppKontext): void {
   const { store } = ctx;
@@ -20,7 +57,7 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
    * nicht die Einstellungen des Nutzers. Gilt für BEIDE Chat-Routen (blockierend
    * UND Stream — 26.9.-Audit: der Stream war die Umgehungslücke).
    */
-  function cloudVerboten(body: ChatRequest): string | null {
+  function cloudVerboten(body: { protocol?: string; baseUrl?: string }): string | null {
     if (richtlinie("chat_cloud") !== "deny") return null;
     const ziel = body.baseUrl || (body.protocol === "anthropic" ? "https://api.anthropic.com" : "https://api.openai.com/v1");
     return istLokalerHost(ziel)
@@ -30,10 +67,9 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
   /**
    * Die Wand von #61, vor jedem Aufbruch: keine Route ruft eine Adresse, die
    * niemand gewaehlt hat, und keine Adresse ausserhalb dieses Rechners ohne
-   * Schluessel. Beides war vorher moeglich — `body.baseUrl || "https://api.openai.com/v1"`
-   * (server/helfer/upstream.ts:68) und, am Werksstandard, `apiKey: ''`
-   * (src/lib/ai.ts:351) mit weitergegebenem Grund (src/components/Settings.tsx:308).
-   * Zurueckkommt ein Grund, den die Flaeche malen kann — 400, kein Socket.
+   * Schluessel (`body.baseUrl || "https://api.openai.com/v1"` war frueher offen).
+   * Zusaetzlich werden Schema, Credentials und Cloud-Metadata-Ziele
+   * (169.254.0.0/16, fe80::/10, 0.0.0.0) vor jedem Socket-Aufbau abgewiesen.
    */
   function anbieterSperre(body: { baseUrl?: string; apiKey?: string }): { status: number; error: string; grund: string } | null {
     const basis = trimSlash(body.baseUrl || "");
@@ -43,6 +79,21 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
         error: "kein Anbieter gewaehlt — die Route rueft keine Adresse, die niemand genannt hat",
         grund: "kein-anbieter",
       };
+    }
+    let parsed: URL;
+    try {
+      parsed = new URL(basis);
+    } catch {
+      return { status: 400, error: "invalid provider address", grund: "ungueltige-adresse" };
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return { status: 400, error: "only http and https provider URLs are supported", grund: "ungueltige-adresse" };
+    }
+    if (parsed.username || parsed.password) {
+      return { status: 400, error: "provider URL must not contain embedded credentials", grund: "ungueltige-adresse" };
+    }
+    if (istBlockierteAnbieterHost(parsed.hostname)) {
+      return { status: 400, error: "metadata and link-local addresses are blocked", grund: "adresse-blockiert" };
     }
     if (!istLokaleAdresse(basis) && !(body.apiKey || "").trim()) {
       return {
@@ -206,19 +257,18 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
 
   app.post("/api/models", ctx.limiter.chat, async (req, res) => {
     const { protocol, baseUrl, apiKey } = bodyOf<{ protocol: string; baseUrl: string; apiKey: string }>(req);
+    const cloudFehler = cloudVerboten({ protocol, baseUrl });
+    if (cloudFehler) {
+      return res.status(403).json({ error: cloudFehler, grund: "wolke-verboten" });
+    }
+    const sperre = anbieterSperre({ baseUrl, apiKey });
+    if (sperre) {
+      const error = sperre.grund === "kein-anbieter"
+        ? "kein Modell-Anbieter gesetzt — die Route rueft keinen Anbieter, sie fragt die Einstellungen"
+        : sperre.error;
+      return res.status(sperre.status).json({ error, grund: sperre.grund });
+    }
     const base = trimSlash(baseUrl || "");
-    if (!base) {
-      return res.status(400).json({
-        error: "kein Modell-Anbieter gesetzt — die Route rueft keinen Anbieter, sie fragt die Einstellungen",
-        grund: "kein-anbieter",
-      });
-    }
-    if (!istLokaleAdresse(base) && !(apiKey || "").trim()) {
-      return res.status(400).json({
-        error: `der Anbieter ${base} braucht einen Schluessel — ohne ihn geht kein Paket aus dem Rechner`,
-        grund: "kein-schluessel",
-      });
-    }
 
     const headers: Record<string, string> = {};
     if (apiKey && protocol !== "anthropic") headers["Authorization"] = `Bearer ${apiKey}`;
@@ -229,9 +279,10 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
     const url = protocol === "anthropic" ? `${base}/v1/models` : `${base}/models`;
     let r: Response;
     try {
-      r = await fetch(url, { headers });
+      r = await fetch(url, { headers, signal: AbortSignal.timeout(15_000) });
     } catch (fehler: unknown) {
-      const code = (fehler as { cause?: { code?: string } })?.cause?.code || "unbekannt";
+      const code = (fehler as { cause?: { code?: string }; name?: string })?.cause?.code
+        || ((fehler as { name?: string })?.name === "TimeoutError" ? "ETIMEDOUT" : "unbekannt");
       return res.status(502).json({
         error: `der Anbieter antwortet nicht auf ${url} (${code})`,
         grund: "anbieter-nicht-erreichbar",
@@ -264,7 +315,7 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
           // der settings-Adresse vorbeiging: eine Ollama auf einem andern Rechner wurde in
           // der Liste ignoriert, und die Liste kam vom localhost.
           const hafen = base.replace(/\/v1\/?$/, "").replace(/\/+$/, "");
-          const tags = await fetch(`${hafen}/api/tags`);
+          const tags = await fetch(`${hafen}/api/tags`, { signal: AbortSignal.timeout(5_000) });
           if (tags.ok) {
             const tagData = await tags.json() as { models?: { name?: string }[] };
             const ollamaModels = (tagData?.models || []).map((m) => m.name).filter(Boolean) as string[];
@@ -275,8 +326,8 @@ export function mountChat(app: express.Express, ctx: AppKontext): void {
 
       res.json({ models: models.sort() });
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Interner Serverfehler";
-      res.status(500).json({ error: msg, grund: "antwort-nicht-lesbar" });
+      console.error("kepta: /api/models response parse failed:", error instanceof Error ? error.message : String(error));
+      res.status(500).json({ error: "The model provider returned an unreadable response.", grund: "antwort-nicht-lesbar" });
     }
   });
 

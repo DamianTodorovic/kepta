@@ -115,36 +115,70 @@ function Live({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMemory: (id: stri
     );
   }
   return (
-    <div>
-      <div className="flex flex-wrap gap-2 mb-5">
-        {apps.map((a) => {
-          const live = Date.now() - a.lastSeen < LIVE_MS;
-          return (
-            <span key={a.who} className="px-3 py-2 rounded-full fs-3 flex items-center gap-2" style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-1)' }}>
-              <span aria-hidden className={live ? 'animate-pulse' : ''} style={{ width: 8, height: 8, borderRadius: 999, background: live ? 'var(--ok)' : 'var(--text-3)' }} />
-              <strong>{a.who}</strong>
-              <span style={{ color: 'var(--text-3)' }}>{live ? 'active now' : vor(a.lastSeen)} · {a.calls} {a.calls === 1 ? 'call' : 'calls'}</span>
-            </span>
-          );
-        })}
-      </div>
-      <ul className="space-y-1">
-        {eintraege.map((e) => (
-          <li key={e.id} className="flex gap-3 items-start px-3 py-2 rounded-lg hover:bg-[var(--bg-inset)]">
-            <Bot className="w-4 h-4 mt-1 shrink-0" style={{ color: /save|update|delete|forget/.test(e.tool) ? 'var(--accent)' : 'var(--text-3)' }} />
-            <div className="min-w-0 fs-3" style={{ color: 'var(--text-2)' }}>
-              <strong style={{ color: 'var(--text-1)' }}>{e.who}</strong> {VERB[e.tool] ?? e.tool.replace(/^memory_/, '').replace(/_/g, ' ')}{' '}
-              {e.text && (e.noteId
-                ? <button onClick={() => onOpenMemory(e.noteId!)} className="font-semibold hover:underline underline-offset-2" style={{ color: 'var(--text-1)' }}>{e.text}</button>
-                : <strong style={{ color: 'var(--text-1)' }}>{e.tool === 'memory_search' ? `“${e.text}”` : e.text}</strong>)}
-              {e.tool === 'memory_search' && e.count !== null && <span style={{ color: 'var(--text-3)' }}> · {e.count} {e.count === 1 ? 'note' : 'notes'}</span>}
-              <div className="fs-1" style={{ color: 'var(--text-3)' }}>{vor(e.at)}</div>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <details className="mt-6">
-        <summary className="fs-3 cursor-pointer" style={{ color: 'var(--accent)' }}>Connect another app</summary>
+    <div className="max-w-[680px]">
+      {apps.length > 0 && (
+        <section className="detail-gruppe" style={{ marginTop: 0 }}>
+          <div className="detail-gruppe-name">Connected apps</div>
+          <div className="gruppen-tisch">
+            {apps.map((a, i) => {
+              const live = Date.now() - a.lastSeen < LIVE_MS;
+              return (
+                <div
+                  key={a.who}
+                  className="app-zeile"
+                  style={i === apps.length - 1 ? { borderBottom: 'none' } : undefined}
+                >
+                  <span className={`app-icon ${live ? 'ok' : ''}`}>{a.who.slice(0, 1).toUpperCase()}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="app-name flex items-center gap-2">
+                      <span>{a.who}</span>
+                      <span
+                        aria-hidden
+                        className={live ? 'animate-pulse inline-block' : 'inline-block'}
+                        style={{ width: 7, height: 7, borderRadius: 999, background: live ? 'var(--ok)' : 'var(--text-3)' }}
+                      />
+                    </div>
+                    <div className="app-zustand tnum">
+                      {live ? 'active now' : vor(a.lastSeen)} · {a.calls} {a.calls === 1 ? 'call' : 'calls'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+      <section className="detail-gruppe" style={apps.length === 0 ? { marginTop: 0 } : undefined}>
+        <div className="detail-gruppe-name">Recent calls</div>
+        <div className="gruppen-tisch">
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+            {eintraege.map((e, i) => (
+              <li
+                key={e.id}
+                className="app-zeile"
+                style={i === eintraege.length - 1 ? { borderBottom: 'none', alignItems: 'flex-start' } : { alignItems: 'flex-start' }}
+              >
+                <span
+                  aria-hidden
+                  className={`app-icon mt-0.5 ${/save|update|delete|forget/.test(e.tool) ? 'ok' : ''}`}
+                >
+                  <Bot className="w-3.5 h-3.5" style={{ color: /save|update|delete|forget/.test(e.tool) ? 'var(--accent)' : 'var(--text-3)' }} />
+                </span>
+                <div className="min-w-0 flex-1 fs-3" style={{ color: 'var(--text-2)' }}>
+                  <strong style={{ color: 'var(--text-1)' }}>{e.who}</strong> {VERB[e.tool] ?? e.tool.replace(/^memory_/, '').replace(/_/g, ' ')}{' '}
+                  {e.text && (e.noteId
+                    ? <button onClick={() => onOpenMemory(e.noteId!)} className="font-semibold hover:underline underline-offset-2 text-left" style={{ color: 'var(--text-1)' }}>{e.text}</button>
+                    : <strong style={{ color: 'var(--text-1)' }}>{e.tool === 'memory_search' ? `“${e.text}”` : e.text}</strong>)}
+                  {e.tool === 'memory_search' && e.count !== null && <span style={{ color: 'var(--text-3)' }}> · {e.count} {e.count === 1 ? 'note' : 'notes'}</span>}
+                </div>
+                <div className="fs-1 tnum shrink-0 pt-0.5" style={{ color: 'var(--text-3)' }}>{vor(e.at)}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+      <details className="detail-gruppe">
+        <summary className="fs-3 font-semibold cursor-pointer" style={{ color: 'var(--accent)' }}>Connect another app</summary>
         <div className="mt-3"><ConnectApps /></div>
       </details>
     </div>
@@ -241,60 +275,81 @@ function Protokoll() {
   };
 
   return (
-    <div>
-      <p className="fs-4 lh-lesbar mb-4" style={{ color: 'var(--text-2)' }}>
-        Every access to your knowledge base — by you, by each AI app and by scripts. Each entry is sealed with the one before it:
-        if anyone changes or removes an entry, the check below shows it.
-      </p>
-      <div className="flex flex-wrap gap-2 mb-4">
-        <button onClick={() => void pruefen()} disabled={prueft} className="btn-primary px-3 py-2 rounded-lg fs-3 font-semibold flex items-center gap-2 disabled:opacity-50">
-          {prueft ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} Check integrity
-        </button>
-        <button onClick={() => void exportieren()} className="btn-ghost px-3 py-2 rounded-lg fs-3 flex items-center gap-2" style={{ border: '1px solid var(--border-subtle)' }}>
-          <Download className="w-4 h-4" /> Export CSV
-        </button>
-      </div>
-      {pruefung && (
-        <p role="status" data-testid="audit-check" className="fs-3 mb-4 rounded-lg px-3 py-2 flex items-center gap-2" style={{ color: pruefung.ok ? 'var(--ok)' : 'var(--danger)', border: `1px solid ${pruefung.ok ? 'var(--ok)' : 'var(--danger)'}` }}>
-          {pruefung.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-          {pruefung.ok
-            ? `Intact — ${pruefung.entries} ${pruefung.entries === 1 ? 'entry' : 'entries'}, none changed or removed.`
-            : pruefung.truncated
-              ? `Entries are missing at the end — the log was cut off after entry ${pruefung.entries}.`
-              : `Something was changed: entry ${pruefung.brokenAt} does not match the one before it.`}
+    <div className="max-w-[680px]">
+      <div className="gruppen-tisch p-4 mb-4">
+        <p className="fs-3 lh-lesbar mb-3" style={{ color: 'var(--text-2)', marginTop: 0 }}>
+          Every access to your knowledge base — by you, by each AI app and by scripts. Each entry is sealed with the one before it:
+          if anyone changes or removes an entry, the check below shows it.
         </p>
-      )}
-      <div className="flex flex-wrap gap-2 mb-3">
-        <select aria-label="Who" value={wer} onChange={(e) => setWer(e.target.value)} className="hud-input rounded-lg px-3 py-2 fs-3">
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => void pruefen()} disabled={prueft} className="btn-primary px-3 py-1.5 rounded-lg fs-2 font-semibold flex items-center gap-2 disabled:opacity-50">
+            {prueft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />} Check integrity
+          </button>
+          <button onClick={() => void exportieren()} className="btn-ghost px-3 py-1.5 rounded-lg fs-2 flex items-center gap-2" style={{ border: '1px solid var(--border-subtle)', background: 'var(--eb-2)' }}>
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </button>
+        </div>
+        {pruefung && (
+          <p role="status" data-testid="audit-check" className="fs-3 mt-3 rounded-lg px-3 py-2 flex items-center gap-2" style={{ color: pruefung.ok ? 'var(--ok)' : 'var(--danger)', border: `1px solid ${pruefung.ok ? 'var(--ok)' : 'var(--danger)'}`, marginBottom: 0 }}>
+            {pruefung.ok ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+            {pruefung.ok
+              ? `Intact — ${pruefung.entries} ${pruefung.entries === 1 ? 'entry' : 'entries'}, none changed or removed.`
+              : pruefung.truncated
+                ? `Entries are missing at the end — the log was cut off after entry ${pruefung.entries}.`
+                : `Something was changed: entry ${pruefung.brokenAt} does not match the one before it.`}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-wrap sm:flex-nowrap gap-2 mb-3">
+        <select aria-label="Who" value={wer} onChange={(e) => setWer(e.target.value)} className="hud-input rounded-lg px-3 py-1.5 fs-2">
           <option value="">Everyone</option>
           {actors.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
-        <select aria-label="What" value={was} onChange={(e) => setWas(e.target.value)} className="hud-input rounded-lg px-3 py-2 fs-3">
+        <select aria-label="What" value={was} onChange={(e) => setWas(e.target.value)} className="hud-input rounded-lg px-3 py-1.5 fs-2">
           <option value="">Every action</option>
           {actions.map((a) => <option key={a} value={a}>{AKTION[a] ?? a}</option>)}
         </select>
-        <input aria-label="Search the log" value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Search a note, a query…" className="hud-input flex-1 min-w-[160px] rounded-lg px-3 py-2 fs-3" />
+        <input aria-label="Search the log" value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Search a note, a query…" className="hud-input flex-1 min-w-[160px] rounded-lg px-3 py-1.5 fs-2" />
       </div>
       {fehler && <p className="fs-4 lh-lesbar mb-2" style={{ color: 'var(--warn)' }}>{fehler}</p>}
       {eintraege.length === 0 ? (
-        <p className="fs-4 lh-lesbar" style={{ color: 'var(--text-3)' }}>Nothing recorded {wer || was || suche ? 'that matches' : 'yet'}.</p>
+        <div className="gruppen-tisch p-4">
+          <p className="fs-3 lh-lesbar" style={{ color: 'var(--text-3)', margin: 0 }}>Nothing recorded {wer || was || suche ? 'that matches' : 'yet'}.</p>
+        </div>
       ) : (
-        <ul className="divide-y" style={{ borderColor: 'var(--border-subtle)' }} data-testid="audit-list">
-          {eintraege.map((e) => (
-            <li key={e.id} className="py-2 fs-3" style={{ borderColor: 'var(--border-subtle)' }}>
-              <div style={{ color: 'var(--text-2)' }}>
-                <strong style={{ color: 'var(--text-1)' }}>{e.actor}</strong> {AKTION[e.action] ?? e.action}
-                {e.target && <> <span style={{ color: 'var(--text-1)' }}>{e.action === 'search' ? `“${e.target}”` : e.target}</span></>}
-              </div>
-              <div className="fs-1 mt-1 break-words" style={{ color: 'var(--text-3)' }}>
-                {new Date(e.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                {lesbareDetails(e.detail) ? ` · ${lesbareDetails(e.detail)}` : ''}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="gruppen-tisch">
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }} data-testid="audit-list">
+            {eintraege.map((e, i) => {
+              const details = lesbareDetails(e.detail);
+              return (
+                <li
+                  key={e.id}
+                  className="app-zeile"
+                  style={i === eintraege.length - 1 ? { borderBottom: 'none', alignItems: 'flex-start' } : { alignItems: 'flex-start' }}
+                >
+                  <div className="min-w-0 flex-1 fs-3">
+                    <div style={{ color: 'var(--text-2)' }}>
+                      <strong style={{ color: 'var(--text-1)' }}>{e.actor}</strong> {AKTION[e.action] ?? e.action}
+                      {e.target && <> <span style={{ color: 'var(--text-1)' }}>{e.action === 'search' ? `“${e.target}”` : e.target}</span></>}
+                    </div>
+                    {details && (
+                      <div className="fs-1 mt-0.5 break-words" style={{ color: 'var(--text-3)' }}>{details}</div>
+                    )}
+                  </div>
+                  <div className="fs-1 tnum shrink-0 pt-0.5" style={{ color: 'var(--text-3)' }}>
+                    {new Date(e.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
-      {mehr && <button onClick={() => void weitere()} className="btn-ghost mt-3 px-3 py-2 rounded-lg fs-3">Load more</button>}
+      {mehr && (
+        <button onClick={() => void weitere()} className="btn-ghost mt-3 px-3 py-1.5 rounded-lg fs-2" style={{ border: '1px solid var(--border-subtle)', background: 'var(--eb-2)' }}>
+          Load more
+        </button>
+      )}
     </div>
   );
 }
@@ -324,16 +379,20 @@ export function ActivityView({ aktiv, onOpenMemory }: { aktiv: boolean; onOpenMe
       <div className="listen-kopf">
         <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>What your AI apps read and write</h2>
         <div className="kopf-handlungen">
-          <div className="flex gap-1 p-1 rounded-xl hud-inset" role="tablist">
+          <div className="apple-seg hud-inset inline-flex items-center p-0.5 rounded-lg" role="tablist">
             {([['live', 'Live', 'Live shows what your AI apps are reading and writing in your memory right now'], ['audit', 'Audit log', 'The audit log is the sealed list of who read or changed what in your memory, and when']] as const).map(([id, label, erklaerung]) => (
               <button
                 key={id}
+                type="button"
                 role="tab"
                 aria-selected={reiter === id}
                 onClick={() => setReiter(id)}
                 title={erklaerung}
-                className={`px-3 py-1 rounded-lg fs-2 font-semibold ${reiter === id ? 'bg-blatt shadow-sm' : ''}`}
-                style={{ color: reiter === id ? 'var(--text-1)' : 'var(--text-2)' }}
+                className={`apple-seg-btn px-3 py-1 rounded-md fs-2 font-semibold transition-colors ${reiter === id ? 'bg-blatt shadow-sm' : ''}`}
+                style={{
+                  color: reiter === id ? 'var(--text-1)' : 'var(--text-2)',
+                  background: reiter === id ? 'var(--eb-2)' : 'transparent',
+                }}
               >
                 {label}
               </button>

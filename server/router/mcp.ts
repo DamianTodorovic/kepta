@@ -25,7 +25,7 @@ export function mountMcp(app: express.Express, ctx: AppKontext): void {
   });
 
   // Streamable HTTP (MCP 2026-07-28, stateless) — POST /mcp
-  app.post("/mcp", async (req, res) => {
+  app.post("/mcp", ctx.limiter.write, async (req, res) => {
     const body = req.body as Record<string, unknown> | undefined;
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       // JSON-Array = Batch-Request: MCP 2026-07-28 hat Batching gestrichen →
@@ -48,10 +48,10 @@ export function mountMcp(app: express.Express, ctx: AppKontext): void {
       if (!reply) return res.status(202).json({ accepted: true });
       return res.json(reply);
     } catch (e) {
+      console.error("kepta: /mcp request failed:", e instanceof Error ? e.message : String(e));
       return res.status(500).json({
-        jsonrpc: "2.0",
-        id: null,
-        error: { code: -32603, message: e instanceof Error ? e.message : String(e) },
+        jsonrpc: "2.0", id: null,
+        error: { code: -32603, message: "Request could not be completed — try again." },
       });
     }
   });

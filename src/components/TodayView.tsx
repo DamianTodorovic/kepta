@@ -3,7 +3,7 @@
 // computer, ready the moment the view opens.
 import { absage } from '../lib/absage';
 import { ApiFehler, tuerSatz } from '../lib/api';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, CheckCircle2, Clock, RefreshCw } from '../lib/icons';
 import { inForm } from '../lib/antwort';
@@ -62,6 +62,18 @@ export function fensterSeit(index: number, besuch: number, jetzt: number): numbe
   if (f.ms < 0) return besuch;
   if (f.ms === 0) return 0;
   return jetzt - f.ms;
+}
+
+/** Reads the last Today timestamp without updating it yet. */
+function leseBesuchSeit(jetzt = Date.now()): number {
+  let seit = jetzt - TAG;
+  try {
+    const roh = Number(localStorage.getItem(LETZTER_BESUCH));
+    if (Number.isFinite(roh) && roh > 0 && roh < jetzt) seit = roh;
+  } catch {
+    // private window — a day ago it is
+  }
+  return seit;
 }
 
 /** When Today was last opened — a day ago the first time. Stores now for the next visit. */
@@ -154,11 +166,19 @@ interface Props {
 }
 
 export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
-  const [besuch] = useState(() => besuchSeit());
+  const [besuch] = useState(() => (aktiv ? besuchSeit() : leseBesuchSeit()));
+  const besuchGesichert = useRef(aktiv);
   const [fenster, setFenster] = useState(0);
   const [daten, setDaten] = useState<Briefing | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [erledigt, setErledigt] = useState<Record<string, string>>({});
+  const [alleTodos, setAlleTodos] = useState(false);
+
+  useEffect(() => {
+    if (!aktiv || besuchGesichert.current) return;
+    besuchGesichert.current = true;
+    try { localStorage.setItem(LETZTER_BESUCH, String(Date.now())); } catch { /* private window */ }
+  }, [aktiv]);
 
   const seit = useMemo(() => fensterSeit(fenster, besuch, Date.now()), [fenster, besuch]);
 
@@ -205,28 +225,31 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
 
   const jetzt = new Date();
   const fensterInfo = FENSTER[fenster]!;
+  const abgeloest = daten?.superseded ?? { total: 0, notes: [] };
+  const geloescht = daten?.deleted ?? { total: 0, notes: [] };
+  const bewegungZahl = daten ? daten.created.total + daten.changed.total + abgeloest.total + geloescht.total : 0;
   // Die Statuszeile wohnt am Fenster-Slot (volle Breite, Mockup .statuszeile);
   // die Fläche meldet ihre Wörter dorthin.
   const melde = benutzeFensterStatus();
   useEffect(() => {
     if (!aktiv) return;
     melde({
-      links: (
+      links: fehler ? (
+        <span>No answer from the store</span>
+      ) : !daten ? (
+        <span>Asking the store…</span>
+      ) : (
         <>
-          <span className={fehler || !daten ? undefined : 'gruen'}>
-            {fehler ? 'No answer from the store' : daten ? 'In sync' : 'Asking the store…'}
-          </span>
+          <span className="tnum gruen">{bewegungZahl.toLocaleString('en-GB')} {bewegungZahl === 1 ? 'change' : 'changes'}</span>
           <span className="strich">·</span>
           <span>{fensterInfo.label}</span>
         </>
       ),
       rechts: 'local · private',
     });
-  }, [aktiv, fehler, daten, fensterInfo.label, melde]);
+  }, [aktiv, fehler, daten, bewegungZahl, fensterInfo.label, melde]);
   // Untertitel: beim gewohnten Blick die gemessene Spanne, sonst der Fenstertext.
   const untertitel = fenster === 0 ? `what happened in the last ${spannenText(seit)}` : `what happened ${fensterInfo.text}`;
-  const abgeloest = daten?.superseded ?? { total: 0, notes: [] };
-  const geloescht = daten?.deleted ?? { total: 0, notes: [] };
   // P202, Mockup-Treue (k3pta-app-fenster): Today ist ein FENSTER — die Liste
   // ("What changed") als schmale Spalte mit dem Zeitfenster als Steuer-Zeile,
   // die Entscheidungen (Widersprüche, to-dos, Fristen, Apps) in der Detail-
@@ -236,7 +259,31 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
   // Notiz, Titel in einer Zeile, rechts die kurze Zeit und die Herkunft.
   const bewegungen = daten ? (
     daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 ? (
-      <p className="fs-3 lh-lesbar px-3 py-2" style={{ color: 'var(--text-3)' }}>Nothing new {fensterInfo.text}.</p>
+      <div className="px-3 py-3 space-y-2.5">
+        <p className="fs-3 lh-lesbar" style={{ color: 'var(--text-3)', margin: 0 }}>Nothing new {fensterInfo.text}.</p>
+        {fenster < FENSTER.length - 1 && (
+          <div className="flex flex-wrap gap-1.5">
+            {fenster < 2 && (
+              <button
+                type="button"
+                onClick={() => setFenster(2)}
+                className="px-2.5 py-1 rounded-md fs-2 font-semibold hover:opacity-85"
+                style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-1)' }}
+              >
+                Show last 7 days
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setFenster(FENSTER.length - 1)}
+              className="px-2.5 py-1 rounded-md fs-2 font-semibold hover:opacity-85"
+              style={{ background: 'var(--bg-inset-strong)', color: 'var(--text-1)' }}
+            >
+              Show everything
+            </button>
+          </div>
+        )}
+      </div>
     ) : (
       <ul>
         {daten.created.notes.map((n) => (
@@ -301,27 +348,54 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
       <aside className="listen-spalte">
         <div className="listen-kopf">
           <h2 className="listen-titel fs-2 font-semibold" style={{ margin: 0 }}>What changed</h2>
-          <span className="listen-zahl fs-1 tnum">{fensterInfo.label}</span>
+          <span className="listen-zahl fs-1 tnum">
+            {daten ? `${bewegungZahl.toLocaleString('en-GB')} ${bewegungZahl === 1 ? 'change' : 'changes'}` : fensterInfo.label}
+          </span>
         </div>
-        {/* Zeitmaschine: das Fenster, in das Today hineinsieht — als schmale
-            Steuer-Zeile der Liste (Mockup-Grammatik). */}
+        {/* Zeitstrahl: durchgängige Spur mit eingerasteten Stufen und zentriertem Knopf,
+            darunter direkt zugeordnete Zeitraum-Schritte ohne Doppelbeschriftung. */}
         <div className="listen-steuer" data-testid="today-zeitfenster">
-          {/* h-7 statt h-1.5: gemessen war die Trefferfläche des Reglers 6 px
-              hoch. Z-08 verlangt mindestens 20, für Wiederholtes 28. Die Spur
-              malt die Lage darunter, der Knauf sitzt zentriert. */}
-          <input
-            type="range"
-            min={0}
-            max={FENSTER.length - 1}
-            step={1}
-            value={fenster}
-            onChange={(e) => setFenster(parseInt(e.target.value, 10))}
-            className="flex-1 min-w-0 h-7 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer
-              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-knopf [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--accent)] [&::-webkit-slider-thumb]:shadow-sm
-              [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-knopf [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--accent)]"
-            aria-label="Time window"
-          />
-          <span className="fs-1 tnum whitespace-nowrap shrink-0" style={{ color: 'var(--text-3)' }}>{fensterInfo.label}</span>
+          <div className="zeitstrahl-spur-rahmen">
+            <div className="zeitstrahl-gleis" aria-hidden="true">
+              <div
+                className="zeitstrahl-fuellung"
+                style={{ width: `${(fenster / (FENSTER.length - 1)) * 100}%` }}
+              />
+              {FENSTER.map((f, idx) => (
+                <span
+                  key={f.label}
+                  className="zeitstrahl-punkt"
+                  data-aktiv={idx <= fenster ? 'true' : 'false'}
+                  style={{ left: `${(idx / (FENSTER.length - 1)) * 100}%` }}
+                />
+              ))}
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={FENSTER.length - 1}
+              step={1}
+              value={fenster}
+              onChange={(e) => setFenster(parseInt(e.target.value, 10))}
+              className="arch-range relative z-10 w-full h-7 appearance-none bg-transparent accent-[var(--accent)] cursor-pointer"
+              aria-label="Time window"
+              aria-valuetext={fensterInfo.label}
+            />
+          </div>
+          <div className="zeitstrahl-marken" role="group" aria-label="Timeframe presets">
+            {FENSTER.map((f, idx) => (
+              <button
+                key={f.label}
+                type="button"
+                onClick={() => setFenster(idx)}
+                aria-pressed={fenster === idx}
+                data-on={fenster === idx ? 'true' : 'false'}
+                className="zeitfenster-stopp fs-1"
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="listen-zeilen">
           {fehler && (
@@ -333,10 +407,6 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
           {!daten && !fehler && <p className="fs-3 lh-lesbar px-3 py-2" style={{ color: 'var(--text-2)' }}>Getting your day ready…</p>}
           {daten && (
             <>
-              {/* Die Spannen-Auskunft und die Herkunfts-Summe stehen im Mockup-Bild
-                  nicht an dieser Stelle — ihr Ort ist der Listen-Kopf (Fenster-Wort)
-                  und die Statuszeile. Die bewachten Zellen bleiben im DOM. */}
-              <div hidden data-testid="today-spanne">{untertitel}</div>
               {daten.created.bySource.length > 0 && (
                 <p hidden data-testid="today-herkunft">
                   {daten.created.bySource.map((q) => `${q.who}: ${q.count} new`).join(' · ')}
@@ -360,15 +430,34 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
         </div>
       </aside>
       <section className="detail-spalte">
-        <div className="detail-kopf"><span className="wo">{jetzt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</span></div>
+        <div className="detail-kopf">
+          <span className="wo">{jetzt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+          <span className="fs-1 tnum truncate ml-auto" style={{ color: 'var(--text-3)' }} data-testid="today-spanne">{untertitel}</span>
+        </div>
         <div className="detail-korper">
           {daten && (
-            <>
+            <div className="max-w-[680px]">
+              <div className="gruppen-tisch mb-5 grid grid-cols-2 sm:grid-cols-4 divide-x overflow-hidden" style={{ borderColor: 'var(--border-subtle)' }}>
+                {[
+                  { label: 'New', wert: daten.created.total, warn: false },
+                  { label: 'Updated', wert: daten.changed.total, warn: false },
+                  { label: 'To-dos', wert: daten.todos.total, warn: false },
+                  { label: 'To check', wert: daten.contradictions.length, warn: daten.contradictions.length > 0 },
+                ].map((k) => (
+                  <div key={k.label} className="px-3.5 py-2.5 min-w-0" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <div className="fs-1" style={{ color: 'var(--text-3)' }}>{k.label}</div>
+                    <div className="fs-5 font-semibold tnum mt-0.5" style={{ color: k.warn ? 'var(--warn)' : 'var(--text-1)' }}>
+                      {k.wert}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               {daten.contradictions.length > 0 && (
                 <Abschnitt titel="Needs a look" zahl={daten.contradictions.length}>
                   <div className="space-y-3">
                     {daten.contradictions.map((w) => (
-                      <div key={w.key} className="hud-inset rounded-xl p-4" data-testid="contradiction">
+                      <div key={w.key} className="gruppen-tisch p-4" data-testid="contradiction">
                         <div className="fs-3 mb-3 flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
                           <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--warn)' }} />
                           Two notes disagree{w.about ? ` about “${w.about}”` : ''}.
@@ -397,43 +486,84 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
                 </Abschnitt>
               )}
 
-              {daten.todos.total > 0 && (
-                <Abschnitt titel="Open to-dos" zahl={daten.todos.total}>
-                  <ul className="space-y-2">
-                    {daten.todos.items.map((t, i) => (
-                      <li key={`${t.id}-${i}`} className="fs-3 flex items-baseline gap-2" style={{ color: 'var(--text-1)' }}>
-                        <span aria-hidden className="w-3 h-3 rounded-[3px] shrink-0 translate-y-0.5" style={{ border: '1.5px solid var(--text-3)' }} />
-                        <span className="flex-1">{t.text}</span>
-                        <button onClick={() => onOpenMemory(t.id)} className="fs-1 hover:underline shrink-0" style={{ color: 'var(--text-3)' }}>{t.title}</button>
-                      </li>
-                    ))}
-                  </ul>
-                  {daten.todos.total > daten.todos.items.length && (
-                    <p className="fs-1 mt-2" style={{ color: 'var(--text-3)' }}>and {daten.todos.total - daten.todos.items.length} more in your notes</p>
-                  )}
-                </Abschnitt>
-              )}
+              {daten.todos.total > 0 && (() => {
+                const sichtbareTodos = alleTodos ? daten.todos.items : daten.todos.items.slice(0, 8);
+                const hatToggle = daten.todos.items.length > 8;
+                return (
+                  <Abschnitt titel="Open to-dos" zahl={daten.todos.total}>
+                    <div className="gruppen-tisch">
+                      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                        {sichtbareTodos.map((t, i) => (
+                          <li
+                            key={`${t.id}-${i}`}
+                            className="app-zeile"
+                            style={!hatToggle && i === sichtbareTodos.length - 1 ? { borderBottom: 'none' } : undefined}
+                          >
+                            <span aria-hidden className="app-icon" style={{ background: 'transparent' }}>
+                              <span className="block w-3.5 h-3.5 rounded-[4px]" style={{ border: '1.5px solid var(--text-3)' }} />
+                            </span>
+                            <span className="flex-1 min-w-0 fs-3" style={{ color: 'var(--text-1)' }}>{t.text}</span>
+                            <button
+                              onClick={() => onOpenMemory(t.id)}
+                              className="fs-1 hover:underline shrink-0 text-right truncate max-w-[220px]"
+                              style={{ color: 'var(--text-3)' }}
+                            >
+                              {t.title}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                      {hatToggle && (
+                        <div className="px-3 py-2">
+                          <button
+                            type="button"
+                            onClick={() => setAlleTodos((v) => !v)}
+                            className="fs-2 font-semibold hover:underline"
+                            style={{ color: 'var(--accent)' }}
+                          >
+                            {alleTodos ? 'Show fewer' : `Show all ${daten.todos.items.length} open to-dos`}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {daten.todos.total > daten.todos.items.length && (
+                      <p className="fs-1 mt-2" style={{ color: 'var(--text-3)' }}>and {daten.todos.total - daten.todos.items.length} more in your notes</p>
+                    )}
+                  </Abschnitt>
+                );
+              })()}
 
-              {(daten.expiring.length > 0 || daten.expired.length > 0) && (
-                <Abschnitt titel="Due" zahl={daten.expiring.length + daten.expired.length}>
-                  <ul className="space-y-2">
-                    {daten.expiring.map((n) => (
-                      <li key={n.id} className="fs-3 flex items-baseline gap-2">
-                        <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--warn)' }} />
-                        <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                        <span className="fs-1" style={{ color: 'var(--text-3)' }}>valid until {datum(n.validTo)}</span>
-                      </li>
-                    ))}
-                    {daten.expired.map((n) => (
-                      <li key={n.id} className="fs-3 flex items-baseline gap-2">
-                        <Clock className="w-3.5 h-3.5 shrink-0 translate-y-0.5" style={{ color: 'var(--text-3)' }} />
-                        <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
-                        <span className="fs-1" style={{ color: 'var(--text-2)' }}>expired {datum(n.validTo)} — still true?</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Abschnitt>
-              )}
+              {(daten.expiring.length > 0 || daten.expired.length > 0) && (() => {
+                const fristen = [
+                  ...daten.expiring.map((n) => ({ ...n, abgelaufen: false })),
+                  ...daten.expired.map((n) => ({ ...n, abgelaufen: true })),
+                ];
+                return (
+                  <Abschnitt titel="Due" zahl={fristen.length}>
+                    <div className="gruppen-tisch">
+                      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                        {fristen.map((n, i) => (
+                          <li
+                            key={`${n.abgelaufen ? 'exp' : 'due'}-${n.id}`}
+                            className="app-zeile"
+                            style={i === fristen.length - 1 ? { borderBottom: 'none' } : undefined}
+                          >
+                            <span aria-hidden className="app-icon" style={{ background: 'transparent' }}>
+                              <Clock className="w-3.5 h-3.5" style={{ color: n.abgelaufen ? 'var(--text-3)' : 'var(--warn)' }} />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <Titel id={n.id} title={n.title} onOpen={onOpenMemory} />
+                            </div>
+                            <span className="fs-1 shrink-0" style={{ color: n.abgelaufen ? 'var(--text-2)' : 'var(--text-3)' }}>
+                              {n.abgelaufen ? `expired ${datum(n.validTo)} — still true?` : `valid until ${datum(n.validTo)}`}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </Abschnitt>
+                );
+              })()}
 
               {/* Your AI apps als Tabelle des Mockups (gruppen-tisch + app-zeilen):
                   Zeilen mit Zeich-Badge, Name und Zustand, getrennt von Haarlinien. */}
@@ -463,11 +593,11 @@ export function TodayView({ aktiv, onOpenMemory, onGo }: Props) {
               </Abschnitt>
 
               {daten.contradictions.length === 0 && daten.todos.total === 0 && daten.created.total === 0 && daten.changed.total === 0 && abgeloest.total === 0 && geloescht.total === 0 && (
-                <p className="fs-4 lh-lesbar flex items-center gap-2" style={{ color: 'var(--ok)' }}>
+                <p className="fs-4 lh-lesbar flex items-center gap-2 mt-4" style={{ color: 'var(--ok)' }}>
                   <CheckCircle2 className="w-4 h-4" /> All quiet. Nothing needs you right now.
                 </p>
               )}
-            </>
+            </div>
           )}
         </div>
       </section>

@@ -145,7 +145,7 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         {pct !== null && (
           <span
             className="row-pct tnum"
-            title={matchedTerms?.length ? `Getroffene Begriffe: ${matchedTerms.slice(0, 4).join(', ')}` : undefined}
+            title={matchedTerms?.length ? `Matched terms: ${matchedTerms.slice(0, 4).join(', ')}` : undefined}
           >
             {pct}%
           </span>
@@ -163,7 +163,15 @@ export const MemoryCard = memo(function MemoryCard({ memory, onClick, score, mat
         </div>
         <span className="row-time tnum">{kurzeZeit(memory.updatedAt)}</span>
         {/* Die Herkunft als eigenes Glied (Mockup: „md file“, „Claude Code“, „MCP“). */}
-        {quelle && <span className="row-herkunft truncate max-w-[120px]">{quelle.name}</span>}
+        {quelle && (
+          <span className="row-herkunft" title={quelle.pfad ?? quelle.url ?? quelle.name}>
+            {quelle.art === "datei"
+              ? (quelle.dateiTyp && quelle.dateiTyp.length <= 6 ? `${quelle.dateiTyp} file` : "file")
+              : quelle.art === "url"
+                ? quelle.name
+                : "inbox"}
+          </span>
+        )}
         {chunk && !quelle && <span className="row-herkunft">{chunk.von} parts</span>}
       </div>
     </div>

@@ -86,3 +86,79 @@ export async function getJsonOderNull<T>(url: string): Promise<T | null> {
     return null;
   }
 }
+
+interface CoalescedEntry {
+  promise: Promise<{ ok: boolean; status: number; data: unknown }>;
+  fetchFn: typeof fetch;
+}
+
+interface CachedEntry {
+  value: { ok: boolean; status: number; data: unknown };
+  expiresAt: number;
+  fetchFn: typeof fetch;
+}
+
+const coalescedInflight = new Map<string, CoalescedEntry>();
+const coalescedCache = new Map<string, CachedEntry>();
+
+function cloneJson<T>(val: T): T {
+  if (val === null || typeof val !== "object") return val;
+  if (typeof structuredClone === "function") return structuredClone(val);
+  return JSON.parse(JSON.stringify(val)) as T;
+}
+
+export function invalidateApiCache(prefix: string): void {
+  for (const key of coalescedInflight.keys()) {
+    if (key.startsWith(prefix)) coalescedInflight.delete(key);
+  }
+  for (const key of coalescedCache.keys()) {
+    if (key.startsWith(prefix)) coalescedCache.delete(key);
+  }
+}
+
+/**
+ * Shared GET helper that coalesces concurrent identical requests and optionally
+ * holds successful bootstrap reads for a brief window (`ttlMs`), automatically
+ * bypassing cache whenever `globalThis.fetch` changes (test isolation).
+ */
+export async function coalescedJson<T>(
+  url: string,
+  opts: { ttlMs?: number } = {},
+): Promise<{ ok: boolean; status: number; data: T | null }> {
+  const currentFetch = globalThis.fetch;
+  const now = Date.now();
+  const cached = coalescedCache.get(url);
+  if (cached && cached.fetchFn === currentFetch && now < cached.expiresAt) {
+    return {
+      ok: cached.value.ok,
+      status: cached.value.status,
+      data: cloneJson(cached.value.data) as T | null,
+    };
+  }
+  const active = coalescedInflight.get(url);
+  if (active && active.fetchFn === currentFetch) {
+    const res = await active.promise;
+    return { ok: res.ok, status: res.status, data: cloneJson(res.data) as T | null };
+  }
+  const ttlMs = opts.ttlMs ?? 0;
+  const run = (async () => {
+    const r = await currentFetch(url);
+    if (!r.ok) return { ok: false, status: r.status, data: null };
+    const data = (await r.json()) as unknown;
+    const out = { ok: true, status: r.status, data };
+    if (ttlMs > 0 && globalThis.fetch === currentFetch) {
+      coalescedCache.set(url, {
+        value: { ok: true, status: r.status, data: cloneJson(data) },
+        expiresAt: Date.now() + ttlMs,
+        fetchFn: currentFetch,
+      });
+    }
+    return out;
+  })().finally(() => {
+    const cur = coalescedInflight.get(url);
+    if (cur && cur.promise === run) coalescedInflight.delete(url);
+  });
+  coalescedInflight.set(url, { promise: run, fetchFn: currentFetch });
+  const result = await run;
+  return { ok: result.ok, status: result.status, data: cloneJson(result.data) as T | null };
+}

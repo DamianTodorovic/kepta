@@ -204,13 +204,14 @@ function TypFarbenReihe() {
   );
 }
 
-export function Settings() {
+export function Settings({ aktiv = true }: { aktiv?: boolean } = {}) {
   const [activeTab, setActiveTab] = useState<TabId>(tabLesen);
 
   // Die Statuszeile wohnt am Fenster-Slot (Mockup .statuszeile):
   // „Version <x> · AI & data | local · private“.
   const melde = benutzeFensterStatus();
   useEffect(() => {
+    if (!aktiv) return;
     melde({
       links: (
         <>
@@ -221,7 +222,7 @@ export function Settings() {
       ),
       rechts: 'local · private',
     });
-  }, [activeTab, melde]);
+  }, [aktiv, activeTab, melde]);
 
   // Punkt 4: der Tab merkt sich, wo die Hand war — `useState` allein verlor ihn beim naechsten
   // Oeffnen, und die Seite lag wieder auf 'system'.
@@ -390,11 +391,13 @@ export function Settings() {
 
   // Auto-Erkennung für lokale Modelle: Ollama/LM Studio sofort + alle 12s + bei Fenster-Fokus
   useEffect(() => {
+    if (!aktiv) return;
     // Aufgabe #8: dasselbe Urteil wie die Tuer, nicht drei Teilstring-Tests (siehe :256).
     const isLocal = !provider.needsKey || istLokaleAdresse(settings.baseUrl);
     if (!isLocal) return;
     let cancelled = false;
     const silentLoad = async () => {
+      if (cancelled || (typeof document !== 'undefined' && document.hidden)) return;
       try {
         const res = await fetch('/api/models', {
           method: 'POST',
@@ -429,14 +432,15 @@ export function Settings() {
     };
     silentLoad();
     const id = setInterval(silentLoad, 12000);
-    const onFocus = () => silentLoad();
+    const onFocus = () => { void silentLoad(); };
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onFocus);
     return () => { cancelled = true; clearInterval(id); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus); };
-  }, [settings.providerId, settings.baseUrl, provider.needsKey, provider.protocol]);
+  }, [aktiv, settings.providerId, settings.baseUrl, provider.needsKey, provider.protocol]);
 
   // Für Remote-Anbieter mit Key: einmalig beim Open auto-laden (kein Polling, um Rate-Limits zu schonen)
   useEffect(() => {
+    if (!aktiv) return;
     // Aufgabe #8: dasselbe Urteil wie die Tuer, nicht drei Teilstring-Tests (siehe :256).
     const isLocal = !provider.needsKey || istLokaleAdresse(settings.baseUrl);
     if (isLocal) return;
@@ -469,12 +473,13 @@ export function Settings() {
     const onFocus = () => loadOnce();
     window.addEventListener('focus', onFocus);
     return () => { cancelled = true; window.removeEventListener('focus', onFocus); };
-  }, [settings.providerId, settings.baseUrl, settings.apiKey, provider.needsKey, provider.protocol]);
+  }, [aktiv, settings.providerId, settings.baseUrl, settings.apiKey, provider.needsKey, provider.protocol]);
 
   // Jemand, der gleich nach dem Start in die Einstellungen klickt, trifft die
   // Rehydrierung des Dashboard noch laufend an — die Messung aus dem gebauten
   // Buendel liess das Feld leer. Also selbst nachholen, dann nachziehen.
   useEffect(() => {
+    if (!aktiv) return;
     let gueltig = true;
     hydrateAISettings().then((s) => {
       if (!gueltig) return;
@@ -482,9 +487,10 @@ export function Settings() {
       setExtractModel(s.extractModel ?? '');
     });
     return () => { gueltig = false; };
-  }, []);
+  }, [aktiv]);
 
   useEffect(() => {
+    if (!aktiv) return;
     // P184: die Modell-Liste und die aktuelle Wahl — der Wechsel-Schalter liest sie.
     if (activeTab !== 'mcp' && activeTab !== 'system') return;
     let gueltigWechsel = true;
@@ -498,7 +504,7 @@ export function Settings() {
       } catch { /* die Liste bleibt leer — der Rest der Fläche steht */ }
     })();
     return () => { gueltigWechsel = false; };
-  }, [activeTab]);
+  }, [aktiv, activeTab]);
 
   const wechsleSuchModell = async () => {
     if (!modellWahl || modellWechselLaeuft) return;
@@ -527,6 +533,7 @@ export function Settings() {
     setModellWechselLaeuft(false);
   };
   useEffect(() => {
+    if (!aktiv) return;
     // P183: auch der System-Tab liest die Health — die Search-Model-Zeile nennt
     // das Modell aus health.embeddings.models.
     if (activeTab !== 'mcp' && activeTab !== 'system') return;
@@ -564,7 +571,7 @@ export function Settings() {
       }
     })();
     return () => { cancelled = true; };
-  }, [activeTab]);
+  }, [aktiv, activeTab]);
 
   const update = (patch: Partial<AISettings>) => {
     if (patch.providerId !== undefined) ortZuletzt.current = "anbieter";
@@ -750,7 +757,7 @@ export function Settings() {
   const inputClass = "hud-input w-full rounded-xl px-4 py-3 fs-4 lh-lesbar";
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div className="h-full flex flex-col md:flex-row min-h-0" style={{ background: 'var(--bg-base)' }}>
       {/* P199: der Mount-Lauf spielte unsichtbar — Einstellungen bleiben
           dauerhaft gemountet; die Umhüllung im Dashboard blendet bei jedem
           Einblenden (ansicht-blende). */}
@@ -778,7 +785,7 @@ export function Settings() {
 
         {activeTab === 'system' && (
           <div className="space-y-10">
-            <SystemStatus />
+            <SystemStatus aktiv={aktiv && activeTab === 'system'} />
             <PrivacyShield />
 
             {/* P196: die Typ-Farben — dieselbe Wahl wie im Graph-Regal, dieselbe

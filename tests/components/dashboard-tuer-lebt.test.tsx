@@ -62,17 +62,19 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); });
 
 describe("Punkt 4: die Sync-Behauptung ist an eine Antwort gebunden", () => {
-  it("steht 'In sync', wenn die Tuer geantwortet hat", async () => {
+  it("zeigt bei antwortender Tuer die Bestandszahlen statt 'In sync' oder Fehlerstatus", async () => {
     antworte((p) => (p.includes("/api/health") ? GESUND : p.includes("/api/memories/gruppen")
       ? { bestand: 12, traeger: { notes: 12, files: 0, code: 0, daten: 0, anderes: 0 }, themen: { people: 0, projects: 0, events: 0, tasks: 0, guides: 0, links: 0 }, ohneThema: 12, themenNachTraeger: {}, ohneThemaNachTraeger: {} }
       : p.includes("/api/memor") ? [ { id: "m1", userId: "local", title: "Notiz", content: "Inhalt", tags: [], type: "semantic", createdAt: 1, updatedAt: 1 } as unknown as Memory ]
       : {}));
     const { container } = await zeige();
-    expect(syncStelle(container), `die antwortende Tuer zeigt nicht 'In sync': ${syncStelle(container)}`)
-      .toContain("In sync");
+    const stelle = syncStelle(container);
+    expect(stelle).not.toContain("In sync");
+    expect(stelle).toContain("12 notes");
+    expect(stelle).not.toMatch(/No answer|Asking the store/i);
   });
 
-  it("behauptet kein 'In sync', wenn die Tuer nie geantwortet hat", async () => {
+  it("behauptet keinen Antwortstatus, wenn die Tuer nie geantwortet hat", async () => {
     antworte(() => new Error("connection refused"));
     const { container } = await zeige();
     const stelle = syncStelle(container);
@@ -89,12 +91,14 @@ describe("Punkt 4: die Sync-Behauptung ist an eine Antwort gebunden", () => {
       return {};
     });
     const { container } = await zeige();
-    expect(syncStelle(container)).toContain("In sync");
+    expect(syncStelle(container)).toContain("12 notes");
+    expect(syncStelle(container)).not.toMatch(/No answer/i);
     gesund = false;
     // Die Frage nach dem Leben der Tuer laeuft auf einem Takt; ohne den Takt bleibt der
     // Tod unsichtbar, weil die Flaeche nur beim Bergaufragen. Der Takt ist 5 s.
     await act(async () => { await new Promise((r) => setTimeout(r, 6200)); });
     const stelle = syncStelle(container);
-    expect(stelle, `die Tuer ist fort, die Stelle sagt weiter: ${stelle}`).not.toContain("In sync");
+    expect(stelle, `die Tuer ist fort, die Stelle meldet keinen Verlust: ${stelle}`).toMatch(/No answer from the store/i);
+    expect(stelle).not.toContain("In sync");
   });
 });

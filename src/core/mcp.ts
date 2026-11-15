@@ -171,6 +171,7 @@ export const TOOLS = [
         confidence: opt({ type: "number" }),
         validFrom: opt({ type: ["integer", "null"] }),
         validTo: opt({ type: ["integer", "null"] }),
+        supersededBy: opt({ type: ["string", "null"] }),
       },
       required: ["id"],
     },
@@ -516,12 +517,18 @@ export async function callTool(store: KeptaStore, name: string, args: Record<str
         const verweigert = aussenVor(store, id, `Memory not found: ${id}`);
         if (verweigert) throw verweigert;
         const patch: Record<string, unknown> = {};
-        for (const k of ["title", "content", "tags", "type", "confidence", "validFrom", "validTo"] as const) {
+        for (const k of ["title", "content", "tags", "type", "confidence", "validFrom", "validTo", "supersededBy"] as const) {
           if (args[k] !== undefined) patch[k] = args[k];
         }
         const updated = store.updateMemory(id, patch);
         if (!updated) throw new Error(`Memory not found: ${id}`);
-        if (patch.content !== undefined) indexMemory(store, id);
+        if (patch.content !== undefined || patch.title !== undefined) {
+          indexMemory(store, id);
+          const aktualisiert = store.getMemory(id);
+          if (aktualisiert) {
+            store.verknuepfeNotiz(id, aktualisiert.title, extractWikiLinks(`${aktualisiert.title} ${aktualisiert.content}`));
+          }
+        }
         const structured = { updated: true, memory: memoryToOut(store, store.getMemory(id)) };
         return { content: [{ type: "text", text: JSON.stringify(structured, null, 2) }], structuredContent: structured };
       }

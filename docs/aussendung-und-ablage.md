@@ -255,7 +255,7 @@ ausdrücklichen Schreibstellen in sechs Dateien — `server/router/audit.ts:81`,
 `server/router/clients.ts:43`, `server/router/mcp.ts:80` (die Suche durch die HTTP-Tür),
 `server/router/schild.ts:47`. Dazu kommt
 `src/lib/mcpwache.ts:121` mit `protokolliereMcp` für jedes Ereignis durch die MCP-Tür.
-`src/core/store.ts:584` hätte einen Senk für Leseereignisse — die App setzt ihn nie, der Default
+`src/core/store.ts:593` hätte einen Senk für Leseereignisse — die App setzt ihn nie, der Default
 ist `NOOP_SINK` (`src/core/extensions.ts:136`, `:162`). Also: **Lesen über HTTP hinterlässt nichts
 in der Kette**, und der README-Satz war breiter als die Maschine.
 
@@ -1771,13 +1771,13 @@ Sie trennt jetzt git's eigne Absage (Exit-Code plus stderr → Befund) von einem
 
 **Die Heilung in den Blättern.** README.md:145 heißt jetzt `.test.tsx` (:73 und :88).
 README.md:261 verankert die Verschlüsselung an diesem Baum: `281f5a1:src/core/store.ts:992`
-(Erstcommit dieses Baums, per `git show` gemessen) und `src/core/store.ts:1929` heute; die
+(Erstcommit dieses Baums, per `git show` gemessen) und `src/core/store.ts:1938` heute; die
 Behauptung, der *Kern*-Erstcommit `2c942be` trage `package.json` 2.11.0, ist aus dem Satz
 herausgezogen — im Kern-Repo nachgemessen wahr (dessen Erstcommit `2c942be` trägt in
 `package.json` auf Zeile 3 die Version 2.11.0 und das Pragma auf Blob-Zeile 959), aber für einen
 Leser dieses Repos nicht zu öffnen, und ein Beleg, den ein Kunde
 nicht öffnen kann, ist keiner. README.md:265 nennt Helmet (`server/app.ts:200`), den globalen
-Limit (`:208`), die Schreibroute (`server/router/memories.ts:130`) und das 1mb-Limit
+Limit (`:208`), die Schreibroute (`server/router/memories.ts:131`) und das 1mb-Limit
 (`server/app.ts:251`). Die sechs Historien-Zeugen in REGISTER und Ledger stehen in der Blob-Form
 `113093c:server/helfer/…`; der `trial-anchor`-Beleg (:183-185, Flag `wx` auf :218) gehört zu
 `planzustand.ts`, nicht zu `plan-schluesselbund.ts` (98 Zeilen, konnte :183 nicht liefern).

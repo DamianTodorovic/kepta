@@ -29,7 +29,7 @@ export function suchModellWechseln(
   tags: string[],
 ): WechselErgebnis {
   if (typeof modell !== "string" || modell.trim().length === 0 || modell.length > 80) {
-    return { ok: false, fehler: "Das Modell-Feld fehlt oder ist kein Name." };
+    return { ok: false, fehler: "The model field is missing or not a valid name." };
   }
   const name = modell.trim();
   const bekannt = tags.some((t) => t === name || t.startsWith(`${name}:`));
@@ -38,7 +38,7 @@ export function suchModellWechseln(
       .filter((t) => !t.startsWith("llama") && !t.startsWith("qwen"))
       .slice(0, 6)
       .join(", ");
-    return { ok: false, fehler: `Ollama kennt „${name}" nicht. Vorhandene Such-Modelle: ${kandidaten}.` };
+    return { ok: false, fehler: `Ollama does not know "${name}". Available search models: ${kandidaten}.` };
   }
   store.setzeEinstellungen({ such_modell: name });
   queue?.wechselModell(name);

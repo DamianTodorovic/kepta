@@ -69,7 +69,7 @@ export function mountSettings(app: express.Express, ctx: AppKontext): void {
       res.json(null);
     }
   });
-  app.post("/api/profile", (req, res) => {
+  app.post("/api/profile", ctx.limiter.write, (req, res) => {
     try {
       // Hardened: size limit + sanitize
       const body = bodyOf<Record<string, unknown>>(req);

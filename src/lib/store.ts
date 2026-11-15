@@ -239,6 +239,10 @@ async function doRefresh(): Promise<Memory[]> {
 export function refreshMemories(): Promise<Memory[]> {
   // Dedup: laufende Anfrage wiederverwenden
   if (pendingRefresh) return pendingRefresh;
+  // Erstabruf ohne 300ms-Kunstpause ausführen, damit die Wissensliste sofort füllt
+  if (cache.length === 0 && !debounceTimer) {
+    return doRefresh();
+  }
   // Debounce 300ms: sammle parallele Aufrufe
   if (debounceTimer) {
     return new Promise<Memory[]>((resolve, reject) => {

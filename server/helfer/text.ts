@@ -60,7 +60,7 @@ export async function textAus(datei: string): Promise<string> {
     const text = await textAusPdf(datei);
     if (text) return text;
     // Extraktion leer -> besser ein ehrlicher Hinweis als Binärmüll.
-    return "[Text konnte aus dieser PDF nicht extrahiert werden — Quelle ist über den Quellen-Chip öffnbar]";
+    return "[Text could not be extracted from this PDF — open the original via the source chip]";
   }
   // Nutzerdateien werden nie synchron gelesen. Der Server laeuft im
   // Hauptprozess der App; an 2.10.2 blieb ein synchrones open() auf einer

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback, type ReactNode } from "react";
 import { useTheme } from "../contexts/ThemeContext";
+import { coalescedJson, invalidateApiCache } from "../lib/api";
 import { Memory } from "../types";
 import { existsAt, graphTimeRange, activeIdsAt, edgeVisibleAt, istStruktur, fensterOffen, type Gueltigkeit } from "../lib/graphTime";
 // Atom2 / Sitemap / Scatter / Network sind hier weg: die Ansichts-Schiene trägt
@@ -1315,6 +1316,22 @@ function zeichneGlyph(
   ctx.fillText(text, x, y);
 }
 
+/** Abgerundete Pill-Kontur — nutzt nur Pfade aus tests/helfer/canvas.ts (kein ctx.roundRect). */
+function pillPfad(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
 /**
  * Greifweite eines Knotens in BILDSCHIRM-Pixeln.
  *
@@ -1564,9 +1581,15 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const [ganzerBestand, setzeGanzenBestand] = useState<Memory[]>([]);
   /** "kommt" bis der eigne Ganzbestands-Ruf geantwortet hat, "fort" wenn er scheiterte. */
   const [bestandStand, setzeBestandStand] = useState<"kommt" | "da" | "fort">("kommt");
+  const bestandGestartetRef = useRef(false);
+  const hatFensterNotizen = memoriesAusFenster.length > 0;
   useEffect(() => {
+    // Erst laden, wenn Graph sichtbar wird oder erste Seitennotizen da sind — verhindert Konflikte beim leeren Erststart
+    if ((!sichtbar && !hatFensterNotizen) || bestandGestartetRef.current) return;
     let abgebrochen = false;
-    void (async () => {
+    const ladeAlles = async () => {
+      if (abgebrochen || bestandGestartetRef.current) return;
+      bestandGestartetRef.current = true;
       try {
         const res = await fetch("/api/memories?alle=1");
         if (abgebrochen) return;
@@ -1579,9 +1602,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       } catch { /* Tuer nicht erreichbar: die Fensterseite traegt das Bild, bis sie antwortet */
         if (!abgebrochen) setzeBestandStand("fort");
       }
-    })();
-    return () => { abgebrochen = true; };
-  }, []);
+    };
+    const timer = setTimeout(() => { void ladeAlles(); }, sichtbar ? 0 : 120);
+    return () => { abgebrochen = true; clearTimeout(timer); };
+  }, [sichtbar, hatFensterNotizen]);
   const memories = ganzerBestand.length > memoriesAusFenster.length ? ganzerBestand : memoriesAusFenster;
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -2117,11 +2141,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     let abgebrochen = false;
     void (async () => {
       try {
-        const res = await fetch(`/api/graph?depth=${graphTiefe}`);
-        const data = await res.json().catch(() => null);
+        const url = `/api/graph?depth=${graphTiefe}`;
+        if (netzLade > 0) invalidateApiCache(url);
+        const res = await coalescedJson<GraphApi>(url, { ttlMs: netzLade === 0 ? 1200 : 0 });
         if (abgebrochen) return;
-        if (res.ok && data && Array.isArray(data.relations)) {
-          setGraphApi(data as GraphApi);
+        if (res.ok && res.data && Array.isArray(res.data.relations)) {
+          setGraphApi(res.data);
           setKanteStand("da");
         } else {
           setKanteStand("fort");
@@ -2146,6 +2171,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     begriffe: number; kanten: number; neuBegriffe: number; neuKanten: number; fehler: string | null;
   } | null>(null);
   useEffect(() => {
+    if (!sichtbar) return;
     let abgebrochen = false;
     const hole = async (): Promise<Record<string, unknown> | null> => {
       try {
@@ -2212,7 +2238,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       }
     })();
     return () => { abgebrochen = true; };
-  }, []);
+  }, [sichtbar]);
 
   /**
    * Die semantische Karte: Plätze, keine Vektoren.
@@ -2914,8 +2940,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   // Baum ist aus dem Produkt geflogen, aber das Gruppen-Regal (Band 4 mit den
   // Farb-Wählern) braucht die Zählung in Claims und Meaning genauso.
   const regal = useMemo(
-    () => baueRegal(baumMemories),
-    [baumMemories]
+    () => (sichtbar ? baueRegal(baumMemories) : null),
+    [sichtbar, baumMemories]
   );
   /**
    * G-72 — die Gruppen, die ein Mensch aus einem Tag baut. **Ein Aufruf, ein Korpus:**
@@ -3247,6 +3273,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   }, [netz, verdecktJeKonzept]);
   const forceHistoryRef = useRef<Simulation | null>(null);
   useEffect(() => {
+    if (!sichtbar) return;
     if (ansichtRef.current !== "force") return;
     const ids = idsSchluessel ? idsSchluessel.split(",") : [];
     const kommtVomBaum = uebergangBaumRef.current;
@@ -3303,7 +3330,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     uebergangRef.current = zielKraft ?? new Map();
     zeichneNoetig.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsSchluessel, edges, radiusOf, ansicht, kraftGeruest]);
+  }, [sichtbar, idsSchluessel, edges, radiusOf, ansicht, kraftGeruest]);
 
 
   // Semantische Ansicht: dieselbe Knotenmenge und dieselben Behauptungen wie im
@@ -3671,6 +3698,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     const geruestFarbe = lies("--text-2", "#9b9992");
     const grundFarbe = lies("--bg-panel-solid", "#151515");
     const akzent = lies("--accent", "#c9b785");
+    const kantenRand = lies("--border-subtle", "#d4d3cf");
     const schwach = lies("--text-3", "#7a7a7a");
     // Thema-abhaengige Kugelwerte — auf hellem Grund ist die Kante dunkel.
     const nodeRim = lies("--node-rim", "rgba(255,255,255,0.2)");
@@ -4165,11 +4193,20 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         ctx.arc(n.x, n.y, rr + 3 / Math.max(0.01, t.k), 0, Math.PI * 2);
         ctx.stroke();
       }
+      if (istHov || tastaturIdRef.current === n.id) {
+        const vorAlpha = ctx.globalAlpha;
+        ctx.globalAlpha = 0.14;
+        ctx.fillStyle = akzent;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, rr + 7 / Math.max(0.4, t.k), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = vorAlpha;
+      }
       if (istHov) {
         ctx.strokeStyle = akzent;
         ctx.lineWidth = 2 / Math.max(0.4, t.k);
         ctx.beginPath();
-        ctx.arc(n.x, n.y, rr + 4, 0, Math.PI * 2);
+        ctx.arc(n.x, n.y, rr + 3.5 / Math.max(0.4, t.k), 0, Math.PI * 2);
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
@@ -4604,6 +4641,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         verdraengt++;
         continue;
       }
+      if (gehalten) {
+        pillPfad(ctx, xKantig - breite / 2 - 7, yKantig - 2, breite + 14, fs + 6, 5);
+        ctx.fillStyle = grundFarbe;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = akzent;
+        ctx.stroke();
+      }
       ctx.lineWidth = 3;
       ctx.strokeStyle = grundFarbe;
       ctx.strokeText(titel, xKantig, yKantig);
@@ -4704,6 +4749,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         const breite = ctx.measureText(text).width;
         const eigne = e === gehalten;
         if (!eigne && !freiUndBelegen(sx, sy - zellHoehe / 2, breite)) continue;
+        const pillW = breite + 12;
+        const pillH = fs * 1.3 + 4;
+        pillPfad(ctx, sx - pillW / 2, sy - pillH / 2, pillW, pillH, 5);
+        ctx.fillStyle = grundFarbe;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = eigne ? akzent : kantenRand;
+        ctx.stroke();
         ctx.lineWidth = 3;
         ctx.strokeStyle = grundFarbe;
         ctx.strokeText(text, sx, sy);
@@ -5673,6 +5726,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     return Math.max(0, Math.min(100, Math.round(((zeitStandMs - zeitAchse.min) / spanne) * 100)));
   })();
   useEffect(() => {
+    if (!sichtbar) return;
     melde({
       links: (
         <>
@@ -5686,7 +5740,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       ),
       rechts: ansichtLabel(ansicht),
     });
-  }, [melde, zeitProzent, grundMasse.notizen.length, haufenBild?.groessen?.length, ansicht]);
+  }, [sichtbar, melde, zeitProzent, grundMasse.notizen.length, haufenBild?.groessen?.length, ansicht]);
 
   if (memories.length === 0) {
     return (
@@ -6166,53 +6220,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   // dem Fenster fielen (D1-01) und die More-Klappe das Bild überschwemmte.
   // Im Panel passt alles — die Glieder stehen in Reihen, der Körper rollt.
   return (
-    <div className="relative flex flex-row h-full min-h-0">
-      <aside
-        ref={leistenMessen}
-        data-testid="graph-leiste"
-        className="graph-panel"
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            e.stopPropagation();
-            setSchemaOffen(false);
-            setzeKrafteOffen(false);
-          }
-        }}
-      >
-        <div className="graph-panel-kopf">View</div>
-        <div className="graph-panel-korper">
-          <div className="graph-panel-zeile">{sucheBlock}</div>
-          <div className="graph-panel-zeile">{schieneAnsicht}</div>
-          <div className="graph-panel-zeile">{schieneKanal}</div>
-          <div className="graph-panel-zeile">{schieneTiefe}</div>
-          <div className="graph-panel-zeile">{schieneNamen}</div>
-          <div className="graph-panel-zeile">{farbenReihe}</div>
-          {/* Der Zeitstrahl (Mockup-Block): der Stand, der Regler, das Feld. */}
-          <div className="graph-panel-zeile">{zeitStand}</div>
-          <div className="graph-panel-zeile">{zeitRegler(true)}</div>
-          <div className="graph-panel-zeile">{datumsFeld}</div>
-          <div className="graph-panel-zeile">{schalterRichtung}</div>
-          <div className="graph-panel-zeile">{schalterAehnlichkeit}</div>
-          <div className="graph-panel-zeile">{schalterSelbst}</div>
-          <div className="graph-panel-zeile">{schalterSchema}</div>
-          <div className="graph-panel-zeile">{schalterKrafte}</div>
-          <div className="graph-panel-zeile">{schalterBewegung}</div>
-          <div className="graph-panel-zeile">{schalterNurMit}</div>
-          <div className="graph-panel-zeile">{steuerelementTagFilter}</div>
-          <div className="graph-panel-zeile">{steuerelementDicke}</div>
-        </div>
-        <div className="graph-panel-fuss">
-          {/* Der Ausgewählt-Block (Mockup .regler-block): der gewählte Knoten
-              und die Zahl der Verbindungen des Bildes, darunter die drei Griffe. */}
-          <div className="graph-fuss-zeile"><span>Selected</span><span className="wert">{tastaturId ? (titelVonId.get(tastaturId) ?? tastaturId.slice(0, 18)) : "—"}</span></div>
-          <div className="graph-fuss-zeile"><span>Links</span><span className="wert tnum">{(netz.erwahnungen.length + netz.behauptungen.length).toLocaleString("en-US")}</span></div>
-          <div className="graph-fuss-knoepfe">{zoomReihe}</div>
-        </div>
-      </aside>
-
+    <div className="relative flex flex-col md:flex-row h-full min-h-0 overflow-hidden">
       <div
         ref={containerRef}
-        className="flex-1 min-h-[420px] overflow-hidden relative graph-leinwand"
+        className="flex-1 min-h-[240px] md:min-h-[420px] overflow-hidden relative graph-leinwand"
         style={undefined}
       >
         <p
@@ -6313,7 +6324,6 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             </div>
           );
         })()}
-        {bandSegmente.length > 0 && <GruppenBand segmente={bandSegmente} />}
         <canvas
           ref={canvasRef}
           data-testid="graph-canvas"
@@ -6862,6 +6872,54 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           </div>
         </div>
       </div>
+
+      <aside
+        ref={leistenMessen}
+        data-testid="graph-leiste"
+        className="graph-panel"
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.stopPropagation();
+            setSchemaOffen(false);
+            setzeKrafteOffen(false);
+          }
+        }}
+      >
+        <div className="graph-panel-kopf">View</div>
+        <div className="graph-panel-korper">
+          <div className="graph-panel-zeile">{sucheBlock}</div>
+          <div className="graph-panel-zeile">{schieneAnsicht}</div>
+          <div className="graph-panel-zeile">{schieneKanal}</div>
+          <div className="graph-panel-zeile">{schieneTiefe}</div>
+          <div className="graph-panel-zeile">{schieneNamen}</div>
+          {bandSegmente.length > 0 && (
+            <div className="graph-panel-zeile">
+              <GruppenBand segmente={bandSegmente} />
+            </div>
+          )}
+          <div className="graph-panel-zeile">{farbenReihe}</div>
+          {/* Der Zeitstrahl (Mockup-Block): der Stand, der Regler, das Feld. */}
+          <div className="graph-panel-zeile">{zeitStand}</div>
+          <div className="graph-panel-zeile">{zeitRegler(true)}</div>
+          <div className="graph-panel-zeile">{datumsFeld}</div>
+          <div className="graph-panel-zeile">{schalterRichtung}</div>
+          <div className="graph-panel-zeile">{schalterAehnlichkeit}</div>
+          <div className="graph-panel-zeile">{schalterSelbst}</div>
+          <div className="graph-panel-zeile">{schalterSchema}</div>
+          <div className="graph-panel-zeile">{schalterKrafte}</div>
+          <div className="graph-panel-zeile">{schalterBewegung}</div>
+          <div className="graph-panel-zeile">{schalterNurMit}</div>
+          <div className="graph-panel-zeile">{steuerelementTagFilter}</div>
+          <div className="graph-panel-zeile">{steuerelementDicke}</div>
+        </div>
+        <div className="graph-panel-fuss">
+          {/* Der Ausgewählt-Block (Mockup .regler-block): der gewählte Knoten
+              und die Zahl der Verbindungen des Bildes, darunter die drei Griffe. */}
+          <div className="graph-fuss-zeile"><span>Selected</span><span className="wert">{tastaturId ? (titelVonId.get(tastaturId) ?? tastaturId.slice(0, 18)) : "—"}</span></div>
+          <div className="graph-fuss-zeile"><span>Links</span><span className="wert tnum">{(netz.erwahnungen.length + netz.behauptungen.length).toLocaleString("en-US")}</span></div>
+          <div className="graph-fuss-knoepfe">{zoomReihe}</div>
+        </div>
+      </aside>
     </div>
   );
 }

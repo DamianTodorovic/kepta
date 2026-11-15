@@ -68,11 +68,20 @@ function createWindow() {
     show: false,
   });
 
+  const openExternalSafe = (raw) => {
+    try {
+      const u = new URL(raw);
+      if (u.protocol === 'http:' || u.protocol === 'https:') {
+        shell.openExternal(raw).catch(() => {});
+      }
+    } catch { /* invalid URL — ignore */ }
+  };
+
   // Hardened: nur http://localhost:* erlauben
   const isAllowedUrl = (url) => {
     try {
       const u = new URL(url);
-      if (u.protocol === 'data:') return url.startsWith('data:text/html');
+      if (u.protocol === 'data:') return false;
       if (u.protocol === 'file:') return false;
       if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return true;
       return false;
@@ -82,14 +91,14 @@ function createWindow() {
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (!isAllowedUrl(url)) {
       event.preventDefault();
-      shell.openExternal(url).catch(()=>{});
+      openExternalSafe(url);
     }
   });
 
   // Externe Links im Standard-Browser öffnen
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (isAllowedUrl(url)) return { action: 'allow' };
-    shell.openExternal(url).catch(()=>{});
+    openExternalSafe(url);
     return { action: 'deny' };
   });
 
@@ -224,8 +233,10 @@ app.on('web-contents-created', (_event, contents) => {
     try {
       const u = new URL(url);
       if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return { action: 'allow' };
+      if (u.protocol === 'http:' || u.protocol === 'https:') {
+        shell.openExternal(url).catch(() => {});
+      }
     } catch { /* keine URL — kein Zweck fürs Öffnen */ }
-    shell.openExternal(url).catch(()=>{});
     return { action: 'deny' };
   });
 });
