@@ -1,3 +1,64 @@
+## [3.2.214]
+
+### Fixed
+
+- **Installer, Release-Tag and licence metadata now describe the same thing.** Three
+  gaps, measured on 16 November 2026 against GitHub and against the running package
+  rather than read out of the source:
+  - The tag `app-3.2.213` pointed at `064671a` (13 Nov, "Update README.md") while the
+    shipped `.dmg` files were built from `3ca25a4` (15 Nov) — 1934 files apart, 133 of
+    them delivered app code (`electron.js`, `package-lock.json`, `src/App.tsx`,
+    `src/components/*`). Both commits are public and both are ancestors of `main`, but
+    they share no common ancestor: the tag sat on the engine lineage, the build on the
+    app lineage. `git checkout app-3.2.213` therefore handed an auditor a different tree
+    (`0d31a27d`) than the one the binary was built from (`a938a5f5`). This release is
+    built from the commit its own tag names.
+  - The delivered `app.asar` said `"license": "UNLICENSED"` while the download page said
+    BUSL-1.1, because the licence switch landed 34 minutes after that build and
+    `package-lock.json` kept `UNLICENSED` altogether. `tests/version.test.ts` now pins
+    the licence in four places — `package.json`, `package-lock.json` `packages[""]`,
+    `npm/package.json`, first line of `LICENSE` — the way it already pinned the version.
+  - `SECURITY-ENTERPRISE.md` called the desktop application proprietary while `LICENSE`
+    names it as Licensed Work under BUSL-1.1, and described the release as DMGs plus zips
+    plus `latest-mac.yml` with SHA-512 digests; the published release carries three
+    assets — two `.dmg` and `SHA256SUMS.txt` with SHA-256. Both sentences now state the
+    measured shape.
+
+### Changed
+
+- **The proof chain before an outward release can be run again, and it gained the step
+  that was missing.** `scripts/release-beweisen.mjs` demanded ten assets where three are
+  published, and it read `release/mac-arm64` and `release/mac`, which do not survive the
+  build — so its most valuable step, whether the package actually starts and serves,
+  silently never ran. It now mounts the `.dmg` and asks the app that really ships, and it
+  separates what is built from what is published. New step 5: the release tag must point
+  at the commit the packages were built from, read off `release/BAU-COMMIT.txt`, which
+  `npm run build:mac` now writes. Driven on 16 November 2026 against 3.2.213: both
+  architectures at NODE_MODULE_VERSION 149, both start, the server answers with
+  encryption on, markers present in both bundles — and step 5 reported the wrong tag,
+  which is why this release exists.
+- **The Mac build has its own script, and the chain compares the two packages.**
+  `npm run build:mac` is now `node scripts/bau-mac.mjs`. Three measured breaks, all on
+  16 November 2026: npm appends `-- --arm64 --x64` (the form `.github/workflows/build.yml:111`
+  uses) to the *end* of the script line, so the build receipt appended as a third `&&`
+  command would have received `--arm64` at `git rev-parse`; without an arch flag
+  electron-builder builds the host architecture only, which is why 33 local versions were
+  arm64-half; and `@electron/rebuild` logged `finished moduleName=better-sqlite3-multiple-ciphers`
+  while leaving `build/Release/better_sqlite3.node` at NODE_MODULE_VERSION 147, where the
+  packaged Electron 44.4.1 requires 149 — that package opened a window whose server never
+  listened, and the chain refused it (`kein /api/health in 36 s`). The script now builds
+  arch by arch, places the matching prebuilt from `bin/darwin-<arch>-149/`, restores the
+  Node build afterwards so `npm test` keeps working, and writes `release/BAU-COMMIT.txt`.
+  New step 1c in the chain: both packages must name the same files and may differ only in
+  native binaries. It earned its place immediately — the first 3.2.214 build carried the
+  script's own backup (`better_sqlite3.node.vor-bau`, a Node-ABI binary) inside the arm64
+  `app.asar`, 6313 files against 6312, while both packages started and reported the same
+  version. The backup now lives outside the module tree, for a second measured reason:
+  `@electron/rebuild` clears `build/Release` during the build, so the in-tree backup
+  vanished with it, the restore ran into nothing, and `node_modules` was left holding the
+  x64 binding — `npm test` then died in its pre-test guard (`bindings.js:121`) rather than
+  in a single test. Healed with `npm rebuild better-sqlite3-multiple-ciphers`.
+
 ## [3.2.213]
 
 ### Fixed
