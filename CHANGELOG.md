@@ -1,3 +1,43 @@
+## [3.2.214]
+
+### Fixed
+
+- **Installer, Release-Tag and licence metadata now describe the same thing.** Three
+  gaps, measured on 16 November 2026 against GitHub and against the running package
+  rather than read out of the source:
+  - The tag `app-3.2.213` pointed at `064671a` (13 Nov, "Update README.md") while the
+    shipped `.dmg` files were built from `3ca25a4` (15 Nov) — 1934 files apart, 133 of
+    them delivered app code (`electron.js`, `package-lock.json`, `src/App.tsx`,
+    `src/components/*`). Both commits are public and both are ancestors of `main`, but
+    they share no common ancestor: the tag sat on the engine lineage, the build on the
+    app lineage. `git checkout app-3.2.213` therefore handed an auditor a different tree
+    (`0d31a27d`) than the one the binary was built from (`a938a5f5`). This release is
+    built from the commit its own tag names.
+  - The delivered `app.asar` said `"license": "UNLICENSED"` while the download page said
+    BUSL-1.1, because the licence switch landed 34 minutes after that build and
+    `package-lock.json` kept `UNLICENSED` altogether. `tests/version.test.ts` now pins
+    the licence in four places — `package.json`, `package-lock.json` `packages[""]`,
+    `npm/package.json`, first line of `LICENSE` — the way it already pinned the version.
+  - `SECURITY-ENTERPRISE.md` called the desktop application proprietary while `LICENSE`
+    names it as Licensed Work under BUSL-1.1, and described the release as DMGs plus zips
+    plus `latest-mac.yml` with SHA-512 digests; the published release carries three
+    assets — two `.dmg` and `SHA256SUMS.txt` with SHA-256. Both sentences now state the
+    measured shape.
+
+### Changed
+
+- **The proof chain before an outward release can be run again, and it gained the step
+  that was missing.** `scripts/release-beweisen.mjs` demanded ten assets where three are
+  published, and it read `release/mac-arm64` and `release/mac`, which do not survive the
+  build — so its most valuable step, whether the package actually starts and serves,
+  silently never ran. It now mounts the `.dmg` and asks the app that really ships, and it
+  separates what is built from what is published. New step 5: the release tag must point
+  at the commit the packages were built from, read off `release/BAU-COMMIT.txt`, which
+  `npm run build:mac` now writes. Driven on 16 November 2026 against 3.2.213: both
+  architectures at NODE_MODULE_VERSION 149, both start, the server answers with
+  encryption on, markers present in both bundles — and step 5 reported the wrong tag,
+  which is why this release exists.
+
 ## [3.2.213]
 
 ### Fixed
