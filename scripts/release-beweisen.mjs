@@ -198,6 +198,48 @@ for (const k of KAPSELN) {
   }
 }
 
+// 1c) Beide Architekturen muessen dasselbe Programm tragen. Gemessen 16.11.2026 am
+//   ersten 3.2.214-Bau: arm64 hatte 6313 Dateien im asar, x64 6312 — die Sicherung des
+//   Node-Bindings (`better_sqlite3.node.vor-bau`) lag im Modulbaum und wurde mitgepackt.
+//   Schritt 1 sieht das nicht: beide Pakete starten, beide melden dieselbe Version.
+//   Erlaubt sind allein die nativen Binaries, die je Architektur anders sein muessen.
+//   Gezahlt wird ueber die Integritaets-Hashes im asar-Kopf, nicht ueber Dateigroessen.
+let asarWerkzeug = null;
+try { asarWerkzeug = (await import("@electron/asar")).default; } catch { /* Schritt 1c meldet das */ }
+function payloadKarte(asarPf) {
+  const karte = new Map();
+  const geh = (knoten, weg) => {
+    for (const [name, eintrag] of Object.entries(knoten.files ?? {})) {
+      const w = weg ? `${weg}/${name}` : name;
+      if (eintrag.files) geh(eintrag, w);
+      else karte.set(w, eintrag.integrity?.hash ?? `${eintrag.size}:${eintrag.offset}`);
+    }
+  };
+  geh(JSON.parse(asarWerkzeug.getRawHeader(asarPf).headerString), "");
+  return karte;
+}
+if (!asarWerkzeug) {
+  meld("@electron/asar nicht ladbar — die Payload beider Architekturen ist nicht vergleichbar", false);
+} else {
+  const pakete = KAPSELN.map(k => ({ arch: k.arch, quelle: appAusDmg(k.arch) }));
+  const fehlend = pakete.filter(p => !p.quelle.app);
+  if (fehlend.length) {
+    meld(`Payload-Vergleich nicht gefahren: ${fehlend.map(p => `${p.arch} (${p.quelle.grund})`).join(", ")}`, false);
+  } else {
+    const karten = pakete.map(p => ({ arch: p.arch, karte: payloadKarte(path.join(p.quelle.app, "Contents/Resources/app.asar")) }));
+    const [a, b] = karten;
+    const nurA = [...a.karte.keys()].filter(f => !b.karte.has(f));
+    const nurB = [...b.karte.keys()].filter(f => !a.karte.has(f));
+    meld(`beide Pakete nennen dieselben Dateien (arm64 ${a.karte.size}, x64 ${b.karte.size})` +
+      (nurA.length || nurB.length ? ` — nur arm64: ${nurA.join(", ") || "keine"}; nur x64: ${nurB.join(", ") || "keine"}` : ""),
+      nurA.length === 0 && nurB.length === 0);
+    const anders = [...a.karte.keys()].filter(f => b.karte.has(f) && a.karte.get(f) !== b.karte.get(f));
+    const fremd = anders.filter(f => !f.endsWith(".node"));
+    meld(`inhaltlich verschieden sind allein die nativen Binaries (${anders.length} Dateien)` +
+      (fremd.length ? ` — davon NICHT nativ: ${fremd.join(", ")}` : ""), fremd.length === 0);
+  }
+}
+
 // 2) SHA256SUMS.txt
 const summe = path.join(RELEASE, "SHA256SUMS.txt");
 if (fs.existsSync(summe)) {

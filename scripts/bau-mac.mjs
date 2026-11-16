@@ -31,13 +31,24 @@
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const HIER = path.resolve(import.meta.dirname, "..");
 const argumente = process.argv.slice(2);
 const MODUL = path.join(HIER, "node_modules", "better-sqlite3-multiple-ciphers");
 const ZIEL = path.join(MODUL, "build", "Release", "better_sqlite3.node");
-const SICHERUNG = `${ZIEL}.vor-bau`;
+// Die Sicherung liegt AUSSERHALB des Modulbaums, und das hat zwei gemessene Gruende
+// (16.11.2026, erster 3.2.214-Bau). Erstens packt electron-builder alles mit, was nicht
+// `*.node` heisst: `better_sqlite3.node.vor-bau` neben dem Binary endete im arm64-Paket
+// (6313 Dateien gegen 6312 im x64-Paket), ein Node-Binding mit fremder ABI im
+// ausgelieferten Objekt. Zweitens raeumt @electron/rebuild build/Release waehrend des
+// Baus — die Sicherung verschwand mit, die Rueckstellung lief ins Leere, und
+// node_modules trug danach das x64-Binding: `npm test` starb in der Vor-Wache
+// (bindings.js:121), nicht in einem einzigen Test. Schritt 1c der Beweis-Kette haelt
+// die Payload beider Architekturen gegeneinander; die Ursache wird hier geheilt.
+const SICHERUNG_ORDNER = fs.mkdtempSync(path.join(os.tmpdir(), "kepta-bau-abi-"));
+const SICHERUNG = path.join(SICHERUNG_ORDNER, "better_sqlite3.node");
 
 function laufen(befehl, args) {
   execFileSync(befehl, args, { cwd: HIER, stdio: "inherit" });
@@ -85,9 +96,9 @@ try {
   // Auch nach einem Abbruch: die Suite braucht die Node-Fassung, nicht die Electron-Fassung.
   if (fs.existsSync(SICHERUNG)) {
     fs.copyFileSync(SICHERUNG, ZIEL);
-    fs.rmSync(SICHERUNG);
     console.log("  node_modules auf die Node-Fassung zurueckgestellt (die Suite braucht sie)");
   }
+  fs.rmSync(SICHERUNG_ORDNER, { recursive: true, force: true });
 }
 if (gebaut !== archs.length) process.exit(1);
 
