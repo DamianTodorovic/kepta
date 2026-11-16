@@ -4,6 +4,7 @@ import { MessageSquare, SettingsIcon, Moon, Sun, Network, Clock, FileText, Bot, 
 import { useTheme } from '../contexts/ThemeContext';
 import { cn } from '../lib/utils';
 import { KeptaMark } from './KeptaMark';
+import { BrainJarView, K3PTA_SIDEBAR_PALETTES } from './BrainJarView';
 import { t } from '../lib/uiText';
 
 export type Ansicht = 'memories' | 'today' | 'chat' | 'graph' | 'dossier' | 'activity' | 'team' | 'settings';
@@ -210,38 +211,54 @@ export function Sidebar({ tags, selectedTags, onSelectTag, onClearTags, currentV
           Knopf-Reihen flogen; „local · private" steht allein in der Statuszeile
           der Flächen (Lehre 32: ein Ort, ein Wort). */}
       <div className="seiten-kante-oben nav-fuss-leiste">
-        <div className="nav-fuss-konto">
-          <KeptaMark size={20} />
-          <span className="seiten-marke fs-3 truncate font-semibold tracking-[0.01em]">
-            {/* Branding 3.1.1: schlicht K3PTA — keine Stufen-Anzeige mehr.
-                Die Versionszahl steht bewusst NICHT in der Sidebar (Damian, 25.9.) —
-                sie bleibt über Systemstatus und /api/health abrufbar. */}
-            {'K3PTA'}
-          </span>
-        </div>
-        <div className="nav-fuss-ikonen">
-          {/* Die zwei Thema-Ikons des Mockups: das aktive Thema trägt seine
-              Färbung, das andere steht daneben — kein Wort, nur das Zeichen.
-              Der Setup-Weg wohnt in der Palette (⌘K), die Leisten-Klappe an
-              ⌘B/Shortcuts — der Fuß trägt nur die Mockup-Zeichen. */}
-          <button
-            onClick={() => { if (isDark) toggleTheme(); }}
-            className="nav-fuss-ikon treff"
-            data-on={!isDark ? "true" : undefined}
-            aria-label="Light theme"
-            title="Light theme"
-          >
-            <Sun className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => { if (!isDark) toggleTheme(); }}
-            className="nav-fuss-ikon treff"
-            data-on={isDark ? "true" : undefined}
-            aria-label="Dark theme"
-            title="Dark theme"
-          >
-            <Moon className="w-3.5 h-3.5" />
-          </button>
+        <BrainJarView
+          active={!isFocusMode}
+          suspended={isFocusMode}
+          theme={isDark ? 'dark' : 'light'}
+          palette={K3PTA_SIDEBAR_PALETTES}
+          speedMode="drehen"
+          viewPreset="dock"
+          freeOrbit={true}
+          showBaseShadow={false}
+          enableHoverTilt={false}
+          enableDrag={true}
+          enableZoom={false}
+          enableClickCycle={true}
+          maxPixelRatio={2}
+          className="k3pta-jar-dock"
+          ariaLabel="Interactive K3PTA 3D emblem"
+          fallback={<KeptaMark size={20} />}
+        />
+        <div className="nav-fuss-rechts">
+          <div className="nav-fuss-konto">
+            <span className="seiten-marke fs-3 truncate font-semibold tracking-[0.01em]">
+              {/* Branding 3.1.1: schlicht K3PTA — keine Stufen-Anzeige mehr.
+                  Die Versionszahl steht bewusst NICHT in der Sidebar (Damian, 25.9.) —
+                  sie bleibt über Systemstatus und /api/health abrufbar. */}
+              {'K3PTA'}
+            </span>
+          </div>
+          <div className="nav-fuss-ikonen">
+            {/* Keep only the two mock theme switches without status copy; 20px gap preserves 44px hit separation. */}
+            <button
+              onClick={() => { if (isDark) toggleTheme(); }}
+              className="nav-fuss-ikon treff"
+              data-on={!isDark ? "true" : undefined}
+              aria-label="Light theme"
+              title="Light theme"
+            >
+              <Sun className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => { if (!isDark) toggleTheme(); }}
+              className="nav-fuss-ikon treff"
+              data-on={isDark ? "true" : undefined}
+              aria-label="Dark theme"
+              title="Dark theme"
+            >
+              <Moon className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -52,9 +52,10 @@ html:not(.dark) .huelle .seiten-leiste .sidebar-tag-btn > span:first-child { col
    App- `pr-1` schob die Zeilen 4px schmaler als das Mockup-Maß 191). */
 .huelle .seiten-leiste .flex-1.overflow-y-auto { padding-right: 0 !important; scrollbar-width: none !important; }
 .huelle .seiten-leiste .flex-1.overflow-y-auto::-webkit-scrollbar { display: none !important; }
-.huelle .seiten-leiste .nav-fuss-leiste { padding: 8px 6px 0 !important; gap: 7px !important; height: 33px !important; min-height: 33px !important; }
-.huelle .huelle .seiten-leiste .nav-fuss-leiste .seiten-marke { font-size: var(--fs-2) !important; }
-.huelle .seiten-leiste .nav-fuss-ikon { width: 24px !important; height: 24px !important; }
+.huelle .seiten-leiste .nav-fuss-leiste { padding: 6px 0 0 !important; gap: 12px !important; height: 94px !important; min-height: 94px !important; align-items: stretch !important; }
+.huelle .seiten-leiste .nav-fuss-leiste .seiten-marke { font-size: var(--fs-3) !important; font-weight: var(--fw-fest) !important; }
+.huelle .seiten-leiste .nav-fuss-ikonen { gap: 20px !important; }
+.huelle .seiten-leiste .nav-fuss-ikon { width: 24px !important; height: 24px !important; min-width: 0 !important; min-height: 0 !important; }
 
 /* ── Liste: width 420 · kopf h44 pad 8/14 titel 13.5/700 zahl 12 · ikon-knopf 28×28 ── */
 .huelle .listen-spalte { width: 420px !important; }

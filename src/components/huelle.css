@@ -111,22 +111,41 @@
    rechts. Die früheren Karten (seiten-flaeche) und Knopf-Reihen flogen. */
 .seiten-leiste .nav-fuss-leiste {
   display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px 10px;
-  min-height: 44px;
+  align-items: stretch;
+  gap: 12px;
+  padding: 6px 14px 4px;
+  min-height: 94px;
+}
+.seiten-leiste .k3pta-jar-dock {
+  width: 84px;
+  height: 84px;
+  flex-shrink: 0;
+  position: relative;
+  background: transparent;
+  border-radius: var(--r-btn);
+}
+.seiten-leiste .k3pta-jar-dock:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.seiten-leiste .nav-fuss-rechts {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4px 0 2px;
 }
 .seiten-leiste .nav-fuss-konto {
   display: flex;
   align-items: center;
   gap: 7px;
-  flex: 1;
   min-width: 0;
 }
-.seiten-leiste .nav-fuss-ikonen { display: flex; align-items: center; gap: 2px; }
+.seiten-leiste .nav-fuss-ikonen { display: flex; align-items: center; justify-content: flex-end; gap: 20px; }
 .seiten-leiste .nav-fuss-ikon {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: var(--r-btn);
   display: grid;
   place-items: center;
