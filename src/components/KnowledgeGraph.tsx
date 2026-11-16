@@ -3987,6 +3987,8 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     ctx.scale(t.k, t.k);
 
     // --- Chaikin Archipelagos & Vault Sanctuary (world-space, non-destructive, 0 arc/fillRect/stroke in atlas!) ---
+    const islandLabels: { x: number; y: number; text: string; col: string }[] = [];
+    let privBadgePos: { x: number; y: number } | null = null;
     if ((curLens === "atlas" || curLens === "privacy") && sim.nodes.length <= 160 && !sim.gangIds?.size) {
       const clusterPts = new Map<string, { x: number; y: number }[]>();
       const privPts: { x: number; y: number }[] = [];
@@ -4006,21 +4008,29 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       for (const [key, pts] of clusterPts) {
         if (pts.length < 3) continue;
         const col = notenFarbenRef.current[key] ?? akzent;
-        const outerHull = expandAndChaikin(convexHull(pts), 34, 2);
+        const outerHull = expandAndChaikin(convexHull(pts), 42, 2);
         traceSmoothClosedPath(ctx, outerHull);
-        ctx.globalAlpha = hellerGrund ? 0.04 : 0.07;
+        ctx.globalAlpha = hellerGrund ? 0.08 : 0.13;
         ctx.fillStyle = col;
         ctx.fill();
-        const innerHull = expandAndChaikin(convexHull(pts), 22, 2);
+        const innerHull = expandAndChaikin(convexHull(pts), 24, 2);
         traceSmoothClosedPath(ctx, innerHull);
-        ctx.globalAlpha = hellerGrund ? 0.03 : 0.055;
+        ctx.globalAlpha = hellerGrund ? 0.045 : 0.08;
         ctx.fill();
         ctx.globalAlpha = 1;
+        if (curLens === "atlas" && outerHull.length > 0 && sim.nodes.length >= 12) {
+          const label = TYP_BESCHREIBUNG[key];
+          if (label) {
+            let topPt = outerHull[0];
+            for (const p of outerHull) if (p.y < topPt.y) topPt = p;
+            islandLabels.push({ x: topPt.x, y: topPt.y, text: label, col });
+          }
+        }
       }
       if (privPts.length >= 1) {
-        const privHull = expandAndChaikin(convexHull(privPts), 28, 2);
+        const privHull = expandAndChaikin(convexHull(privPts), 34, 2);
         traceSmoothClosedPath(ctx, privHull);
-        ctx.globalAlpha = hellerGrund ? 0.05 : 0.085;
+        ctx.globalAlpha = hellerGrund ? 0.075 : 0.12;
         ctx.fillStyle = lies("--warn", "#684d00");
         ctx.fill();
         ctx.globalAlpha = 1;
@@ -4030,6 +4040,10 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           ctx.lineWidth = 1.4 / Math.max(0.4, t.k);
           ctx.stroke();
           ctx.setLineDash([]);
+        } else if (privHull.length > 0) {
+          let botPt = privHull[0];
+          for (const p of privHull) if (p.y > botPt.y) botPt = p;
+          privBadgePos = { x: botPt.x, y: botPt.y };
         }
       }
     }
@@ -4891,6 +4905,42 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       }
     }
 
+    // --- Themen-Insel-Überschriften & Sanctuary-Plakette ---
+    if (curLens === "atlas" && t.k >= 0.45 && islandLabels.length > 0) {
+      ctx.font = `600 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      for (const isl of islandLabels) {
+        const sx = isl.x * t.k + t.x;
+        const sy = Math.max(54, isl.y * t.k + t.y - 4);
+        const tw = ctx.measureText(isl.text).width;
+        if (sx - tw / 2 < 10 || sx + tw / 2 > dimensions.w - 10 || sy > dimensions.h - 40) continue;
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = grundFarbe;
+        ctx.strokeText(isl.text, sx, sy);
+        ctx.fillStyle = isl.col;
+        ctx.fillText(isl.text, sx, sy);
+      }
+    }
+    if (privBadgePos && curLens === "atlas" && t.k >= 0.45 && sim.nodes.length >= 12) {
+      const warnCol = lies("--warn", "#684d00");
+      const badgeTxt = "Lock: § 203 private vault";
+      ctx.font = `600 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+      const bw = ctx.measureText(badgeTxt).width + 16;
+      const bx = Math.max(bw / 2 + 12, Math.min(dimensions.w - bw / 2 - 12, privBadgePos.x * t.k + t.x));
+      const by = Math.min(dimensions.h - 54, Math.max(54, privBadgePos.y * t.k + t.y + 4));
+      pillPfad(ctx, bx - bw / 2, by, bw, 18, 4);
+      ctx.fillStyle = warnCol;
+      ctx.fill();
+      pillPfad(ctx, bx - bw / 2 + 1, by + 1, bw - 2, 16, 3);
+      ctx.fillStyle = grundFarbe;
+      ctx.fill();
+      ctx.fillStyle = warnCol;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(badgeTxt, bx, by + 9);
+    }
+
     ctx.font = `600 ${fs}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
@@ -4904,10 +4954,16 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     let verdraengt = 0;
     /** Titel, die selbst mittig nicht in das Bild faessen — achter Grund des Etat. */
     let anDerKante = 0;
+    const warnCol = lies("--warn", "#684d00");
+    const dangerCol = lies("--danger", "#7e2a22");
+    const accentSoft = lies("--accent-soft", grundFarbe);
+    const borderStrong = lies("--border-strong", kantenRand);
+    const jetztMs = Date.now();
     for (const { n, m, r } of etiketten) {
       // Der Peek: was der Zeiger oder die Tastatur haelt, wird nicht gekuerzt —
       // genau dann will jemand den ganzen Namen lesen.
       const gehalten = n.id === gehaltenId;
+      const isSelected = gehalten || tastaturIdRef.current === n.id || clickedIdRef.current === n.id;
       const vorrat = etikettVorratRef.current;
       // Ein Gang-Titel wohnt in einer Reihe von `GANG_ABSTAND · k` Bildpixeln —
       // er darf nicht länger sein, als die Reihe breit ist. Ausserhalb des
@@ -4947,29 +5003,72 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
         verdraengt++;
         continue;
       }
-      if (gehalten) {
+      const kapselAn = !sim.gangIds?.has(n.id) && t.k >= 0.38;
+      const isPrivate = m.scope === "private";
+      const isExpiringSoon = m.validTo != null && m.validTo > jetztMs && m.validTo - jetztMs < 16 * 86_400_000;
+      const hasTagsRow = hov === n.id && m.tags.length > 0;
+      if (kapselAn) {
+        const cardW = breite + 26;
+        const cardH = (hasTagsRow ? fs * 2.25 : fs) + 8;
+        const cardX = Math.max(6, Math.min(dimensions.w - cardW - 6, xKantig - cardW / 2 - 3));
+        const cardY = yKantig - 4;
+        const borderCol = isSelected ? akzent : isPrivate ? warnCol : isExpiringSoon ? dangerCol : borderStrong;
+        const bwPx = isSelected ? 1.5 : 1;
+        pillPfad(ctx, cardX, cardY, cardW, cardH, 6);
+        ctx.fillStyle = borderCol;
+        ctx.fill();
+        pillPfad(ctx, cardX + bwPx, cardY + bwPx, cardW - bwPx * 2, cardH - bwPx * 2, 5);
+        ctx.fillStyle = isSelected ? accentSoft : grundFarbe;
+        ctx.fill();
+        if (isSelected) {
+          pillPfad(ctx, cardX, cardY + 3, 3, cardH - 6, 1.5);
+          ctx.fillStyle = akzent;
+          ctx.fill();
+        }
+        const chipCol = notenFarbenRef.current[m.type ?? "neutral"] ?? akzent;
+        pillPfad(ctx, cardX + 6, yKantig + 1.5, 8, 8, 4);
+        ctx.fillStyle = chipCol;
+        ctx.fill();
+        if (isPrivate || isExpiringSoon) {
+          const badgeTxt = isPrivate ? "Lock" : "Due";
+          const badgeCol = isPrivate ? warnCol : dangerCol;
+          const bw = ctx.measureText(badgeTxt).width + 8;
+          pillPfad(ctx, cardX + cardW - bw - 3, cardY - 7, bw, 13, 3);
+          ctx.fillStyle = badgeCol;
+          ctx.fill();
+          pillPfad(ctx, cardX + cardW - bw - 2, cardY - 6, bw - 2, 11, 2);
+          ctx.fillStyle = grundFarbe;
+          ctx.fill();
+          ctx.fillStyle = badgeCol;
+          ctx.textAlign = "center";
+          ctx.fillText(badgeTxt, cardX + cardW - bw / 2 - 3, cardY - 6);
+        }
+      } else if (gehalten) {
         pillPfad(ctx, xKantig - breite / 2 - 7, yKantig - 2, breite + 14, fs + 6, 5);
+        ctx.fillStyle = akzent;
+        ctx.fill();
+        pillPfad(ctx, xKantig - breite / 2 - 6, yKantig - 1, breite + 12, fs + 4, 4);
         ctx.fillStyle = grundFarbe;
         ctx.fill();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = akzent;
-        ctx.stroke();
       }
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = grundFarbe;
-      ctx.strokeText(titel, xKantig, yKantig);
+      const textX = kapselAn ? Math.max(breite / 2 + 22, Math.min(dimensions.w - breite / 2 - 12, xKantig + 5)) : xKantig;
+      if (!kapselAn) {
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = grundFarbe;
+        ctx.strokeText(titel, textX, yKantig);
+      }
       // Ein Etikett aus dem ersten Satz der Notiz ist ein Platzhalter und sieht
       // aus wie einer — eine Notiz ohne Titel darf nicht so tun, als haette sie
       // einen.
       ctx.fillStyle = platzhalter ? schwach : textFarbe;
-      ctx.fillText(titel, xKantig, yKantig);
+      ctx.fillText(titel, textX, yKantig);
       benannt++;
-      if (hov === n.id && m.tags.length > 0) {
+      if (hasTagsRow) {
         const tags = m.tags.slice(0, 3).join(" · ");
         ctx.font = `400 ${fs}px ui-sans-serif, system-ui, sans-serif`;
-        ctx.strokeText(tags, xKantig, kantigY(yKantig + fs * 1.15, fs));
+        if (!kapselAn) ctx.strokeText(tags, textX, kantigY(yKantig + fs * 1.15, fs));
         ctx.fillStyle = schwach;
-        ctx.fillText(tags, xKantig, kantigY(yKantig + fs * 1.15, fs));
+        ctx.fillText(tags, textX, kantigY(yKantig + fs * 1.15, fs));
         ctx.font = `600 ${fs}px ui-sans-serif, system-ui, sans-serif`;
       }
     }
