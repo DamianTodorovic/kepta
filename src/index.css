@@ -888,21 +888,38 @@ select:focus-visible {
   }
   .graph-panel {
     width: 100%;
-    max-height: 46%;
+    max-height: 52%;
     border-left: 0;
     border-top: 1px solid var(--border-subtle);
+  }
+  .graph-panel[data-sheet="zu"] .graph-panel-korper,
+  .graph-panel[data-sheet="zu"] .graph-panel-fuss {
+    display: none;
   }
 }
 .graph-panel-kopf {
   flex: none;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--border-subtle);
   font-size: var(--fs-2);
   font-weight: var(--fw-halbfest);
   color: var(--text-1);
+}
+.graph-sheet-toggle {
+  display: none;
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  color: var(--accent);
+}
+@media (max-width: 767px) {
+  .graph-sheet-toggle {
+    display: inline-flex;
+    align-items: center;
+  }
 }
 .graph-panel-korper {
   flex: 1;
@@ -928,13 +945,22 @@ select:focus-visible {
 }
 .graph-fuss-zeile {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   font-size: var(--fs-1);
   color: var(--text-2);
   padding: 3px 0;
 }
-.graph-fuss-zeile .wert { margin-left: auto; color: var(--text-1); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.graph-fuss-zeile .wert {
+  margin-left: auto;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  white-space: normal;
+  word-break: break-word;
+  text-align: right;
+  line-height: 1.35;
+  max-width: 162px;
+}
 .graph-fuss-knoepfe { display: flex; gap: 5px; margin-top: 6px; }
 .graph-fuss-knoepfe > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px; width: 100%; min-width: 0; }
 .graph-fuss-knoepfe .btn-ghost { flex: 0 1 auto; justify-content: center; padding: 4px 6px; margin-right: 0; }
@@ -2512,4 +2538,145 @@ html:not(.dark) .row-tag { color: var(--type-semantic); }
     justify-content: flex-end;
     flex: 1 1 auto;
   }
+}
+
+/* ─────────── PDCR v4 Spatial Lenses, Blast Ripple & Conflict Tribunal ─────────── */
+.graph-lens-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}
+.graph-lens-pill {
+  min-height: 28px;
+  padding: 3px 8px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel-solid);
+  color: var(--text-2);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  cursor: pointer;
+}
+.graph-lens-pill:hover {
+  color: var(--text-1);
+  border-color: var(--border-strong);
+}
+.graph-lens-pill[data-on="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.graph-top-banners {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: none;
+}
+.graph-lens-banner {
+  max-width: 360px;
+  padding: 5px 10px;
+  border-radius: var(--r-btn);
+  background: var(--bg-panel-solid);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(8px);
+  font-size: var(--fs-1);
+  line-height: 1.35;
+  color: var(--text-2);
+  pointer-events: auto;
+}
+.graph-lens-banner strong {
+  color: var(--text-1);
+  font-weight: var(--fw-halbfest);
+}
+.graph-ripple-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: var(--r-btn);
+  background: color-mix(in oklch, var(--bg-panel-solid) 86%, var(--warn));
+  border: 1px solid var(--warn);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(8px);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  color: var(--text-1);
+  pointer-events: auto;
+}
+.graph-tribunal {
+  position: absolute;
+  right: 12px;
+  bottom: 52px;
+  z-index: 15;
+  width: min(520px, calc(100% - 24px));
+  background: var(--eb-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.graph-tribunal-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 767px) {
+  .graph-lens-banner { display: none; }
+  .graph-top-banners { top: 10px; left: 10px; right: 10px; align-items: stretch; }
+  .graph-ripple-banner { justify-content: space-between; }
+  .graph-tribunal-cols { grid-template-columns: 1fr; }
+}
+.graph-tribunal-card {
+  padding: 8px 10px;
+  border-radius: var(--r-btn);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.graph-tribunal-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.graph-tribunal-btn {
+  min-height: 32px;
+  padding: 5px 8px;
+  border-radius: var(--r-btn);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-panel-solid);
+  color: var(--text-1);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
+  text-align: left;
+  cursor: pointer;
+}
+.graph-tribunal-btn:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.graph-fuss-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+.graph-fuss-actions > button {
+  flex: 1;
+  min-height: 28px;
+  padding: 3px 6px;
+  border-radius: var(--r-btn);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-halbfest);
 }

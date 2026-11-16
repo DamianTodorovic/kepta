@@ -106,6 +106,20 @@ import { gemeinschaftenBaue, grundHexVon, haufenBildBaue, haufenKantenAus, haufe
 import { KAPPE_PANEL } from "../lib/kappe";
 import { ansichtBeschreibung, ansichtLabel } from "../lib/ansichten";
 import { benutzeFensterStatus } from "./ui/FensterStatus";
+import { findeWidersprueche, type Widerspruch } from "../lib/widersprueche";
+import {
+  SPATIAL_LENSES,
+  type SpatialLens,
+  FOCUS_OUTER_RADIUS,
+  convexHull,
+  expandAndChaikin,
+  traceSmoothClosedPath,
+  computeBlastSet,
+  computeLensTargets,
+  getLensFitPoints,
+  paintSpatialLensBackdrop,
+  paintFocusQuadrantPills,
+} from "../lib/graphSpatialLenses";
 
 // P197: der Baum (dendrogram) ist aus dem Produkt geflogen — der Knopf ist weg,
 // eine gemerkte Baum-Ansicht fällt aufs Kraftfeld zurück. Der interne Weg bleibt
@@ -1256,7 +1270,8 @@ export function nachschlagFaellig(budget: number, steht: boolean, bewegtGerade: 
   return bewegtGerade || !gefechtert;
 }
 
-export function istHell(farbe: string): boolean {
+export function istHell(farbe?: string): boolean {
+  if (!farbe || typeof farbe !== "string") return false;
   const s = farbe.trim();
   let r = 0, g = 0, b = 0;
   if (s.startsWith("#")) {
@@ -1781,7 +1796,12 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (naechste === gangSeiteRef.current) return;
     gangSeiteRef.current = naechste;
     const sim = simRef.current;
-    if (sim) { sim.gangSeite = naechste; spiegleGang(sim); }
+    if (sim) {
+      sim.gangSeite = naechste;
+      stepSimulation(sim);
+      spiegleGang(sim);
+      zeichneNoetig.current = true;
+    }
   };
   const legendenRef = useRef<HTMLDivElement>(null);
   /**
@@ -2773,9 +2793,77 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     } catch { return "force"; }
   });
   const wechsleAnsicht = (v: GraphAnsicht) => {
+    if (ansicht === "semantic" && v === "force") uebergangBaumRef.current = true;
+    setSpatialLens("atlas");
+    spatialLensRef.current = "atlas";
+    setConflictStatusMsg(null);
     setAnsicht(v);
     try { localStorage.setItem(ANSICHT_KEY, v); } catch { /* ignore */ }
   };
+  const [spatialLens, setSpatialLens] = useState<SpatialLens>("atlas");
+  const spatialLensRef = useRef<SpatialLens>("atlas");
+  spatialLensRef.current = spatialLens;
+  const [rippleActive, setRippleActive] = useState(false);
+  const rippleActiveRef = useRef(false);
+  rippleActiveRef.current = rippleActive;
+  const [resolvedConflictKeys, setResolvedConflictKeys] = useState<Set<string>>(() => new Set());
+  const [conflictStatusMsg, setConflictStatusMsg] = useState<string | null>(null);
+  const [panelSheetOpen, setPanelSheetOpen] = useState(false);
+  const atlasSnapRef = useRef<Map<string, { x: number; y: number }> | null>(null);
+
+  const conflicts = useMemo((): Widerspruch[] => {
+    return findeWidersprueche(
+      feldNotizen.map((m) => ({
+        id: m.id,
+        title: m.title,
+        content: m.content ?? "",
+        type: m.type ?? "semantic",
+        updatedAt: m.updatedAt ?? m.createdAt ?? 0,
+        supersededBy: m.supersededBy ?? null,
+        deletedAt: m.deletedAt ?? null,
+      }))
+    ).filter((w) => !resolvedConflictKeys.has(w.key));
+  }, [feldNotizen, resolvedConflictKeys]);
+  const activeConflict = conflicts[0] ?? null;
+  const contradictionIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const c of conflicts) {
+      s.add(c.newer.id);
+      s.add(c.older.id);
+    }
+    return s;
+  }, [conflicts]);
+
+  const resolveConflict = useCallback(async (w: Widerspruch, choice: "newer" | "older" | "window" | "both") => {
+    const keep = choice === "older" ? w.older : w.newer;
+    const drop = choice === "older" ? w.newer : w.older;
+    try {
+      const r = await fetch("/api/contradictions/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          keep: keep.id,
+          drop: drop.id,
+          both: choice === "both",
+          window: choice === "window",
+        }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateApiCache("/api/graph");
+      invalidateApiCache("/api/memories");
+      setResolvedConflictKeys((prev) => new Set(prev).add(w.key));
+      setConflictStatusMsg(
+        choice === "both"
+          ? "Saved — both exceptions kept valid."
+          : choice === "window"
+            ? "Saved — older date window closed."
+            : `Saved — “${drop.title}” superseded.`
+      );
+      zeichneNoetig.current = true;
+    } catch {
+      setConflictStatusMsg("Could not save decision — check local store.");
+    }
+  }, []);
   const zeichneNoetig = useRef(true);
   const autoFitOffen = useRef(true);
   /** Sobald der Nutzer selbst verschoben oder gezoomt hat, faessen wir den Ausschnitt nicht mehr an. */
@@ -2793,6 +2881,20 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   // Tastatur-Auswahl: der Knoten, den die Pfeiltasten gerade markieren.
   const tastaturIdRef = useRef<string | null>(null);
   const [tastaturId, setTastaturId] = useState<string | null>(null);
+  // Maus-Auswahl per Einzelklick (ohne Tastatur-Ring-Spy zu beeinflussen).
+  const clickedIdRef = useRef<string | null>(null);
+  const [clickedId, setClickedId] = useState<string | null>(null);
+  const activeNoteId = tastaturId ?? clickedId;
+  const blastStartId = activeNoteId ?? hovered ?? filtered.find((m) => (degree.get(m.id) ?? 0) > 0)?.id ?? filtered[0]?.id ?? null;
+  const blastMap = useMemo(() => {
+    if (!rippleActive) return null;
+    return blastStartId ? computeBlastSet(blastStartId, edges, graphTiefe) : null;
+  }, [rippleActive, blastStartId, edges, graphTiefe]);
+  const blastRef = useRef<Map<string, number> | null>(null);
+  blastRef.current = blastMap;
+  useEffect(() => {
+    zeichneNoetig.current = true;
+  }, [rippleActive, blastMap]);
   const degreeRef = useRef(degree);
   const nachbarnRef = useRef(neighborsOf);
   const byIdRef = useRef(byId);
@@ -3300,6 +3402,26 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // Startspirale aller 20.000 Verborgenen ein — gemessen 15.10. 18:00 an seinem
     // Bestand: 3 % Zoom, ein 6-px-Punkt wird 0,18 px, und das Bild wirkt leer.
     stepSimulation(sim);
+    if (spatialLensRef.current !== "atlas") {
+      const snap = new Map<string, { x: number; y: number }>();
+      for (const n of sim.nodes) snap.set(n.id, { x: n.x, y: n.y });
+      atlasSnapRef.current = snap;
+      const targets = computeLensTargets(
+        spatialLensRef.current,
+        sim.nodes,
+        byIdRef.current,
+        edges,
+        tastaturIdRef.current ?? clickedIdRef.current ?? hoveredRef.current,
+        contradictionIds
+      );
+      zielRef.current = targets;
+      autoFitOffen.current = false;
+      if (!bewegungAn || reduzierteBewegung.current) stepDendrogram(sim.nodes, targets, 1);
+      fitKarte(targets, getLensFitPoints(spatialLensRef.current, targets));
+      uebergangRef.current = new Map();
+      zeichneNoetig.current = true;
+      return;
+    }
     if (sim.nodes.length > 0) {
       // Der Ausschnitt gehoert zu den ZIEL-Positionen und MUSS sofort gesetzt
       // werden: ein bereits ausgekuehltes Feld bewegt sich nie wieder, der
@@ -3346,8 +3468,25 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     simRef.current = sim;
     spiegleGang(null);
     strukturKnotenRef.current = kraftGeruest;
+    if (spatialLensRef.current !== "atlas") {
+      const targets = computeLensTargets(
+        spatialLensRef.current,
+        sim.nodes,
+        byIdRef.current,
+        edges,
+        tastaturIdRef.current ?? clickedIdRef.current ?? hoveredRef.current,
+        contradictionIds
+      );
+      zielRef.current = targets;
+      autoFitOffen.current = false;
+      if (!bewegungAn || reduzierteBewegung.current) stepDendrogram(sim.nodes, targets, 1);
+      fitKarte(targets, getLensFitPoints(spatialLensRef.current, targets));
+      zeichneNoetig.current = true;
+      return;
+    }
     zielRef.current = semantikFeld.ziele;
     autoFitOffen.current = false;
+    if (!bewegungAn || reduzierteBewegung.current) stepDendrogram(sim.nodes, semantikFeld.ziele, 1);
     fitKarte(semantikFeld.ziele);
     zeichneNoetig.current = true;
   }, [ansicht, idsSchluessel, edges, radiusOf, semantikFeld, kraftGeruest]);
@@ -3613,10 +3752,14 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * würde auf das Feld gerechnet und die Karte läge halbbildschirmweise draussen.
    * Die Randnotizen sitzen schon in `ziele`, also passt die ganze Menge hinein.
    */
-  const fitKarte = useCallback((ziele: ReadonlyMap<string, { x: number; y: number }>) => {
-    if (ziele.size === 0) return;
+  const fitKarte = useCallback((
+    ziele: ReadonlyMap<string, { x: number; y: number }>,
+    punkte?: readonly { x: number; y: number }[]
+  ) => {
+    const liste = punkte && punkte.length > 0 ? punkte : [...ziele.values()];
+    if (liste.length === 0) return;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const p of ziele.values()) {
+    for (const p of liste) {
       if (p.x < minX) minX = p.x;
       if (p.x > maxX) maxX = p.x;
       if (p.y < minY) minY = p.y;
@@ -3629,6 +3772,87 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     setZoomAnzeige(transformRef.current.k);
     zeichneNoetig.current = true;
   }, [dimensions]);
+
+  const switchSpatialLens = useCallback((nextLens: SpatialLens) => {
+    const sim = simRef.current;
+    const prevLens = spatialLensRef.current;
+    if (nextLens === prevLens && nextLens === "atlas") return;
+    if (prevLens === "atlas" && nextLens !== "atlas" && sim) {
+      const snap = new Map<string, { x: number; y: number }>();
+      for (const n of sim.nodes) snap.set(n.id, { x: n.x, y: n.y });
+      atlasSnapRef.current = snap;
+    }
+    spatialLensRef.current = nextLens;
+    setSpatialLens(nextLens);
+    setConflictStatusMsg(null);
+    if (!sim || sim.nodes.length === 0) return;
+
+    const noMotion = !bewegungAn || reduzierteBewegung.current;
+    if (nextLens === "atlas") {
+      if (ansichtRef.current === "semantic" && semantikFeld) {
+        zielRef.current = semantikFeld.ziele;
+        if (noMotion) stepDendrogram(sim.nodes, semantikFeld.ziele, 1);
+        fitKarte(semantikFeld.ziele);
+      } else {
+        const snap = atlasSnapRef.current;
+        if (noMotion && snap) {
+          for (const n of sim.nodes) {
+            const p = snap.get(n.id);
+            if (p) { n.x = p.x; n.y = p.y; }
+          }
+          uebergangRef.current = new Map();
+        } else {
+          uebergangRef.current = snap ?? new Map();
+        }
+        const fitNodes = snap && snap.size > 0
+          ? sim.nodes.map((n) => {
+              const p = snap.get(n.id);
+              return p ? { ...n, x: p.x, y: p.y } : n;
+            })
+          : sim.nodes;
+        transformRef.current = feldTransform(layoutBounds(fitNodes, randFuerAnsicht(fitNodes)), titelAnker({ ...sim, nodes: fitNodes }));
+        setZoomAnzeige(transformRef.current.k);
+      }
+      zeichneNoetig.current = true;
+      return;
+    }
+
+    const focusSel = tastaturIdRef.current ?? clickedIdRef.current ?? hoveredRef.current;
+    const targets = computeLensTargets(
+      nextLens,
+      sim.nodes,
+      byIdRef.current,
+      edges,
+      focusSel,
+      contradictionIds
+    );
+    zielRef.current = targets;
+    autoFitOffen.current = false;
+    if (noMotion) stepDendrogram(sim.nodes, targets, 1);
+    fitKarte(targets, getLensFitPoints(nextLens, targets));
+    zeichneNoetig.current = true;
+  }, [bewegungAn, contradictionIds, edges, fitKarte, semantikFeld]);
+
+  useEffect(() => {
+    if (spatialLens === "atlas") return;
+    const sim = simRef.current;
+    if (!sim || sim.nodes.length === 0) return;
+    const focusSel = tastaturId ?? clickedId ?? hoveredRef.current;
+    const targets = computeLensTargets(
+      spatialLens,
+      sim.nodes,
+      byIdRef.current,
+      edges,
+      focusSel,
+      contradictionIds
+    );
+    zielRef.current = targets;
+    if (!bewegungAn || reduzierteBewegung.current) stepDendrogram(sim.nodes, targets, 1);
+    if (spatialLens === "focus") {
+      fitKarte(targets, getLensFitPoints("focus", targets));
+    }
+    zeichneNoetig.current = true;
+  }, [spatialLens, contradictionIds, tastaturId, clickedId, edges, bewegungAn, fitKarte]);
 
   const zoom = useCallback((faktor: number, sx?: number, sy?: number) => {
     const t = transformRef.current;
@@ -3650,6 +3874,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (nutzerBewegt.current) return;
     const sim = simRef.current;
     if (!sim || sim.nodes.length === 0) return;
+    if (spatialLensRef.current !== "atlas") { fitKarte(zielRef.current); return; }
     if (ansichtRef.current === "semantic") { fitKarte(zielRef.current); return; }
     transformRef.current = feldTransform(layoutBounds(sim.nodes, randFuerAnsicht(sim.nodes)), titelAnker(sim));
     setZoomAnzeige(transformRef.current.k);
@@ -3670,13 +3895,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   useEffect(() => {
     zeichneNoetig.current = true;
   }, [selbstkaanten]);
-
   // Eine neue Notizliste ist eine neue Wissensbasis: was gemerkt wurde, gilt
   // nicht mehr. Ohne diesen Schritt stünde das Etikett der letzten Fassung.
   useEffect(() => {
     etikettVorratRef.current.clear();
   }, [memories]);
-
   // --- Zeichnen ---
   const zeichne = useCallback(() => {
     const canvas = canvasRef.current;
@@ -3712,6 +3935,18 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     ctx.clearRect(0, 0, dimensions.w, dimensions.h);
 
     const t = transformRef.current;
+    const curLens = spatialLensRef.current;
+    if (curLens !== "atlas") {
+      paintSpatialLensBackdrop(ctx, curLens, t, dimensions.w, dimensions.h, {
+        akzent,
+        warn: lies("--warn", "#684d00"),
+        danger: lies("--danger", "#7e2a22"),
+        text2: geruestFarbe,
+        dekore: kantenRand,
+        paper: grundFarbe,
+        helleFlaeche: hellerGrund,
+      });
+    }
     const hov = hoveredRef.current;
     // Was das Schema-Inventar im Bild lässt. `null` = nichts gewählt, das Bild
     // ist unangetastet — das Panel allein verändert keinen Pixel.
@@ -3750,6 +3985,72 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     ctx.save();
     ctx.translate(t.x, t.y);
     ctx.scale(t.k, t.k);
+
+    // --- Chaikin Archipelagos & Vault Sanctuary (world-space, non-destructive, 0 arc/fillRect/stroke in atlas!) ---
+    if ((curLens === "atlas" || curLens === "privacy") && sim.nodes.length <= 160 && !sim.gangIds?.size) {
+      const clusterPts = new Map<string, { x: number; y: number }[]>();
+      const privPts: { x: number; y: number }[] = [];
+      for (const n of sim.nodes) {
+        if (!imBild(n)) continue;
+        const m = byIdRef.current.get(n.id);
+        if (m?.scope === "private") privPts.push({ x: n.x, y: n.y });
+        if (curLens !== "atlas") continue;
+        const key = haufenAktivRef.current
+          ? (haufenBildRef.current.zuordnung.get(n.id) ?? "")
+          : (haufenBildRef.current.zuordnung.get(n.id) ?? (aktiverKanalRef.current === "herkunft" ? herkunftRef.current.get(n.id) : m?.type) ?? "");
+        if (!key) continue;
+        const list = clusterPts.get(key) ?? [];
+        list.push({ x: n.x, y: n.y });
+        clusterPts.set(key, list);
+      }
+      for (const [key, pts] of clusterPts) {
+        if (pts.length < 3) continue;
+        const col = notenFarbenRef.current[key] ?? akzent;
+        const outerHull = expandAndChaikin(convexHull(pts), 34, 2);
+        traceSmoothClosedPath(ctx, outerHull);
+        ctx.globalAlpha = hellerGrund ? 0.04 : 0.07;
+        ctx.fillStyle = col;
+        ctx.fill();
+        const innerHull = expandAndChaikin(convexHull(pts), 22, 2);
+        traceSmoothClosedPath(ctx, innerHull);
+        ctx.globalAlpha = hellerGrund ? 0.03 : 0.055;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      if (privPts.length >= 1) {
+        const privHull = expandAndChaikin(convexHull(privPts), 28, 2);
+        traceSmoothClosedPath(ctx, privHull);
+        ctx.globalAlpha = hellerGrund ? 0.05 : 0.085;
+        ctx.fillStyle = lies("--warn", "#684d00");
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        if (curLens === "privacy") {
+          ctx.setLineDash([6 / Math.max(0.4, t.k), 4 / Math.max(0.4, t.k)]);
+          ctx.strokeStyle = lies("--warn", "#684d00");
+          ctx.lineWidth = 1.4 / Math.max(0.4, t.k);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+    }
+
+    if (rippleActiveRef.current && blastRef.current) {
+      const blast = blastRef.current;
+      const warnCol = lies("--warn", "#684d00");
+      for (const n of sim.nodes) {
+        const dist = blast.get(n.id);
+        if (dist === undefined || !imBild(n)) continue;
+        const hr = n.r + (dist === 0 ? 7 : 5) / Math.max(0.4, t.k);
+        const oct = Array.from({ length: 8 }, (_, idx) => {
+          const a = (idx / 8) * Math.PI * 2;
+          return { x: n.x + Math.cos(a) * hr, y: n.y + Math.sin(a) * hr };
+        });
+        traceSmoothClosedPath(ctx, oct);
+        ctx.strokeStyle = dist <= 1 ? akzent : warnCol;
+        ctx.lineWidth = (dist === 0 ? 2.0 : 1.6) / Math.max(0.4, t.k);
+        ctx.stroke();
+      }
+    }
 
     // --- Kanten ---
     const nurEcht = nurEchteKanten(sim.edges.length, t.k);
@@ -4082,7 +4383,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       // hier nicht die Art-Farbe, sonst malten zwei Systeme uebereinander.
       const haufenArt = haufenAktivRef.current ? haufenBildRef.current.zuordnung.get(n.id) ?? "neutral" : undefined;
       const typ = herkunftArt ?? gruppenArt ?? haufenArt ?? (m.type && sp[m.type] ? m.type : "neutral");
-      const farbe = notenFarbenRef.current[typ];
+      const farbe = notenFarbenRef.current[typ] ?? farbenRef.current.neutral ?? "#464646";
 
       // Winzig: sammeln statt einzeln malen.
       //
@@ -4445,7 +4746,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     // nicht, weil der Platz fehlte, sondern weil die Knoten unter
     // mindestRadius fielen. „Many" offnet diese Pforte auf die
     // Haelfte; das Belegungsraster entscheidet weiterhin, was bleibt.
-    const durchDiePforte =
+    const durchDiePforteBase =
       modus === "keine" || modus === "alle"
         ? kandidaten
         : kandidaten.filter(
@@ -4454,6 +4755,11 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             // Boden zu pruefen kann nie schlagen — nur die Rundung tat es.
             ({ n, rb }) => hov === n.id || nachbarn?.has(n.id) || rb * t.k >= mindestRadius * stufe.pforte
           );
+    const durchDiePforte = curLens === "focus"
+      ? durchDiePforteBase.filter(
+          ({ n }) => hov === n.id || tastaturIdRef.current === n.id || nachbarn?.has(n.id) || Math.hypot(n.x, n.y) <= FOCUS_OUTER_RADIUS + 145
+        )
+      : durchDiePforteBase;
     /** Wie viele Kandidaten an der Pforte fielen (sechster Grund des Titel-Etats). */
     const pforteFallaeller = kandidaten.length - durchDiePforte.length;
     const etiketten =
@@ -5036,6 +5342,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     }
 
     ctx.restore();
+    if (curLens === "focus") {
+      paintFocusQuadrantPills(ctx, t, akzent, geruestFarbe, grundFarbe);
+    }
   }, [dimensions, holeSprites]);
 
   // --- Bildschleife: rechnet nur, solange sich etwas bewegt ---
@@ -5065,21 +5374,22 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
       if (!laeuft) return;
       const sim = simRef.current;
       if (sim) {
-        if (ansichtRef.current === "semantic") {
-          // Projektion: kein Physik-Loop — die Knoten gleiten auf ihre
+        if (ansichtRef.current === "semantic" || spatialLensRef.current !== "atlas") {
+          // Projektion / Spatial Lens: kein Physik-Loop — die Knoten gleiten auf ihre
           // Zielstellen und ruhen dann. Loslassen einer Bewegung = Auto-Fit.
-          const bewegt = bewegungAn ? stepDendrogram(sim.nodes, zielRef.current, reduzierteBewegung.current ? 1 : undefined) : false;
+          const bewegt = stepDendrogram(sim.nodes, zielRef.current, !bewegungAn || reduzierteBewegung.current ? 1 : undefined);
           if (bewegt) zeichneNoetig.current = true;
           if (autoFitOffen.current && !bewegt && sim.nodes.length > 0) {
             autoFitOffen.current = false;
-            fitBaumAnsicht();
+            if (spatialLensRef.current !== "atlas") fitKarte(zielRef.current, getLensFitPoints(spatialLensRef.current, zielRef.current));
+            else fitBaumAnsicht();
           }
         } else {
           const uebergang = uebergangRef.current;
           if (uebergang.size > 0) {
             // Baum→Kraftfeld: erst der weiche Übergang auf die letzten
             // Kraftfeld-Positionen, DANACH übernimmt die Physik.
-            const gleitet = bewegungAn ? stepDendrogram(sim.nodes, uebergang, reduzierteBewegung.current ? 1 : undefined) : false;
+            const gleitet = stepDendrogram(sim.nodes, uebergang, !bewegungAn || reduzierteBewegung.current ? 1 : undefined);
             if (gleitet) {
               zeichneNoetig.current = true;
             } else {
@@ -5336,35 +5646,20 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
     if (!sim) return;
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     const w = weltPunkt(e);
-    // Im Baum ist Ziehen Schwenken — die Anordnung gehoert der Hierarchie,
-    // nicht der Hand. (Und das Anheften ist Kraftfeld-Sache.)
-    const treffer = ansichtRef.current === "force" ? trefferBei(w) : null;
-    if (treffer) {
-      // P197: der ERSTE Griff nach der letzten Lösung friert das ganze Feld ein
-      // — „Release pinned" gibt es vollständig wieder, Nachbarn eingeschlossen.
+    // Anheften und Verschieben gilt nur im Kraftfeld-Atlas; in allen anderen
+    // Modi und Linsen bleibt Ziehen Schwenken und ein Klick wählt den Knoten.
+    const inForceAtlas = ansichtRef.current === "force" && spatialLensRef.current === "atlas";
+    const treffer = trefferBei(w);
+    if (treffer && inForceAtlas) {
       if (!feldSchnappschussRef.current) feldSchnappschussRef.current = feldSchnappschuss(sim);
-      // Die Stelle des ERSTEN Griffs wird gemerkt, bevor die Hand sie bewegt:
-      // genau sie gibt der Loesungsknopf zurueck.
       merkUrsprung(sim, treffer.id);
       treffer.pinned = true;
       draggingRef.current = treffer;
       zugRef.current = { sx: e.clientX, sy: e.clientY, bewegt: false };
-      // KEIN globales Anheizen mehr.
-      //
-      // Frueher hob ein Griff die Kraftstaerke des GANZEN Layouts auf 0,3 —
-      // damit ordnete sich bei jedem Zug die komplette Wissensbasis neu und
-      // brauchte rund vier Sekunden, bis sie wieder stand. Von aussen sieht das
-      // aus, als faenge alles an zu tanzen, und das war es auch: gemessen an
-      // 320 Notizen verschoben sich 263 der uebrigen Knoten um im Mittel 91
-      // Einheiten, der weiteste um 673.
-      //
-      // Ohne das Anhezen bewegt sich nur, was der gezogene Knoten auf seinem
-      // Weg wirklich beruehrt — seit P200 bewegt sich während des Griffs
-      // UEBERHAUPT NICHTS mehr: die Bildschleife taktet nicht (siehe den
-      // draggingRef-Zweig dort), der Knoten folgt der Hand direkt. Die
-      // Nachbarn stehen, bis man loslässt.
       zeichneNoetig.current = true;
     } else {
+      draggingRef.current = treffer;
+      zugRef.current = { sx: e.clientX, sy: e.clientY, bewegt: false };
       panRef.current = { sx: e.clientX, sy: e.clientY, ox: transformRef.current.x, oy: transformRef.current.y };
       autoFitOffen.current = false;
       nutzerBewegt.current = true;
@@ -5375,25 +5670,24 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     const sim = simRef.current;
     if (!sim) return;
-    const pan = panRef.current;
-    if (pan) {
-      transformRef.current = { ...transformRef.current, x: pan.ox + (e.clientX - pan.sx), y: pan.oy + (e.clientY - pan.sy) };
-      zeichneNoetig.current = true;
-      return;
+    const zug = zugRef.current;
+    if (zug && !zug.bewegt && Math.hypot(e.clientX - zug.sx, e.clientY - zug.sy) > ZUG_SCHWELLE_PX) {
+      zug.bewegt = true;
     }
+    const inForceAtlas = ansichtRef.current === "force" && spatialLensRef.current === "atlas";
+    const gezogen = inForceAtlas ? draggingRef.current : null;
     const w = weltPunkt(e);
-    const gezogen = ansichtRef.current === "force" ? draggingRef.current : null;
     if (gezogen) {
       gezogen.x = w.x;
       gezogen.y = w.y;
       gezogen.vx = 0;
       gezogen.vy = 0;
-      // Ein Klick ist kein Zug. Erst ab einer echten Strecke gilt der Knoten
-      // als verschoben — sonst bliebe jeder, den man nur anfasst, angeheftet.
-      const zug = zugRef.current;
-      if (zug && !zug.bewegt && Math.hypot(e.clientX - zug.sx, e.clientY - zug.sy) > ZUG_SCHWELLE_PX) {
-        zug.bewegt = true;
-      }
+      zeichneNoetig.current = true;
+      return;
+    }
+    const pan = panRef.current;
+    if (pan) {
+      transformRef.current = { ...transformRef.current, x: pan.ox + (e.clientX - pan.sx), y: pan.oy + (e.clientY - pan.sy) };
       zeichneNoetig.current = true;
       return;
     }
@@ -5418,29 +5712,26 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
 
   const onPointerUp = useCallback(() => {
     const gezogen = draggingRef.current;
+    const bewegt = zugRef.current?.bewegt ?? false;
+    const inForceAtlas = ansichtRef.current === "force" && spatialLensRef.current === "atlas";
     if (gezogen) {
-      // Ein abgelegter Knoten BLEIBT, wo man ihn hingezogen hat.
-      //
-      // Zwischenzeitlich sprang er zurueck in die Physik, und das war die
-      // Antwort auf einen echten Fehler: damals wurde beim Anfassen angeheftet
-      // und nie wieder geloest, sodass nach ein paar Griffen der halbe Graph
-      // erstarrt war. Der Fehler lag aber nicht im Anheften, sondern darin,
-      // dass es keinen Weg zurueck gab. Den gibt es jetzt: angeheftete Knoten
-      // tragen einen Ring, und der Knopf in der Leiste loest sie wieder.
-      //
-      // Ein blosser Klick heftet nicht an — dafuer die Schwelle.
-      const bewegt = zugRef.current?.bewegt ?? false;
-      gezogen.pinned = bewegt;
-      gezogen.vx = 0;
-      gezogen.vy = 0;
-      if (bewegt) setAngeheftet(zaehleAngeheftet());
-      // ein blosser Klick auf ein konzept öffnet sein dossier — für die notiz
-      // gilt das nicht, die öffnet erst der doppelklick und bleibt beim
-      // einfachen klick liegen, wo sie war.
-      if (!bewegt && gezogen.id.startsWith(ENTITAETS_PRAEFIX)) {
-        const name = strukturKnotenRef.current.get(gezogen.id)?.label;
-        if (name) onSelectConcept?.(name);
+      if (inForceAtlas) {
+        gezogen.pinned = bewegt;
+        gezogen.vx = 0;
+        gezogen.vy = 0;
+        if (bewegt) setAngeheftet(zaehleAngeheftet());
       }
+      if (!bewegt) {
+        clickedIdRef.current = gezogen.id;
+        setClickedId(gezogen.id);
+        if (gezogen.id.startsWith(ENTITAETS_PRAEFIX)) {
+          const name = strukturKnotenRef.current.get(gezogen.id)?.label;
+          if (name) onSelectConcept?.(name);
+        }
+      }
+    } else if (!bewegt && panRef.current) {
+      clickedIdRef.current = null;
+      setClickedId(null);
     }
     zugRef.current = null;
     draggingRef.current = null;
@@ -5713,7 +6004,7 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * eine Achse braucht eine Richtung, und eine Richtung braucht ein Zweites.
    */
   const karteZeigbar =
-    ansicht !== "semantic" || (!karteFehler && karte !== null && karte.punkte.length >= 2);
+    spatialLens !== "atlas" || ansicht !== "semantic" || (!karteFehler && karte !== null && karte.punkte.length >= 2);
 
   // Die Statuszeile wohnt am Fenster-Slot (volle Breite, Mockup .statuszeile):
   // der Zeitanteil, der Bestand des Bildes, rechts das Bild-Wort. Die Hooks
@@ -5779,8 +6070,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
    * aria-pressed=true und sonst nichts (gemessen 10.10.: Rand
    * rgba(255,255,255,.08), Schrift --text-1 — wie „All" und „Off" aus).
    */
-  const segment = (an: boolean, titel: string, onClick: () => void, wort: string, zu = false) => (
+  const segment = (an: boolean, titel: string, onClick: () => void, wort: string, zu = false, schluessel?: string) => (
     <button
+      key={schluessel}
       type="button"
       className="apple-seg-btn fs-1 font-semibold"
       data-on={an ? "true" : "false"}
@@ -6020,7 +6312,24 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
   const schieneNamen = (
     <div className="apple-seg shrink-0" role="group" aria-label="Density of names" data-testid="graph-schiene-namen">
       {STUFEN_FOLGE.map((m) =>
-        segment(etikettenModus === m, NAMEN_STUFE[m].erklaerung, () => setzeEtiketten(m), NAMEN_STUFE[m].wort))}
+        segment(etikettenModus === m, NAMEN_STUFE[m].erklaerung, () => setzeEtiketten(m), NAMEN_STUFE[m].wort, false, m))}
+    </div>
+  );
+  const schieneLinse = (
+    <div className="graph-lens-grid" role="group" aria-label="Spatial lens">
+      {SPATIAL_LENSES.map((l) => (
+        <button
+          key={l.id}
+          type="button"
+          className="graph-lens-pill"
+          data-on={spatialLens === l.id ? "true" : "false"}
+          aria-pressed={spatialLens === l.id ? "true" : "false"}
+          title={l.caption}
+          onClick={() => switchSpatialLens(l.id)}
+        >
+          {l.label}
+        </button>
+      ))}
     </div>
   );
   const schieneKanal = (
@@ -6053,7 +6362,9 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             ? "Four steps — the whole neighbourhood around a concept. Slower, and the door caps what it can carry."
             : `${t} steps — how far the picture reaches from each concept.`,
         () => wechsleTiefe(t),
-        String(t)
+        String(t),
+        false,
+        `depth-${t}`
       ))}
     </div>
   );
@@ -6871,11 +7182,106 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
             {ansicht === "semantic" ? uiT("hint.semantic") : uiT("hint.force")}
           </div>
         </div>
+
+        {/* PDCR v4 Spatial Lens Banner & Blast Ripple Readout */}
+        {(spatialLens !== "atlas" || rippleActive) && (
+          <div className="graph-top-banners">
+            {spatialLens !== "atlas" && (
+              <div className="graph-lens-banner" role="status">
+                <strong>{SPATIAL_LENSES.find((l) => l.id === spatialLens)?.label}: </strong>
+                {SPATIAL_LENSES.find((l) => l.id === spatialLens)?.caption}
+              </div>
+            )}
+            {rippleActive && (
+              <div className="graph-ripple-banner" role="status">
+                <span className="tnum">
+                  {`Ripple impact: ${
+                    blastMap
+                      ? [...blastMap.keys()].filter((id) => id !== blastStartId && byId.has(id)).length || Math.max(0, blastMap.size - 1)
+                      : 0
+                  } affected within ${graphTiefe} steps`}
+                </span>
+                <button
+                  type="button"
+                  className="btn-ghost px-1.5 py-0.5 rounded fs-1"
+                  onClick={() => {
+                    setRippleActive(false);
+                    zeichneNoetig.current = true;
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PDCR v4 4-Way Contradiction Balance Tribunal (Review & Gaps Lens) */}
+        {spatialLens === "review" && (
+          <div className="graph-tribunal" role="region" aria-label="Conflict review">
+            <div className="flex items-center justify-between gap-2">
+              <span className="fs-2 font-semibold" style={{ color: "var(--text-1)" }}>
+                {activeConflict
+                  ? "Resolve conflicting claim — choose which record holds"
+                  : "No open conflicting facts detected"}
+              </span>
+              <span className="hud-label tnum" style={{ color: activeConflict ? "var(--warn)" : "var(--ok)" }}>
+                {conflicts.length === 0 ? "0 conflicts" : `${conflicts.length} open`}
+              </span>
+            </div>
+            {conflictStatusMsg && (
+              <div className="fs-1" style={{ color: "var(--ok)" }}>{conflictStatusMsg}</div>
+            )}
+            {activeConflict && (
+              <>
+                <div className="graph-tribunal-cols">
+                  <div className="graph-tribunal-card">
+                    <span className="fs-1 font-semibold" style={{ color: "var(--accent)" }}>
+                      Older record
+                    </span>
+                    <div className="fs-2 font-semibold" style={{ color: "var(--text-1)" }}>
+                      {activeConflict.older.title}
+                    </div>
+                    <div className="fs-1" style={{ color: "var(--text-2)" }}>
+                      {activeConflict.older.sentence || activeConflict.older.value}
+                    </div>
+                  </div>
+                  <div className="graph-tribunal-card">
+                    <span className="fs-1 font-semibold" style={{ color: "var(--warn)" }}>
+                      Newer record
+                    </span>
+                    <div className="fs-2 font-semibold" style={{ color: "var(--text-1)" }}>
+                      {activeConflict.newer.title}
+                    </div>
+                    <div className="fs-1" style={{ color: "var(--text-2)" }}>
+                      {activeConflict.newer.sentence || activeConflict.newer.value}
+                    </div>
+                  </div>
+                </div>
+                <div className="graph-tribunal-actions">
+                  <button type="button" className="graph-tribunal-btn" onClick={() => void resolveConflict(activeConflict, "newer")}>
+                    Keep newer note (supersede older)
+                  </button>
+                  <button type="button" className="graph-tribunal-btn" onClick={() => void resolveConflict(activeConflict, "older")}>
+                    Keep older note (supersede newer)
+                  </button>
+                  <button type="button" className="graph-tribunal-btn" onClick={() => void resolveConflict(activeConflict, "window")}>
+                    Both hold — close older valid-to date
+                  </button>
+                  <button type="button" className="graph-tribunal-btn" onClick={() => void resolveConflict(activeConflict, "both")}>
+                    Both hold simultaneously as exceptions
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <aside
         ref={leistenMessen}
         data-testid="graph-leiste"
+        data-sheet={panelSheetOpen ? "auf" : "zu"}
         className="graph-panel"
         onKeyDown={(e) => {
           if (e.key === "Escape") {
@@ -6885,10 +7291,21 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           }
         }}
       >
-        <div className="graph-panel-kopf">View</div>
+        <div className="graph-panel-kopf">
+          <span>View</span>
+          <button
+            type="button"
+            className="graph-sheet-toggle"
+            aria-expanded={panelSheetOpen}
+            onClick={() => setPanelSheetOpen((v) => !v)}
+          >
+            {panelSheetOpen ? "Hide controls ▾" : "Controls ▴"}
+          </button>
+        </div>
         <div className="graph-panel-korper">
           <div className="graph-panel-zeile">{sucheBlock}</div>
           <div className="graph-panel-zeile">{schieneAnsicht}</div>
+          <div className="graph-panel-zeile">{schieneLinse}</div>
           <div className="graph-panel-zeile">{schieneKanal}</div>
           <div className="graph-panel-zeile">{schieneTiefe}</div>
           <div className="graph-panel-zeile">{schieneNamen}</div>
@@ -6913,10 +7330,42 @@ export function KnowledgeGraph({ memories: memoriesAusFenster, onSelectMemory, o
           <div className="graph-panel-zeile">{steuerelementDicke}</div>
         </div>
         <div className="graph-panel-fuss">
-          {/* Der Ausgewählt-Block (Mockup .regler-block): der gewählte Knoten
-              und die Zahl der Verbindungen des Bildes, darunter die drei Griffe. */}
-          <div className="graph-fuss-zeile"><span>Selected</span><span className="wert">{tastaturId ? (titelVonId.get(tastaturId) ?? tastaturId.slice(0, 18)) : "—"}</span></div>
+          {/* Der Ausgewählt-Block: vollständiger umbrochener Notiz-Titel ohne 18-Zeichen-Kappung. */}
+          <div className="graph-fuss-zeile"><span>Selected</span><span className="wert">{activeNoteId ? (titelVonId.get(activeNoteId) ?? activeNoteId) : "—"}</span></div>
           <div className="graph-fuss-zeile"><span>Links</span><span className="wert tnum">{(netz.erwahnungen.length + netz.behauptungen.length).toLocaleString("en-US")}</span></div>
+          <div className="graph-fuss-actions">
+            {activeNoteId && byId.get(activeNoteId) && (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  const m = byId.get(activeNoteId);
+                  if (m) onSelectMemory(m);
+                }}
+              >
+                Open note
+              </button>
+            )}
+            <button
+              type="button"
+              className="graph-lens-pill"
+              data-on={spatialLens === "focus" ? "true" : "false"}
+              onClick={() => switchSpatialLens(spatialLens === "focus" ? "atlas" : "focus")}
+            >
+              {spatialLens === "focus" ? "Exit focus" : "Focus note"}
+            </button>
+            <button
+              type="button"
+              className="graph-lens-pill"
+              data-on={rippleActive ? "true" : "false"}
+              onClick={() => {
+                setRippleActive((v) => !v);
+                zeichneNoetig.current = true;
+              }}
+            >
+              Trace ripple
+            </button>
+          </div>
           <div className="graph-fuss-knoepfe">{zoomReihe}</div>
         </div>
       </aside>

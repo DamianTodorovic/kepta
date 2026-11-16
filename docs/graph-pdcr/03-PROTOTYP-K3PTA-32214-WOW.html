@@ -1,0 +1,3381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Graph — K3PTA (v4 Topographic Cartography · Core 3.2.214)</title>
+  <style>
+    /* =========================================================================
+       K3PTA DESIGN SYSTEM — EXACT CORE 3.2.214 TOKENS (src/index.css)
+       Static weights only: 300 / 400 / 600 / 700 (no 500)
+       Strict scale: --fs-1 (11px) .. --fs-6 (20px)
+       ========================================================================= */
+    :root {
+      --eb-0: #f7f6f3;
+      --eb-1: #f6f5f3;
+      --eb-2: #fafaf9;
+      --canvas-paper: #ffffff;
+      --feld: #f1f0ec;
+      --side-basis-1: #f1f0ec;
+      --side-basis-2: #eae9e4;
+      --bg-hover: #efeeea;
+
+      --kante-dekor: rgba(31, 30, 28, 0.11);
+      --kante-stark: rgba(31, 30, 28, 0.22);
+      --kante-kontrolle: rgba(31, 30, 28, 0.34);
+
+      --text-1: #1f1e1c;
+      --text-2: #5f5b54;
+      --text-3: #6b675f;
+
+      --accent: #276b4f;
+      --accent-fuell: #2e7d5b;
+      --accent-soft: rgba(46, 125, 91, 0.12);
+      --accent-soft-2: rgba(46, 125, 91, 0.18);
+      --on-accent: #ffffff;
+      --fokus: #276b4f;
+
+      --ok: #2d6749;
+      --ok-soft: rgba(45, 103, 73, 0.11);
+      --warn: #684d00;
+      --warn-soft: rgba(168, 116, 46, 0.13);
+      --danger: #7e2a22;
+      --danger-soft: rgba(183, 24, 36, 0.10);
+      --gefahr: #b71824;
+
+      /* Dual-Channel Mineral Kinds (exact Core 3.2.214 twins) */
+      --type-semantic-hex: #3a6ea8;
+      --type-episodic-hex: #a8742e;
+      --type-procedural-hex: #2e7d5b;
+      --type-reference-hex: #a4553f;
+      --type-neutral-hex: #464646;
+
+      --herkunft-written: #42474c;
+      --herkunft-file: #693a00;
+      --herkunft-machine: #00514d;
+
+      --shadow-sm: 0 1px 2px rgba(20, 28, 34, 0.08);
+      --shadow-md: 0 4px 14px rgba(20, 28, 34, 0.10);
+
+      --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+      --r-panel: 14px;
+      --r-card: 12px;
+      --r-btn: 7px;
+      --r-chip: 4px;
+      --r-badge: 3px;
+
+      --fs-1: 11px;
+      --fs-2: 12px;
+      --fs-3: 13px;
+      --fs-4: 14px;
+      --fs-5: 16px;
+      --fs-detail: 18px;
+
+      --ease-apple: cubic-bezier(0.2, 0.8, 0.2, 1);
+      --dur-fast: 100ms;
+      --dur: 200ms;
+    }
+
+    html.dark {
+      --eb-0: #070708;
+      --eb-1: #252526;
+      --eb-2: #38383a;
+      --canvas-paper: #121211;
+      --feld: #0c0d0f;
+      --side-basis-1: #1a1b1e;
+      --side-basis-2: #121316;
+      --bg-hover: #2c2d31;
+
+      --kante-dekor: rgba(255, 255, 255, 0.12);
+      --kante-stark: rgba(255, 255, 255, 0.24);
+      --kante-kontrolle: rgba(255, 255, 255, 0.36);
+
+      --text-1: #eaeae8;
+      --text-2: #bab8b1;
+      --text-3: #a4a29b;
+
+      /* Dark accent per canonical src/index.css: Coral/Siegellack (#f97d69 / #c04a39), --ok (#73bb91) */
+      --accent: #f97d69;
+      --accent-fuell: #c04a39;
+      --accent-soft: rgba(249, 125, 105, 0.14);
+      --accent-soft-2: rgba(249, 125, 105, 0.22);
+      --on-accent: #ffffff;
+      --fokus: #f97d69;
+
+      --ok: #73bb91;
+      --ok-soft: rgba(115, 187, 145, 0.14);
+      --warn: #d8a84a;
+      --warn-soft: rgba(216, 168, 74, 0.14);
+      --danger: #e57a6b;
+      --danger-soft: rgba(229, 122, 107, 0.14);
+      --gefahr: #e54c4d;
+
+      --type-semantic-hex: #9cadc4;
+      --type-episodic-hex: #c6a1ba;
+      --type-procedural-hex: #8fb89a;
+      --type-reference-hex: #c6a687;
+      --type-neutral-hex: #acacac;
+
+      --herkunft-written: #a7acb3;
+      --herkunft-file: #d8a25c;
+      --herkunft-machine: #6cb9b3;
+
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: var(--font-ui);
+      font-size: var(--fs-3);
+      line-height: 1.45;
+      color: var(--text-1);
+      background: var(--eb-0);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font-family: inherit; color: inherit; }
+    button { border: none; background: transparent; cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--fokus);
+      outline-offset: 2px;
+    }
+
+    .tnum { font-variant-numeric: tabular-nums; }
+    .mono { font-family: var(--font-mono); }
+
+    /* =========================================================================
+       P202 WINDOW SHELL (38px Titlebar · 208px Sidebar · Body · 26px Statusbar)
+       ========================================================================= */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      background: var(--eb-0);
+    }
+
+    .fenster-titelleiste {
+      height: 38px;
+      flex: none;
+      background: var(--feld);
+      border-bottom: 1px solid var(--kante-dekor);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 0 12px;
+      gap: 12px;
+      user-select: none;
+    }
+    .fenster-ampel {
+      display: flex; align-items: center; gap: 7px;
+    }
+    .fenster-ampel i {
+      width: 12px; height: 12px; border-radius: 50%; display: block;
+    }
+    .fenster-titel {
+      font-size: var(--fs-3);
+      font-weight: 600;
+      color: var(--text-2);
+      white-space: nowrap;
+      text-align: center;
+    }
+    .demo-bar {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .demo-pill {
+      flex: 1;
+      height: 24px;
+      padding: 0 7px;
+      border-radius: var(--r-btn);
+      border: 1px solid var(--kante-dekor);
+      background: var(--canvas-paper);
+      color: var(--text-2);
+      font-size: var(--fs-1);
+      font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      white-space: nowrap;
+      transition: background var(--dur-fast) var(--ease-apple), color var(--dur-fast) var(--ease-apple);
+    }
+    .demo-pill:hover { color: var(--text-1); border-color: var(--kante-stark); }
+    .demo-pill[aria-pressed="true"] {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .app-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Left Sidebar (208px p202) */
+    .seiten-leiste {
+      width: 208px;
+      flex: none;
+      background: var(--side-basis-1);
+      border-right: 1px solid var(--kante-dekor);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .sidebar-suche-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .sidebar-suche-feld {
+      width: 100%;
+      height: 28px;
+      padding: 0 34px 0 28px;
+      border-radius: var(--r-btn);
+      background: var(--eb-2);
+      border: 1px solid var(--kante-dekor);
+      font-size: var(--fs-2);
+      color: var(--text-1);
+    }
+    .kbd {
+      position: absolute;
+      right: 7px;
+      font-size: var(--fs-1);
+      color: var(--text-3);
+      border: 1px solid var(--kante-dekor);
+      border-radius: var(--r-chip);
+      padding: 0 4px;
+      line-height: 1.4;
+      pointer-events: none;
+    }
+    .sidebar-nav-btn {
+      width: 100%;
+      height: 30px;
+      padding: 0 8px;
+      border-radius: var(--r-btn);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--fs-3);
+      font-weight: 600;
+      color: var(--text-2);
+      text-align: left;
+      transition: background var(--dur-fast) var(--ease-apple);
+    }
+    .sidebar-nav-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+    .sidebar-nav-btn[data-active="true"] {
+      background: var(--accent-soft);
+      color: var(--accent);
+      box-shadow: inset 2px 0 0 var(--accent);
+    }
+    .seiten-zahl { margin-left: auto; font-size: var(--fs-1); font-weight: 600; color: var(--text-3); }
+    .sidebar-nav-btn[data-active="true"] .seiten-zahl { color: var(--accent); }
+    .seiten-punkt {
+      margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+    }
+
+    .seiten-kopf {
+      font-size: var(--fs-1);
+      font-weight: 600;
+      color: var(--text-3);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 12px 8px 4px;
+    }
+    .sidebar-tags {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .sidebar-tag-btn {
+      width: 100%;
+      height: 26px;
+      padding: 0 8px;
+      border-radius: var(--r-btn);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--fs-2);
+      font-weight: 600;
+      color: var(--type-semantic-hex);
+    }
+    .sidebar-tag-btn:hover { background: var(--bg-hover); }
+    .sidebar-tag-btn[data-active="true"] {
+      background: var(--accent-soft);
+    }
+    .seiten-plakette {
+      font-size: var(--fs-1);
+      color: var(--text-3);
+      background: rgba(31, 30, 28, 0.05);
+      padding: 0 6px;
+      border-radius: var(--r-chip);
+    }
+    html.dark .seiten-plakette { background: rgba(255, 255, 255, 0.07); }
+
+    .nav-fuss-leiste {
+      margin-top: auto;
+      padding-top: 8px;
+      border-top: 1px solid var(--kante-dekor);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 36px;
+    }
+    .nav-fuss-konto { display: flex; align-items: center; gap: 7px; }
+    .kepta-mark {
+      width: 20px; height: 20px; border-radius: 5px;
+      background: var(--text-1); color: var(--canvas-paper);
+      display: grid; place-items: center;
+      font-size: var(--fs-1); font-weight: 700;
+    }
+    .nav-fuss-ikonen { display: flex; align-items: center; gap: 2px; }
+    .nav-fuss-ikon {
+      width: 28px; height: 28px; border-radius: var(--r-btn);
+      display: grid; place-items: center; color: var(--text-2);
+    }
+    .nav-fuss-ikon:hover { background: var(--bg-hover); color: var(--text-1); }
+    .nav-fuss-ikon[data-on="true"] { color: var(--accent); background: var(--accent-soft); }
+
+    /* =========================================================================
+       GRAPH WORKSPACE (.graph-leinwand Pure Paper + .graph-panel 258px)
+       ========================================================================= */
+    .graph-workspace {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+    .graph-leinwand {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      position: relative;
+      background: var(--canvas-paper);
+      overflow: hidden;
+    }
+    canvas#graph-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+    canvas#graph-canvas:active { cursor: grabbing; }
+
+    /* Minimal Top-Left Zoom & Breadcrumb Bar */
+    .canvas-top-left {
+      position: absolute;
+      top: 12px; left: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .graph-canvas-zoom {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 2px;
+      border-radius: var(--r-btn);
+      background: var(--eb-2);
+      border: 1px solid var(--kante-dekor);
+      box-shadow: var(--shadow-sm);
+      font-size: var(--fs-1);
+      color: var(--text-2);
+    }
+    .graph-canvas-zoom button {
+      width: 28px; height: 28px;
+      border-radius: 5px;
+      font-weight: 600;
+      display: grid; place-items: center;
+    }
+    .graph-canvas-zoom button:hover { background: var(--bg-hover); color: var(--text-1); }
+    .z-pct { min-width: 42px; text-align: center; font-weight: 600; color: var(--text-1); }
+
+    .atlas-crumb {
+      pointer-events: auto;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: var(--r-btn);
+      background: var(--eb-2);
+      border: 1px solid var(--kante-stark);
+      box-shadow: var(--shadow-sm);
+      font-size: var(--fs-2);
+      font-weight: 600;
+      color: var(--text-1);
+    }
+    .atlas-crumb.show { display: inline-flex; }
+    .atlas-crumb button {
+      color: var(--accent);
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: var(--r-chip);
+    }
+    .atlas-crumb button:hover { background: var(--accent-soft); }
+
+    /* Top-Right Contextual Banner (Meaning variance / Blast Radius / Lens Explanation) */
+    .canvas-top-right {
+      position: absolute;
+      top: 12px; right: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .lens-caption {
+      pointer-events: auto;
+      padding: 5px 10px;
+      border-radius: var(--r-btn);
+      background: var(--eb-2);
+      border: 1px solid var(--kante-dekor);
+      box-shadow: var(--shadow-sm);
+      font-size: var(--fs-1);
+      line-height: 1.4;
+      color: var(--text-2);
+      display: block;
+      max-width: 400px;
+    }
+    .lens-caption strong { color: var(--text-1); font-weight: 600; }
+    .ripple-banner {
+      display: none;
+      pointer-events: auto;
+      padding: 6px 10px;
+      border-radius: var(--r-btn);
+      background: var(--warn-soft);
+      border: 1px solid var(--warn);
+      color: var(--text-1);
+      font-size: var(--fs-1);
+      font-weight: 600;
+      align-items: center;
+      gap: 8px;
+    }
+    .ripple-banner.show { display: inline-flex; }
+
+    /* Der Gang (Bottom-Right Discreet Shelf Pill for Unlinked Notes) */
+    .gang-dock {
+      position: absolute;
+      right: 12px; bottom: 12px;
+      z-index: 9;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      height: 34px;
+      padding: 0 10px;
+      border-radius: var(--r-btn);
+      background: var(--eb-2);
+      border: 1px solid var(--kante-dekor);
+      box-shadow: var(--shadow-sm);
+      font-size: var(--fs-1);
+      color: var(--text-2);
+    }
+    .gang-dock.show { display: inline-flex; }
+    .gang-dock button {
+      height: 24px; padding: 0 7px;
+      border-radius: var(--r-chip);
+      border: 1px solid var(--kante-dekor);
+      font-size: var(--fs-1); font-weight: 600; color: var(--text-1);
+    }
+    .gang-dock button:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Collapsible Legend Bottom-Left (<= 25% mobile invariant when closed!) */
+    .graph-legende {
+      position: absolute;
+      left: 12px; bottom: 12px;
+      z-index: 12;
+      background: var(--eb-2);
+      border: 1px solid var(--kante-dekor);
+      border-radius: var(--r-btn);
+      box-shadow: var(--shadow-md);
+      font-size: var(--fs-1);
+      color: var(--text-2);
+      max-width: min(360px, calc(100% - 24px));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .graph-legende[data-legende="zu"] {
+      height: 34px;
+    }
+    .graph-legende[data-legende="auf"] {
+      max-height: calc(100% - 76px);
+      width: min(360px, calc(100% - 24px));
+    }
+    .graph-legende-head {
+      height: 34px;
+      flex: none;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legende-klappe-btn {
+      height: 28px;
+      padding: 0 6px;
+      border-radius: var(--r-chip);
+      font-size: var(--fs-1);
+      font-weight: 600;
+      color: var(--text-1);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .legende-klappe-btn:hover { background: var(--bg-hover); }
+    .kind-dots-row { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+    .kind-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
+    .graph-legende-bilanz {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-2);
+    }
+    .legende-erweitert {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--kante-dekor);
+      overflow-y: auto;
+    }
+    .graph-legende[data-legende="auf"] .legende-erweitert { display: flex; }
+
+    /* GraphRegal inside expanded Legend (Single Scroll Container!) */
+    .regal-band-bar {
+      height: 6px;
+      width: 100%;
+      border-radius: var(--r-chip);
+      overflow: hidden;
+      display: flex;
+      border: 1px solid var(--kante-dekor);
+    }
+    .regal-baskets { display: flex; flex-wrap: wrap; gap: 4px; }
+    .regal-koerb {
+      min-height: 28px;
+      padding: 2px 8px;
+      border-radius: var(--r-chip);
+      border: 1px solid var(--kante-dekor);
+      background: var(--eb-0);
+      font-size: var(--fs-1);
+      font-weight: 600;
+      color: var(--text-2);
+    }
+    .regal-koerb[aria-expanded="true"] {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    /* Interactive Hover Card & Tribunal Overlay inside Review Lens */
+    .graph-edge-tooltip {
+      position: absolute;
+      pointer-events: none;
+      display: none;
+      padding: 6px 10px;
+      border-radius: var(--r-btn);
+      background: var(--eb-2);
+      border: 1px solid var(--kante-stark);
+      box-shadow: var(--shadow-md);
+      font-size: var(--fs-1);
+      color: var(--text-1);
+      z-index: 25;
+      max-width: 310px;
+    }
+
+    /* Contradiction Balance Tribunal Card (Review & Gaps Lens)
+       Right-docked on wide desktop so bottom-left open Legend NEVER overlaps! */
+    .tribunal-dock {
+      position: absolute;
+      right: 12px;
+      bottom: 54px;
+      width: min(560px, calc(100% - 24px));
+      background: var(--eb-2);
+      border: 1px solid var(--kante-stark);
+      border-radius: var(--r-card);
+      box-shadow: var(--shadow-md);
+      padding: 12px 14px;
+      z-index: 15;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .tribunal-dock.show { display: flex; }
+    .tribunal-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .tribunal-card {
+      padding: 9px 10px;
+      border-radius: var(--r-btn);
+      background: var(--canvas-paper);
+      border: 1px solid var(--kante-dekor);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .tribunal-card.ai-draft { border-color: var(--warn); }
+    .tribunal-card.human-record { border-color: var(--accent); }
+    .tribunal-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .tribunal-btn {
+      min-height: 32px;
+      padding: 5px 9px;
+      border-radius: var(--r-btn);
+      border: 1px solid var(--kante-kontrolle);
+      background: var(--canvas-paper);
+      font-size: var(--fs-1);
+      font-weight: 600;
+      color: var(--text-1);
+      text-align: left;
+    }
+    .tribunal-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+    /* Missing Bridge Inline Card (Meaning Lens) */
+    .bridge-prompt {
+      position: absolute;
+      left: 50%; bottom: 56px; transform: translateX(-50%);
+      width: min(500px, calc(100% - 32px));
+      padding: 10px 12px;
+      border-radius: var(--r-card);
+      background: var(--eb-2);
+      border: 1px solid var(--accent);
+      box-shadow: var(--shadow-md);
+      z-index: 15;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: var(--fs-2);
+    }
+    .bridge-prompt.show { display: flex; }
+
+    /* Popovers (#pop-schema & #pop-krafte) */
+    .graph-popover {
+      position: absolute;
+      right: 12px; top: 52px;
+      width: 288px;
+      max-height: calc(100% - 104px);
+      overflow-y: auto;
+      background: var(--eb-2);
+      border: 1px solid var(--kante-stark);
+      border-radius: var(--r-card);
+      box-shadow: var(--shadow-md);
+      padding: 12px;
+      z-index: 22;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .graph-popover.open { display: flex; }
+    .graph-gruppenband {
+      height: 6px;
+      border-radius: var(--r-chip);
+      overflow: hidden;
+      display: flex;
+      background: var(--eb-0);
+    }
+    .graph-gruppenband span { height: 100%; }
+    .schema-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 6px; border-radius: var(--r-chip);
+      font-size: var(--fs-1); color: var(--text-1);
+      width: 100%; text-align: left;
+    }
+    .schema-row:hover, .schema-row[data-on="true"] { background: var(--accent-soft); color: var(--accent); }
+
+    /* =========================================================================
+       RIGHT INSPECTOR PANEL (.graph-panel · 258px exact p202)
+       ========================================================================= */
+    .graph-panel {
+      width: 258px;
+      flex: none;
+      border-left: 1px solid var(--kante-dekor);
+      background: var(--eb-0);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .graph-panel-kopf {
+      height: 40px;
+      flex: none;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--kante-dekor);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--fs-2);
+      font-weight: 600;
+      color: var(--text-1);
+    }
+    .graph-panel-korper {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .hud-label {
+      font-size: var(--fs-1);
+      font-weight: 600;
+      color: var(--text-3);
+    }
+
+    .graph-search-wrap { position: relative; }
+    .graph-search-input {
+      width: 100%;
+      height: 28px;
+      padding: 0 42px 0 26px;
+      border-radius: var(--r-btn);
+      background: var(--canvas-paper);
+      border: 1px solid var(--kante-dekor);
+      font-size: var(--fs-2);
+      color: var(--text-1);
+    }
+    .graph-search-count {
+      position: absolute; right: 7px; top: 6px;
+      font-size: var(--fs-1); color: var(--text-3);
+      pointer-events: none;
+    }
+
+    .apple-seg {
+      display: flex;
+      width: 100%;
+      padding: 2px;
+      gap: 2px;
+      border-radius: var(--r-btn);
+      background: var(--bg-hover);
+    }
+    .apple-seg-btn {
+      flex: 1;
+      height: 24px;
+      padding: 0 5px;
+      border-radius: 5px;
+      font-size: var(--fs-1);
+      font-weight: 600;
+      color: var(--text-2);
+      white-space: nowrap;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .apple-seg-btn:hover { color: var(--text-1); }
+    .apple-seg-btn[aria-pressed="true"], .apple-seg-btn.on {
+      background: var(--canvas-paper);
+      color: var(--text-1);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .lens-pills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .lens-pill {
+      height: 24px;
+      padding: 0 8px;
+      border-radius: var(--r-btn);
+      border: 1px solid var(--kante-dekor);
+      background: var(--canvas-paper);
+      font-size: var(--fs-1);
+      font-weight: 600;
+      color: var(--text-2);
+    }
+    .lens-pill:hover { border-color: var(--kante-stark); color: var(--text-1); }
+    .lens-pill[aria-pressed="true"] {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .legende-graph {
+      background: var(--canvas-paper);
+      border: 1px solid var(--kante-dekor);
+      border-radius: var(--r-btn);
+      overflow: hidden;
+    }
+    .farbwahl-zeile {
+      width: 100%;
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 9px;
+      font-size: var(--fs-1);
+      color: var(--text-1);
+      text-align: left;
+    }
+    .farbwahl-zeile + .farbwahl-zeile { border-top: 1px solid var(--kante-dekor); }
+    .farbwahl-zeile:hover { background: var(--bg-hover); }
+    .farbwahl-zeile[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+    .graph-line-key {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 5px 9px;
+      border-top: 1px solid var(--kante-dekor);
+      background: var(--feld);
+      font-size: var(--fs-1);
+      color: var(--text-3);
+    }
+
+    /* Synchronized TodayView Green Gleis Slider */
+    .zeitstrahl-box {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 8px 9px;
+      border-radius: var(--r-btn);
+      background: var(--canvas-paper);
+      border: 1px solid var(--kante-dekor);
+    }
+    .zeitstrahl-spur {
+      position: relative;
+      height: 22px;
+      display: flex; align-items: center;
+    }
+    .zeitstrahl-gleis {
+      position: absolute; left: 2px; right: 2px; top: 50%; height: 3px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: var(--kante-dekor);
+      pointer-events: none;
+    }
+    .zeitstrahl-fuellung {
+      height: 100%; border-radius: 999px; background: var(--accent-fuell);
+    }
+    input[type="range"].arch-range {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: transparent;
+      margin: 0;
+      position: relative;
+      z-index: 2;
+      cursor: pointer;
+    }
+    input[type="range"].arch-range::-webkit-slider-runnable-track { height: 4px; background: transparent; }
+    input[type="range"].arch-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px; height: 13px; margin-top: -4.5px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid var(--accent-fuell);
+      box-shadow: var(--shadow-sm);
+    }
+    .date-input {
+      width: 100%; height: 26px;
+      padding: 0 7px;
+      border-radius: var(--r-chip);
+      border: 1px solid var(--kante-dekor);
+      background: var(--eb-0);
+      font-size: var(--fs-1);
+      color: var(--text-1);
+    }
+
+    /* Quiet Disclosure Accordions (No flat 18-control dump!) */
+    .acc-group {
+      border: 1px solid var(--kante-dekor);
+      border-radius: var(--r-btn);
+      background: var(--canvas-paper);
+      overflow: hidden;
+    }
+    .acc-summary {
+      list-style: none;
+      padding: 7px 9px;
+      font-size: var(--fs-1);
+      font-weight: 600;
+      color: var(--text-1);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .acc-summary::-webkit-details-marker { display: none; }
+    .acc-body {
+      padding: 8px 9px;
+      border-top: 1px solid var(--kante-dekor);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .graph-toggle-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+    .graph-pill-btn {
+      height: 24px; padding: 0 7px;
+      border-radius: var(--r-chip);
+      border: 1px solid var(--kante-dekor);
+      background: var(--eb-0);
+      font-size: var(--fs-1); font-weight: 600; color: var(--text-2);
+    }
+    .graph-pill-btn[data-on="true"] {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Sticky Unclipped Selected Inspector Footer */
+    .graph-panel-fuss {
+      flex: none;
+      padding: 9px 10px 10px;
+      border-top: 1px solid var(--kante-dekor);
+      background: var(--eb-0);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .sel-title-wrap {
+      font-size: var(--fs-2);
+      font-weight: 600;
+      color: var(--text-1);
+      line-height: 1.3;
+      max-height: 48px;
+      overflow-y: auto;
+      word-break: break-word;
+    }
+    .sel-meta-line {
+      font-size: var(--fs-1);
+      color: var(--text-3);
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    }
+    .sel-actions-row {
+      display: flex; gap: 4px; flex-wrap: wrap;
+    }
+    .btn-primary-sm {
+      flex: 1; min-height: 28px; padding: 0 8px;
+      border-radius: var(--r-btn);
+      background: var(--accent-fuell);
+      color: var(--on-accent);
+      font-size: var(--fs-1); font-weight: 600;
+      white-space: nowrap;
+    }
+    .btn-outline-sm {
+      min-height: 28px; padding: 0 8px;
+      border-radius: var(--r-btn);
+      border: 1px solid var(--kante-kontrolle);
+      background: var(--canvas-paper);
+      color: var(--text-1);
+      font-size: var(--fs-1); font-weight: 600;
+      white-space: nowrap;
+    }
+    .btn-outline-sm:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-outline-sm[data-on="true"] { background: var(--warn-soft); border-color: var(--warn); color: var(--text-1); }
+
+    .graph-fuss-knoepfe {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+    .btn-util {
+      min-height: 28px;
+      border-radius: var(--r-btn);
+      border: 1px solid var(--kante-dekor);
+      background: var(--canvas-paper);
+      color: var(--text-2);
+      font-size: var(--fs-1);
+      font-weight: 600;
+    }
+    .btn-util:hover { color: var(--text-1); border-color: var(--kante-stark); }
+
+    /* Global 26px Status Bar */
+    .flaechen-status {
+      height: 26px;
+      flex: none;
+      background: var(--feld);
+      border-top: 1px solid var(--kante-dekor);
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--fs-1);
+      color: var(--text-3);
+    }
+
+    /* Slide-in Note Quick Reader Drawer (Open note preview without leaving Graph) */
+    .note-modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(31, 30, 28, 0.25);
+      z-index: 40;
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .note-modal-backdrop.open { display: flex; }
+    .note-modal {
+      width: min(520px, 100%);
+      max-height: 85vh;
+      overflow-y: auto;
+      background: var(--canvas-paper);
+      border: 1px solid var(--kante-stark);
+      border-radius: var(--r-card);
+      box-shadow: var(--shadow-md);
+      padding: 18px 22px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    /* Responsive Mobile Bottom-Sheet View Panel (<= 767px) — NO Canvas Crushing & Zero Overlap! */
+    .mobile-sheet-toggle { display: none; }
+    @media (max-width: 767px) {
+      .seiten-leiste { display: none; }
+      .lens-caption { display: none; }
+      .graph-workspace { flex-direction: column; position: relative; }
+      .graph-leinwand { flex: 1; height: 100%; }
+      .graph-panel {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        width: 100%;
+        height: 44px;
+        max-height: 68vh;
+        border-left: none;
+        border-top: 1px solid var(--kante-stark);
+        border-radius: var(--r-card) var(--r-card) 0 0;
+        z-index: 30;
+        box-shadow: var(--shadow-md);
+        transition: height var(--dur) var(--ease-apple);
+      }
+      .graph-panel.sheet-open { height: 64vh; }
+      .graph-panel-kopf { cursor: pointer; gap: 6px; padding: 0 12px; }
+      .mobile-sheet-toggle { display: inline-flex; font-size: var(--fs-1); color: var(--accent); font-weight: 600; white-space: nowrap; }
+      .graph-panel:not(.sheet-open) .graph-panel-korper,
+      .graph-panel:not(.sheet-open) .graph-panel-fuss { display: none; }
+      .graph-legende { left: 12px; bottom: 54px; max-width: calc(100% - 24px); }
+      .gang-dock { bottom: 96px; right: 12px; max-width: calc(100% - 24px); gap: 5px; padding: 0 8px; }
+      .tribunal-dock { left: 12px; right: 12px; bottom: 54px; width: calc(100% - 24px); }
+      .tribunal-cols { grid-template-columns: 1fr; }
+      #status-right { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 38px Titlebar (Clean centered window title matching P202 today.png!) -->
+    <header class="fenster-titelleiste" data-testid="fenster-titelleiste">
+      <div class="fenster-ampel">
+        <i style="background:#ff5f57"></i>
+        <i style="background:#febc2e"></i>
+        <i style="background:#28c840"></i>
+      </div>
+      <div class="fenster-titel">Graph — K3PTA</div>
+      <div></div>
+    </header>
+
+    <div class="app-body">
+      <!-- 208px Left Navigation Sidebar (Exact p202) -->
+      <aside class="seiten-leiste" aria-label="Workspace navigation">
+        <div class="sidebar-suche-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="position:absolute;left:9px;color:var(--text-3);pointer-events:none"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" class="sidebar-suche-feld" id="sidebar-search" aria-label="Search memory" placeholder="Search" readonly />
+          <span class="kbd">⌘K</span>
+        </div>
+
+        <nav style="display:flex;flex-direction:column;gap:1px">
+          <button type="button" class="sidebar-nav-btn"><span>Knowledge</span><span class="seiten-zahl tnum" id="sidebar-total">34</span></button>
+          <button type="button" class="sidebar-nav-btn"><span>Today</span><span class="seiten-zahl tnum">2</span></button>
+          <button type="button" class="sidebar-nav-btn"><span>Chat</span></button>
+          <button type="button" class="sidebar-nav-btn" data-active="true"><span>Graph</span></button>
+          <button type="button" class="sidebar-nav-btn"><span>Dossier</span></button>
+          <button type="button" class="sidebar-nav-btn"><span>Activity</span><span class="seiten-punkt" title="AI apps connected locally"></span></button>
+          <button type="button" class="sidebar-nav-btn"><span>Settings</span></button>
+        </nav>
+
+        <div class="seiten-kopf">Tags</div>
+        <div class="sidebar-tags" id="sidebar-tags"></div>
+
+        <div class="nav-fuss-leiste">
+          <div class="nav-fuss-konto">
+            <span class="kepta-mark">K</span>
+            <div>
+              <div style="font-size:var(--fs-2);font-weight:700;line-height:1.1">K3PTA</div>
+              <div style="font-size:var(--fs-1);color:var(--text-3);line-height:1.1">MCP ready · 8 tools</div>
+            </div>
+          </div>
+          <div class="nav-fuss-ikonen">
+            <button type="button" class="nav-fuss-ikon" id="side-light" data-on="true" aria-label="Light theme">☀</button>
+            <button type="button" class="nav-fuss-ikon" id="side-dark" data-on="false" aria-label="Dark theme">☾</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Graph Workspace -->
+      <main class="graph-workspace">
+        <section class="graph-leinwand" id="graph-canvas-wrap">
+          <canvas id="graph-canvas" data-testid="graph-canvas" tabindex="0" aria-label="Interactive knowledge graph canvas"></canvas>
+
+          <!-- Top-Left Minimal Zoom & Large-Archive Drill Breadcrumb -->
+          <div class="canvas-top-left">
+            <div class="graph-canvas-zoom" aria-label="Graph zoom controls">
+              <button type="button" id="btn-zoom-out" aria-label="Zoom out">−</button>
+              <span class="z-pct tnum" id="graph-zoom-pct">100 %</span>
+              <button type="button" id="btn-zoom-in" aria-label="Zoom in">+</button>
+            </div>
+            <div class="atlas-crumb" id="atlas-crumb">
+              <button type="button" id="btn-crumb-back">← 25,000-note atlas</button>
+              <span id="crumb-topic" style="color:var(--text-2)"></span>
+            </div>
+          </div>
+
+          <!-- Top-Right Lens Description & Blast Radius Status -->
+          <div class="canvas-top-right">
+            <div class="lens-caption" id="lens-caption" data-testid="graph-meaning-caption"></div>
+            <div class="ripple-banner" id="ripple-banner">
+              <span id="ripple-text"></span>
+              <button type="button" id="btn-clear-ripple" style="color:var(--danger);font-weight:700;padding:0 4px">Clear</button>
+            </div>
+          </div>
+
+          <!-- Edge / Card Hover Tooltip -->
+          <div class="graph-edge-tooltip" id="graph-edge-tooltip" data-testid="graph-kante-tooltip"></div>
+
+          <!-- Missing Link Prompt (By Meaning Lens) -->
+          <div class="bridge-prompt" id="bridge-prompt">
+            <div>
+              <strong style="font-size:var(--fs-2)">Suggested connection (89 % similar)</strong>
+              <div id="bridge-detail" data-testid="nachzug-info" style="font-size:var(--fs-1);color:var(--text-2)"></div>
+            </div>
+            <div style="display:flex;gap:6px;flex:none">
+              <button type="button" class="btn-outline-sm" id="btn-bridge-close">Dismiss</button>
+              <button type="button" class="btn-primary-sm" id="btn-bridge-link">Link notes</button>
+            </div>
+          </div>
+
+          <!-- Hidden Semantic Empty-State Anchor (UI Parity Contract) -->
+          <div id="graph-semantik-leer" data-testid="graph-semantik-leer" style="display:none">No close semantic neighbors under current filter.</div>
+
+          <!-- Contradiction Balance Tribunal (Review & Gaps Lens) -->
+          <div class="tribunal-dock" id="tribunal-dock">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="font-size:var(--fs-2);font-weight:700;color:var(--text-1)" id="tribunal-header">Resolve conflicting deadline — choose which record holds</div>
+              <span class="tnum" id="tribunal-counter" style="font-size:var(--fs-1);color:var(--warn);font-weight:600">1 open conflict</span>
+            </div>
+            <div class="tribunal-cols" id="tribunal-cols"></div>
+            <div class="tribunal-actions">
+              <button type="button" class="tribunal-btn" data-resolve="newer">Keep newer note (marks older superseded)</button>
+              <button type="button" class="tribunal-btn" data-resolve="older">Keep older statutory note (supersede newer)</button>
+              <button type="button" class="tribunal-btn" data-resolve="window">Both hold — close older valid-to date</button>
+              <button type="button" class="tribunal-btn" data-resolve="both">Both hold simultaneously as valid exceptions</button>
+            </div>
+          </div>
+
+          <!-- Der Gang Unlinked Notes Shelf Dock (Right Bottom) -->
+          <div class="gang-dock" id="gang-dock" data-testid="gang-blaetterer">
+            <span id="gang-label" data-testid="gang-info" class="tnum">Shelf: 3 unlinked notes</span>
+            <button type="button" id="btn-gang-prev" data-testid="gang-zurueck" aria-label="Previous unlinked note">‹</button>
+            <button type="button" id="btn-gang-next" data-testid="gang-weiter" aria-label="Next unlinked note">›</button>
+            <button type="button" id="btn-gang-review">Inspect unlinked</button>
+          </div>
+
+          <!-- Popover: Schema & GruppenBand (#pop-schema) -->
+          <div class="graph-popover" id="pop-schema" data-testid="graph-schema">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span class="hud-label">Schema of the knowledge base</span>
+              <button type="button" class="btn-util" style="padding:0 8px" data-close-pop="pop-schema">Done</button>
+            </div>
+            <div class="graph-gruppenband" id="graph-gruppenband" data-testid="graph-gruppenband" title="Painted share of note kinds"></div>
+            <div class="hud-label">Note kinds (click to spotlight)</div>
+            <div id="schema-kinds-list"></div>
+            <div class="hud-label">Link types &amp; roles</div>
+            <div id="schema-preds-list"></div>
+          </div>
+
+          <!-- Popover: Forces (#pop-krafte) -->
+          <div class="graph-popover" id="pop-krafte" data-testid="graph-krafte">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span class="hud-label">Spacing forces (zero overlap)</span>
+              <button type="button" class="btn-util" style="padding:0 8px" data-close-pop="pop-krafte">Done</button>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:var(--fs-1)"><span>Island spacing</span><span class="tnum" id="force-spread-val">1.0×</span></div>
+              <input type="range" class="arch-range" id="force-spread" min="75" max="145" value="100" />
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:var(--fs-1)"><span>Capsule size</span><span class="tnum" id="force-size-val">1.0×</span></div>
+              <input type="range" class="arch-range" id="force-size" min="80" max="135" value="100" />
+            </div>
+            <button type="button" class="btn-outline-sm" id="btn-force-reset" data-testid="graph-krafte-reset">Reset defaults</button>
+          </div>
+
+          <!-- Collapsible Legend Pill & Docked Shelf (.graph-legende — strictly <= 25% when closed!) -->
+          <div class="graph-legende" id="graph-legende" data-testid="graph-legende" data-legende="zu">
+            <div class="graph-legende-head">
+              <button type="button" class="legende-klappe-btn" id="btn-legend-toggle" data-testid="graph-legende-klappe" aria-expanded="false">Legend ▾</button>
+              <span class="kind-dots-row" aria-hidden="true">
+                <span class="kind-dot" style="background:var(--type-semantic-hex)"></span>
+                <span class="kind-dot" style="background:var(--type-episodic-hex)"></span>
+                <span class="kind-dot" style="background:var(--type-procedural-hex)"></span>
+                <span class="kind-dot" style="background:var(--type-reference-hex)"></span>
+              </span>
+              <span class="graph-legende-bilanz tnum" id="graph-legend-summary" data-testid="graph-im-bild">34 notes · 4 concepts · 34 links</span>
+            </div>
+            <div class="legende-erweitert">
+              <div id="graph-zustaende" data-testid="graph-zustaende" style="color:var(--text-2);line-height:1.4">
+                Badges show types: <strong>F</strong> Fact, <strong>E</strong> Event, <strong>H</strong> How-To, <strong>S</strong> Source. Amber lock = private.
+              </div>
+              <div data-testid="graph-regal" id="graph-regal" style="display:flex;flex-direction:column;gap:8px">
+                <div>
+                  <div class="hud-label" style="margin-bottom:4px">Sources in this vault (written vs files)</div>
+                  <div class="regal-band-bar" id="regal-woher-bar" data-testid="regal-farbgruppe"></div>
+                  <div id="regal-woher-text" class="tnum" style="margin-top:3px;color:var(--text-3)"></div>
+                </div>
+                <div>
+                  <div class="hud-label" style="margin-bottom:4px">Last updated (click to spotlight)</div>
+                  <div class="regal-baskets" id="regal-wann-baskets" data-testid="regal-koerb-liste"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right 258px View Inspector Panel (Exact p202 + Accordion Cleanup + Full Title Wrap) -->
+        <aside class="graph-panel" id="graph-panel" data-testid="graph-leiste">
+          <div class="graph-panel-kopf" id="graph-panel-head">
+            <span>View</span>
+            <span class="mobile-sheet-toggle" id="mobile-sheet-label">Controls ▴</span>
+            <span class="tnum" id="graph-counts-chip" data-testid="graph-kopf" style="color:var(--text-3);font-size:var(--fs-1)">34 notes · 34 links</span>
+          </div>
+
+          <div class="graph-panel-korper">
+            <!-- Dataset & Theme Switcher inside Panel (Keeps Titlebar 100% Calm P202!) -->
+            <div class="demo-bar" aria-label="Vault size and theme">
+              <button type="button" class="demo-pill" id="btn-corpus-small" aria-pressed="true">34 notes</button>
+              <button type="button" class="demo-pill" id="btn-corpus-large" aria-pressed="false">25,000 archive</button>
+              <button type="button" class="demo-pill" id="btn-theme-toggle" aria-pressed="false">Dark</button>
+            </div>
+
+            <!-- Filter Input -->
+            <div class="graph-search-wrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="position:absolute;left:8px;top:7.5px;color:var(--text-3);pointer-events:none"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input type="text" class="graph-search-input" id="graph-filter-input" data-testid="graph-suche" aria-label="Filter notes in the graph" placeholder="Filter notes or tags…" />
+              <span class="graph-search-count tnum" id="graph-search-count" data-testid="graph-search-count"></span>
+            </div>
+
+            <!-- Primary Layout Mode + Spatial Lenses -->
+            <div>
+              <div class="hud-label" style="margin-bottom:4px">Arrange notes</div>
+              <div class="apple-seg" data-testid="graph-schiene-ansicht" role="tablist">
+                <button type="button" class="apple-seg-btn" id="btn-mode-force" aria-pressed="true" title="Arranged around explicit connections you created or cited">By links</button>
+                <button type="button" class="apple-seg-btn" id="btn-mode-semantic" aria-pressed="false" title="Grouped by similar meaning to spot missing links">By meaning</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="hud-label" style="margin-bottom:4px">Spatial lens</div>
+              <div class="lens-pills-grid">
+                <button type="button" class="lens-pill" data-lens="atlas" aria-pressed="true">Atlas</button>
+                <button type="button" class="lens-pill" data-lens="timeline" aria-pressed="false">Timeline</button>
+                <button type="button" class="lens-pill" data-lens="privacy" aria-pressed="false">AI &amp; Privacy</button>
+                <button type="button" class="lens-pill" data-lens="review" aria-pressed="false">Review &amp; Gaps</button>
+                <button type="button" class="lens-pill" data-lens="focus" aria-pressed="false">Focus</button>
+              </div>
+            </div>
+
+            <!-- Colour Channel + Compact Swatch Key -->
+            <div data-testid="graph-farbgruppe">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <span class="hud-label">Colour by</span>
+                <div class="apple-seg" style="width:auto" data-testid="graph-schiene-kanal">
+                  <button type="button" class="apple-seg-btn" data-chan="type" aria-pressed="true" style="padding:0 7px">Type</button>
+                  <button type="button" class="apple-seg-btn" data-chan="provenance" aria-pressed="false" style="padding:0 7px">Origin</button>
+                  <button type="button" class="apple-seg-btn" data-chan="community" aria-pressed="false" style="padding:0 7px">Groups</button>
+                </div>
+              </div>
+              <div class="legende-graph" id="panel-swatches"></div>
+            </div>
+
+            <!-- Synchronized Time Travel Scrubber -->
+            <div class="zeitstrahl-box">
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-1)">
+                <span class="hud-label" id="graph-zeitstand" data-testid="graph-zeitstand">Now · Today</span>
+                <button type="button" id="btn-time-now" style="color:var(--accent);font-weight:600">Reset today</button>
+              </div>
+              <div class="zeitstrahl-spur">
+                <div class="zeitstrahl-gleis"><div class="zeitstrahl-fuellung" id="time-fill" style="width:100%"></div></div>
+                <input type="range" class="arch-range" id="graph-time-slider" data-testid="graph-time" min="0" max="100" value="100" aria-label="Knowledge validity timeline slider" />
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="date" class="date-input" id="graph-date-input" data-testid="graph-datum" aria-label="Knowledge validity as of date" value="2026-11-16" />
+                <span class="tnum" id="graph-zeit-spaeter" data-testid="graph-zeit-spaeter" style="font-size:var(--fs-1);color:var(--text-3);white-space:nowrap">+2 later</span>
+              </div>
+            </div>
+
+            <!-- Accordion 1: Display & Labels -->
+            <details class="acc-group">
+              <summary class="acc-summary">
+                <span>Display, labels &amp; depth</span>
+                <span style="color:var(--text-3)">▾</span>
+              </summary>
+              <div class="acc-body">
+                <div>
+                  <div class="hud-label" style="margin-bottom:3px">Label density</div>
+                  <div class="apple-seg" data-testid="graph-schiene-namen">
+                    <button type="button" class="apple-seg-btn" data-density="none" aria-pressed="false">None</button>
+                    <button type="button" class="apple-seg-btn" data-density="few" aria-pressed="true">Few</button>
+                    <button type="button" class="apple-seg-btn" data-density="many" aria-pressed="false">Many</button>
+                    <button type="button" class="apple-seg-btn" data-density="all" aria-pressed="false">All</button>
+                  </div>
+                </div>
+                <div>
+                  <div class="hud-label" style="margin-bottom:3px">Network depth (steps)</div>
+                  <div class="apple-seg" data-testid="graph-schiene-tiefe">
+                    <button type="button" class="apple-seg-btn" data-depth="1" aria-pressed="false">1</button>
+                    <button type="button" class="apple-seg-btn" data-depth="2" aria-pressed="true">2</button>
+                    <button type="button" class="apple-seg-btn" data-depth="3" aria-pressed="false">3</button>
+                    <button type="button" class="apple-seg-btn" data-depth="4" aria-pressed="false">4</button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="hud-label" style="white-space:nowrap">Line weight</span>
+                  <input type="range" class="arch-range" id="graph-thickness" data-testid="graph-verbindungsdicke" min="10" max="30" value="14" style="flex:1" />
+                  <span class="tnum" id="graph-thick-val" data-testid="graph-verbindungsdicke-wert" style="font-size:var(--fs-1)">1.4×</span>
+                </div>
+              </div>
+            </details>
+
+            <!-- Accordion 2: Filters & Rules -->
+            <details class="acc-group">
+              <summary class="acc-summary">
+                <span>Filters, direction &amp; schema</span>
+                <span style="color:var(--text-3)">▾</span>
+              </summary>
+              <div class="acc-body">
+                <div class="graph-toggle-grid">
+                  <button type="button" class="graph-pill-btn" id="btn-tog-dir" data-on="true">Direction</button>
+                  <button type="button" class="graph-pill-btn" id="btn-tog-sim" data-on="true">Similar</button>
+                  <button type="button" class="graph-pill-btn" id="btn-tog-conn" data-testid="graph-nur-mit-verbindungen" data-on="false">Connected</button>
+                  <button type="button" class="graph-pill-btn" id="btn-tog-schema" data-on="false">Schema</button>
+                  <button type="button" class="graph-pill-btn" id="btn-tog-forces" data-testid="graph-bewegung" data-on="false">Forces</button>
+                </div>
+                <select class="date-input" id="graph-tag-filter" data-testid="graph-tag-filter" aria-label="Filter by tag"></select>
+              </div>
+            </details>
+          </div>
+
+          <!-- Sticky Footer: Full Multi-Line Note Inspector + Superpowers + Zoom/Export -->
+          <div class="graph-panel-fuss">
+            <div class="sel-meta-line">
+              <span class="hud-label">Selected note</span>
+              <span class="tnum" id="sel-link-summary" style="color:var(--text-2)">5 links · local</span>
+            </div>
+            <div class="sel-title-wrap" id="sel-title" data-testid="graph-benannt">Q3 Compliance review — Mandatsakte 1</div>
+            <div class="sel-actions-row">
+              <button type="button" class="btn-primary-sm" id="btn-open-note">Open note</button>
+              <button type="button" class="btn-outline-sm" id="btn-focus-solar">Focus</button>
+              <button type="button" class="btn-outline-sm" id="btn-blast-ripple" data-on="false" title="Trace downstream impact and deadline risk">Trace ripple</button>
+            </div>
+            <div class="graph-fuss-knoepfe">
+              <button type="button" class="btn-util" id="btn-graph-fit" data-testid="graph-fit">Fit</button>
+              <button type="button" class="btn-util" id="btn-graph-export" data-testid="graph-export">Export PNG</button>
+              <button type="button" class="btn-util" id="btn-graph-reset">Reset</button>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- 26px Global Status Bar -->
+    <footer class="flaechen-status" data-testid="flaechen-status">
+      <div id="status-left">In sync · <span class="tnum">100 %</span> recent · <span class="tnum">34</span> notes · <span class="tnum">5</span> topic groups</div>
+      <div id="status-right" data-testid="graph-kern-zustand">local · private vault · ready</div>
+    </footer>
+  </div>
+
+  <!-- Quick Preview / Dossier Modal -->
+  <div class="note-modal-backdrop" id="note-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-note-title">
+    <div class="note-modal">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <span id="modal-note-kind" class="lens-pill" style="display:inline-flex;align-items:center">Fact</span>
+        <button type="button" class="btn-outline-sm" id="btn-modal-close">Close</button>
+      </div>
+      <h2 id="modal-note-title" style="margin:0;font-size:var(--fs-detail);font-weight:700;line-height:1.35"></h2>
+      <div id="modal-note-meta" style="font-size:var(--fs-1);color:var(--text-3)"></div>
+      <p id="modal-note-body" style="margin:0;font-size:var(--fs-3);line-height:1.6;color:var(--text-2)"></p>
+      <div id="modal-note-readers" style="padding:9px 11px;border-radius:var(--r-btn);background:var(--eb-0);border:1px solid var(--kante-dekor);font-size:var(--fs-1);color:var(--text-2)"></div>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    "use strict";
+
+    // =========================================================================
+    // 1. REALISTIC SMALL (34) + 25,000-NOTE ARCHIVE CORPORA (ZERO "node" JARGON!)
+    // =========================================================================
+    const DAY = 86400000;
+    const NOW = new Date("2026-11-16T12:00:00Z").getTime();
+    const daysAgo = d => NOW - d * DAY;
+    const daysAhead = d => NOW + d * DAY;
+
+    const SMALL_ITEMS = [
+      // Cluster 0: Client Compliance & § 203 StGB Custody (includes private vault!)
+      { id: "n1", title: "Q3 Compliance review — Mandatsakte 1", type: "semantic", provenance: "written", cluster: 0, scope: "local", daysOld: 1, tags: ["compliance", "q3"], x: -190, y: -115, readers: ["Claude Desktop (read 11:18)"], text: "Review findings for the Q3 retention workflow. References client secrecy obligations and deadline verification before external audit closes." },
+      { id: "n2", title: "Q3 Compliance review — Mandatsakte 2", type: "semantic", provenance: "file", cluster: 0, scope: "local", daysOld: 3, tags: ["compliance", "q3", "json"], x: -335, y: -70, readers: ["Cursor (read 09:42)"], text: "Parallel audit notes for JSON ingestion pipeline. Shares the retention window constraints verified under Akte 1." },
+      { id: "n3", title: "§ 203 StGB client secrecy boundary policy", type: "procedural", provenance: "written", cluster: 0, scope: "private", daysOld: 45, tags: ["compliance", "security"], x: -245, y: -235, readers: [], text: "Statutory rule: all private client mandate files remain strictly blocked from MCP tools and cloud models." },
+      { id: "n4", title: "Mandate letter: Becker & Partner indemnity", type: "reference", provenance: "file", cluster: 0, scope: "private", daysOld: 14, tags: ["compliance"], x: -395, y: -210, readers: [], text: "Signed mandate retainer (PDF import). Protected under § 203 StGB custody zone." },
+      { id: "n5", title: "Keeper letter follow-up (Audit window)", type: "episodic", provenance: "written", cluster: 0, scope: "local", daysOld: 2, validTo: daysAhead(12), tags: ["compliance", "q3"], x: -95, y: -225, readers: ["Claude Code (wrote 10:05)"], text: "Action item: confirm receipt of the keeper letter before audit window closes on 28 November." },
+      { id: "n6", title: "Client retention schedule — Stand 3", type: "procedural", provenance: "file", cluster: 0, scope: "local", daysOld: 18, tags: ["compliance"], x: -355, y: 20, readers: [], text: "Ten-year AO/HGB statutory retention buckets by document category." },
+
+      // Cluster 1: Tax Law & Deadlines (includes real conflict pair!)
+      { id: "n7", title: "ESt-Bescheid 2025 — Hoffmann Tax Filing", type: "reference", provenance: "file", cluster: 1, scope: "local", daysOld: 22, validTo: daysAhead(14), tags: ["tax", "deadlines"], x: 255, y: -155, readers: [], text: "Official statutory assessment notice received via ELSTER. Statutory objection window runs strictly until 14 December 2026 (28 days)." },
+      { id: "n8", title: "Hoffmann deadline summary (AI draft)", type: "episodic", provenance: "machine", cluster: 1, scope: "local", daysOld: 1, validTo: daysAhead(4), tags: ["tax", "deadlines"], x: 405, y: -225, readers: ["Claude Code (wrote 14:22)"], conflictWith: "n7", text: "Auto-extracted draft summary citing a 14-day review deadline (30 November 2026). Conflicts with statutory 28-day notice." },
+      { id: "n9", title: "DATEV export field mapping guide", type: "procedural", provenance: "written", cluster: 1, scope: "local", daysOld: 62, tags: ["tax", "json"], x: 350, y: -55, readers: ["Cursor (read yesterday)"], text: "Step-by-step account frame SKR04 export mapping rules for monthly accounting handoff." },
+      { id: "n10", title: "BFH ruling on input VAT deduction", type: "semantic", provenance: "file", cluster: 1, scope: "local", daysOld: 95, tags: ["tax", "compliance"], x: 95, y: -235, readers: [], text: "Precedent requiring itemized invoice timestamps before claiming quarterly input tax credit." },
+      { id: "n11", title: "Q4 Advance VAT extension — Akte Hoffmann", type: "episodic", provenance: "written", cluster: 1, scope: "private", daysOld: 5, validTo: daysAhead(21), tags: ["tax"], x: 435, y: -95, readers: [], text: "Confidential client permanent extension (Dauerfristverlängerung) confirmation." },
+      { id: "n12", title: "Previous VAT guideline 2024 (superseded)", type: "semantic", provenance: "file", cluster: 1, scope: "local", daysOld: 310, supersededBy: "n10", validTo: daysAgo(120), tags: ["tax"], x: 190, y: -320, readers: [], text: "Historical 2024 VAT interpretation replaced by the newer BFH ruling." },
+
+      // Cluster 2: Core Engine, SQLCipher & MCP Architecture
+      { id: "n13", title: "K3PTA SQLCipher-4 key handling", type: "procedural", provenance: "written", cluster: 2, scope: "local", daysOld: 8, tags: ["architecture", "security"], x: 10, y: 30, readers: ["Claude Code (read 11:05)", "Cursor (read 10:30)"], text: "AES-256 database key stored exclusively in macOS Keychain under app.kepta.database with zero plaintext disk write." },
+      { id: "n14", title: "3-Track Retrieval Fusion (BM25 + Vectors)", type: "semantic", provenance: "written", cluster: 2, scope: "local", daysOld: 12, tags: ["architecture"], x: -135, y: 95, readers: ["Claude Desktop (read yesterday)"], text: "Combines FTS5 keyword matches, local Ollama embeddings, and entity links via RRF=60 within strict budget caps." },
+      { id: "n15", title: "Embedding model migration: bge-m3", type: "episodic", provenance: "machine", cluster: 2, scope: "local", daysOld: 4, tags: ["architecture", "json"], x: 145, y: 105, readers: ["Claude Code (wrote 02.11.)"], text: "Switched local Ollama vector pipeline from nomic-embed-text to multilingual bge-m3 (1024 dimensions)." },
+      { id: "n16", title: "MCP Server 8-tool protocol 2026-07-28", type: "semantic", provenance: "written", cluster: 2, scope: "local", daysOld: 19, tags: ["architecture", "security"], x: -30, y: 175, readers: ["Claude Code (read 11:12)", "Claude Desktop (read 10:40)"], text: "Exposes memory_search, memory_save, memory_graph, and memory_forget over stdio and loopback HTTP." },
+      { id: "n17", title: "Privacy Shield Mod-97 & Luhn masking", type: "procedural", provenance: "written", cluster: 2, scope: "local", daysOld: 25, tags: ["security"], x: 120, y: 205, readers: ["Claude Desktop (read 3d ago)"], text: "Deterministically masks emails, IBANs, credit cards, and API keys before any prompt leaves the machine." },
+      { id: "n18", title: "Oblivion decay curve (90-day half-life)", type: "semantic", provenance: "file", cluster: 2, scope: "local", daysOld: 110, tags: ["architecture"], x: -175, y: 205, readers: [], text: "Weights recently accessed notes higher while retaining statutory reference documents at a 0.20 floor." },
+
+      // Cluster 3: Workshop & Operations Hardware Fleet
+      { id: "n19", title: "Maschinenpark — Inventory 2026", type: "reference", provenance: "file", cluster: 3, scope: "local", daysOld: 28, tags: ["maschine"], x: -335, y: 190, readers: [], text: "Complete asset registry for CNC mills, laser cutters, and annual calibration intervals." },
+      { id: "n20", title: "Workshop inspection protocol — Line B", type: "episodic", provenance: "written", cluster: 3, scope: "local", daysOld: 6, tags: ["maschine"], x: -450, y: 135, readers: [], text: "Completed spindle alignment and coolant filter swap; next check scheduled in 6 months." },
+      { id: "n21", title: "CNC tolerance checklist & safety lock", type: "procedural", provenance: "written", cluster: 3, scope: "local", daysOld: 52, tags: ["maschine", "security"], x: -455, y: 255, readers: [], text: "Mandatory lockout/tagout verification before servo drive maintenance." },
+      { id: "n22", title: "Letter boilerplate templates (DACH)", type: "reference", provenance: "written", cluster: 3, scope: "local", daysOld: 140, tags: ["compliance"], x: -255, y: 295, readers: [], text: "Reusable DIN-5008 approved client cover letters and formal deadline extension requests." },
+
+      // Cluster 4: PraxisSync & Client Portals
+      { id: "n23", title: "PraxisSync encrypted envelope format", type: "semantic", provenance: "written", cluster: 4, scope: "local", daysOld: 16, tags: ["security", "architecture"], x: 315, y: 145, readers: ["Cursor (read 4d ago)"], text: "AES-256-GCM packets keyed by scrypt passphrase with chained SHA-256 integrity journal." },
+      { id: "n24", title: "Passphrase length rule (12+ chars)", type: "procedural", provenance: "written", cluster: 4, scope: "private", daysOld: 75, tags: ["security"], x: 430, y: 185, readers: [], text: "Enforces scrypt N=131072 derivation so sync archives remain unreadable across untrusted cloud folders." },
+      { id: "n25", title: "Partner onboarding runbook (v3.2)", type: "procedural", provenance: "written", cluster: 4, scope: "local", daysOld: 9, tags: ["compliance"], x: 265, y: 245, readers: ["Claude Desktop (read 2d ago)"], text: "Four-step workspace provisioning from local folder scan to verified encrypted backup." },
+      { id: "n26", title: "Old sync v2 format (deprecated)", type: "reference", provenance: "file", cluster: 4, scope: "local", daysOld: 340, supersededBy: "n23", validTo: daysAgo(90), tags: ["architecture"], x: 405, y: 280, readers: [], text: "Legacy unchained sync bundle superseded by PraxisSync SHA-256 journal." },
+
+      // Isolated / Unlinked Notes for "Der Gang" Shelf + Semantic Bridge candidates!
+      { id: "n27", title: "Loopback HTTP Host header 403 guard", type: "semantic", provenance: "written", cluster: 2, scope: "local", daysOld: 4, tags: ["security"], x: 40, y: -60, readers: [], bridgeTo: "n16", simScore: 0.89, text: "Blocks DNS rebinding and cross-site mutations before reaching any API route." },
+      { id: "n28", title: "Quarterly archive backup checklist", type: "procedural", provenance: "written", cluster: -1, scope: "local", daysOld: 11, tags: ["compliance"], x: -65, y: 290, readers: [], orphan: true, bridgeTo: "n6", simScore: 0.86, text: "Unlinked note covering offline external drive verification — matches Retention schedule Stand 3." },
+      { id: "n29", title: "Hardware security token recovery note", type: "reference", provenance: "written", cluster: -1, scope: "private", daysOld: 210, tags: ["security"], x: 110, y: 315, readers: [], orphan: true, text: "Sealed offline recovery instructions stored exclusively in local safe." },
+      { id: "n30", title: "Draft memo: Star Cooperation PoC goals", type: "episodic", provenance: "written", cluster: -1, scope: "local", daysOld: 7, tags: ["q3"], x: -405, y: -340, readers: [], orphan: true, text: "Outline for pilot deployment metrics and zero cloud egress verification." },
+
+      // Concept Hubs (4 clean hubs uniting the graph)
+      { id: "c1", title: "Client Confidentiality", type: "neutral", provenance: "written", cluster: 0, scope: "local", daysOld: 60, tags: ["compliance", "security"], x: -215, y: -15, isHub: true, text: "Core legal & technical topic connecting § 203 StGB policies, retention schedules, and Q3 audits." },
+      { id: "c2", title: "Tax Deadlines", type: "neutral", provenance: "written", cluster: 1, scope: "local", daysOld: 60, tags: ["tax"], x: 255, y: -65, isHub: true, text: "Topic grouping statutory assessment notices, VAT deadlines, and conflicting AI extracts." },
+      { id: "c3", title: "Local Memory Engine", type: "neutral", provenance: "written", cluster: 2, scope: "local", daysOld: 60, tags: ["architecture"], x: -25, y: 105, isHub: true, text: "Topic uniting SQLCipher encryption, hybrid RRF search, bge-m3 vectors, and MCP tools." },
+      { id: "c4", title: "Local-Only Sync", type: "neutral", provenance: "written", cluster: 4, scope: "local", daysOld: 60, tags: ["security"], x: 280, y: 95, isHub: true, text: "Topic tracking encrypted multi-device synchronization and passphrase hardening." }
+    ];
+
+    const SMALL_EDGES = [
+      // Claimed links (solid emerald + predicates!)
+      { a: "n3", b: "n1", kind: "claimed", predicate: "governs", daysOld: 40 },
+      { a: "n1", b: "n5", kind: "claimed", predicate: "requires", daysOld: 2 },
+      { a: "n6", b: "n1", kind: "claimed", predicate: "defines", daysOld: 18 },
+      { a: "n7", b: "n8", kind: "conflict", predicate: "conflicts (14d vs 28d)", daysOld: 1 },
+      { a: "n10", b: "n7", kind: "claimed", predicate: "supports", daysOld: 20 },
+      { a: "n12", b: "n10", kind: "superseded", predicate: "replaced by", daysOld: 120 },
+      { a: "n13", b: "n16", kind: "claimed", predicate: "secures", daysOld: 8 },
+      { a: "n17", b: "n16", kind: "claimed", predicate: "guards", daysOld: 15 },
+      { a: "n15", b: "n14", kind: "claimed", predicate: "upgrades", daysOld: 4 },
+      { a: "n23", b: "n13", kind: "claimed", predicate: "inherits key", daysOld: 14 },
+      { a: "n24", b: "n23", kind: "claimed", predicate: "hardens", daysOld: 14 },
+      { a: "n26", b: "n23", kind: "superseded", predicate: "replaced by", daysOld: 90 },
+      { a: "n20", b: "n19", kind: "claimed", predicate: "logs check", daysOld: 6 },
+      { a: "n21", b: "n20", kind: "claimed", predicate: "enforces", daysOld: 6 },
+      { a: "n1", b: "n17", kind: "claimed", predicate: "verifies", daysOld: 12 },
+
+      // Concept & shared mentions
+      { a: "n1", b: "c1", kind: "mention", predicate: "mentions", daysOld: 1 },
+      { a: "n2", b: "c1", kind: "mention", predicate: "mentions", daysOld: 3 },
+      { a: "n3", b: "c1", kind: "mention", predicate: "mentions", daysOld: 45 },
+      { a: "n4", b: "c1", kind: "mention", predicate: "mentions", daysOld: 14 },
+      { a: "n6", b: "c1", kind: "mention", predicate: "mentions", daysOld: 18 },
+
+      { a: "n7", b: "c2", kind: "mention", predicate: "mentions", daysOld: 22 },
+      { a: "n9", b: "c2", kind: "mention", predicate: "mentions", daysOld: 62 },
+      { a: "n10", b: "c2", kind: "mention", predicate: "mentions", daysOld: 95 },
+      { a: "n11", b: "c2", kind: "mention", predicate: "mentions", daysOld: 5 },
+
+      { a: "n13", b: "c3", kind: "mention", predicate: "mentions", daysOld: 8 },
+      { a: "n14", b: "c3", kind: "mention", predicate: "mentions", daysOld: 12 },
+      { a: "n15", b: "c3", kind: "mention", predicate: "mentions", daysOld: 4 },
+      { a: "n16", b: "c3", kind: "mention", predicate: "mentions", daysOld: 19 },
+      { a: "n18", b: "c3", kind: "mention", predicate: "mentions", daysOld: 110 },
+
+      { a: "n23", b: "c4", kind: "mention", predicate: "mentions", daysOld: 16 },
+      { a: "n25", b: "c4", kind: "mention", predicate: "mentions", daysOld: 9 },
+
+      // Suggested semantic bridges (revealed when Similar is ON or in Meaning Lens)
+      { a: "n27", b: "n16", kind: "bridge", predicate: "89 % similar (suggested)", daysOld: 4 },
+      { a: "n28", b: "n6", kind: "bridge", predicate: "86 % similar (suggested)", daysOld: 11 },
+      { a: "n2", b: "n15", kind: "similar", predicate: "shared #json workflow", daysOld: 4 }
+    ];
+
+    const CLUSTER_META = [
+      { id: 0, name: "Compliance & § 203 Custody", type: "procedural" },
+      { id: 1, name: "Tax Deadlines & Filings", type: "episodic" },
+      { id: 2, name: "Core Engine & MCP Vault", type: "semantic" },
+      { id: 3, name: "Workshop & Operations", type: "reference" },
+      { id: 4, name: "Encrypted Device Sync", type: "procedural" }
+    ];
+
+    // 25,000-Note Archive Horizon Medallions (zero overlapping, >= 28px clearance everywhere!)
+    const LARGE_CLUSTERS = [
+      { id: "lc1", title: "Client Mandates & Files", count: 4280, ratios: [0.42, 0.24, 0.14, 0.20], x: -235, y: -135, privateRatio: 0.48, dominant: "semantic" },
+      { id: "lc2", title: "Tax Filings & Objections", count: 3140, ratios: [0.22, 0.45, 0.13, 0.20], x: 45, y: -200, privateRatio: 0.22, dominant: "episodic" },
+      { id: "lc3", title: "Statutory Secrecy (§ 203)", count: 1620, ratios: [0.35, 0.10, 0.40, 0.15], x: -425, y: -15, isPrivate: true, privateRatio: 1.0, dominant: "procedural" },
+      { id: "lc4", title: "BFH & High Court Rulings", count: 2490, ratios: [0.58, 0.12, 0.08, 0.22], x: 295, y: -140, privateRatio: 0.0, dominant: "semantic" },
+      { id: "lc5", title: "Core Vault Architecture", count: 2150, ratios: [0.48, 0.08, 0.34, 0.10], x: -110, y: 40, privateRatio: 0.0, dominant: "procedural" },
+      { id: "lc6", title: "MCP Agent Activity Logs", count: 1840, ratios: [0.20, 0.50, 0.18, 0.12], x: 165, y: 20, privateRatio: 0.0, dominant: "episodic" },
+      { id: "lc7", title: "Annual Accounts (HGB)", count: 2310, ratios: [0.25, 0.20, 0.10, 0.45], x: 385, y: 65, privateRatio: 0.35, dominant: "reference" },
+      { id: "lc8", title: "Contract Templates", count: 1420, ratios: [0.30, 0.10, 0.45, 0.15], x: -335, y: 175, privateRatio: 0.10, dominant: "procedural" },
+      { id: "lc9", title: "Payroll & Social Security", count: 1590, ratios: [0.28, 0.25, 0.22, 0.25], x: -55, y: 200, privateRatio: 0.65, dominant: "reference" },
+      { id: "lc10", title: "Audit & Security Trail", count: 1280, ratios: [0.36, 0.32, 0.24, 0.08], x: 185, y: 195, privateRatio: 0.0, dominant: "procedural" },
+      { id: "lc11", title: "Machine Scan Imports", count: 1960, ratios: [0.18, 0.14, 0.12, 0.56], x: -245, y: -325, privateRatio: 0.0, dominant: "reference" },
+      { id: "lc12", title: "Unfiled Notes Shelf", count: 920, ratios: [0.38, 0.22, 0.16, 0.24], x: 395, y: 230, privateRatio: 0.05, dominant: "semantic" }
+    ]; // Sums to 25,000 exact!
+
+    const LARGE_EDGES = [
+      ["lc1","lc3"], ["lc1","lc2"], ["lc1","lc8"], ["lc2","lc4"], ["lc2","lc7"],
+      ["lc5","lc6"], ["lc5","lc10"], ["lc6","lc10"], ["lc7","lc9"], ["lc1","lc5"], ["lc11","lc5"]
+    ];
+
+    // =========================================================================
+    // 2. APPLICATION STATE & URL QUERY HYDRATION
+    // =========================================================================
+    const qp = new URLSearchParams(location.search);
+    const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const state = {
+      corpus: qp.get("corpus") === "large" ? "large" : "small",
+      mode: qp.get("mode") === "semantic" ? "semantic" : "force",
+      lens: ["atlas", "timeline", "privacy", "review", "focus"].includes(qp.get("lens")) ? qp.get("lens") : "atlas",
+      channel: ["type", "provenance", "community"].includes(qp.get("chan")) ? qp.get("chan") : "type",
+      depth: Number(qp.get("depth") || 2),
+      labels: qp.get("labels") || "few",
+      search: "",
+      tagFilter: "all",
+      spotlightKind: null,
+      spotlightTimeBucket: null,
+      onlyConnected: false,
+      showDirection: true,
+      showSimilar: true,
+      lineWeight: 1.4,
+      timePercent: Number(qp.get("time") || 100),
+      legendOpen: qp.get("legend") === "open",
+      dark: qp.get("theme") === "dark",
+      selectedId: qp.get("sel") || (qp.get("lens") === "review" ? "n7" : "n1"),
+      hoverId: null,
+      rippleActive: qp.get("ripple") === "1",
+      drilledClusterId: null, // For L1 -> L3 inside 25,000 Archive
+      resolvedConflicts: new Set(),
+      conflictResolutionMode: null,
+      gangIndex: 0,
+      linkedBridges: new Set(),
+      selectedBridge: null,
+      spreadScale: 1.0,
+      sizeScale: 1.0,
+      cam: { x: 0, y: 0, zoom: 1.0 },
+      drag: null,
+      hoverEdgeIdx: null,
+      bridgeDismissed: false,
+      pinnedAtlas: new Map(),
+      positions: new Map(),     // current rendered world coords { x, y }
+      morphFrom: new Map(),     // starting world coords for eased morphs
+      targets: new Map(),       // destination world coords { x, y }
+      morphStart: 0,
+      morphing: false,
+      rafId: 0
+    };
+
+    if (state.dark) document.documentElement.classList.add("dark");
+
+    // Seed initial positions
+    function initPositions() {
+      state.positions.clear();
+      SMALL_ITEMS.forEach(n => state.positions.set(n.id, { x: n.x, y: n.y }));
+      LARGE_CLUSTERS.forEach(c => state.positions.set(c.id, { x: c.x, y: c.y }));
+    }
+    initPositions();
+
+    // =========================================================================
+    // 3. PURE CARTOGRAPHY MATH (Chaikin, Hashes, Capsules, Spatial Targets)
+    // =========================================================================
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function palette() {
+      return {
+        paper: cssVar("--canvas-paper"),
+        eb0: cssVar("--eb-0"),
+        eb2: cssVar("--eb-2"),
+        text1: cssVar("--text-1"),
+        text2: cssVar("--text-2"),
+        text3: cssVar("--text-3"),
+        accent: cssVar("--accent"),
+        accentFuell: cssVar("--accent-fuell"),
+        accentSoft: cssVar("--accent-soft"),
+        warn: cssVar("--warn"),
+        warnSoft: cssVar("--warn-soft"),
+        danger: cssVar("--danger"),
+        dangerSoft: cssVar("--danger-soft"),
+        gefahr: cssVar("--gefahr"),
+        kanteDekor: cssVar("--kante-dekor"),
+        kanteStark: cssVar("--kante-stark"),
+        kanteKontrolle: cssVar("--kante-kontrolle"),
+        types: {
+          semantic: cssVar("--type-semantic-hex"),
+          episodic: cssVar("--type-episodic-hex"),
+          procedural: cssVar("--type-procedural-hex"),
+          reference: cssVar("--type-reference-hex"),
+          neutral: cssVar("--type-neutral-hex")
+        },
+        provenance: {
+          written: cssVar("--herkunft-written"),
+          file: cssVar("--herkunft-file"),
+          machine: cssVar("--herkunft-machine")
+        }
+      };
+    }
+
+    const TYPE_META = {
+      semantic:   { label: "Facts & knowledge",      glyph: "F" },
+      episodic:   { label: "Events & dates",         glyph: "E" },
+      procedural: { label: "How-tos & instructions", glyph: "H" },
+      reference:  { label: "Documents & files",      glyph: "S" },
+      neutral:    { label: "Topic hubs",             glyph: "C" }
+    };
+
+    function itemColor(n, pal) {
+      if (state.channel === "provenance") return pal.provenance[n.provenance] || pal.types.neutral;
+      if (state.channel === "community") {
+        const keys = ["semantic", "episodic", "procedural", "reference", "neutral"];
+        return pal.types[keys[Math.max(0, n.cluster) % keys.length]];
+      }
+      return pal.types[n.type] || pal.types.neutral;
+    }
+
+    // Monotone Chain Convex Hull + Outward Padding + 2-Pass Chaikin Subdivision
+    function convexHull(pts) {
+      if (pts.length <= 2) return pts.slice();
+      const s = pts.slice().sort((a, b) => a.x - b.x || a.y - b.y);
+      const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+      const lower = [];
+      for (const p of s) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+        lower.push(p);
+      }
+      const upper = [];
+      for (let i = s.length - 1; i >= 0; i--) {
+        const p = s[i];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+        upper.push(p);
+      }
+      lower.pop(); upper.pop();
+      return lower.concat(upper);
+    }
+
+    function expandAndChaikin(hull, pad, cuts = 2) {
+      if (hull.length === 0) return [];
+      let pts = hull;
+      if (hull.length === 1) {
+        const p = hull[0];
+        pts = Array.from({ length: 12 }, (_, i) => {
+          const a = (i / 12) * Math.PI * 2;
+          return { x: p.x + Math.cos(a) * pad * 1.4, y: p.y + Math.sin(a) * pad * 1.4 };
+        });
+      } else if (hull.length === 2) {
+        const [a, b] = hull;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len, ny = dx / len;
+        pts = [
+          { x: a.x + nx * pad, y: a.y + ny * pad },
+          { x: b.x + nx * pad, y: b.y + ny * pad },
+          { x: b.x - nx * pad, y: b.y - ny * pad },
+          { x: a.x - nx * pad, y: a.y - ny * pad }
+        ];
+      } else {
+        const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length;
+        const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length;
+        pts = hull.map(p => {
+          const dx = p.x - cx, dy = p.y - cy;
+          const d = Math.hypot(dx, dy) || 1;
+          return { x: p.x + (dx / d) * pad, y: p.y + (dy / d) * pad };
+        });
+      }
+      for (let c = 0; c < cuts; c++) {
+        const next = [];
+        for (let i = 0; i < pts.length; i++) {
+          const p0 = pts[i], p1 = pts[(i + 1) % pts.length];
+          next.push({ x: 0.75 * p0.x + 0.25 * p1.x, y: 0.75 * p0.y + 0.25 * p1.y });
+          next.push({ x: 0.25 * p0.x + 0.75 * p1.x, y: 0.25 * p0.y + 0.75 * p1.y });
+        }
+        pts = next;
+      }
+      return pts;
+    }
+
+    function strokeSmoothClosed(ctx, pts) {
+      if (pts.length < 3) return;
+      ctx.beginPath();
+      const firstMidX = (pts[pts.length - 1].x + pts[0].x) / 2;
+      const firstMidY = (pts[pts.length - 1].y + pts[0].y) / 2;
+      ctx.moveTo(firstMidX, firstMidY);
+      for (let i = 0; i < pts.length; i++) {
+        const curr = pts[i], nxt = pts[(i + 1) % pts.length];
+        ctx.quadraticCurveTo(curr.x, curr.y, (curr.x + nxt.x) / 2, (curr.y + nxt.y) / 2);
+      }
+      ctx.closePath();
+    }
+
+    // Word-wrap utility (zero arbitrary mid-word slicing!)
+    function wrapLines(ctx, text, maxW, maxLines = 2) {
+      const words = String(text || "").split(/\s+/).filter(Boolean);
+      const lines = [];
+      let cur = "";
+      for (const w of words) {
+        const test = cur ? cur + " " + w : w;
+        if (ctx.measureText(test).width <= maxW || !cur) {
+          cur = test;
+        } else {
+          lines.push(cur);
+          cur = w;
+          if (lines.length === maxLines - 1) {
+            // fit remaining gently cleanly
+          }
+        }
+      }
+      if (cur) lines.push(cur);
+      if (lines.length > maxLines) {
+        const head = lines.slice(0, maxLines);
+        let last = head[maxLines - 1];
+        while (last.length > 6 && ctx.measureText(last + "…").width > maxW) {
+          last = last.slice(0, -1).trim();
+        }
+        head[maxLines - 1] = last + "…";
+        return head;
+      }
+      return lines;
+    }
+
+    // =========================================================================
+    // 4. TARGET PROJECTIONS FOR EVERY LENS (Zero Monolithic Scatter!)
+    // =========================================================================
+    function getActiveItems() {
+      if (state.corpus === "large" && !state.drilledClusterId) return LARGE_CLUSTERS;
+      if (state.corpus === "large" && state.drilledClusterId) {
+        const lc = LARGE_CLUSTERS.find(c => c.id === state.drilledClusterId) || LARGE_CLUSTERS[0];
+        // Synthetic cohesive local drilldown cards derived deterministically from SMALL_ITEMS
+        return SMALL_ITEMS.map((m, idx) => ({
+          ...m,
+          id: `${lc.id}_${m.id}`,
+          title: idx === 0 ? `${lc.title} — Primary Register` : m.title.replace("Q3 Compliance", lc.title.split(" ")[0]),
+          scope: lc.isPrivate && idx < 8 ? "private" : m.scope
+        }));
+      }
+      return SMALL_ITEMS;
+    }
+
+    function getActiveEdges() {
+      const items = getActiveItems();
+      const ids = new Set(items.map(i => i.id));
+      if (state.corpus === "large" && !state.drilledClusterId) {
+        return LARGE_EDGES.map(([a, b]) => ({ a, b, kind: "claimed", predicate: "cross-reference" }));
+      }
+      if (state.corpus === "large" && state.drilledClusterId) {
+        const pre = state.drilledClusterId + "_";
+        return SMALL_EDGES
+          .filter(e => ids.has(pre + e.a) && ids.has(pre + e.b))
+          .map(e => ({ ...e, a: pre + e.a, b: pre + e.b }));
+      }
+      return SMALL_EDGES.map(e => {
+        if (e.kind === "bridge" && state.linkedBridges.has(`${e.a}->${e.b}`)) {
+          return { ...e, kind: "claimed", predicate: "verified bridge" };
+        }
+        if (e.kind === "conflict" && state.resolvedConflicts.has(`${e.a}-${e.b}`)) {
+          const predMap = { newer: "newer supersedes", older: "older statutory holds", window: "window closed", both: "both valid (exception)" };
+          return { ...e, kind: "superseded", predicate: predMap[state.conflictResolutionMode] || "resolved link" };
+        }
+        return e;
+      });
+    }
+
+    function getBlastSet(startId, maxDepth = state.depth) {
+      const edges = getActiveEdges();
+      const adj = new Map();
+      edges.forEach(e => {
+        if (!adj.has(e.a)) adj.set(e.a, []);
+        if (!adj.has(e.b)) adj.set(e.b, []);
+        adj.get(e.a).push(e.b);
+        adj.get(e.b).push(e.a);
+      });
+      const dist = new Map([[startId, 0]]);
+      const q = [startId];
+      while (q.length) {
+        const cur = q.shift();
+        const d = dist.get(cur);
+        if (d >= maxDepth) continue;
+        for (const nxt of (adj.get(cur) || [])) {
+          if (!dist.has(nxt)) {
+            dist.set(nxt, d + 1);
+            q.push(nxt);
+          }
+        }
+      }
+      return dist;
+    }
+
+    function computeTargets() {
+      const items = getActiveItems();
+      const next = new Map();
+      const sp = state.spreadScale;
+
+      if (state.corpus === "large" && !state.drilledClusterId) {
+        if (state.lens === "timeline") {
+          const cols = [-480, -240, 0, 240, 480];
+          const buckets = [[], [], [], [], []];
+          items.forEach((c, idx) => buckets[idx % 5].push(c));
+          buckets.forEach((arr, b) => arr.forEach((c, r) => next.set(c.id, { x: cols[b], y: (r - (arr.length - 1) / 2) * 165 })));
+          return next;
+        }
+        if (state.lens === "privacy") {
+          const priv = items.filter(c => c.isPrivate);
+          const pub = items.filter(c => !c.isPrivate);
+          priv.forEach((c, i) => next.set(c.id, { x: -340, y: (i - (priv.length - 1) / 2) * 185 }));
+          pub.forEach((c, i) => next.set(c.id, { x: 170 + (i % 3) * 215, y: -185 + Math.floor(i / 3) * 175 }));
+          return next;
+        }
+        if (state.lens === "review") {
+          const flagged = items.filter(c => c.isPrivate || /Tax|Machine|Unfiled/i.test(c.title));
+          const rest = items.filter(c => !flagged.includes(c));
+          flagged.forEach((c, i) => next.set(c.id, { x: (i - (flagged.length - 1) / 2) * 230, y: -195 }));
+          rest.forEach((c, i) => next.set(c.id, { x: -340 + (i % 4) * 225, y: 20 + Math.floor(i / 4) * 185 }));
+          return next;
+        }
+        if (state.lens === "focus") {
+          const sel = items.find(c => c.id === state.selectedId) || items[0];
+          next.set(sel.id, { x: 0, y: 0 });
+          const others = items.filter(c => c.id !== sel.id);
+          others.forEach((c, i) => {
+            const a = (i / Math.max(1, others.length)) * Math.PI * 2 - Math.PI / 2;
+            const r = 280 + (i % 2) * 105;
+            next.set(c.id, { x: Math.cos(a) * r, y: Math.sin(a) * r });
+          });
+          return next;
+        }
+        items.forEach(c => {
+          const pin = state.pinnedAtlas.get(c.id);
+          next.set(c.id, pin ? { ...pin } : { x: c.x * sp, y: c.y * sp });
+        });
+        return next;
+      }
+
+      if (state.lens === "timeline") {
+        // Horizontal Chronological Strata: wide 240px lanes so 200px cards NEVER collide!
+        const buckets = new Map();
+        const xCols = [-480, -240, 0, 240, 480];
+        items.forEach(it => {
+          const b = it.daysOld > 90 ? 0 : it.daysOld > 30 ? 1 : it.daysOld > 7 ? 2 : it.daysOld > 2 ? 3 : 4;
+          if (!buckets.has(b)) buckets.set(b, []);
+          buckets.get(b).push(it);
+        });
+        buckets.forEach((arr, b) => {
+          arr.sort((a, z) => (a.cluster - z.cluster) || a.id.localeCompare(z.id));
+          const count = arr.length;
+          arr.forEach((it, i) => {
+            const rowGap = 68;
+            const y = (i - (count - 1) / 2) * rowGap;
+            next.set(it.id, { x: xCols[b], y });
+          });
+        });
+        return next;
+      }
+
+      if (state.lens === "privacy") {
+        // Disjoint Physical Air-Gap Split with spacious 215px column pitch:
+        const priv = items.filter(i => i.scope === "private");
+        const aiRead = items.filter(i => i.scope !== "private" && i.readers && i.readers.length > 0);
+        const localOpen = items.filter(i => i.scope !== "private" && (!i.readers || !i.readers.length));
+
+        priv.forEach((it, i) => {
+          const col = i % 2, row = Math.floor(i / 2);
+          next.set(it.id, { x: -450 + col * 215, y: -140 + row * 94 });
+        });
+        aiRead.forEach((it, i) => {
+          const col = i % 2, row = Math.floor(i / 2);
+          next.set(it.id, { x: 145 + col * 225, y: -165 + row * 80 });
+        });
+        localOpen.forEach((it, i) => {
+          const col = i % 3, row = Math.floor(i / 3);
+          next.set(it.id, { x: 145 + col * 215, y: 115 + row * 72 });
+        });
+        return next;
+      }
+
+      if (state.lens === "review") {
+        // Compact Triage Arena: ALL cards stay safely in the upper sky ABOVE Tribunal & Open Legend!
+        const isC = i => i.id === "n7" || i.id === "n8" || i.id.endsWith("_n7") || i.id.endsWith("_n8") || i.conflictWith;
+        const conflicts = items.filter(isC);
+        const bridges = items.filter(i => !isC(i) && (i.orphan || i.bridgeTo));
+        const rest = items.filter(i => !conflicts.includes(i) && !bridges.includes(i));
+        conflicts.forEach((it, i) => next.set(it.id, { x: i === 0 ? -190 : 190, y: -255 }));
+        bridges.forEach((it, i) => next.set(it.id, { x: -240 + (i % 3) * 240, y: -155 + Math.floor(i / 3) * 58 }));
+        rest.forEach((it, i) => {
+          const col = i % 6, row = Math.floor(i / 6);
+          next.set(it.id, { x: -460 + col * 184, y: -45 + row * 52 });
+        });
+        return next;
+      }
+
+      if (state.lens === "focus") {
+        // Strict >= 110px center exclusion zone + 4 Disjoint Cardinal Quadrants!
+        const focusId = state.selectedId && items.some(x => x.id === state.selectedId) ? state.selectedId : items[0].id;
+        next.set(focusId, { x: 0, y: 0 });
+        const edges = getActiveEdges();
+        const rel = new Map();
+        edges.forEach(e => {
+          if (e.a === focusId) rel.set(e.b, e.kind);
+          else if (e.b === focusId) rel.set(e.a, e.kind === "claimed" ? "inbound" : e.kind);
+        });
+        const outIds = [], inIds = [], timeIds = [], semIds = [], farIds = [];
+        items.forEach(it => {
+          if (it.id === focusId) return;
+          const k = rel.get(it.id);
+          if (k === "claimed" || k === "conflict") outIds.push(it);
+          else if (k === "inbound") inIds.push(it);
+          else if (k === "superseded" || it.type === "episodic") timeIds.push(it);
+          else if (k === "mention" || k === "bridge" || k === "similar") semIds.push(it);
+          else farIds.push(it);
+        });
+        // North (Semantic/Related), East (Outbound), South (Timeline), West (Inbound)
+        const placeRing = (arr, startAng, arcSpan, rad) => {
+          arr.forEach((it, idx) => {
+            const frac = arr.length === 1 ? 0.5 : idx / (arr.length - 1);
+            const a = startAng + (frac - 0.5) * arcSpan;
+            const r = rad + (idx % 2) * 72;
+            next.set(it.id, { x: Math.cos(a) * r, y: Math.sin(a) * r });
+          });
+        };
+        placeRing(semIds, -Math.PI / 2, Math.PI * 0.42, 225);
+        placeRing(outIds, 0, Math.PI * 0.42, 260);
+        placeRing(timeIds, Math.PI / 2, Math.PI * 0.42, 225);
+        placeRing(inIds, Math.PI, Math.PI * 0.42, 260);
+        farIds.forEach((it, i) => {
+          const a = (i / Math.max(1, farIds.length)) * Math.PI * 2 + 0.35;
+          next.set(it.id, { x: Math.cos(a) * 440, y: Math.sin(a) * 345 });
+        });
+        return next;
+      }
+
+      if (state.mode === "semantic") {
+        // Meaning Contours: 4 semantic thematic basins (Privacy/Custody NW, Tax NE, Core SW, Ops/Sync SE)
+        const centers = [
+          { x: -245 * sp, y: -125 * sp }, // 0: Custody & Compliance
+          { x: 245 * sp,  y: -125 * sp }, // 1: Tax & Filings
+          { x: -195 * sp, y: 145 * sp },  // 2/3: Engine & Ops
+          { x: 245 * sp,  y: 145 * sp }   // 4: Sync & Portals
+        ];
+        const perBasin = [[], [], [], []];
+        items.forEach(it => {
+          const bIdx = it.cluster === 0 ? 0 : it.cluster === 1 ? 1 : (it.cluster === 4 ? 3 : 2);
+          perBasin[bIdx].push(it);
+        });
+        perBasin.forEach((arr, bIdx) => {
+          const c = centers[bIdx];
+          arr.forEach((it, idx) => {
+            const col = idx % 3 - 1;
+            const row = Math.floor(idx / 3) - (Math.ceil(arr.length / 3) - 1) / 2;
+            next.set(it.id, { x: c.x + col * 145, y: c.y + row * 68 });
+          });
+        });
+        return next;
+      }
+
+      // Default Claims (Atlas): Organic cluster islands with spread factor + user pins
+      items.forEach(it => {
+        const pin = state.pinnedAtlas.get(it.id);
+        next.set(it.id, pin ? { ...pin } : { x: it.x * sp, y: it.y * sp });
+      });
+      return next;
+    }
+
+    function applyMorph(animate = true) {
+      const tMap = computeTargets();
+      state.targets = tMap;
+      if (!animate || reducedMotion) {
+        tMap.forEach((pt, id) => state.positions.set(id, { ...pt }));
+        state.morphing = false;
+        drawCanvas();
+        return;
+      }
+      state.morphFrom = new Map();
+      state.positions.forEach((pt, id) => state.morphFrom.set(id, { x: pt.x, y: pt.y }));
+      state.morphStart = performance.now();
+      state.morphing = true;
+      startLoop();
+    }
+
+    // =========================================================================
+    // 5. MAIN 2D CANVAS RENDERER (0 Hz IDLE, SCREEN-SPACE AABB ANTI-OVERLAP)
+    // =========================================================================
+    let hitRects = [];
+    let hitEdges = [];
+
+    function worldToScreen(wx, wy, w, h) {
+      return {
+        x: w / 2 + (wx - state.cam.x) * state.cam.zoom,
+        y: h / 2 + (wy - state.cam.y) * state.cam.zoom
+      };
+    }
+
+    function screenToWorld(sx, sy, w, h) {
+      return {
+        x: (sx - w / 2) / state.cam.zoom + state.cam.x,
+        y: (sy - h / 2) / state.cam.zoom + state.cam.y
+      };
+    }
+
+    // Clamp intersection point between center c and target pt to outer rounded capsule box + margin
+    function clipLineToBox(cx, cy, tx, ty, hw, hh, halo = 8) {
+      const dx = tx - cx, dy = ty - cy;
+      if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) return { x: cx, y: cy };
+      const rx = hw + halo, ry = hh + halo;
+      const tX = Math.abs(dx) > 0.001 ? rx / Math.abs(dx) : Infinity;
+      const tY = Math.abs(dy) > 0.001 ? ry / Math.abs(dy) : Infinity;
+      const t = Math.min(1, Math.min(tX, tY));
+      return { x: cx + dx * t, y: cy + dy * t };
+    }
+
+    function drawCanvas() {
+      const canvas = document.getElementById("graph-canvas");
+      if (!canvas || !canvas.offsetWidth) return;
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.offsetWidth, h = canvas.offsetHeight;
+      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+      }
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const pal = palette();
+      const items = getActiveItems();
+      const edges = getActiveEdges();
+
+      // 1. Immaculate Paper / Obsidian Surface (ZERO Dot-Grid!)
+      ctx.fillStyle = pal.paper;
+      ctx.fillRect(0, 0, w, h);
+
+      // Large Archive Top-Level L1 Horizon Medaillons
+      if (state.corpus === "large" && !state.drilledClusterId) {
+        drawLargeAtlas(ctx, w, h, pal);
+        return;
+      }
+
+      // Compute visible filter mask & days limit from Time slider
+      const maxDays = state.timePercent >= 99 ? 9999 : Math.round(1 + (1 - state.timePercent / 100) * 365);
+      const q = state.search.trim().toLowerCase();
+      const adj = new Map();
+      edges.forEach(e => {
+        if (!adj.has(e.a)) adj.set(e.a, new Set());
+        if (!adj.has(e.b)) adj.set(e.b, new Set());
+        adj.get(e.a).add(e.b);
+        adj.get(e.b).add(e.a);
+      });
+
+      const matchItem = it => {
+        if (state.timePercent < 99 && it.daysOld > maxDays) return false;
+        if (state.onlyConnected && !(adj.get(it.id)?.size > 0)) return false;
+        if (state.tagFilter !== "all" && !(it.tags || []).includes(state.tagFilter)) return false;
+        if (state.spotlightKind) {
+          if (state.channel === "provenance" && it.provenance !== state.spotlightKind) return false;
+          if (state.channel === "type" && it.type !== state.spotlightKind) return false;
+        }
+        if (state.spotlightTimeBucket) {
+          const d = it.daysOld;
+          if (state.spotlightTimeBucket === "today" && d > 2) return false;
+          if (state.spotlightTimeBucket === "7d" && !(d > 2 && d <= 7)) return false;
+          if (state.spotlightTimeBucket === "30d" && !(d > 7 && d <= 30)) return false;
+          if (state.spotlightTimeBucket === "older" && d <= 30) return false;
+        }
+        if (q && !it.title.toLowerCase().includes(q) && !(it.tags || []).some(t => t.includes(q))) return false;
+        return true;
+      };
+
+      const visibleSet = new Set(items.filter(matchItem).map(i => i.id));
+      const focusId = state.hoverId || state.selectedId;
+      const activeNeighborhood = focusId ? getBlastSet(focusId, state.rippleActive ? state.depth : 1) : new Map();
+
+      // Screen coordinates cache
+      const sc = new Map();
+      items.forEach(it => {
+        const p = state.positions.get(it.id) || { x: it.x, y: it.y };
+        sc.set(it.id, worldToScreen(p.x, p.y, w, h));
+      });
+
+      // Build geometry BEFORE lens backdrops so hulls & badges hug relaxed cards with ZERO overlap!
+      const visibleCount = visibleSet.size;
+      const useCapsules = (w > 480 ? (state.cam.zoom >= 0.56 || state.lens === "review") : state.cam.zoom >= 0.72) && visibleCount <= 60;
+      const rects = new Map();
+      ctx.font = "600 11px -apple-system, sans-serif";
+
+      items.forEach(it => {
+        const p = sc.get(it.id);
+        const s = state.sizeScale;
+        const isSel = it.id === state.selectedId || it.id === state.hoverId;
+        const isGhostInFocus = state.lens === "focus" && it.id !== focusId && !activeNeighborhood.has(it.id);
+        if (!useCapsules || isGhostInFocus) {
+          const r = (isGhostInFocus ? 4.5 : (it.isHub ? 11 : 6.5)) * s;
+          rects.set(it.id, { it, cx: p.x, cy: p.y, w: r * 2, h: r * 2, hw: r, hh: r, pearl: true, ghost: isGhostInFocus, r, lines: [it.title] });
+          return;
+        }
+        const maxTextW = (it.isHub ? 168 : 162) * s;
+        const lines = wrapLines(ctx, it.title, maxTextW, 3);
+        const maxLineW = Math.max(...lines.map(l => ctx.measureText(l).width), 48);
+        const cw = Math.max(112, Math.min(208 * s, maxLineW + 34));
+        const ch = (lines.length === 3 ? 52 : lines.length === 2 ? 40 : 28) * s;
+        rects.set(it.id, { it, cx: p.x, cy: p.y, w: cw, h: ch, hw: cw / 2, hh: ch / 2, pearl: false, ghost: false, lines, isSel });
+      });
+
+      // Screen-Space Capsule AABB De-overlap Pass (28 iterations, 12px gap -> 0 overlapping cards!)
+      const boxList = Array.from(rects.values()).filter(b => visibleSet.has(b.it.id) && !b.ghost);
+      if (useCapsules) {
+        const padGapX = 12, padGapY = 10;
+        const draggedCardId = state.drag && state.drag.type === "card" ? state.drag.id : null;
+        for (let iter = 0; iter < 28; iter++) {
+          for (let i = 0; i < boxList.length; i++) {
+            for (let j = i + 1; j < boxList.length; j++) {
+              const a = boxList[i], b = boxList[j];
+              const ox = (a.hw + b.hw + padGapX) - Math.abs(b.cx - a.cx);
+              const oy = (a.hh + b.hh + padGapY) - Math.abs(b.cy - a.cy);
+              if (ox > 0 && oy > 0) {
+                if (ox < oy) {
+                  const dir = b.cx >= a.cx ? 1 : -1;
+                  if (a.it.id === draggedCardId) { b.cx += dir * ox; }
+                  else if (b.it.id === draggedCardId) { a.cx -= dir * ox; }
+                  else { a.cx -= dir * ox * 0.52; b.cx += dir * ox * 0.52; }
+                } else {
+                  const dir = b.cy >= a.cy ? 1 : -1;
+                  if (a.it.id === draggedCardId) { b.cy += dir * oy; }
+                  else if (b.it.id === draggedCardId) { a.cy -= dir * oy; }
+                  else { a.cy -= dir * oy * 0.52; b.cy += dir * oy * 0.52; }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 2. SPECIALIZED SPATIAL LENS BACKDROPS (using relaxed capsule centers so nothing collides!)
+      const relaxedPt = it => {
+        const b = rects.get(it.id);
+        return b ? { x: b.cx, y: b.cy } : sc.get(it.id);
+      };
+
+      if (state.lens === "atlas" || state.mode === "semantic") {
+        // Draw Chaikin Organic Archipelagos (topic islands + private sanctuary)
+        const byCluster = new Map();
+        items.forEach(it => {
+          if (it.cluster < 0 || !visibleSet.has(it.id)) return;
+          if (!byCluster.has(it.cluster)) byCluster.set(it.cluster, []);
+          byCluster.get(it.cluster).push(relaxedPt(it));
+        });
+        byCluster.forEach((pts, cId) => {
+          if (pts.length < 2) return;
+          const meta = CLUSTER_META[cId] || { name: `Topic ${cId}`, type: "semantic" };
+          const col = pal.types[meta.type] || pal.types.semantic;
+          const hull = convexHull(pts);
+          const pad = (state.mode === "semantic" ? 84 : 68) * state.cam.zoom;
+          const outer = expandAndChaikin(hull, pad, 2);
+          const inner = expandAndChaikin(hull, pad * 0.72, 2);
+
+          ctx.save();
+          strokeSmoothClosed(ctx, outer);
+          ctx.globalAlpha = state.dark ? 0.08 : 0.045;
+          ctx.fillStyle = col;
+          ctx.fill();
+          ctx.globalAlpha = state.dark ? 0.22 : 0.16;
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 1.1;
+          ctx.stroke();
+
+          if (state.mode === "semantic") {
+            strokeSmoothClosed(ctx, inner);
+            ctx.globalAlpha = state.dark ? 0.16 : 0.11;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+
+          let topPt = outer[0];
+          for (const p of outer) if (p.y < topPt.y) topPt = p;
+          ctx.globalAlpha = 1;
+          ctx.font = "600 11px -apple-system, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          const lblY = Math.max(66, topPt.y - 6);
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = pal.paper;
+          ctx.strokeText(meta.name, topPt.x, lblY);
+          ctx.fillStyle = col;
+          ctx.fillText(meta.name, topPt.x, lblY);
+          ctx.restore();
+        });
+
+        // Draw dedicated Sanctuary Perimeter strictly around private items — badge sits safely clear of cards!
+        const privPts = items.filter(i => i.scope === "private" && visibleSet.has(i.id)).map(relaxedPt);
+        if (privPts.length >= 2) {
+          const hull = expandAndChaikin(convexHull(privPts), 52 * state.cam.zoom, 2);
+          ctx.save();
+          strokeSmoothClosed(ctx, hull);
+          ctx.setLineDash([6, 4]);
+          ctx.strokeStyle = pal.warn;
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+          ctx.setLineDash([]);
+          let botP = hull[0];
+          for (const p of hull) if (p.y > botP.y) botP = p;
+          const badge = "Lock: § 203 StGB private vault";
+          ctx.font = "600 11px -apple-system, sans-serif";
+          const tw = ctx.measureText(badge).width + 16;
+          let bx = Math.max(tw / 2 + 12, Math.min(w - tw / 2 - 12, botP.x));
+          let by = Math.min(h - 62, botP.y + 4);
+          // Avoid overlapping any nearby visible card
+          for (const box of boxList) {
+            if (Math.abs(bx - box.cx) < tw / 2 + box.hw + 8 && Math.abs(by + 9 - box.cy) < 12 + box.hh + 6) {
+              by = box.cy + box.hh + 12;
+            }
+          }
+          ctx.fillStyle = pal.paper;
+          ctx.beginPath(); ctx.roundRect(bx - tw / 2, by, tw, 18, 4); ctx.fill();
+          ctx.strokeStyle = pal.warn; ctx.lineWidth = 1; ctx.stroke();
+          ctx.fillStyle = pal.warn;
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText(badge, bx, by + 9.5);
+          ctx.restore();
+        }
+      } else if (state.lens === "timeline") {
+        // Horizontal Epoch Strata Columns (headers cleanly below top chrome y = 70px!)
+        const labels = ["Older (>90d)", "Last 90 days", "Last 30 days", "Last 7 days", "Today"];
+        const xCols = [-480, -240, 0, 240, 480];
+        ctx.save();
+        xCols.forEach((wx, idx) => {
+          const sx = worldToScreen(wx, 0, w, h).x;
+          ctx.strokeStyle = pal.kanteDekor;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(sx, 82); ctx.lineTo(sx, h - 48); ctx.stroke();
+          ctx.font = "600 11px -apple-system, sans-serif";
+          ctx.fillStyle = idx === 4 ? pal.accent : pal.text2;
+          ctx.textAlign = "center";
+          ctx.fillText(labels[idx], sx, 70);
+        });
+        ctx.restore();
+      } else if (state.lens === "privacy") {
+        // Disjoint Sovereign Vault vs AI Workspace Boundary (headers cleanly below top chrome y = 76px!)
+        const boundaryX = worldToScreen(-80, 0, w, h).x;
+        ctx.save();
+        ctx.fillStyle = pal.warnSoft;
+        ctx.beginPath();
+        ctx.roundRect(22, 90, Math.max(160, boundaryX - 38), h - 138, 12);
+        ctx.fill();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = pal.warn;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.strokeStyle = pal.danger;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(boundaryX, 82); ctx.lineTo(boundaryX, h - 44); ctx.stroke();
+
+        ctx.font = "700 12px -apple-system, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillStyle = pal.warn;
+        ctx.fillText("Zone A · Locked Private Vault (§ 203 StGB)", 28, 76);
+        ctx.fillStyle = pal.accent;
+        ctx.fillText("Zone B · AI-Readable & Local Notes", boundaryX + 18, 76);
+        ctx.restore();
+      } else if (state.lens === "focus") {
+        // 4-Quadrant Focus Rings with >= 112px center clearance (headers drawn post-edge cleanly!)
+        const cPt = worldToScreen(0, 0, w, h);
+        const rInner = Math.max(112, 112 * state.cam.zoom);
+        const rOuter = Math.max(235, 235 * state.cam.zoom);
+        ctx.save();
+        ctx.strokeStyle = pal.kanteDekor;
+        ctx.setLineDash([4, 4]);
+        [rInner, rOuter].forEach(r => {
+          ctx.beginPath(); ctx.arc(cPt.x, cPt.y, r, 0, Math.PI * 2); ctx.stroke();
+        });
+        [Math.PI * 0.25, Math.PI * 0.75, Math.PI * 1.25, Math.PI * 1.75].forEach(a => {
+          ctx.beginPath();
+          ctx.moveTo(cPt.x + Math.cos(a) * rInner, cPt.y + Math.sin(a) * rInner);
+          ctx.lineTo(cPt.x + Math.cos(a) * (rOuter + 120), cPt.y + Math.sin(a) * (rOuter + 120));
+          ctx.stroke();
+        });
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+
+      // 4. DRAW EDGES WITH VIADUCT HALOS & TYPOGRAPHIC DEFERENCE (pills queued so ZERO cards cover pills!)
+      hitEdges = [];
+      const queuedPills = [];
+      const drawEdgeLayer = activePass => {
+        edges.forEach((e, idx) => {
+          if (e.kind === "similar" && !state.showSimilar) return;
+          if (!visibleSet.has(e.a) || !visibleSet.has(e.b)) return;
+          const bA = rects.get(e.a), bB = rects.get(e.b);
+          if (!bA || !bB) return;
+
+          const focused = focusId ? (e.a === focusId || e.b === focusId || (state.rippleActive && activeNeighborhood.has(e.a) && activeNeighborhood.has(e.b))) : false;
+          if (activePass && !focused && e.kind !== "conflict" && e.kind !== "bridge") return;
+          if (!activePass && (focused || e.kind === "conflict" || e.kind === "bridge")) return;
+
+          const isBlockedCross = state.lens === "privacy" && ((bA.it.scope === "private") !== (bB.it.scope === "private"));
+          const isFocusDimEdge = state.lens === "focus" && !focused;
+
+          const start = clipLineToBox(bA.cx, bA.cy, bB.cx, bB.cy, bA.hw, bA.hh, bA.ghost ? 3 : 7);
+          const end = clipLineToBox(bB.cx, bB.cy, bA.cx, bA.cy, bB.hw, bB.hh, bB.ghost ? 3 : 7);
+
+          const dx = end.x - start.x, dy = end.y - start.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const bow = e.kind === "claimed" || e.kind === "conflict" ? Math.min(26, dist * 0.10) * (idx % 2 === 0 ? 1 : -1) : 0;
+          const ctrlX = (start.x + end.x) / 2 + (-dy / dist) * bow;
+          const ctrlY = (start.y + end.y) / 2 + (dx / dist) * bow;
+          const midX = 0.25 * start.x + 0.5 * ctrlX + 0.25 * end.x;
+          const midY = 0.25 * start.y + 0.5 * ctrlY + 0.25 * end.y;
+          hitEdges.push({ idx, e, start, ctrl: { x: ctrlX, y: ctrlY }, end, mx: midX, my: midY, bA, bB });
+
+          const isEdgeHovered = state.hoverEdgeIdx === idx;
+          const strokeW = (e.kind === "conflict" ? 2.4 : e.kind === "claimed" ? (focused || isEdgeHovered ? 2.2 : 1.55) : isEdgeHovered ? 1.8 : 1.0) * (state.lineWeight / 1.4);
+          let col = e.kind === "conflict" || isBlockedCross ? pal.danger
+            : e.kind === "bridge" ? pal.accent
+            : e.kind === "claimed" ? pal.accent
+            : e.kind === "superseded" ? pal.text3
+            : pal.text2;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.quadraticCurveTo(ctrlX, ctrlY, end.x, end.y);
+          ctx.strokeStyle = pal.paper;
+          ctx.lineWidth = strokeW + 4;
+          ctx.lineCap = "round";
+          ctx.stroke();
+
+          if (e.kind === "mention") ctx.setLineDash([2, 4]);
+          else if (e.kind === "similar" || e.kind === "bridge") ctx.setLineDash([5, 4]);
+          else if (e.kind === "superseded" || isBlockedCross) ctx.setLineDash([4, 4]);
+
+          ctx.globalAlpha = isEdgeHovered ? 1 : (isFocusDimEdge ? 0.08 : ((!focusId || focused || e.kind === "conflict" || e.kind === "bridge")
+            ? (e.kind === "mention" ? 0.55 : 0.92)
+            : 0.22));
+          ctx.strokeStyle = col;
+          ctx.lineWidth = strokeW;
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          if (state.showDirection && (e.kind === "claimed" || e.kind === "conflict") && !isBlockedCross && !isFocusDimEdge) {
+            const t = 0.62;
+            const px = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * ctrlX + t * t * end.x;
+            const py = (1 - t) * (1 - t) * start.y + 2 * (1 - t) * t * ctrlY + t * t * end.y;
+            const dtx = 2 * (1 - t) * (ctrlX - start.x) + 2 * t * (end.x - ctrlX);
+            const dty = 2 * (1 - t) * (ctrlY - start.y) + 2 * t * (end.y - ctrlY);
+            const ang = Math.atan2(dty, dtx);
+            ctx.translate(px, py); ctx.rotate(ang);
+            ctx.beginPath(); ctx.moveTo(-4, -3); ctx.lineTo(2, 0); ctx.lineTo(-4, 3);
+            ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke();
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+
+          if (useCapsules && !isFocusDimEdge && (
+            e.kind === "conflict" ||
+            isBlockedCross ||
+            (e.kind === "bridge" && (state.mode === "semantic" || state.hoverId)) ||
+            (state.hoverId && (e.a === state.hoverId || e.b === state.hoverId) && e.kind === "claimed") ||
+            state.labels === "all"
+          )) {
+            const lbl = isBlockedCross ? "Blocked by Privacy Shield" : (e.predicate || "");
+            if (lbl && (!isBlockedCross || !queuedPills.some(q => q.kind === "blocked") || e.a === "n3")) {
+              queuedPills.push({ lbl, x: midX, y: midY, kind: isBlockedCross ? "blocked" : e.kind });
+            }
+          }
+          ctx.restore();
+        });
+      };
+      drawEdgeLayer(false);
+      drawEdgeLayer(true);
+
+      // 5. DRAW UNIFIED TACTILE CAPSULES / MINERAL PEARLS
+      hitRects = [];
+      items.forEach(it => {
+        if (!visibleSet.has(it.id)) return;
+        const b = rects.get(it.id);
+        const col = itemColor(it, pal);
+        const isSel = it.id === state.selectedId;
+        const isHover = it.id === state.hoverId;
+        const inBlast = state.rippleActive && activeNeighborhood.has(it.id);
+        const isExpiredOrSup = Boolean(it.supersededBy) || (it.validTo && it.validTo < NOW);
+        const isExpiringSoon = it.validTo && it.validTo > NOW && (it.validTo - NOW) < 16 * DAY;
+
+        if (!b.ghost) hitRects.push(b);
+        ctx.save();
+        if (b.ghost) ctx.globalAlpha = 0.20;
+        else if (state.rippleActive && !inBlast) ctx.globalAlpha = 0.25;
+
+        if (b.pearl) {
+          ctx.beginPath();
+          ctx.arc(b.cx, b.cy, b.r, 0, Math.PI * 2);
+          ctx.fillStyle = it.isHub ? pal.paper : col;
+          ctx.fill();
+          ctx.lineWidth = isSel || it.isHub ? 2 : 1.5;
+          ctx.strokeStyle = isSel ? pal.accent : it.isHub ? col : pal.paper;
+          ctx.stroke();
+          if (!b.ghost && (state.labels === "many" || state.labels === "all" || isSel || isHover || it.isHub)) {
+            ctx.font = "600 11px -apple-system, sans-serif";
+            ctx.textAlign = "center"; ctx.textBaseline = "top";
+            ctx.lineWidth = 3.5; ctx.strokeStyle = pal.paper;
+            ctx.strokeText(it.title, b.cx, b.cy + b.r + 4);
+            ctx.fillStyle = pal.text1;
+            ctx.fillText(it.title, b.cx, b.cy + b.r + 4);
+          }
+          ctx.restore();
+          return;
+        }
+
+        const x0 = b.cx - b.hw, y0 = b.cy - b.hh;
+        if (inBlast && state.rippleActive && it.id !== focusId) {
+          ctx.beginPath();
+          ctx.roundRect(x0 - 4, y0 - 4, b.w + 8, b.h + 8, 10);
+          ctx.strokeStyle = isExpiringSoon ? pal.danger : pal.warn;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+
+        ctx.shadowColor = state.dark ? "rgba(0,0,0,0.40)" : "rgba(31,30,28,0.08)";
+        ctx.shadowBlur = isSel || isHover ? 10 : 4;
+        ctx.shadowOffsetY = isSel || isHover ? 2 : 1;
+
+        ctx.beginPath();
+        ctx.roundRect(x0, y0, b.w, b.h, 7);
+        ctx.fillStyle = isSel ? pal.accentSoft : it.isHub ? pal.eb0 : pal.eb2;
+        ctx.fill();
+        ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+        if (isExpiredOrSup) ctx.setLineDash([4, 3]);
+        ctx.lineWidth = isSel || isHover ? 1.5 : 1;
+        ctx.strokeStyle = isSel ? pal.accent : it.scope === "private" ? pal.warn : isHover ? pal.kanteKontrolle : (state.dark ? pal.kanteStark : pal.kanteDekor);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (isSel) {
+          ctx.fillStyle = pal.accent;
+          ctx.beginPath();
+          ctx.roundRect(x0, y0 + 4, 3, b.h - 8, 1.5);
+          ctx.fill();
+        }
+
+        const bx = x0 + 13, by = b.cy;
+        ctx.beginPath();
+        ctx.arc(bx, by, 7.5, 0, Math.PI * 2);
+        ctx.fillStyle = it.isHub ? pal.paper : col;
+        ctx.fill();
+        if (it.isHub) {
+          ctx.lineWidth = 1.6; ctx.strokeStyle = col; ctx.stroke();
+        }
+        const glyph = (TYPE_META[it.type] || TYPE_META.neutral).glyph;
+        ctx.font = "700 11px -apple-system, sans-serif";
+        ctx.fillStyle = it.isHub ? col : "#ffffff";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(glyph, bx, by + 0.5);
+
+        ctx.font = "600 11px -apple-system, sans-serif";
+        ctx.fillStyle = isExpiredOrSup ? pal.text3 : pal.text1;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        const tx = x0 + 25;
+        if (b.lines.length === 1) {
+          ctx.fillText(b.lines[0], tx, b.cy);
+        } else if (b.lines.length === 2) {
+          ctx.fillText(b.lines[0], tx, b.cy - 6.5);
+          ctx.fillText(b.lines[1], tx, b.cy + 7);
+        } else {
+          ctx.fillText(b.lines[0], tx, b.cy - 13);
+          ctx.fillText(b.lines[1], tx, b.cy);
+          ctx.fillText(b.lines[2], tx, b.cy + 13);
+        }
+
+        if (it.scope === "private" || isExpiringSoon) {
+          const badgeLbl = it.scope === "private" ? "Lock" : "Due";
+          ctx.font = "700 11px -apple-system, sans-serif";
+          const bw = ctx.measureText(badgeLbl).width + 10;
+          ctx.fillStyle = it.scope === "private" ? pal.warnSoft : pal.dangerSoft;
+          ctx.beginPath(); ctx.roundRect(x0 + b.w - bw - 4, y0 - 8, bw, 15, 3); ctx.fill();
+          ctx.fillStyle = it.scope === "private" ? pal.warn : pal.danger;
+          ctx.textAlign = "center";
+          ctx.fillText(badgeLbl, x0 + b.w - bw / 2 - 4, y0 - 0.5);
+        }
+
+        ctx.restore();
+      });
+
+      // 5B. DRAW QUEUED EDGE PILLS ABOVE CAPSULES WITH STRICT ZERO-COLLISION SEARCH!
+      const drawnPills = [];
+      queuedPills.forEach(p => {
+        ctx.save();
+        ctx.font = "600 11px -apple-system, sans-serif";
+        const lw = ctx.measureText(p.lbl).width + 14;
+        const lh = 19;
+        const hitsAny = (cx, cy) => {
+          if (cy < 68 || cy > h - 54 || cx - lw / 2 < 10 || cx + lw / 2 > w - 10) return true;
+          for (const box of boxList) {
+            if (Math.abs(cx - box.cx) < lw / 2 + box.hw + 5 && Math.abs(cy - box.cy) < lh / 2 + box.hh + 10) return true;
+          }
+          for (const dp of drawnPills) {
+            if (Math.abs(cx - dp.x) < lw / 2 + dp.w / 2 + 6 && Math.abs(cy - dp.y) < lh + 6) return true;
+          }
+          return false;
+        };
+        const offsets = [
+          [0, 0], [0, -26], [0, 26], [-65, -24], [65, -24], [-65, 24], [65, 24],
+          [0, -48], [0, 48], [-105, -18], [105, -18], [-105, 18], [105, 18],
+          [0, -72], [-145, -34], [145, -34], [-90, -48], [90, -48]
+        ];
+        let best = null;
+        for (const [dx, dy] of offsets) {
+          if (!hitsAny(p.x + dx, p.y + dy)) { best = { x: p.x + dx, y: p.y + dy }; break; }
+        }
+        if (!best && p.kind !== "conflict") { ctx.restore(); return; }
+        const px = best ? best.x : p.x, py = best ? best.y : Math.max(70, p.y - 54);
+        const isWarnPill = p.kind === "conflict" || p.kind === "blocked";
+        drawnPills.push({ x: px, y: py, w: lw });
+        ctx.fillStyle = isWarnPill ? pal.gefahr : p.kind === "bridge" ? pal.accentSoft : pal.paper;
+        ctx.strokeStyle = isWarnPill ? pal.gefahr : p.kind === "bridge" ? pal.accent : pal.kanteStark;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.roundRect(px - lw / 2, py - lh / 2, lw, lh, 4);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = isWarnPill ? "#ffffff" : p.kind === "bridge" ? pal.accent : pal.text1;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(p.lbl, px, py + 0.5);
+        ctx.restore();
+      });
+
+      // 5C. DRAW FOCUS QUADRANT HEADERS ON TOP OF EDGES WITH CRISP HALO PILLS (zero line strike-through!)
+      if (state.lens === "focus") {
+        const cPt = worldToScreen(0, 0, w, h);
+        const rInner = Math.max(112, 112 * state.cam.zoom);
+        ctx.save();
+        ctx.font = "600 11px -apple-system, sans-serif";
+        const drawPillHdr = (txt, x, y, col) => {
+          const tw = ctx.measureText(txt).width + 12;
+          ctx.fillStyle = pal.paper;
+          ctx.beginPath(); ctx.roundRect(x - tw / 2, y - 9, tw, 18, 4); ctx.fill();
+          ctx.fillStyle = col;
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText(txt, x, y);
+        };
+        drawPillHdr("▲ Similar themes", cPt.x, Math.max(70, cPt.y - rInner - 10), pal.text2);
+        drawPillHdr("▼ Time & versions", cPt.x, cPt.y + rInner + 14, pal.text2);
+        drawPillHdr("◀ Cited by", cPt.x - rInner - 28, cPt.y, pal.text2);
+        drawPillHdr("Links out ▶", cPt.x + rInner + 28, cPt.y, pal.accent);
+        ctx.restore();
+      }
+    }
+
+    // L1 25,000-Note Horizon Macro Medallions Renderer (ZERO Broken Donut Arcs!)
+    function drawLargeAtlas(ctx, w, h, pal) {
+      hitRects = []; hitEdges = [];
+      if (state.lens === "timeline") {
+        const labels = ["Older (>90d)", "Last 90 days", "Last 30 days", "Last 7 days", "Today"];
+        const xCols = [-480, -240, 0, 240, 480];
+        ctx.save();
+        xCols.forEach((wx, idx) => {
+          const sx = worldToScreen(wx, 0, w, h).x;
+          ctx.strokeStyle = pal.kanteDekor; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(sx, 82); ctx.lineTo(sx, h - 48); ctx.stroke();
+          ctx.font = "600 11px -apple-system, sans-serif";
+          ctx.fillStyle = idx === 4 ? pal.accent : pal.text2;
+          ctx.textAlign = "center";
+          ctx.fillText(labels[idx], sx, 70);
+        });
+        ctx.restore();
+      } else if (state.lens === "privacy") {
+        const boundaryX = worldToScreen(-80, 0, w, h).x;
+        ctx.save();
+        ctx.fillStyle = pal.warnSoft;
+        ctx.beginPath();
+        ctx.roundRect(22, 90, Math.max(160, boundaryX - 38), h - 138, 12);
+        ctx.fill();
+        ctx.setLineDash([6, 4]); ctx.strokeStyle = pal.warn; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = pal.danger; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(boundaryX, 82); ctx.lineTo(boundaryX, h - 44); ctx.stroke();
+        ctx.font = "700 12px -apple-system, sans-serif"; ctx.textAlign = "left";
+        ctx.fillStyle = pal.warn; ctx.fillText("Zone A · Locked Private Vault (§ 203 StGB)", 28, 76);
+        ctx.fillStyle = pal.accent; ctx.fillText("Zone B · AI-Readable & Local Notes", boundaryX + 18, 76);
+        ctx.restore();
+      } else if (state.lens === "focus") {
+        const cPt = worldToScreen(0, 0, w, h);
+        const rInner = Math.max(112, 112 * state.cam.zoom);
+        const rOuter = Math.max(255, 255 * state.cam.zoom);
+        ctx.save(); ctx.strokeStyle = pal.kanteDekor; ctx.setLineDash([4, 4]);
+        [rInner, rOuter].forEach(r => { ctx.beginPath(); ctx.arc(cPt.x, cPt.y, r, 0, Math.PI * 2); ctx.stroke(); });
+        ctx.setLineDash([]); ctx.restore();
+      }
+      const sc = new Map();
+      LARGE_CLUSTERS.forEach(c => {
+        const p = state.positions.get(c.id) || { x: c.x, y: c.y };
+        sc.set(c.id, worldToScreen(p.x, p.y, w, h));
+      });
+
+      // Macro Viaduct Links between Topics
+      LARGE_EDGES.forEach(([aId, bId]) => {
+        const pA = sc.get(aId), pB = sc.get(bId);
+        if (!pA || !pB) return;
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(pA.x, pA.y); ctx.lineTo(pB.x, pB.y);
+        ctx.strokeStyle = pal.paper; ctx.lineWidth = 5; ctx.stroke();
+        ctx.strokeStyle = pal.kanteStark; ctx.lineWidth = 1.4; ctx.setLineDash([4, 4]); ctx.stroke();
+        ctx.restore();
+      });
+
+      const kindKeys = ["semantic", "episodic", "procedural", "reference"];
+      LARGE_CLUSTERS.forEach(c => {
+        const pt = sc.get(c.id);
+        const rad = (45 + Math.sqrt(c.count) * 0.39) * Math.min(1.22, Math.max(0.74, state.cam.zoom));
+        const isSel = c.id === state.selectedId || c.id === state.hoverId;
+        hitRects.push({ it: { ...c, title: c.title, isMedallion: true }, cx: pt.x, cy: pt.y, hw: rad, hh: rad, w: rad * 2, h: rad * 2 });
+
+        ctx.save();
+        ctx.shadowColor = state.dark ? "rgba(0,0,0,0.45)" : "rgba(31,30,28,0.08)";
+        ctx.shadowBlur = isSel ? 14 : 6;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, rad, 0, Math.PI * 2);
+        ctx.fillStyle = isSel ? pal.accentSoft : pal.eb2;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.lineWidth = isSel ? 2.2 : 1.5;
+        ctx.strokeStyle = c.isPrivate ? pal.warn : isSel ? pal.accent : pal.kanteStark;
+        if (c.isPrivate) ctx.setLineDash([6, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        let startAng = -Math.PI / 2;
+        c.ratios.forEach((frac, i) => {
+          const span = frac * Math.PI * 2;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, rad - 5, startAng + 0.02, startAng + span - 0.02);
+          ctx.strokeStyle = pal.types[kindKeys[i]];
+          ctx.lineWidth = 3.2;
+          ctx.lineCap = "round";
+          ctx.stroke();
+          startAng += span;
+        });
+
+        [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach(a => {
+          ctx.beginPath();
+          ctx.moveTo(pt.x + Math.cos(a) * (rad - 1), pt.y + Math.sin(a) * (rad - 1));
+          ctx.lineTo(pt.x + Math.cos(a) * (rad + 4), pt.y + Math.sin(a) * (rad + 4));
+          ctx.strokeStyle = pal.kanteStark; ctx.lineWidth = 1.2; ctx.stroke();
+        });
+
+        ctx.font = "600 12px -apple-system, sans-serif";
+        ctx.fillStyle = pal.text1;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        const lines = wrapLines(ctx, c.title, rad * 1.62, 3);
+        if (lines.length === 1) ctx.fillText(lines[0], pt.x, pt.y - 6);
+        else if (lines.length === 2) {
+          ctx.fillText(lines[0], pt.x, pt.y - 12);
+          ctx.fillText(lines[1], pt.x, pt.y + 3);
+        } else {
+          ctx.fillText(lines[0], pt.x, pt.y - 18);
+          ctx.fillText(lines[1], pt.x, pt.y - 3);
+          ctx.fillText(lines[2], pt.x, pt.y + 12);
+        }
+
+        const pillText = `${c.count.toLocaleString("en-US")} notes`;
+        ctx.font = "600 11px -apple-system, sans-serif";
+        const pw = ctx.measureText(pillText).width + 14;
+        const py = pt.y + rad - 10;
+        ctx.beginPath(); ctx.roundRect(pt.x - pw / 2, py, pw, 19, 9.5);
+        ctx.fillStyle = pal.paper; ctx.fill();
+        ctx.strokeStyle = isSel ? pal.accent : pal.kanteDekor; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = isSel ? pal.accent : pal.text2;
+        ctx.fillText(pillText, pt.x, py + 10);
+
+        ctx.restore();
+      });
+    }
+
+    // =========================================================================
+    // 6. KINETIC LOOP (STRICT 0 HZ IDLE GATE!)
+    // =========================================================================
+    function tick(now) {
+      if (!state.morphing) { state.rafId = 0; return; }
+      const raw = Math.min(1, (now - state.morphStart) / 340);
+      const ease = 1 - Math.pow(1 - raw, 3); // Ease-out cubic from morphFrom
+      const draggedCardId = state.drag && state.drag.type === "card" ? state.drag.id : null;
+      state.targets.forEach((tgt, id) => {
+        if (id === draggedCardId) return;
+        const from = state.morphFrom.get(id) || state.positions.get(id) || tgt;
+        state.positions.set(id, {
+          x: from.x + (tgt.x - from.x) * ease,
+          y: from.y + (tgt.y - from.y) * ease
+        });
+      });
+      drawCanvas();
+      if (raw >= 1) {
+        state.targets.forEach((tgt, id) => {
+          if (id !== draggedCardId) state.positions.set(id, { ...tgt });
+        });
+        state.morphing = false;
+        state.rafId = 0; // Back to exact 0 Hz Idle!
+      } else {
+        state.rafId = requestAnimationFrame(tick);
+      }
+    }
+
+    function startLoop() {
+      if (!state.rafId) state.rafId = requestAnimationFrame(tick);
+    }
+
+    // =========================================================================
+    // 7. UI SYNCHRONIZATION, SWATCHES, REGAL & ACTIONS
+    // =========================================================================
+    function fitCamera() {
+      const wrap = document.getElementById("graph-canvas-wrap");
+      const w = wrap.clientWidth || 800, h = wrap.clientHeight || 600;
+      const isLargeTop = state.corpus === "large" && !state.drilledClusterId;
+      const showTrib = state.lens === "review" && !isLargeTop && !state.resolvedConflicts.has("n7-n8");
+      const topSafe = w <= 767 ? 56 : 74;
+      const bottomSafe = showTrib ? (w <= 767 ? 260 : 250) : (w <= 767 ? 105 : 64);
+      const availH = Math.max(220, h - topSafe - bottomSafe);
+      const allItems = getActiveItems();
+      const blastIds = state.lens === "focus" && state.selectedId ? getBlastSet(state.selectedId, state.rippleActive ? Math.max(1, state.depth) : 1) : null;
+      const items = blastIds ? allItems.filter(it => blastIds.has(it.id)) : allItems;
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      items.forEach(it => {
+        const p = state.targets.get(it.id) || state.positions.get(it.id) || { x: it.x, y: it.y };
+        minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+        minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+      });
+      const spanX = Math.max(260, (maxX - minX) + 300);
+      const spanY = Math.max(220, (maxY - minY) + 190);
+      state.cam.zoom = Math.max(0.45, Math.min(1.16, Math.min(w / spanX, availH / spanY)));
+      state.cam.x = (minX + maxX) / 2;
+      // Offset world center slightly so cards sit cleanly between top chrome and bottom dock!
+      const pxOffset = (topSafe - bottomSafe) / 2;
+      state.cam.y = (minY + maxY) / 2 - pxOffset / state.cam.zoom;
+      syncUI();
+      drawCanvas();
+    }
+
+    function syncUI() {
+      const items = getActiveItems();
+      const edges = getActiveEdges();
+      const pal = palette();
+      const isLargeTop = state.corpus === "large" && !state.drilledClusterId;
+      const narrow = window.innerWidth <= 767;
+
+      document.getElementById("btn-corpus-small").setAttribute("aria-pressed", String(state.corpus === "small"));
+      document.getElementById("btn-corpus-large").setAttribute("aria-pressed", String(state.corpus === "large"));
+      document.getElementById("btn-theme-toggle").setAttribute("aria-pressed", String(state.dark));
+      document.getElementById("side-light").dataset.on = String(!state.dark);
+      document.getElementById("side-dark").dataset.on = String(state.dark);
+
+      document.getElementById("sidebar-total").textContent = state.corpus === "large" ? "25,000" : "34";
+      document.getElementById("graph-zoom-pct").textContent = `${Math.round(state.cam.zoom * 100)} %`;
+      document.getElementById("atlas-crumb").classList.toggle("show", state.corpus === "large" && Boolean(state.drilledClusterId));
+      if (state.drilledClusterId) {
+        const lc = LARGE_CLUSTERS.find(c => c.id === state.drilledClusterId);
+        document.getElementById("crumb-topic").textContent = lc ? `/ ${lc.title}` : "";
+      }
+
+      // Counts & Legend bilanz ("notes" not "nodes"!)
+      const totalLabel = isLargeTop ? "25,000 notes · 12 topics" : (narrow ? `${items.length} · ${edges.length} links` : `${items.length} notes · ${edges.length} links`);
+      document.getElementById("graph-counts-chip").textContent = totalLabel;
+      document.getElementById("graph-legend-summary").textContent = isLargeTop
+        ? "25,000 notes · 12 topics"
+        : (narrow ? `${items.length} notes · ${edges.length} links` : `${items.length} notes · 4 hubs · ${edges.length} links`);
+
+      // Mode & Lens Active States
+      document.getElementById("btn-mode-force").setAttribute("aria-pressed", String(state.mode === "force"));
+      document.getElementById("btn-mode-semantic").setAttribute("aria-pressed", String(state.mode === "semantic"));
+      document.querySelectorAll("[data-lens]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lens === state.lens)));
+      document.querySelectorAll("[data-chan]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.chan === state.channel)));
+      document.querySelectorAll("[data-density]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.density === state.labels)));
+      document.querySelectorAll("[data-depth]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.depth) === state.depth)));
+
+      // Lens Explanatory Caption (plain language, <= 14 words, zero leading middot!)
+      const captions = {
+        atlas: state.mode === "semantic"
+          ? "<strong>By meaning:</strong> similar notes sit together so you spot missing links."
+          : isLargeTop
+            ? "<strong>Horizon Atlas:</strong> 25,000 notes grouped into 12 topic medallions. Double-click to open."
+            : "<strong>Topic Atlas:</strong> notes grouped into topic islands. Amber lock marks private records.",
+        timeline: "<strong>Timeline stream:</strong> columns sort notes by age to spot deadlines and updates.",
+        privacy: "<strong>AI &amp; Privacy fence:</strong> left private notes never leave or reach external AI apps.",
+        review: "<strong>Review &amp; gaps:</strong> resolve conflicting records side-by-side and file shelf notes.",
+        focus: "<strong>4-Way focus:</strong> separates incoming links, outgoing links, time, and similar themes."
+      };
+      document.getElementById("lens-caption").innerHTML = captions[state.lens] || captions.atlas;
+
+      // Dock Visibility by Lens (auto-collapse legend cleanly on narrow screens when Tribunal shows)
+      const showTribunal = state.lens === "review" && !isLargeTop && !state.resolvedConflicts.has("n7-n8");
+      if (showTribunal && window.innerWidth < 1260 && state.legendOpen) state.legendOpen = false;
+      document.getElementById("tribunal-dock").classList.toggle("show", showTribunal);
+      if (showTribunal) renderTribunal();
+
+      const showBridge = state.lens === "atlas" && state.mode === "semantic" && !state.bridgeDismissed && !state.linkedBridges.has("n27->n16") && !isLargeTop;
+      document.getElementById("bridge-prompt").classList.toggle("show", showBridge);
+      if (showBridge) {
+        document.getElementById("bridge-detail").textContent = "Link “Host header guard” to “MCP Server protocol” as a firm note link?";
+      }
+
+      const orphans = items.filter(i => i.orphan);
+      const gangEl = document.getElementById("gang-dock");
+      gangEl.classList.toggle("show", orphans.length > 0 && state.lens !== "focus" && !isLargeTop);
+      const curOrphan = orphans.length ? orphans[state.gangIndex % orphans.length] : null;
+      document.getElementById("gang-label").textContent = narrow
+        ? `Shelf (${(state.gangIndex % Math.max(1, orphans.length)) + 1}/${orphans.length})`
+        : (curOrphan ? `Shelf (${(state.gangIndex % orphans.length) + 1}/${orphans.length}): ${orphans.length} unlinked notes` : "Shelf: 0 unlinked");
+      document.getElementById("btn-gang-review").textContent = narrow ? "Open" : "Inspect unlinked";
+
+      // Ripple Status ("steps" not "hops", disabled at aggregate L1 macro)
+      const blastBtn = document.getElementById("btn-blast-ripple");
+      blastBtn.disabled = isLargeTop;
+      blastBtn.style.opacity = isLargeTop ? "0.45" : "1";
+      const blastCount = state.rippleActive && state.selectedId ? getBlastSet(state.selectedId, state.depth).size - 1 : 0;
+      document.getElementById("ripple-banner").classList.toggle("show", Boolean(state.rippleActive && !isLargeTop));
+      document.getElementById("ripple-text").textContent = `Ripple impact: ${blastCount} affected notes within ${state.depth} steps`;
+      blastBtn.dataset.on = String(state.rippleActive && !isLargeTop);
+
+      // Selected Note Inspector (FULL WRAPPED TITLE, Conflict-synced in Review & Gaps!)
+      const selItem = items.find(i => i.id === state.selectedId) || items[0];
+      document.getElementById("sel-title").textContent = selItem ? selItem.title : "No note selected";
+      if (selItem && isLargeTop) {
+        document.getElementById("sel-link-summary").textContent = `${selItem.count.toLocaleString("en-US")} notes · single-click selected`;
+        document.getElementById("btn-open-note").textContent = "Open topic";
+      } else if (selItem) {
+        const deg = edges.filter(e => e.a === selItem.id || e.b === selItem.id).length;
+        const isConflictPair = !state.resolvedConflicts.has("n7-n8") && (selItem.id === "n7" || selItem.id === "n8" || selItem.id.endsWith("_n7") || selItem.id.endsWith("_n8"));
+        document.getElementById("sel-link-summary").textContent = isConflictPair
+          ? `Deadline conflict (14d vs 28d) · ${selItem.scope || "local"}`
+          : `${deg} links · ${selItem.scope || "local"}`;
+        document.getElementById("btn-open-note").textContent = "Open note";
+      }
+
+      // Legend Open/Closed State
+      const leg = document.getElementById("graph-legende");
+      leg.dataset.legende = state.legendOpen ? "auf" : "zu";
+      const kBtn = document.getElementById("btn-legend-toggle");
+      kBtn.setAttribute("aria-expanded", String(state.legendOpen));
+      kBtn.textContent = state.legendOpen ? "Hide legend ▴" : "Legend ▾";
+
+      // Swatches in Right Panel & Schema Popover
+      const swBox = document.getElementById("panel-swatches");
+      const rows = state.channel === "provenance"
+        ? [
+            { k: "written", lbl: "Written by you", col: pal.provenance.written, cnt: items.filter(i => i.provenance === "written").length },
+            { k: "file",    lbl: "Imported files", col: pal.provenance.file,    cnt: items.filter(i => i.provenance === "file").length },
+            { k: "machine", lbl: "AI / scanned",   col: pal.provenance.machine, cnt: items.filter(i => i.provenance === "machine").length }
+          ]
+        : [
+            { k: "semantic",   lbl: "Facts & knowledge (F)",      col: pal.types.semantic,   cnt: items.filter(i => i.type === "semantic").length },
+            { k: "episodic",   lbl: "Events & dates (E)",         col: pal.types.episodic,   cnt: items.filter(i => i.type === "episodic").length },
+            { k: "procedural", lbl: "How-tos & guides (H)",       col: pal.types.procedural, cnt: items.filter(i => i.type === "procedural").length },
+            { k: "reference",  lbl: "Documents & files (S)",      col: pal.types.reference,  cnt: items.filter(i => i.type === "reference").length }
+          ];
+      swBox.innerHTML = rows.map(r => `
+        <button type="button" class="farbwahl-zeile" data-testid="graph-farbhaufen" data-spot="${r.k}" aria-pressed="${state.spotlightKind === r.k}">
+          <span class="kind-dot" style="background:${r.col}"></span>
+          <span style="flex:1">${r.lbl}</span>
+          <span class="tnum" style="color:var(--text-3)">${isLargeTop ? "" : r.cnt}</span>
+        </button>
+      `).join("") + `
+        <div class="graph-line-key">
+          <span>━ confirmed link</span>
+          <span>┈ mention / suggested</span>
+        </div>`;
+      swBox.querySelectorAll("[data-spot]").forEach(b => b.addEventListener("click", () => {
+        state.spotlightKind = state.spotlightKind === b.dataset.spot ? null : b.dataset.spot;
+        syncUI(); drawCanvas();
+      }));
+
+      // GruppenBand inside #pop-schema
+      const totalC = Math.max(1, items.length);
+      document.getElementById("graph-gruppenband").innerHTML = ["semantic", "procedural", "episodic", "reference"].map(k => {
+        const cnt = items.filter(i => i.type === k).length;
+        return `<span style="flex-grow:${Math.max(1, cnt)};background:${pal.types[k]}"></span>`;
+      }).join("");
+      const schemaEl = document.getElementById("schema-kinds-list");
+      schemaEl.innerHTML = rows.map(r => `
+        <button type="button" class="schema-row" data-testid="graph-schema-row" data-schema-spot="${r.k}" data-on="${state.spotlightKind === r.k}">
+          <span style="display:inline-flex;align-items:center;gap:6px"><span class="kind-dot" style="background:${r.col}"></span>${r.lbl}</span>
+          <span class="tnum">${r.cnt}</span>
+        </button>`).join("");
+      schemaEl.querySelectorAll("[data-schema-spot]").forEach(b => b.addEventListener("click", () => {
+        state.spotlightKind = state.spotlightKind === b.dataset.schemaSpot ? null : b.dataset.schemaSpot;
+        syncUI(); drawCanvas();
+      }));
+      document.getElementById("schema-preds-list").innerHTML = `
+        <div class="schema-row" data-testid="graph-schema-row"><span>governs / enforces / requires</span><span class="tnum">${edges.filter(e => e.kind === "claimed").length}</span></div>
+        <div class="schema-row" data-testid="graph-schema-row"><span>shared topic mentions</span><span class="tnum">${edges.filter(e => e.kind === "mention").length}</span></div>
+        <div class="schema-row" data-testid="graph-schema-row"><span>conflicting records</span><span class="tnum">${edges.filter(e => e.kind === "conflict").length}</span></div>`;
+
+      // GraphRegal inside Open Legend
+      const wr = items.filter(i => i.provenance === "written").length || 12;
+      const fl = items.filter(i => i.provenance === "file").length || 8;
+      const mc = items.filter(i => i.provenance === "machine").length || 2;
+      const wTot = wr + fl + mc;
+      document.getElementById("regal-woher-bar").innerHTML = `
+        <div style="width:${(wr / wTot) * 100}%;background:var(--type-semantic-hex)"></div>
+        <div style="width:${(fl / wTot) * 100}%;background:var(--type-reference-hex)"></div>
+        <div style="width:${(mc / wTot) * 100}%;background:var(--type-episodic-hex)"></div>`;
+      document.getElementById("regal-woher-text").textContent = `Written ${wr} · Files ${fl} · AI/Scanned ${mc}`;
+      const basketsEl = document.getElementById("regal-wann-baskets");
+      basketsEl.innerHTML = [
+        ["today", "Today", items.filter(i => i.daysOld <= 2).length],
+        ["7d", "7 days", items.filter(i => i.daysOld > 2 && i.daysOld <= 7).length],
+        ["30d", "30 days", items.filter(i => i.daysOld > 7 && i.daysOld <= 30).length],
+        ["older", "Older", items.filter(i => i.daysOld > 30).length]
+      ].map(([k, lbl, c]) => `<button type="button" class="regal-koerb" data-testid="regal-koerb" data-koerb="${k}" aria-expanded="${state.spotlightTimeBucket === k}">${lbl} · ${c}</button>`).join("");
+      basketsEl.querySelectorAll("[data-koerb]").forEach(b => b.addEventListener("click", () => {
+        state.spotlightTimeBucket = state.spotlightTimeBucket === b.dataset.koerb ? null : b.dataset.koerb;
+        syncUI(); drawCanvas();
+      }));
+
+      // Time Scrubber Sync
+      document.getElementById("time-fill").style.width = `${state.timePercent}%`;
+      document.getElementById("graph-zeitstand").textContent = state.timePercent >= 99 ? "Now · Today" : `Past · ≤ ${Math.round(1 + (1 - state.timePercent / 100) * 365)}d ago`;
+
+      // Global Status Footer
+      const modeName = state.mode === "semantic" ? "By meaning" : `By links (${state.lens})`;
+      document.getElementById("status-left").innerHTML = isLargeTop
+        ? `In sync · <span class="tnum">25,000</span> notes in store · <span class="tnum">12</span> topic medallions`
+        : `In sync · <span class="tnum">${state.timePercent}%</span> recent · <span class="tnum">${items.length}</span> notes · <span class="tnum">${edges.length}</span> links`;
+      document.getElementById("status-right").textContent = `local · private vault · ${modeName}`;
+    }
+
+    function renderTribunal() {
+      const a = SMALL_ITEMS.find(n => n.id === "n7");
+      const b = SMALL_ITEMS.find(n => n.id === "n8");
+      document.getElementById("tribunal-cols").innerHTML = `
+        <div class="tribunal-card human-record">
+          <div style="display:flex;justify-content:space-between;font-size:var(--fs-1);color:var(--accent);font-weight:700">
+            <span>Older record · Statutory source</span><span class="tnum">Due 14 Dec 2026</span>
+          </div>
+          <div style="font-size:var(--fs-2);font-weight:700;color:var(--text-1)">${a.title}</div>
+          <div style="font-size:var(--fs-1);color:var(--text-2);line-height:1.45">${a.text}</div>
+        </div>
+        <div class="tribunal-card ai-draft">
+          <div style="display:flex;justify-content:space-between;font-size:var(--fs-1);color:var(--warn);font-weight:700">
+            <span>Newer note · Claude Code extract</span><span class="tnum">Due 30 Nov 2026</span>
+          </div>
+          <div style="font-size:var(--fs-2);font-weight:700;color:var(--text-1)">${b.title}</div>
+          <div style="font-size:var(--fs-1);color:var(--text-2);line-height:1.45">${b.text}</div>
+        </div>`;
+    }
+
+    function populateSidebarAndTags() {
+      const allTags = new Map();
+      SMALL_ITEMS.forEach(m => (m.tags || []).forEach(t => allTags.set(t, (allTags.get(t) || 0) + 1)));
+      const sorted = [...allTags.entries()].sort((a, b) => b[1] - a[1]);
+      document.getElementById("sidebar-tags").innerHTML = sorted.map(([t, c]) => `
+        <button type="button" class="sidebar-tag-btn" data-tag="${t}" data-active="${state.tagFilter === t}">
+          <span>#${t}</span><span class="seiten-plakette tnum">${c}</span>
+        </button>`).join("");
+      document.getElementById("sidebar-tags").querySelectorAll("[data-tag]").forEach(b => {
+        b.addEventListener("click", () => {
+          state.tagFilter = state.tagFilter === b.dataset.tag ? "all" : b.dataset.tag;
+          document.getElementById("graph-tag-filter").value = state.tagFilter;
+          populateSidebarAndTags(); syncUI(); drawCanvas();
+        });
+      });
+
+      const sel = document.getElementById("graph-tag-filter");
+      sel.innerHTML = `<option value="all">All tags</option>` + sorted.map(([t, c]) => `<option value="${t}">#${t} (${c})</option>`).join("");
+      sel.value = state.tagFilter;
+    }
+
+    function openNoteModal(item) {
+      if (!item) return;
+      document.getElementById("modal-note-kind").textContent = (TYPE_META[item.type] || TYPE_META.semantic).label;
+      document.getElementById("modal-note-title").textContent = item.title;
+      document.getElementById("modal-note-meta").textContent = `Scope: ${item.scope || "local"} · Origin: ${item.provenance || "written"} · Tags: ${(item.tags || []).map(t => "#" + t).join(", ")}`;
+      document.getElementById("modal-note-body").textContent = item.text || "";
+      document.getElementById("modal-note-readers").textContent = item.scope === "private"
+        ? "Privacy Shield: § 203 StGB locked — zero external AI apps can read or search this note."
+        : (item.readers && item.readers.length ? `MCP Readers: ${item.readers.join(" · ")}` : "MCP Readers: Not accessed by external AI apps.");
+      document.getElementById("note-modal-backdrop").classList.add("open");
+    }
+
+    // =========================================================================
+    // 8. CANVAS INTERACTIONS (PAN, ZOOM, HOVER, DRAG-FREEZE, KEYBOARD)
+    // =========================================================================
+    const canvas = document.getElementById("graph-canvas");
+    function hitAt(sx, sy) {
+      for (let i = hitRects.length - 1; i >= 0; i--) {
+        const b = hitRects[i];
+        if (b.it.isMedallion) {
+          if (Math.hypot(sx - b.cx, sy - b.cy) <= b.hw) return { kind: "card", item: b.it };
+        } else if (Math.abs(sx - b.cx) <= b.hw && Math.abs(sy - b.cy) <= b.hh) {
+          return { kind: "card", item: b.it };
+        }
+      }
+      for (const he of hitEdges) {
+        for (let step = 1; step <= 9; step++) {
+          const t = step / 10;
+          const mt = 1 - t;
+          const px = mt * mt * he.start.x + 2 * mt * t * he.ctrl.x + t * t * he.end.x;
+          const py = mt * mt * he.start.y + 2 * mt * t * he.ctrl.y + t * t * he.end.y;
+          if (Math.hypot(sx - px, sy - py) <= 10) return { kind: "edge", edge: he };
+        }
+      }
+      return null;
+    }
+
+    canvas.addEventListener("pointerdown", ev => {
+      try { canvas.setPointerCapture(ev.pointerId); } catch {}
+      const r = canvas.getBoundingClientRect();
+      const sx = ev.clientX - r.left, sy = ev.clientY - r.top;
+      const hit = hitAt(sx, sy);
+      if (hit && hit.kind === "card") {
+        const wClick = screenToWorld(sx, sy, canvas.offsetWidth, canvas.offsetHeight);
+        const curW = state.positions.get(hit.item.id) || { x: hit.item.x, y: hit.item.y };
+        state.drag = {
+          type: "card",
+          id: hit.item.id,
+          startX: sx,
+          startY: sy,
+          grabDx: wClick.x - curW.x,
+          grabDy: wClick.y - curW.y,
+          moved: false
+        };
+        state.selectedId = hit.item.id;
+        syncUI(); drawCanvas();
+      } else {
+        state.drag = { type: "pan", startX: sx, startY: sy, camX: state.cam.x, camY: state.cam.y, moved: false };
+      }
+    });
+
+    window.addEventListener("pointermove", ev => {
+      const r = canvas.getBoundingClientRect();
+      const sx = ev.clientX - r.left, sy = ev.clientY - r.top;
+      if (state.drag) {
+        const dx = sx - state.drag.startX, dy = sy - state.drag.startY;
+        if (Math.hypot(dx, dy) > 3) state.drag.moved = true;
+        if (state.drag.type === "pan") {
+          state.cam.x = state.drag.camX - dx / state.cam.zoom;
+          state.cam.y = state.drag.camY - dy / state.cam.zoom;
+          drawCanvas();
+        } else if (state.drag.type === "card" && state.drag.moved) {
+          const wPos = screenToWorld(sx, sy, canvas.offsetWidth, canvas.offsetHeight);
+          const nextW = { x: wPos.x - state.drag.grabDx, y: wPos.y - state.drag.grabDy };
+          state.positions.set(state.drag.id, nextW);
+          state.targets.set(state.drag.id, nextW);
+          if (state.lens === "atlas" && state.mode === "force") state.pinnedAtlas.set(state.drag.id, nextW);
+          drawCanvas();
+        }
+        return;
+      }
+      const hit = hitAt(sx, sy);
+      const nextHov = hit && hit.kind === "card" ? hit.item.id : null;
+      const nextEdgeIdx = hit && hit.kind === "edge" ? hit.edge.idx : null;
+      const tip = document.getElementById("graph-edge-tooltip");
+      if (hit && hit.kind === "edge") {
+        tip.style.display = "block";
+        tip.style.left = `${Math.min(canvas.offsetWidth - 260, sx + 12)}px`;
+        tip.style.top = `${Math.max(12, sy - 28)}px`;
+        tip.textContent = `${hit.edge.bA.it.title} → ${hit.edge.bB.it.title} (${hit.edge.e.predicate})`;
+      } else {
+        tip.style.display = "none";
+      }
+      if (nextHov !== state.hoverId || nextEdgeIdx !== state.hoverEdgeIdx) {
+        state.hoverId = nextHov;
+        state.hoverEdgeIdx = nextEdgeIdx;
+        canvas.style.cursor = nextHov || nextEdgeIdx !== null ? "pointer" : "grab";
+        drawCanvas();
+      }
+    });
+
+    const endDrag = () => {
+      if (!state.drag) return;
+      state.drag = null;
+      syncUI(); drawCanvas();
+    };
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+    canvas.addEventListener("pointerleave", () => {
+      document.getElementById("graph-edge-tooltip").style.display = "none";
+      if (state.hoverId !== null || state.hoverEdgeIdx !== null) {
+        state.hoverId = null;
+        state.hoverEdgeIdx = null;
+        drawCanvas();
+      }
+    });
+
+    canvas.addEventListener("dblclick", ev => {
+      const r = canvas.getBoundingClientRect();
+      const hit = hitAt(ev.clientX - r.left, ev.clientY - r.top);
+      if (hit && hit.kind === "card") {
+        if (state.corpus === "large" && !state.drilledClusterId) {
+          state.drilledClusterId = hit.item.id;
+          state.selectedId = `${hit.item.id}_n1`;
+          initPositions(); applyMorph(false); fitCamera();
+          return;
+        }
+        state.selectedId = hit.item.id;
+        state.lens = "focus";
+        applyMorph(true); fitCamera();
+      }
+    });
+
+    canvas.addEventListener("wheel", ev => {
+      ev.preventDefault();
+      document.getElementById("graph-edge-tooltip").style.display = "none";
+      const r = canvas.getBoundingClientRect();
+      const sx = ev.clientX - r.left, sy = ev.clientY - r.top;
+      const before = screenToWorld(sx, sy, canvas.offsetWidth, canvas.offsetHeight);
+      const factor = Math.exp(-Math.max(-60, Math.min(60, ev.deltaY)) * 0.0025);
+      const nextZoom = Math.max(0.35, Math.min(2.2, state.cam.zoom * factor));
+      state.cam.zoom = nextZoom;
+      const after = screenToWorld(sx, sy, canvas.offsetWidth, canvas.offsetHeight);
+      state.cam.x += before.x - after.x;
+      state.cam.y += before.y - after.y;
+      syncUI(); drawCanvas();
+    }, { passive: false });
+
+    canvas.addEventListener("keydown", ev => {
+      const items = getActiveItems();
+      const idx = items.findIndex(i => i.id === state.selectedId);
+      if (ev.key === "ArrowRight" || ev.key === "ArrowDown") {
+        ev.preventDefault();
+        state.selectedId = items[(Math.max(0, idx) + 1) % items.length].id;
+        syncUI(); drawCanvas();
+      } else if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") {
+        ev.preventDefault();
+        state.selectedId = items[(Math.max(0, idx) - 1 + items.length) % items.length].id;
+        syncUI(); drawCanvas();
+      } else if (ev.key === "Enter" && idx >= 0) {
+        openNoteModal(items[idx]);
+      } else if (ev.key === "Escape") {
+        state.rippleActive = false;
+        document.getElementById("pop-schema").classList.remove("open");
+        document.getElementById("pop-krafte").classList.remove("open");
+        document.getElementById("note-modal-backdrop").classList.remove("open");
+        syncUI(); drawCanvas();
+      }
+    });
+
+    // =========================================================================
+    // 9. WIRE CONTROLS & BUTTON HANDLERS
+    // =========================================================================
+    document.getElementById("btn-corpus-small").addEventListener("click", () => {
+      state.corpus = "small"; state.drilledClusterId = null; state.selectedId = "n1"; state.lens = "atlas";
+      applyMorph(true); fitCamera();
+    });
+    document.getElementById("btn-corpus-large").addEventListener("click", () => {
+      state.corpus = "large"; state.drilledClusterId = null; state.selectedId = "lc1"; state.lens = "atlas";
+      applyMorph(true); fitCamera();
+    });
+    document.getElementById("btn-crumb-back").addEventListener("click", () => {
+      state.drilledClusterId = null; state.selectedId = "lc1";
+      applyMorph(true); fitCamera();
+    });
+
+    const toggleTheme = d => {
+      state.dark = d;
+      document.documentElement.classList.toggle("dark", state.dark);
+      syncUI(); drawCanvas();
+    };
+    document.getElementById("btn-theme-toggle").addEventListener("click", () => toggleTheme(!state.dark));
+    document.getElementById("side-light").addEventListener("click", () => toggleTheme(false));
+    document.getElementById("side-dark").addEventListener("click", () => toggleTheme(true));
+
+    document.getElementById("btn-mode-force").addEventListener("click", () => { state.mode = "force"; applyMorph(true); syncUI(); });
+    document.getElementById("btn-mode-semantic").addEventListener("click", () => { state.mode = "semantic"; state.lens = "atlas"; applyMorph(true); syncUI(); });
+
+    document.querySelectorAll("[data-lens]").forEach(b => b.addEventListener("click", () => {
+      state.lens = b.dataset.lens;
+      if (state.lens === "review") state.selectedId = "n7";
+      applyMorph(true);
+      fitCamera();
+    }));
+
+    document.querySelectorAll("[data-chan]").forEach(b => b.addEventListener("click", () => {
+      state.channel = b.dataset.chan; state.spotlightKind = null; syncUI(); drawCanvas();
+    }));
+    document.querySelectorAll("[data-density]").forEach(b => b.addEventListener("click", () => {
+      state.labels = b.dataset.density; syncUI(); drawCanvas();
+    }));
+    document.querySelectorAll("[data-depth]").forEach(b => b.addEventListener("click", () => {
+      state.depth = Number(b.dataset.depth); syncUI(); drawCanvas();
+    }));
+
+    document.getElementById("graph-filter-input").addEventListener("input", ev => {
+      state.search = ev.target.value;
+      const items = getActiveItems();
+      const q = state.search.trim().toLowerCase();
+      const cnt = q ? items.filter(i => i.title.toLowerCase().includes(q)).length : 0;
+      document.getElementById("graph-search-count").textContent = q ? `${cnt}/${items.length}` : "";
+      drawCanvas();
+    });
+    document.getElementById("graph-tag-filter").addEventListener("change", ev => {
+      state.tagFilter = ev.target.value; populateSidebarAndTags(); syncUI(); drawCanvas();
+    });
+
+    document.getElementById("graph-time-slider").addEventListener("input", ev => {
+      state.timePercent = Number(ev.target.value); syncUI(); drawCanvas();
+    });
+    document.getElementById("btn-time-now").addEventListener("click", () => {
+      state.timePercent = 100; document.getElementById("graph-time-slider").value = "100"; syncUI(); drawCanvas();
+    });
+
+    document.getElementById("graph-thickness").addEventListener("input", ev => {
+      state.lineWeight = Number(ev.target.value) / 10;
+      document.getElementById("graph-thick-val").textContent = `${state.lineWeight.toFixed(1)}×`;
+      drawCanvas();
+    });
+
+    document.getElementById("btn-tog-dir").addEventListener("click", ev => { state.showDirection = !state.showDirection; ev.currentTarget.dataset.on = String(state.showDirection); drawCanvas(); });
+    document.getElementById("btn-tog-sim").addEventListener("click", ev => { state.showSimilar = !state.showSimilar; ev.currentTarget.dataset.on = String(state.showSimilar); drawCanvas(); });
+    document.getElementById("btn-tog-conn").addEventListener("click", ev => { state.onlyConnected = !state.onlyConnected; ev.currentTarget.dataset.on = String(state.onlyConnected); drawCanvas(); });
+    document.getElementById("btn-tog-schema").addEventListener("click", () => {
+      document.getElementById("pop-krafte").classList.remove("open");
+      document.getElementById("pop-schema").classList.toggle("open");
+    });
+    document.getElementById("btn-tog-forces").addEventListener("click", () => {
+      document.getElementById("pop-schema").classList.remove("open");
+      document.getElementById("pop-krafte").classList.toggle("open");
+    });
+    document.querySelectorAll("[data-close-pop]").forEach(b => b.addEventListener("click", () => document.getElementById(b.dataset.closePop).classList.remove("open")));
+
+    document.getElementById("force-spread").addEventListener("input", ev => {
+      state.spreadScale = Number(ev.target.value) / 100;
+      document.getElementById("force-spread-val").textContent = `${state.spreadScale.toFixed(1)}×`;
+      applyMorph(false);
+    });
+    document.getElementById("force-size").addEventListener("input", ev => {
+      state.sizeScale = Number(ev.target.value) / 100;
+      document.getElementById("force-size-val").textContent = `${state.sizeScale.toFixed(1)}×`;
+      drawCanvas();
+    });
+    document.getElementById("btn-force-reset").addEventListener("click", () => {
+      state.spreadScale = 1.0; state.sizeScale = 1.0;
+      document.getElementById("force-spread").value = "100";
+      document.getElementById("force-size").value = "100";
+      document.getElementById("force-spread-val").textContent = "1.0×";
+      document.getElementById("force-size-val").textContent = "1.0×";
+      applyMorph(true);
+    });
+
+    document.getElementById("btn-legend-toggle").addEventListener("click", () => {
+      state.legendOpen = !state.legendOpen; syncUI();
+    });
+
+    document.getElementById("btn-open-note").addEventListener("click", () => {
+      const items = getActiveItems();
+      const it = items.find(i => i.id === state.selectedId);
+      if (state.corpus === "large" && !state.drilledClusterId && it) {
+        state.drilledClusterId = it.id; state.selectedId = `${it.id}_n1`;
+        initPositions(); applyMorph(false); fitCamera();
+      } else openNoteModal(it);
+    });
+    document.getElementById("btn-modal-close").addEventListener("click", () => document.getElementById("note-modal-backdrop").classList.remove("open"));
+    document.getElementById("btn-focus-solar").addEventListener("click", () => {
+      state.lens = state.lens === "focus" ? "atlas" : "focus";
+      applyMorph(true); fitCamera();
+    });
+    document.getElementById("btn-blast-ripple").addEventListener("click", () => {
+      state.rippleActive = !state.rippleActive; syncUI(); drawCanvas();
+    });
+    document.getElementById("btn-clear-ripple").addEventListener("click", () => {
+      state.rippleActive = false; syncUI(); drawCanvas();
+    });
+
+    document.getElementById("btn-zoom-in").addEventListener("click", () => { state.cam.zoom = Math.min(2.2, state.cam.zoom * 1.18); syncUI(); drawCanvas(); });
+    document.getElementById("btn-zoom-out").addEventListener("click", () => { state.cam.zoom = Math.max(0.35, state.cam.zoom * 0.85); syncUI(); drawCanvas(); });
+    document.getElementById("btn-graph-fit").addEventListener("click", fitCamera);
+    document.getElementById("btn-graph-reset").addEventListener("click", () => {
+      state.lens = "atlas"; state.mode = "force"; state.spotlightKind = null; state.spotlightTimeBucket = null; state.tagFilter = "all";
+      state.rippleActive = false; state.search = ""; state.timePercent = 100;
+      state.bridgeDismissed = false; state.drilledClusterId = null;
+      state.pinnedAtlas.clear();
+      state.spreadScale = 1.0; state.sizeScale = 1.0;
+      state.onlyConnected = false; state.showDirection = true; state.showSimilar = true;
+      document.getElementById("graph-filter-input").value = "";
+      document.getElementById("graph-search-count").textContent = "";
+      document.getElementById("graph-tag-filter").value = "all";
+      document.getElementById("graph-time-slider").value = "100";
+      document.getElementById("force-spread").value = "100";
+      document.getElementById("force-size").value = "100";
+      document.getElementById("force-spread-val").textContent = "1.0×";
+      document.getElementById("force-size-val").textContent = "1.0×";
+      document.getElementById("btn-tog-dir").dataset.on = "true";
+      document.getElementById("btn-tog-sim").dataset.on = "true";
+      document.getElementById("btn-tog-conn").dataset.on = "false";
+      populateSidebarAndTags();
+      initPositions(); applyMorph(true); fitCamera();
+    });
+
+    document.getElementById("btn-graph-export").addEventListener("click", () => {
+      const link = document.createElement("a");
+      link.download = "k3pta-graph-v4.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+
+    document.querySelectorAll("[data-resolve]").forEach(b => b.addEventListener("click", () => {
+      const mode = b.dataset.resolve;
+      state.resolvedConflicts.add("n7-n8");
+      state.conflictResolutionMode = mode;
+      const n7 = SMALL_ITEMS.find(x => x.id === "n7");
+      const n8 = SMALL_ITEMS.find(x => x.id === "n8");
+      if (mode === "newer") n7.supersededBy = "n8";
+      else if (mode === "older") n8.supersededBy = "n7";
+      else if (mode === "window") { n7.validTo = NOW - 1 * DAY; n8.tags = [...new Set([...(n8.tags || []), "valid-now"])]; }
+      else if (mode === "both") { n7.tags = [...new Set([...(n7.tags || []), "exception-holds"])]; n8.tags = [...new Set([...(n8.tags || []), "exception-holds"])]; }
+      fitCamera();
+    }));
+
+    document.getElementById("btn-bridge-link").addEventListener("click", () => {
+      state.linkedBridges.add("n27->n16");
+      syncUI(); drawCanvas();
+    });
+    document.getElementById("btn-bridge-close").addEventListener("click", () => {
+      state.bridgeDismissed = true;
+      syncUI();
+    });
+
+    const stepGangNote = delta => {
+      const orphans = getActiveItems().filter(i => i.orphan);
+      if (!orphans.length) return;
+      state.gangIndex = (state.gangIndex + delta + orphans.length) % orphans.length;
+      const targetItem = orphans[state.gangIndex];
+      state.selectedId = targetItem.id;
+      const pos = state.positions.get(targetItem.id) || { x: targetItem.x, y: targetItem.y };
+      state.cam.x = pos.x;
+      state.cam.y = pos.y;
+      syncUI(); drawCanvas();
+    };
+    document.getElementById("btn-gang-prev").addEventListener("click", () => stepGangNote(-1));
+    document.getElementById("btn-gang-next").addEventListener("click", () => stepGangNote(1));
+    document.getElementById("btn-gang-review").addEventListener("click", () => {
+      state.lens = "review"; state.selectedId = "n7"; applyMorph(true); fitCamera();
+    });
+
+    document.getElementById("graph-panel-head").addEventListener("click", () => {
+      if (window.innerWidth <= 767) {
+        document.getElementById("graph-panel").classList.toggle("sheet-open");
+      }
+    });
+
+    window.addEventListener("resize", () => { syncUI(); drawCanvas(); });
+
+    // Initial Boot
+    populateSidebarAndTags();
+    applyMorph(false);
+    fitCamera();
+  })();
+  </script>
+</body>
+</html>
