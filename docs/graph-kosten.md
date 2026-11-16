@@ -120,7 +120,7 @@ What it still settles: it corroborates the direction of the 8-pass fix within ab
 per frame (4.5 against 4.8, 16.5 against 17.5, 32.4 against 33.6) and it confirms the important
 consequence independently — **1 500 notes is outside the 16.67 ms budget while it cools** (140 of
 315 painted frames over). The README lines that sold a millisecond figure therefore do not carry one
-anymore: they carry what a test asserts without a machine (`tests/lib/graphLayout.test.ts:2285`) and
+anymore: they carry what a test asserts without a machine (`tests/lib/graphLayout.test.ts:2441-2486`) and
 point here for timing.
 
 
@@ -163,7 +163,7 @@ The sentence this evidence supports is R1's to write, and as of 11 October 19:12
 force layout keeps 60 fps up to **about 400 notes** (4.8 ms of work a frame, 1 of 322 painted frames
 over budget), **1 500 notes sit outside the 16.67 ms budget while they cool** (17.5 ms a frame, 234
 of 315 frames over — R1's refused re-run reads the same direction at 16.5 ms, 140 of 315), and **at
-rest no two discs intersect at 400, at 1 500 or at 3 000 notes** (`tests/lib/graphLayout.test.ts:2285`).
+rest no two discs intersect at 400, at 1 500 or at 3 000 notes** (`tests/lib/graphLayout.test.ts:2441-2486`).
 An earlier shape of this sentence, written before the 8-pass table above landed, said “60 fps to
 roughly fifteen hundred notes”; that is superseded by the numbers it sits next to, and the README
 carries neither claim as a millisecond — it carries the test.
@@ -221,7 +221,7 @@ a comment.
 
 **Claimed ceiling now: about 400 notes at 60 fps.** 1 500 notes is *outside* the 16.67 ms budget
 while the layout cools (E2: 234 of 315 painted frames; R1's refused re-run: 140 of 315), and at rest
-no disc pair intersects at 400, 1 500 or 3 000 (`tests/lib/graphLayout.test.ts:2285`). Anything that
+no disc pair intersects at 400, 1 500 or 3 000 (`tests/lib/graphLayout.test.ts:2441-2486`). Anything that
 sells “inside the budget at 1 500”, or “60 fps at 3 000”, is out of date on this tree.
 
 Places that still say it, on 11 October at 18:52 — file and line, no judgement here:

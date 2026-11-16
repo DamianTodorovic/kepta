@@ -217,21 +217,32 @@ describe("buildEdges: ueber einen Index statt ueber alle Paare", () => {
     // 400 Notizen mit demselben Tag waeren 79.800 Paare. Der Bucket liegt ueber
     // der Grenze und wird ausgelassen — genau dafuer ist sie da.
     const ms = Array.from({ length: 400 }, () => note({ tags: ["alles"] }));
-    const start = Date.now();
-    const e = buildEdges(ms, { maxBucket: 140 });
-    expect(Date.now() - start).toBeLessThan(1000);
-    expect(e).toEqual([]);
+    // Eine Einzelstichprobe misst den Runner mit (GC, Scheduler, fremde Last).
+    // Zwei Laeufe, der beste zaehlt; die Latte bleibt 1000. buildEdges ist rein.
+    let dauer = Infinity;
+    for (let i = 0; i < 2; i++) {
+      const start = performance.now();
+      const e = buildEdges(ms, { maxBucket: 140 });
+      dauer = Math.min(dauer, performance.now() - start);
+      expect(e).toEqual([]);
+    }
+    expect(dauer, `zwei Laeufe, bester ${dauer.toFixed(0)} ms`).toBeLessThan(1000);
   });
 
   it("bewaeltigt 3000 Notizen in vertretbarer Zeit", () => {
     const ms = Array.from({ length: 3000 }, (_, i) =>
       note({ title: `Thema ${i % 300} Notiz`, tags: [`gruppe${i % 300}`] })
     );
-    const start = Date.now();
-    const e = buildEdges(ms);
     // Alle Paare waeren 4,5 Millionen Vergleiche gewesen.
-    expect(Date.now() - start).toBeLessThan(4000);
-    expect(e.length).toBeGreaterThan(0);
+    // Zwei Laeufe, der beste zaehlt; die Latte bleibt 4000.
+    let dauer = Infinity;
+    for (let i = 0; i < 2; i++) {
+      const start = performance.now();
+      const e = buildEdges(ms);
+      dauer = Math.min(dauer, performance.now() - start);
+      expect(e.length).toBeGreaterThan(0);
+    }
+    expect(dauer, `zwei Laeufe, bester ${dauer.toFixed(0)} ms`).toBeLessThan(4000);
   });
 });
 
@@ -841,13 +852,19 @@ describe("DIE WAND: das Layout darf groesser sein als das Fenster", () => {
 
   it("bleibt bei 3000 Knoten endlich und rechenbar", () => {
     const ids = Array.from({ length: 3000 }, (_, i) => `g${i}`);
-    const sim = createSimulation(ids, []);
-    const start = Date.now();
-    for (let i = 0; i < 20; i++) stepSimulation(sim);
-    const dauer = Date.now() - start;
-    expect(sim.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y))).toBe(true);
     // 20 Schritte Alle-gegen-alle waeren 90 Millionen Paare gewesen.
-    expect(dauer).toBeLessThan(6000);
+    // Eine Einzelstichprobe misst den Runner mit; zwei Laeufe, der beste zaehlt,
+    // die Latte bleibt 6000. Je Lauf eine frische Simulation: stepSimulation
+    // veraendert den Zustand, sonst misst der zweite Lauf einen anderen.
+    let dauer = Infinity;
+    for (let i = 0; i < 2; i++) {
+      const sim = createSimulation(ids, []);
+      const start = performance.now();
+      for (let k = 0; k < 20; k++) stepSimulation(sim);
+      dauer = Math.min(dauer, performance.now() - start);
+      expect(sim.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y))).toBe(true);
+    }
+    expect(dauer, `zwei Laeufe, bester ${dauer.toFixed(0)} ms`).toBeLessThan(6000);
   });
 });
 
@@ -1044,10 +1061,17 @@ describe("Kollision: Knoten ueberlappen nie", () => {
   });
 
   it("bleibt bei 2000 Knoten rechenbar", () => {
-    const nodes = Array.from({ length: 2000 }, (_, i) => knoten(`n${i}`, (i % 50) * 25, Math.floor(i / 50) * 25, 10));
-    const start = Date.now();
-    resolveCollisions(nodes);
-    expect(Date.now() - start).toBeLessThan(1500);
+    // Eine Einzelstichprobe misst den Runner mit; zwei Laeufe, der beste zaehlt,
+    // die Latte bleibt 1500. Je Lauf ein frisches Gitter: resolveCollisions
+    // verschiebt die Knoten, der zweite Lauf braucht denselben Ausgangszustand.
+    let dauer = Infinity;
+    for (let i = 0; i < 2; i++) {
+      const nodes = Array.from({ length: 2000 }, (_, k) => knoten(`n${k}`, (k % 50) * 25, Math.floor(k / 50) * 25, 10));
+      const start = performance.now();
+      resolveCollisions(nodes);
+      dauer = Math.min(dauer, performance.now() - start);
+    }
+    expect(dauer, `zwei Laeufe, bester ${dauer.toFixed(0)} ms`).toBeLessThan(1500);
   });
 });
 

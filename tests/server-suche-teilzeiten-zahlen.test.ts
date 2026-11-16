@@ -101,16 +101,46 @@ describe("#98 Engine-Spalte: die Arbeit in der Engine, als Zahlen", () => {
   it("kalt und warm im selben Prozess: beide tragen die drei Felder, je mit eigner Uhrzeit", async () => {
     const frisch = `engspalte${Date.now()}`;
     const kalt = await searchMemories(store, { query: frisch, limit: 5 });
-    const kaltZeit = new Date().toISOString(); // direkt nach DEM Aufruf, nicht beim Schreiben
+    const kaltUhr = performance.now();
+    const kaltZeit = new Date().toISOString(); // fuers Protokoll, nicht fuer die Erwartung
     const warm = await searchMemories(store, { query: frisch, limit: 5 });
+    const warmUhr = performance.now();
     const warmZeit = new Date().toISOString();
     for (const f of DREI) {
       expect(typeof kalt.teilzeiten![f]).toBe("number");
       expect(typeof warm.teilzeiten![f]).toBe("number");
     }
-    expect(kaltZeit).not.toBe(warmZeit);
+    // Die Wanduhr in Millisekunden war eine Wette, keine Eigenschaft: auf CI kostet eine
+    // Suche ~1 ms (16.11.2026 gemessen, gesamt 1.18 und 1.089), drei grüne Läufe bestanden
+    // nur, weil die Stempel zufällig 1 ms auseinander lagen (.370/.371, .757/.758,
+    // .373/.374) — der rote Lauf landete in derselben Millisekunde (.266 zweimal).
+    // Die monotone Uhr löst unter 1 ms auf und kann nicht zurücklaufen.
+    expect(warmUhr).toBeGreaterThan(kaltUhr);
+    expect(kalt.teilzeiten, "zwei Messungen, nicht dasselbe Objekt zweimal").not.toBe(warm.teilzeiten);
     console.log(`ENGINE-KALT ${kaltZeit} ${JSON.stringify(kalt.teilzeiten)}`);
     console.log(`ENGINE-WARM ${warmZeit} ${JSON.stringify(warm.teilzeiten)}`);
+  });
+
+  it("bei eingefrorener Wanduhr tragen kalt und warm trotzdem verschiedene Messzeiten", async () => {
+    // Die CI-Bedingung wird nachgestellt, nicht erhofft: nur Date ist gefälscht, die
+    // monotone Uhr bleibt echt. Der rote Lauf vom 16.11.2026 09:06:44.266Z steht hier
+    // als eingefrorene Wanduhr — zwei Suchen, ein ISO-Stempel, zwei Messzeiten.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-16T09:06:44.266Z"));
+    try {
+      const frisch = `engspalte-frost-${Date.now()}`;
+      const kalt = await searchMemories(store, { query: frisch, limit: 5 });
+      const kaltIso = new Date().toISOString();
+      const kaltUhr = performance.now();
+      const warm = await searchMemories(store, { query: frisch, limit: 5 });
+      const warmIso = new Date().toISOString();
+      const warmUhr = performance.now();
+      expect(warmIso, "die Wanduhr steht still — das ist die nachgestellte CI-Bedingung").toBe(kaltIso);
+      expect(warmUhr, "die monotone Uhr trennt die zwei Messungen").toBeGreaterThan(kaltUhr);
+      expect(kalt.teilzeiten).not.toBe(warm.teilzeiten);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

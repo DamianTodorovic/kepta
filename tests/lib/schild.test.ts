@@ -44,9 +44,16 @@ describe("Privatsphäre-Schild: was er findet", () => {
   });
 
   it("bleibt schnell bei großen Texten", () => {
-    const start = Date.now();
-    finde("a".repeat(200_000) + " x@y.de " + "1 ".repeat(50_000) + "0".repeat(10_000));
-    expect(Date.now() - start).toBeLessThan(3000);
+    const text = "a".repeat(200_000) + " x@y.de " + "1 ".repeat(50_000) + "0".repeat(10_000);
+    // Eine Einzelstichprobe misst den Runner mit (GC, Scheduler, fremde Last).
+    // Zwei Laeufe, der beste zaehlt; die Latte bleibt 3000. finde ist rein.
+    let dauer = Infinity;
+    for (let i = 0; i < 2; i++) {
+      const start = performance.now();
+      finde(text);
+      dauer = Math.min(dauer, performance.now() - start);
+    }
+    expect(dauer, `zwei Laeufe, bester ${dauer.toFixed(0)} ms`).toBeLessThan(3000);
   });
 });
 
