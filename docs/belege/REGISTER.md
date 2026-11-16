@@ -9,9 +9,10 @@ zitiert, und verlangt die Zahl dort; ein Beleg, den `git ls-files` nicht kennt, 
 Die Tabelle unten ist ein **Siegel** — Bytezahl und sha256 sagen, dass dieser Beleg dieser Lauf
 ist. Bis zum 7.11. hatte dieses Siegel keinen Pruefer. Seitdem vergleicht
 `scripts/helfer/belege-siegel.mjs` in jedem Suite-Lauf jede ausgewiesene Zeile gegen die Datei auf
-der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 176 Siegel-Zeilen,
-gemessen 10:53:35 MEZ von demselben Fall — dieselbe Zahl wie um 02:57:57, weil P154 nur Siegel
-nachzog; zuvor 126 um 01:39:50, und die zwei neuen sind der Historien-Beleg P147
+der Platte, gefahren von `tests/belege-siegel.test.ts:112` (Grundgesamtheit: 180 Siegel-Zeilen,
+gemessen 16.11.2026 von demselben Fall — die vier neuen sind die Landung von 3.2.214: beide
+Beweis-Ketten-Laeufe, die Summendatei und der Release-Abruf von GitHub; zuvor 176 seit
+7.11. 10:53:35 MEZ, davor 126 um 01:39:50, und die zwei neuen waren der Historien-Beleg P147
 mit seinem Generierer). Der erste Lauf dieses Pruefers fand 4 Befunde auf 2 Zeilen:
 `tag-0311/eval-bge-m3-1404.log.txt` und `tag-0311/sprachuebergriff-bge-m3-1406.log.txt` wiesen
 6 144 B bzw. 2 631 B aus, waehrend auf der Platte 6 199 B bzw. 2 720 B lagen, und die
@@ -328,6 +329,10 @@ Schlag prueft `blockKopfFunde` aus `scripts/helfer/belege-siegel.mjs` genau das,
 | `aussendung-0611/aussendung-0611.log.txt` | 3400 B | `8377e3c64c89e082…` |
 | `aussendung-0611/beweisen-3-2-190-0611.txt` | 1094 B | `21c9789fca4692a5…` |
 | `aussendung-0611/github-releases-0611.json` | 153795 B | `56f94e5bd9c71d1c…` |
+| `aussendung-1611/beweisen-3-2-214-lokal.log.txt` | 1582 B | `1cdafb20fabc1a80…` |
+| `aussendung-1611/beweisen-3-2-214-fern.log.txt` | 1927 B | `71f8b8040f12b629…` |
+| `aussendung-1611/SHA256SUMS-3-2-214.txt` | 186 B | `0ca21e7a2f61e8d2…` |
+| `aussendung-1611/github-release-3-2-214.json` | 12152 B | `182a0062540c1a56…` |
 | `aussendungsatz-0611/zaehlen.mjs` | 13425 B | `28f5a607e0c2b7c3…` |
 | `aussendungsatz-0611/satz-riss.mjs` | 3738 B | `61ad2df22ad6b2f3…` |
 | `aussendungsatz-0611/messregel.mjs` | 2458 B | `64c7499e6b02c517…` |

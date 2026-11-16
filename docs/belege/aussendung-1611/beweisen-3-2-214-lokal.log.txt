@@ -1,0 +1,27 @@
+
+Beweis-Kette fuer K3PTA 3.2.214:
+  OK   K3PTA-3.2.214-mac-arm64.dmg vorhanden (153 MiB)
+  OK   K3PTA-3.2.214-mac-x64.dmg vorhanden (160 MiB)
+  OK   K3PTA-3.2.214-mac-arm64.zip vorhanden (153 MiB)
+  OK   K3PTA-3.2.214-mac-x64.zip vorhanden (160 MiB)
+  OK   K3PTA-3.2.214-mac-arm64.dmg.blockmap vorhanden (0 MiB)
+  OK   K3PTA-3.2.214-mac-x64.dmg.blockmap vorhanden (0 MiB)
+  OK   K3PTA-3.2.214-mac-arm64.zip.blockmap vorhanden (0 MiB)
+  OK   K3PTA-3.2.214-mac-x64.zip.blockmap vorhanden (0 MiB)
+  OK   mac-arm64: Binding gegen Electron (arm64) — passt, NODE_MODULE_VERSION 149
+  OK   mac-arm64: laeuft (arm64) — server antwortet, version 3.2.214, verschluesselung an
+  OK   mac: Binding gegen Electron (x64) — passt, NODE_MODULE_VERSION 149
+  OK   mac: laeuft (x64) — server antwortet, version 3.2.214, verschluesselung an
+  OK   mac-arm64: data-abschnitt — Quelltext 3-mal, Paket 3-mal
+  OK   mac-arm64: data-quittung — Quelltext 2-mal, Paket 1-mal
+  OK   mac: data-abschnitt — Quelltext 3-mal, Paket 3-mal
+  OK   mac: data-quittung — Quelltext 2-mal, Paket 1-mal
+  OK   beide Pakete nennen dieselben Dateien (arm64 6312, x64 6312)
+  OK   inhaltlich verschieden sind allein die nativen Binaries (2 Dateien)
+  OK   SHA256SUMS.txt deckt beide veroeffentlichten .dmg ab
+  OK   SHA256SUMS.txt nennt nichts, was nicht gebaut wurde
+  OK   alle 2 Pruefsummen stimmen mit den Dateien auf der platte ueberein
+  OK   latest-mac.yml nennt Version 3.2.214
+  OK   2 Eintraege in latest-mac.yml, alle mit echtem sha512 und echtem Umfang
+
+alle Beweise angetreten — auslieferbar.
